@@ -1,14 +1,8 @@
-// /ata-frontend/src/hooks/useChatWebSocket.js (FINAL, PRODUCTION-READY VERSION)
+// /ata-frontend/src/hooks/useChatWebSocket.js (FINAL, DEFINITIVELY CORRECTED)
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-// --- [THE FIX IS HERE - STEP 1: IMPORT THE CONFIG] ---
 import { config } from '../config';
-// --- [END OF FIX] ---
-
-// --- [THE FIX IS HERE - STEP 2: REMOVE THE HARDCODED CONSTANT] ---
-// const WEBSOCKET_URL_BASE = 'ws://localhost:8000/api/chatbot/ws'; // This is the line we are removing
-// --- [END OF FIX] ---
 
 const useChatWebSocket = (sessionId, setMessages) => {
   const [isThinking, setIsThinking] = useState(false);
@@ -21,60 +15,70 @@ const useChatWebSocket = (sessionId, setMessages) => {
       return;
     }
 
-    // --- [THE FIX IS HERE - STEP 3: USE THE DYNAMIC URL] ---
-    // Construct the full, correct WebSocket URL using our new, intelligent config.
-    // This will be 'ws://localhost:8000/...' in development and
-    // 'wss://ata-backend-api-production.up.railway.app/...' in production.
     const wsUrl = `${config.wsBaseUrl}/api/chatbot/ws/${sessionId}`;
-    // --- [END OF FIX] ---
-
-    console.log(`Attempting to connect WebSocket to: ${wsUrl}`); // This log is now much more useful for debugging
+    console.log(`Attempting to connect WebSocket to: ${wsUrl}`);
     
     const ws = new WebSocket(wsUrl);
     socketRef.current = ws;
 
     ws.onopen = () => {
       console.log(`WebSocket connection established for session: ${sessionId}`);
-      messageQueueRef.current.forEach(msg => socketRef.current.send(JSON.stringify(msg)));
+      messageQueueRef.current.forEach(msg => ws.send(JSON.stringify(msg)));
       messageQueueRef.current = [];
     };
 
     ws.onmessage = (event) => {
       const message = JSON.parse(event.data);
       
+      // --- [THE DEFINITIVE FIX IS HERE] ---
       switch (message.type) {
         case 'stream_start':
           setIsThinking(false);
           setIsResponding(true);
+          // Create the initial bot message object with the correct properties
+          // The key properties are `role: 'bot'` and `content: ''`
           setMessages(prev => [...prev, { id: `msg_bot_${uuidv4()}`, role: 'bot', content: '', isStreaming: true }]);
           break;
         
         case 'stream_token':
-          setMessages(prev => prev.map((msg, index) => 
-            index === prev.length - 1 ? { ...msg, content: msg.content + message.payload.token } : msg
-          ));
+          // Update the last message in the array by appending the new token
+          setMessages(prev => {
+            const lastMessage = prev[prev.length - 1];
+            if (lastMessage && lastMessage.role === 'bot' && lastMessage.isStreaming) {
+              // Create a new array with the updated last message
+              return [
+                ...prev.slice(0, -1),
+                { ...lastMessage, content: lastMessage.content + message.payload.token }
+              ];
+            }
+            return prev;
+          });
           break;
         
         case 'stream_end':
           setIsResponding(false);
-          setMessages(prev => prev.map((msg, index) => {
-            if (index === prev.length - 1) {
-              const { isStreaming, ...finalMsg } = msg;
-              return finalMsg;
+          // Finalize the last message by removing the isStreaming flag
+          setMessages(prev => {
+            const lastMessage = prev[prev.length - 1];
+            if (lastMessage && lastMessage.role === 'bot' && lastMessage.isStreaming) {
+              const { isStreaming, ...finalMsg } = lastMessage;
+              return [...prev.slice(0, -1), finalMsg];
             }
-            return msg;
-          }));
+            return prev;
+          });
           break;
         
         case 'error':
           setIsThinking(false);
           setIsResponding(false);
+          // Add a bot error message with the correct properties
           setMessages(prev => [...prev, { id: `msg_bot_${uuidv4()}`, role: 'bot', content: message.payload.message }]);
           break;
         
         default:
           console.warn("Received unknown WebSocket message type:", message.type);
       }
+      // --- [END OF FIX] ---
     };
 
     ws.onclose = () => {
