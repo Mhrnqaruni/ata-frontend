@@ -1,4 +1,4 @@
-// /ata-frontend/src/pages/Chatbot.jsx (FINAL, DEFINITIVELY CORRECTED)
+// /ata-frontend/src/pages/Chatbot.jsx (FINAL, DEFINITIVELY CORRECTED V2)
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import HistoryIcon from '@mui/icons-material/History';
 
 import MessageList from '../components/chatbot/MessageList';
-import ChatInput from '../components-chatbot/ChatInput';
+import ChatInput from '../components/chatbot/ChatInput';
 import ExamplePrompts from '../components/chatbot/ExamplePrompts';
 import ChatHistoryPanel from '../components/chatbot/ChatHistoryPanel';
 import useChatWebSocket from '../hooks/useChatWebSocket';
@@ -25,7 +25,7 @@ const Chatbot = () => {
   const [isMessagesLoading, setIsMessagesLoading] = useState(false);
   const [isHistoryDrawerOpen, setIsHistoryDrawerOpen] = useState(false);
   
-  const { isThinking, isResponding, sendMessage } = useChatWebSocket(sessionId, setMessages);
+  const { isThinking, isResponding, connect, sendMessage } = useChatWebSocket(setMessages);
 
   const fetchHistory = useCallback(async () => {
     setIsHistoryLoading(true);
@@ -42,6 +42,13 @@ const Chatbot = () => {
   useEffect(() => {
     fetchHistory();
   }, [fetchHistory]);
+
+  useEffect(() => {
+    // This effect now ONLY connects the WebSocket when sessionId is present.
+    if (sessionId) {
+      connect(sessionId);
+    }
+  }, [sessionId, connect]);
 
   useEffect(() => {
     const loadSession = async () => {
@@ -98,27 +105,25 @@ const Chatbot = () => {
 
   // --- [THE DEFINITIVE FIX IS HERE] ---
   const handleSendMessage = useCallback(async (messageText, fileId = null) => {
-    // If there's no session ID, our only job is to create a new session and navigate.
-    // The rest of the logic will be handled by the component re-rendering.
     if (!sessionId) {
       try {
-        // We still show the "thinking" indicator immediately for good UX.
-        setIsThinking(true); 
+        // 1. Create the session and get the new ID
         const { sessionId: newSessionId } = await chatService.createNewChatSession(messageText, fileId);
         
-        // After creating the session, we navigate. The component will re-render,
-        // the useEffect for loading the session will fire, and it will load the
-        // history which now includes the user's first message.
+        // 2. IMPORTANT: Navigate to the new URL FIRST.
+        // This causes the component to re-render with the new sessionId.
         navigate(`/chat/${newSessionId}`);
         
-        // We no longer need to call sendMessage here. The backend already saved the first message.
+        // The component will re-render, the useEffects will fire, connect the websocket,
+        // and load the history (which includes the first message).
+        // Because the user message is already saved on the backend, we don't need to
+        // do an optimistic update here. The history load will show it.
+        
       } catch (error) {
         showSnackbar(error.message, 'error');
-        setIsThinking(false); // Turn off thinking indicator on error
       }
     } else {
-      // If we already have a session, the logic is simple:
-      // 1. Optimistically update the UI with the user's message.
+      // This logic is for an existing, stable session.
       const userMessage = {
         id: `msg_client_${uuidv4()}`,
         role: 'user',
@@ -126,8 +131,6 @@ const Chatbot = () => {
         file_id: fileId,
       };
       setMessages(prev => [...prev, userMessage]);
-      
-      // 2. Send the message over the WebSocket.
       sendMessage(messageText, fileId);
     }
   }, [sessionId, navigate, showSnackbar, sendMessage]);
@@ -170,10 +173,10 @@ const Chatbot = () => {
           </Box>
         ) : (
           <MessageList messages={messages} isThinking={isThinking}>
-            {/* --- [THE FIX IS HERE: ExamplePrompts commented out for V1] --- */}
-            {/*
-              {!sessionId && messages.length <= 1 && <ExamplePrompts onPromptClick={handleSendMessage} />}
-            */}
+            {/* --- [THE FIX IS HERE: Use a boolean to disable ExamplePrompts] --- */}
+            {false && !sessionId && messages.length <= 1 && (
+              <ExamplePrompts onPromptClick={handleSendMessage} />
+            )}
             {/* --- [END OF FIX] --- */}
           </MessageList>
         )}
