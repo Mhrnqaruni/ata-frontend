@@ -1,4 +1,4 @@
-// /ata-frontend/src/pages/Chatbot.jsx (FINAL, DEFINITIVELY CORRECTED V2)
+// /ata-frontend/src/pages/Chatbot.jsx (FINAL, DEFINITIVE, RACE-CONDITION-FREE)
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -25,6 +25,7 @@ const Chatbot = () => {
   const [isMessagesLoading, setIsMessagesLoading] = useState(false);
   const [isHistoryDrawerOpen, setIsHistoryDrawerOpen] = useState(false);
   
+  // The hook is now simpler and only needs setMessages
   const { isThinking, isResponding, connect, sendMessage } = useChatWebSocket(setMessages);
 
   const fetchHistory = useCallback(async () => {
@@ -44,20 +45,21 @@ const Chatbot = () => {
   }, [fetchHistory]);
 
   useEffect(() => {
-    // This effect now ONLY connects the WebSocket when sessionId is present.
+    // This effect connects the WebSocket when a session ID is present.
     if (sessionId) {
       connect(sessionId);
     }
   }, [sessionId, connect]);
 
   useEffect(() => {
+    // This effect loads the message history for the current session.
     const loadSession = async () => {
       if (sessionId) {
         setIsMessagesLoading(true);
         try {
           const sessionDetails = await chatService.getChatSessionDetails(sessionId);
           const formattedMessages = sessionDetails.history.map(msg => ({
-            id: `msg_hist_${uuidv4()}`,
+            id: msg.id || `msg_hist_${uuidv4()}`, // Prefer the real ID from the DB
             role: msg.role,
             content: msg.content,
             file_id: msg.file_id
@@ -70,8 +72,9 @@ const Chatbot = () => {
           setIsMessagesLoading(false);
         }
       } else {
+        // This is the initial state for a new, unsaved chat.
         setMessages([{
-          id: `msg_bot_${uuidv4()}`,
+          id: `msg_bot_initial`,
           role: 'bot',
           content: "Hello! I'm My Smart Teach, your AI assistant. How can I help you with your teaching tasks today?"
         }]);
@@ -106,24 +109,26 @@ const Chatbot = () => {
   // --- [THE DEFINITIVE FIX IS HERE] ---
   const handleSendMessage = useCallback(async (messageText, fileId = null) => {
     if (!sessionId) {
+      // --- Logic for the VERY FIRST message in a NEW chat ---
       try {
-        // 1. Create the session and get the new ID
+        // 1. Create the session on the backend. The backend now saves the first message.
         const { sessionId: newSessionId } = await chatService.createNewChatSession(messageText, fileId);
         
-        // 2. IMPORTANT: Navigate to the new URL FIRST.
-        // This causes the component to re-render with the new sessionId.
+        // 2. Navigate to the new session's URL.
+        // This will trigger the useEffect hooks to load the history (which now includes
+        // the first message) and connect the WebSocket.
         navigate(`/chat/${newSessionId}`);
         
-        // The component will re-render, the useEffects will fire, connect the websocket,
-        // and load the history (which includes the first message).
-        // Because the user message is already saved on the backend, we don't need to
-        // do an optimistic update here. The history load will show it.
-        
+        // 3. After navigating, we also need to trigger the AI response for the first message.
+        // We do this by sending the message over the WebSocket.
+        sendMessage(messageText, fileId);
+
       } catch (error) {
         showSnackbar(error.message, 'error');
       }
     } else {
-      // This logic is for an existing, stable session.
+      // --- Logic for all SUBSEQUENT messages in an EXISTING chat ---
+      // This is the standard optimistic update flow.
       const userMessage = {
         id: `msg_client_${uuidv4()}`,
         role: 'user',
@@ -173,11 +178,10 @@ const Chatbot = () => {
           </Box>
         ) : (
           <MessageList messages={messages} isThinking={isThinking}>
-            {/* --- [THE FIX IS HERE: Use a boolean to disable ExamplePrompts] --- */}
+            {/* ExamplePrompts are correctly disabled for V1 */}
             {false && !sessionId && messages.length <= 1 && (
               <ExamplePrompts onPromptClick={handleSendMessage} />
             )}
-            {/* --- [END OF FIX] --- */}
           </MessageList>
         )}
         <ChatInput
