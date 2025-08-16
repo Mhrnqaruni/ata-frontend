@@ -1,9 +1,14 @@
-// /ata-frontend/src/hooks/useChatWebSocket.js
+// /ata-frontend/src/hooks/useChatWebSocket.js (FINAL, PRODUCTION-READY VERSION)
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+// --- [THE FIX IS HERE - STEP 1: IMPORT THE CONFIG] ---
+import { config } from '../config';
+// --- [END OF FIX] ---
 
-const WEBSOCKET_URL_BASE = 'ws://localhost:8000/api/chatbot/ws';
+// --- [THE FIX IS HERE - STEP 2: REMOVE THE HARDCODED CONSTANT] ---
+// const WEBSOCKET_URL_BASE = 'ws://localhost:8000/api/chatbot/ws'; // This is the line we are removing
+// --- [END OF FIX] ---
 
 const useChatWebSocket = (sessionId, setMessages) => {
   const [isThinking, setIsThinking] = useState(false);
@@ -16,28 +21,37 @@ const useChatWebSocket = (sessionId, setMessages) => {
       return;
     }
 
-    socketRef.current = new WebSocket(`${WEBSOCKET_URL_BASE}/${sessionId}`);
-    // Do not set isThinking here anymore, let sendMessage handle it.
+    // --- [THE FIX IS HERE - STEP 3: USE THE DYNAMIC URL] ---
+    // Construct the full, correct WebSocket URL using our new, intelligent config.
+    // This will be 'ws://localhost:8000/...' in development and
+    // 'wss://ata-backend-api-production.up.railway.app/...' in production.
+    const wsUrl = `${config.wsBaseUrl}/api/chatbot/ws/${sessionId}`;
+    // --- [END OF FIX] ---
 
-    socketRef.current.onopen = () => {
+    console.log(`Attempting to connect WebSocket to: ${wsUrl}`); // This log is now much more useful for debugging
+    
+    const ws = new WebSocket(wsUrl);
+    socketRef.current = ws;
+
+    ws.onopen = () => {
       console.log(`WebSocket connection established for session: ${sessionId}`);
       messageQueueRef.current.forEach(msg => socketRef.current.send(JSON.stringify(msg)));
       messageQueueRef.current = [];
     };
 
-    socketRef.current.onmessage = (event) => {
+    ws.onmessage = (event) => {
       const message = JSON.parse(event.data);
       
       switch (message.type) {
         case 'stream_start':
           setIsThinking(false);
           setIsResponding(true);
-          setMessages(prev => [...prev, { id: `msg_bot_${uuidv4()}`, author: 'bot', text: '', isStreaming: true }]);
+          setMessages(prev => [...prev, { id: `msg_bot_${uuidv4()}`, role: 'bot', content: '', isStreaming: true }]);
           break;
         
         case 'stream_token':
           setMessages(prev => prev.map((msg, index) => 
-            index === prev.length - 1 ? { ...msg, text: msg.text + message.payload.token } : msg
+            index === prev.length - 1 ? { ...msg, content: msg.content + message.payload.token } : msg
           ));
           break;
         
@@ -55,7 +69,7 @@ const useChatWebSocket = (sessionId, setMessages) => {
         case 'error':
           setIsThinking(false);
           setIsResponding(false);
-          setMessages(prev => [...prev, { id: `msg_bot_${uuidv4()}`, author: 'bot', text: message.payload.message }]);
+          setMessages(prev => [...prev, { id: `msg_bot_${uuidv4()}`, role: 'bot', content: message.payload.message }]);
           break;
         
         default:
@@ -63,17 +77,17 @@ const useChatWebSocket = (sessionId, setMessages) => {
       }
     };
 
-    socketRef.current.onclose = () => {
+    ws.onclose = () => {
       console.log(`WebSocket connection closed for session: ${sessionId}`);
       setIsThinking(false);
       setIsResponding(false);
     };
     
-    socketRef.current.onerror = (error) => {
+    ws.onerror = (error) => {
       console.error("WebSocket error:", error);
       setIsThinking(false);
       setIsResponding(false);
-      setMessages(prev => [...prev, { id: `msg_bot_${uuidv4()}`, author: 'bot', text: "Sorry, a connection error occurred. Please refresh the page." }]);
+      setMessages(prev => [...prev, { id: `msg_bot_${uuidv4()}`, role: 'bot', content: "Sorry, a connection error occurred. Please refresh the page." }]);
     };
 
     return () => {
@@ -81,11 +95,7 @@ const useChatWebSocket = (sessionId, setMessages) => {
         socketRef.current.close();
       }
     };
-  // --- [THE FIX IS HERE] ---
-  // The effect now correctly depends on `sessionId` and `setMessages`.
-  // This ensures the `onmessage` handler never has a "stale" version of `setMessages`.
   }, [sessionId, setMessages]);
-  // --- [END OF FIX] ---
 
   const sendMessage = useCallback((messageText, fileId = null) => {
     const payload = { 
