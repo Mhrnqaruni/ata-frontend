@@ -1,4 +1,4 @@
-// /ata-frontend/src/pages/Chatbot.jsx
+// /ata-frontend/src/pages/Chatbot.jsx (DEFINITIVELY CORRECTED AND CONSISTENT)
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -49,13 +49,18 @@ const Chatbot = () => {
         setIsMessagesLoading(true);
         try {
           const sessionDetails = await chatService.getChatSessionDetails(sessionId);
+          
+          // --- [THE FIX IS HERE - STEP 1: Standardize History Loading] ---
+          // Map the backend data to our new, consistent frontend message shape.
           const formattedMessages = sessionDetails.history.map(msg => ({
             id: `msg_hist_${uuidv4()}`,
-            author: msg.role === 'model' ? 'bot' : msg.role,
-            text: msg.content,
+            role: msg.role, // Use 'role' directly
+            content: msg.content, // Use 'content' directly
             file_id: msg.file_id
           }));
+          // --- [END OF FIX] ---
           setMessages(formattedMessages);
+
         } catch (error) {
           showSnackbar(error.message, 'error');
           navigate('/chat');
@@ -63,31 +68,26 @@ const Chatbot = () => {
           setIsMessagesLoading(false);
         }
       } else {
+        // --- [THE FIX IS HERE - STEP 2: Standardize Initial Message] ---
         setMessages([{
           id: `msg_bot_${uuidv4()}`,
-          author: 'bot',
-          text: "Hello! I'm your MST assistant. How can I help you analyze your teaching data today?"
+          role: 'bot', // Use 'role'
+          content: "Hello! I'm My Smart Teach, your AI assistant. How can I help you with your teaching tasks today?" // Use 'content'
         }]);
+        // --- [END OF FIX] ---
       }
     };
     loadSession();
   }, [sessionId, showSnackbar, navigate]);
 
 
-  const handleHistoryDrawerToggle = () => {
-    setIsHistoryDrawerOpen(!isHistoryDrawerOpen);
-  };
-
-  const handleNewChat = () => {
-    if (sessionId) {
-      navigate('/chat');
-    }
-  };
-
+  const handleHistoryDrawerToggle = () => setIsHistoryDrawerOpen(!isHistoryDrawerOpen);
+  const handleNewChat = () => navigate('/chat');
   const handleSessionSelect = (selectedSessionId) => {
     if (sessionId !== selectedSessionId) {
       navigate(`/chat/${selectedSessionId}`);
     }
+    setIsHistoryDrawerOpen(false);
   };
 
   const handleDeleteSession = async (sessionIdToDelete) => {
@@ -104,31 +104,27 @@ const Chatbot = () => {
   };
 
   const handleSendMessage = useCallback(async (messageText, fileId = null) => {
+    // --- [THE FIX IS HERE - STEP 3: Standardize New User Message] ---
     const userMessage = {
       id: `msg_client_${uuidv4()}`,
-      author: 'user',
-      text: messageText,
+      role: 'user', // Use 'role'
+      content: messageText, // Use 'content'
       file_id: fileId,
     };
+    // --- [END OF FIX] ---
     setMessages(prev => [...prev, userMessage]);
 
     if (!sessionId) {
       try {
         const { sessionId: newSessionId } = await chatService.createNewChatSession(messageText, fileId);
-        // We now have the newSessionId. Navigate to it.
-        // The useChatWebSocket hook will see this change and connect.
-        // It will also correctly queue the message to be sent on connection.
         navigate(`/chat/${newSessionId}`, { replace: true });
-        // The first message MUST now be sent by the hook, we must call sendMessage
         sendMessage(messageText, fileId);
-
       } catch (error) {
         showSnackbar(error.message, 'error');
       }
     } else {
       sendMessage(messageText, fileId);
     }
-
   }, [sessionId, navigate, showSnackbar, sendMessage]);
   
   const handleStopGeneration = () => console.log("Stop generation requested.");
@@ -149,17 +145,8 @@ const Chatbot = () => {
         onMobileClose={() => setIsHistoryDrawerOpen(false)}
       />
       <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-        <Box sx={{
-          display: 'flex',
-          alignItems: 'center',
-          p: 2,
-          borderBottom: 1,
-          borderColor: 'divider',
-          flexShrink: 0
-        }}>
-          <Typography variant="h3" sx={{ flexGrow: 1 }}>
-            Chat
-          </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', p: 2, borderBottom: 1, borderColor: 'divider', flexShrink: 0 }}>
+          <Typography variant="h3" sx={{ flexGrow: 1 }}>Chat</Typography>
           <IconButton
             color="inherit"
             aria-label="open history"
@@ -176,15 +163,8 @@ const Chatbot = () => {
             <CircularProgress />
           </Box>
         ) : (
-          <MessageList
-            messages={messages}
-            isThinking={isThinking}
-          >
-            {/* --- [THE FIX IS HERE: FEATURE FLAG] --- */}
-            {/* Temporarily disable ExamplePrompts for V1 by setting the condition to false. */}
-            {/* V2 TODO: Re-enable by changing this back to: !sessionId && messages.length <= 1 */}
-            {false && !sessionId && messages.length <= 1 && <ExamplePrompts onPromptClick={handleSendMessage} />}
-            {/* --- [END OF FIX] --- */}
+          <MessageList messages={messages} isThinking={isThinking}>
+            {!sessionId && messages.length <= 1 && <ExamplePrompts onPromptClick={handleSendMessage} />}
           </MessageList>
         )}
         <ChatInput
