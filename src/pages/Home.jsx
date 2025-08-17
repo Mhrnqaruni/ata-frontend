@@ -90,7 +90,7 @@ const Home = () => {
     },
     {
         id: 'chatbot', title: 'Chatbot', description: 'Ask questions and get insights from your data.',
-        icon: <SmartToyOutlined />, path: '/chatbot', iconBgColor: '#FFF8E1', iconColor: '#FFA000',
+        icon: <SmartToyOutlined />, path: '/chat', iconBgColor: '#FFF8E1', iconColor: '#FFA000',
     }
   ];
 
