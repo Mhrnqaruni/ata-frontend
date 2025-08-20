@@ -1,6 +1,6 @@
 // /src/main.jsx
 
-import { SpeedInsights } from "@vercel/speed-insights/next"
+
 
 // --- Core React Imports ---
 import React from 'react';
@@ -9,6 +9,7 @@ import ReactDOM from 'react-dom/client';
 // --- Application Shell Import ---
 // Import the top-level App component.
 import App from './App.jsx';
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 
 // --- Application Rendering ---
