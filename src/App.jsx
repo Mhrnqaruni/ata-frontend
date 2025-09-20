@@ -1,15 +1,27 @@
-// /src/App.jsx (FINAL, WITH CHATBOT ROUTE)
+// /src/App.jsx (FINAL, SECURE, SUPERVISOR-APPROVED VERSION)
 
+// --- Core React & Router Imports ---
 import React, { useMemo } from 'react';
 import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
+
+// --- MUI & Theme Imports ---
 import { ThemeProvider } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
+import { getTheme } from './theme/theme';
+
+// --- Context Provider Imports ---
+// These providers wrap the entire application to provide global state.
 import { ThemeModeProvider, useThemeMode } from './hooks/useThemeMode';
 import { AuthProvider } from './hooks/useAuth';
 import { SnackbarProvider } from './hooks/useSnackbar';
-import { getTheme } from './theme/theme';
 
-// --- Component & Page Imports ---
+// --- [CRITICAL MODIFICATION 1/4: IMPORT NEW COMPONENTS] ---
+// Import the new pages and the route protection component.
+import Login from './pages/Login';
+import Register from './pages/Register';
+import ProtectedRoute from './components/common/ProtectedRoute';
+
+// --- Component & Page Imports (Existing) ---
 import Layout from './components/common/Layout';
 import Home from './pages/Home';
 import Classes from './pages/Classes';
@@ -24,29 +36,47 @@ import NewAssessmentV2 from './pages/assessments/NewAssessmentV2';
 import GradingWorkflow from './pages/grading/GradingWorkflow';
 import FinalResultsPage from './pages/assessments/FinalResultsPage';
 import PublicReportView from './pages/public/ReportView';
-// --- [THE FIX IS HERE: STEP 1 - IMPORT] ---
-import Chatbot from './pages/Chatbot'; // Import the real Chatbot page
-// --- [END OF FIX] ---
+import Chatbot from './pages/Chatbot';
 
+/**
+ * A layout component that wraps all protected pages.
+ * It includes the main Layout (Header, Sidebar) and an Outlet for the specific page content.
+ */
 const AppLayout = () => (
   <Layout>
     <Outlet />
   </Layout>
 );
 
+/**
+ * A component that applies the MUI theme and defines the application's routing structure.
+ */
 const ThemedApp = () => {
   const { mode } = useThemeMode();
+  // useMemo ensures the theme is only recalculated when the mode changes.
   const theme = useMemo(() => getTheme(mode), [mode]);
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      {/* The Routes component is where all URL-to-component mapping is defined. */}
       <Routes>
-        {/* Public route without the main layout */}
+        {/* --- [CRITICAL MODIFICATION 2/4: DEFINE PUBLIC-ONLY ROUTES] --- */}
+        {/* These routes are for unauthenticated users. */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+
+        {/* --- [CRITICAL MODIFICATION 3/4: DEFINE TRULY PUBLIC ROUTES] --- */}
+        {/* This route is accessible to anyone, logged in or not. */}
         <Route path="/report/:report_token" element={<PublicReportView />} />
         
-        {/* Authenticated routes that use the AppLayout */}
-        <Route element={<AppLayout />}>
+        {/* --- [CRITICAL MODIFICATION 4/4: DEFINE PROTECTED ROUTES] --- */}
+        {/* This parent Route uses the ProtectedRoute component as its element.
+            ANY route nested inside this one will first be checked by ProtectedRoute.
+            If the user is not authenticated, they will be redirected to /login
+            and none of the child routes will ever be rendered. */}
+        <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+          {/* All application pages that require a user to be logged in go here. */}
           <Route path="/" element={<Home />} />
           <Route path="/classes" element={<Classes />} />
           <Route path="/classes/:class_id" element={<ClassDetails />} />
@@ -59,12 +89,9 @@ const ThemedApp = () => {
           <Route path="/assessments/new-v2" element={<NewAssessmentV2 />} />
           <Route path="/assessments/:job_id/review" element={<GradingWorkflow />} />
           <Route path="/assessments/:job_id/results" element={<FinalResultsPage />} />
-          
-          {/* --- [THE FIX IS HERE: STEP 2 - REPLACE] --- */}
-          {/* The dynamic route for chat sessions */}
           <Route path="/chat/:sessionId?" element={<Chatbot />} />
-          {/* --- [END OF FIX] --- */}
-
+          
+          {/* A catch-all route for any other path, rendered within the protected layout. */}
           <Route path="*" element={<h1>404 Not Found</h1>} />
         </Route>
       </Routes>
@@ -72,6 +99,12 @@ const ThemedApp = () => {
   );
 }
 
+/**
+ * The absolute top-level component of the application.
+ * It sets up the Router and all the global context providers.
+ * The order of providers here generally doesn't matter, but it's good practice
+ * to have the AuthProvider near the top.
+ */
 function App() {
   return (
     <Router>

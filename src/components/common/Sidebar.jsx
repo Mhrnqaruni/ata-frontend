@@ -1,4 +1,4 @@
-// /src/components/common/Sidebar.jsx (FINAL, WITH RESPONSIVE LOGO)
+// /src/components/common/Sidebar.jsx (FINAL, WITH COPYRIGHT NOTICE)
 
 // --- Core React & Router Imports ---
 import React from 'react';
@@ -26,6 +26,8 @@ const navItems = [
   { text: 'Chatbot', icon: <SmartToyOutlined />, path: '/chat' },
 ];
 
+const copyrightText = "Copyright © 2025 Unique Tech Solution Ltd. All Rights Reserved";
+
 /**
  * The primary navigation component. Supports a collapsible "mini" state on desktop.
  */
@@ -39,21 +41,17 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, sidebarWidth, isCollapsed, onTogg
 
   const drawerContent = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* --- [THE FIX IS HERE: DYNAMIC IMAGE STYLE] --- */}
       <Toolbar sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', p: 1, height: '64px' }}>
         <img 
           src={mode === 'light' ? lightLogo : darkLogo} 
           alt="ATA Logo" 
           style={{ 
-            // When collapsed, the logo is smaller. When expanded, it is larger.
             height: isCollapsed ? '32px' : '50px',
             objectFit: 'contain',
-            // Animate the height change for a smooth transition.
             transition: 'height 0.3s ease-in-out',
           }} 
         />
       </Toolbar>
-      {/* --- [END OF FIX] --- */}
 
       <List sx={{ flexGrow: 1 }}>
         {navItems.map((item) => {
@@ -100,19 +98,43 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, sidebarWidth, isCollapsed, onTogg
         })}
       </List>
       
-      <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+      {/* --- [START OF COPYRIGHT AND COLLAPSE SECTION] --- */}
+      <Box>
         <Divider />
-        <ListItem disablePadding>
-          <ListItemButton onClick={onToggleCollapse} sx={{ justifyContent: 'center', py: 2 }}>
-            <ListItemIcon sx={{ minWidth: 0, justifyContent: 'center', 
-              transition: 'transform 0.3s',
-              transform: isCollapsed ? 'rotate(180deg)' : 'rotate(0deg)',
-            }}>
-              <ChevronLeftIcon />
-            </ListItemIcon>
-          </ListItemButton>
-        </ListItem>
+        
+        {/* --- THE NEW COPYRIGHT NOTICE --- */}
+        <Box sx={{ p: 2, textAlign: 'center' }}>
+          {isCollapsed ? (
+            // In collapsed mode, show only the icon with a tooltip.
+            <Tooltip title={copyrightText} placement="right">
+              <Typography variant="caption" color="text.secondary">
+                ©
+              </Typography>
+            </Tooltip>
+          ) : (
+            // In expanded mode, show the full text.
+            <Typography variant="caption" color="text.secondary">
+              {copyrightText}
+            </Typography>
+          )}
+        </Box>
+        
+        {/* The collapse button is now only visible on desktop. */}
+        <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+          <Divider />
+          <ListItem disablePadding>
+            <ListItemButton onClick={onToggleCollapse} sx={{ justifyContent: 'center', py: 2 }}>
+              <ListItemIcon sx={{ minWidth: 0, justifyContent: 'center', 
+                transition: 'transform 0.3s',
+                transform: isCollapsed ? 'rotate(180deg)' : 'rotate(0deg)',
+              }}>
+                <ChevronLeftIcon />
+              </ListItemIcon>
+            </ListItemButton>
+          </ListItem>
+        </Box>
       </Box>
+      {/* --- [END OF COPYRIGHT AND COLLAPSE SECTION] --- */}
     </Box>
   );
 
@@ -122,6 +144,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, sidebarWidth, isCollapsed, onTogg
       sx={{ width: { md: isCollapsed ? collapsedSidebarWidth : sidebarWidth }, flexShrink: { md: 0 } }}
       aria-label="main navigation"
     >
+      {/* Mobile Drawer */}
       <Drawer
         variant="temporary"
         open={mobileOpen}
@@ -134,6 +157,8 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, sidebarWidth, isCollapsed, onTogg
       >
         {drawerContent}
       </Drawer>
+      
+      {/* Desktop Drawer */}
       <Drawer
         variant="permanent"
         sx={{
