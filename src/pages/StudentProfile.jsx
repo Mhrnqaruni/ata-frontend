@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link as RouterLink } from 'react-router-dom';
-import { Box, Typography, Paper, CircularProgress, Alert, Button, Chip, Card, CardContent, Breadcrumbs, Link } from '@mui/material';
-import { DataGrid } from '@mui/x-data-grid';
+import { Box, Typography, Paper, CircularProgress, Alert, Button, Chip, Card, CardContent, Breadcrumbs, Link, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, useTheme } from '@mui/material';
 import { useAuth } from '../hooks/useAuth';
 import studentService from '../services/studentService';
 import reviewService from '../services/reviewService';
@@ -9,6 +8,7 @@ import reviewService from '../services/reviewService';
 const StudentProfile = () => {
     const { student_id } = useParams();
     const { user } = useAuth();
+    const theme = useTheme();
     const [studentData, setStudentData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -32,57 +32,27 @@ const StudentProfile = () => {
         fetchStudentData();
     }, [student_id, user]);
 
-    const getColumns = (className) => [
-        { field: 'assessmentName', headerName: 'Assessment', flex: 2 },
-        {
-            field: 'createdAt',
-            headerName: 'Date',
-            width: 120,
-            renderCell: (params) => {
-                const value = params.row.createdAt;
-                if (!value) return 'N/A';
-                const date = new Date(value);
-                return isNaN(date.getTime()) ? 'N/A' : date.toLocaleDateString();
-            },
-        },
-        {
-            field: 'mark',
-            headerName: 'Mark',
-            flex: 1.5,
-            renderCell: ({ row }) => {
-                if (row.status === 'ABSENT') {
-                    return <Chip label="Absent" color="default" size="small" />;
-                }
-                if (row.status === 'PENDING_REVIEW') {
-                    return <Chip label="Pending" color="warning" size="small" />;
-                }
-                if (row.totalScore !== null && row.maxTotalScore) {
-                    const percentage = Math.round((row.totalScore / row.maxTotalScore) * 100);
-                    return `${row.totalScore} / ${row.maxTotalScore} (${percentage}%)`;
-                }
-                return 'N/A';
-            },
-        },
-        {
-            field: 'download',
-            headerName: 'Report',
-            width: 160,
-            sortable: false,
-            renderCell: ({ row }) => {
-                if (row.jobId && row.status !== 'ABSENT' && row.status !== 'PENDING_REVIEW') {
-                    const handleDownload = async () => {
-                        try {
-                            await reviewService.downloadReport(row.jobId, student_id);
-                        } catch (downloadError) {
-                            console.error('Failed to download report', downloadError);
-                        }
-                    };
-                    return <Button size="small" variant="outlined" onClick={handleDownload}>Download</Button>;
-                }
-                return null;
-            },
-        },
-    ];
+    const handleDownloadReport = async (jobId) => {
+        try {
+            await reviewService.downloadReport(jobId, student_id);
+        } catch (downloadError) {
+            console.error('Failed to download report', downloadError);
+        }
+    };
+
+    const renderMarkCell = (assessment) => {
+        if (assessment.status === 'ABSENT') {
+            return <Chip label="Absent" color="default" size="small" />;
+        }
+        if (assessment.status === 'PENDING_REVIEW') {
+            return <Chip label="Pending" color="warning" size="small" />;
+        }
+        if (assessment.totalScore !== null && assessment.maxTotalScore) {
+            const percentage = Math.round((assessment.totalScore / assessment.maxTotalScore) * 100);
+            return `${assessment.totalScore} / ${assessment.maxTotalScore} (${percentage}%)`;
+        }
+        return 'N/A';
+    };
 
     if (loading) {
         return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>;
@@ -135,15 +105,55 @@ const StudentProfile = () => {
                             {classData.assessments.length === 0 ? (
                                 <Alert severity="info">No assessments for this class yet.</Alert>
                             ) : (
-                                <Box sx={{ height: 400, width: '100%' }}>
-                                    <DataGrid
-                                        rows={classData.assessments.map(a => ({ ...a, id: a.jobId }))}
-                                        columns={getColumns(classData.className)}
-                                        pageSize={5}
-                                        rowsPerPageOptions={[5, 10]}
-                                        disableSelectionOnClick
-                                        density="comfortable"
-                                    />
+                                <Box sx={{ width: '100%', overflow: 'auto' }}>
+                                    <TableContainer>
+                                        <Table aria-label="assessments table" sx={{ minWidth: 650 }}>
+                                            <TableHead sx={{ backgroundColor: theme.palette.grey[100] }}>
+                                                <TableRow>
+                                                    <TableCell sx={{ fontWeight: 600 }}>Assessment</TableCell>
+                                                    <TableCell sx={{ fontWeight: 600 }}>Date</TableCell>
+                                                    <TableCell sx={{ fontWeight: 600 }}>Mark</TableCell>
+                                                    <TableCell sx={{ fontWeight: 600 }} align="right">Report</TableCell>
+                                                </TableRow>
+                                            </TableHead>
+                                            <TableBody>
+                                                {classData.assessments.map((assessment) => (
+                                                    <TableRow
+                                                        key={assessment.jobId}
+                                                        hover
+                                                        sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                                                    >
+                                                        <TableCell component="th" scope="row">
+                                                            <Typography variant="body1">{assessment.assessmentName}</Typography>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Typography variant="body2" color="text.secondary">
+                                                                {assessment.createdAt
+                                                                    ? new Date(assessment.createdAt).toLocaleDateString()
+                                                                    : 'N/A'}
+                                                            </Typography>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Typography variant="body1">
+                                                                {renderMarkCell(assessment)}
+                                                            </Typography>
+                                                        </TableCell>
+                                                        <TableCell align="right">
+                                                            {assessment.jobId && assessment.status !== 'ABSENT' && assessment.status !== 'PENDING_REVIEW' && (
+                                                                <Button
+                                                                    size="small"
+                                                                    variant="outlined"
+                                                                    onClick={() => handleDownloadReport(assessment.jobId)}
+                                                                >
+                                                                    Download
+                                                                </Button>
+                                                            )}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </TableContainer>
                                 </Box>
                             )}
                         </CardContent>
