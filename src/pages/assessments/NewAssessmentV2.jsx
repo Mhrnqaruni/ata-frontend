@@ -2,7 +2,7 @@
 
 import React, { useState, useReducer, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Stepper, Step, StepLabel, Button, Typography, Paper, Alert, CircularProgress, Grid, FormControl, FormLabel, RadioGroup, FormControlLabel, Radio, TextField, Stack } from '@mui/material';
+import { Box, Stepper, Step, StepLabel, Button, Typography, Paper, Alert, CircularProgress, Grid, FormControl, FormLabel, RadioGroup, FormControlLabel, Radio, TextField, Stack, useMediaQuery, useTheme } from '@mui/material';
 
 // Import our full suite of components
 import DocumentUploader from '../../components/assessments/uploader/DocumentUploader';
@@ -30,6 +30,8 @@ const stepDescriptions = [
 const NewAssessmentV2 = () => {
   const navigate = useNavigate();
   const { showSnackbar } = useSnackbar();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [state, dispatch] = useReducer(wizardReducerV2, initialStateV2);
   const [activeStep, setActiveStep] = useState(0);
   const [classes, setClasses] = useState([]);
@@ -287,8 +289,7 @@ const NewAssessmentV2 = () => {
       <Stepper
         activeStep={activeStep}
         sx={{ mb: 4 }}
-        orientation={{ xs: 'vertical', sm: 'horizontal' }}
-        alternativeLabel={false}
+        orientation={isMobile ? 'vertical' : 'horizontal'}
       >
         {steps.map((label) => <Step key={label}><StepLabel>{label}</StepLabel></Step>)}
       </Stepper>
