@@ -2,6 +2,7 @@
 
 // --- Core React Import ---
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 // --- MUI Component Imports ---
 import { Box, Card, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, IconButton, Tooltip, useTheme } from '@mui/material';
@@ -10,6 +11,7 @@ import { Box, Card, Table, TableBody, TableCell, TableContainer, TableHead, Tabl
 import EditOutlined from '@mui/icons-material/EditOutlined';
 import DeleteOutlineOutlined from '@mui/icons-material/DeleteOutlineOutlined';
 import PersonAddOutlined from '@mui/icons-material/PersonAddOutlined';
+import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined';
 
 /**
  * A purely presentational component that renders a table of students.
@@ -23,6 +25,7 @@ import PersonAddOutlined from '@mui/icons-material/PersonAddOutlined';
  */
 const StudentTable = ({ students, onEdit, onDelete }) => {
   const theme = useTheme();
+  const navigate = useNavigate();
 
   /**
    * A helper function to determine the text color for a grade based on its value.
@@ -88,6 +91,11 @@ const StudentTable = ({ students, onEdit, onDelete }) => {
                 </TableCell>
                 <TableCell align="right">
                   {/* --- Action Delegation Buttons --- */}
+                  <Tooltip title="View Profile">
+                    <IconButton onClick={() => navigate(`/students/${student.id}`)} aria-label={`view ${student.name} profile`}>
+                      <VisibilityOutlined fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
                   <Tooltip title="Edit Student">
                     {/* The onClick handler calls the onEdit prop, passing the specific student object up. */}
                     <IconButton onClick={() => onEdit(student)} aria-label={`edit ${student.name}`}>

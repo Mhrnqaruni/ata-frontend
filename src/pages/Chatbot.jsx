@@ -141,8 +141,12 @@ const Chatbot = () => {
   }, [sessionId, navigate, showSnackbar, sendMessage]);
   // --- [END OF FIX] ---
   
-  const handleStopGeneration = () => console.log("Stop generation requested.");
-  const handleFileUpload = (file) => console.log("File uploaded:", file.name);
+  const handleStopGeneration = () => {
+    // TODO: Implement stop generation functionality
+  };
+  const handleFileUpload = (file) => {
+    // TODO: Implement file upload functionality
+  };
 
   const isInputDisabled = isThinking || isResponding || isMessagesLoading;
 

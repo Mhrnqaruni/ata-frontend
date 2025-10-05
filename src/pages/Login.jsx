@@ -76,7 +76,12 @@ const Login = () => {
         localStorage.removeItem('rememberedEmail');
       }
 
-      navigate(from, { replace: true });
+      // Check if this is the admin user
+      if (email === 'mehran.gharuni.admin@admin.com') {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate(from, { replace: true });
+      }
     } catch (err) {
       setError(err.message || 'An unexpected error occurred. Please try again.');
     } finally {

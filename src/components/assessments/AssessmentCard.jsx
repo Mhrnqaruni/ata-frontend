@@ -1,5 +1,5 @@
-// /src/components/assessments/AssessmentCard.jsx (UPDATED WITH DELETE ACTION)
-import React, { useState } from 'react';
+// /src/components/assessments/AssessmentCard.jsx (UPDATED WITH DELETE ACTION AND COUNTDOWN TIMER)
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box, Card, CardActionArea, Typography, Grid, Menu, MenuItem, IconButton, Tooltip, ListItemIcon, Divider
@@ -15,15 +15,40 @@ const AssessmentCard = ({ job, onDelete }) => { // Accept the new onDelete prop
     const navigate = useNavigate();
     const [anchorEl, setAnchorEl] = useState(null);
     const isMenuOpen = Boolean(anchorEl);
+    const [remainingSeconds, setRemainingSeconds] = useState(0);
+    const startTimeRef = useRef(null);
 
     const isClickable = ['Pending Review', 'Completed'].includes(job.status);
 
-    const handleCardClick = () => {
-        if (job.status === 'Pending Review') {
-            navigate(`/assessments/${job.id}/review`);
-        } else if (job.status === 'Completed') {
-            navigate(`/assessments/${job.id}/results`);
+    // Initialize countdown when job starts processing
+    useEffect(() => {
+        if (job.status === 'Processing' && job.totalPages > 0) {
+            // If we don't have a start time, set it now
+            if (!startTimeRef.current) {
+                startTimeRef.current = Date.now();
+                const estimatedSeconds = job.totalPages * 45; // 45 seconds per page
+                setRemainingSeconds(estimatedSeconds);
+            }
+        } else {
+            // Reset when job is no longer processing
+            startTimeRef.current = null;
+            setRemainingSeconds(0);
         }
+    }, [job.status, job.totalPages]);
+
+    // Countdown timer effect
+    useEffect(() => {
+        if (job.status === 'Processing' && remainingSeconds > 0) {
+            const timer = setInterval(() => {
+                setRemainingSeconds(prev => Math.max(0, prev - 1));
+            }, 1000);
+            return () => clearInterval(timer);
+        }
+    }, [job.status, remainingSeconds]);
+
+    const handleCardClick = () => {
+        // Consistent entry point: Results page for every job
+        navigate(`/assessments/${job.id}/results`);
     };
 
     const handleMenuClick = (event) => {
@@ -85,7 +110,7 @@ const AssessmentCard = ({ job, onDelete }) => { // Accept the new onDelete prop
                         </Typography>
                     </Grid>
                     <Grid item xs={12} md={3}>
-                        <StatusChip status={job.status} progress={job.progress} />
+                        <StatusChip status={job.status} progress={job.progress} remainingSeconds={remainingSeconds} />
                     </Grid>
                     <Grid item xs={12} md={4} sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
                         {job.status === 'Completed' && (

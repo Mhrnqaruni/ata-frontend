@@ -65,14 +65,12 @@ const useChatWebSocket = (setMessages) => {
     // Append the token as a query parameter named 'token'. The backend's
     // chatbot_router is specifically designed to look for this parameter.
     const wsUrl = `${config.wsBaseUrl}/api/chatbot/ws/${sessionId}?token=${token}`;
-    
-    console.log(`Connecting secure WebSocket to: ${wsUrl}`);
+
     const ws = new WebSocket(wsUrl);
     socketRef.current = ws;
 
     // --- WebSocket Event Handlers (Logic is unchanged, but now operate on a secure connection) ---
     ws.onopen = () => {
-      console.log(`WebSocket connection established for session: ${sessionId}`);
       setIsConnected(true);
       messageQueueRef.current.forEach(msg => ws.send(JSON.stringify(msg)));
       messageQueueRef.current = [];
@@ -110,11 +108,9 @@ const useChatWebSocket = (setMessages) => {
     };
 
     ws.onclose = (event) => {
-      console.log(`WebSocket connection closed for session: ${sessionId}. Code: ${event.code}`);
       // If the close code is 1008, it's likely an auth failure from the backend.
       if (event.code === 1008) {
-          console.error("WebSocket closed due to policy violation. This is likely an authentication or authorization error.");
-          // Here you could use a snackbar to inform the user their session might be invalid.
+          // WebSocket closed due to policy violation - likely auth error
       }
       setIsConnected(false);
       setIsThinking(false);

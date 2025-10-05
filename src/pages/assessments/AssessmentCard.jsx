@@ -19,11 +19,8 @@ const AssessmentCard = ({ job }) => {
     const isClickable = ['Pending Review', 'Completed'].includes(job.status);
 
     const handleCardClick = () => {
-        if (job.status === 'Pending Review') {
-            navigate(`/assessments/${job.id}/review`);
-        } else if (job.status === 'Completed') {
-            navigate(`/assessments/${job.id}/results`);
-        }
+        // Always land on the Results page first, regardless of status.
+        navigate(`/assessments/${job.id}/results`);
     };
 
     const handleMenuClick = (event) => {

@@ -2,15 +2,15 @@
 
 import React, { useState, useReducer, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Stepper, Step, StepLabel, Button, Typography, Paper, Alert, CircularProgress, Grid } from '@mui/material';
+import { Box, Stepper, Step, StepLabel, Button, Typography, Paper, Alert, CircularProgress, Grid, FormControl, FormLabel, RadioGroup, FormControlLabel, Radio, TextField, Stack } from '@mui/material';
 
 // Import our full suite of components
 import DocumentUploader from '../../components/assessments/uploader/DocumentUploader';
 import StructureReviewer from '../../components/assessments/uploader/StructureReviewer';
 import GradingModeSelector from '../../components/assessments/uploader/GradingModeSelector';
-import ScoringConfigurator from '../../components/assessments/uploader/ScoringConfigurator';
 import Step1Setup from '../../components/assessments/wizard/Step1Setup';
 import Step3Upload from '../../components/assessments/wizard/Step3Upload';
+import ManualUploader from '../../components/assessments/uploader/ManualUploader';
 import WizardStep from '../../components/assessments/WizardStep';
 
 import assessmentService from '../../services/assessmentService';
@@ -43,38 +43,85 @@ const NewAssessmentV2 = () => {
       .finally(() => setIsLoading(false));
   }, [showSnackbar]);
 
+  // Count pages when question and answer key files are selected
+  useEffect(() => {
+    const countPages = async () => {
+      if (state.questionFile && state.answerKeyFile) {
+        try {
+          const files = [state.questionFile, state.answerKeyFile];
+          const result = await assessmentService.countPages(files);
+          dispatch({ type: 'SET_ESTIMATED_TIME', payload: result.estimated_seconds });
+        } catch (error) {
+          console.error('Failed to count pages:', error);
+          // Set a default estimate if page counting fails
+          dispatch({ type: 'SET_ESTIMATED_TIME', payload: 30 });
+        }
+      }
+    };
+    countPages();
+  }, [state.questionFile, state.answerKeyFile]);
+
+  // Countdown timer effect during parsing
+  useEffect(() => {
+    if (state.status === 'parsing' && state.countdownSeconds > 0) {
+      const timer = setInterval(() => {
+        dispatch({ type: 'UPDATE_COUNTDOWN', payload: state.countdownSeconds - 1 });
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [state.status, state.countdownSeconds]);
+
   // NEW Handler for structuring documents
   const handleStructure = useCallback(async () => {
-    if (!state.questionFile) {
-      showSnackbar('Please upload the main question document.', 'error');
+    if (!state.questionFile || !state.answerKeyFile) {
+      showSnackbar('Please upload both the question paper and the answer key.', 'error');
       return;
     }
     dispatch({ type: 'START_PARSING' });
     try {
-      const parsedConfig = await assessmentService.parseDocument(
+      // Step 1: Always parse the documents first to get the structure.
+      let parsedConfig = await assessmentService.parseDocument(
         state.questionFile,
-        state.answerKeyFile, // Pass the optional second file
+        state.answerKeyFile,
         state.classId,
         state.assessmentName
       );
+
+      // Step 2: If AI marking is selected, make a second call to distribute scores.
+      if (state.markingStrategy === 'ai') {
+        showSnackbar('Documents analyzed. Now, asking AI to assign marks...', 'info');
+        parsedConfig = await assessmentService.distributeScoresWithAI(parsedConfig, state.totalMarks);
+      }
+
       dispatch({ type: 'PARSE_SUCCESS', payload: parsedConfig });
-      showSnackbar('Document(s) analyzed successfully!', 'success');
+      showSnackbar('Assessment structure is ready for review!', 'success');
     } catch (error) {
-      dispatch({ type: 'PARSE_FAILURE', payload: error.message || 'Failed to parse document.' });
+      dispatch({ type: 'PARSE_FAILURE', payload: error.message || 'Failed to process documents.' });
     }
-  }, [state.questionFile, state.answerKeyFile, state.classId, state.assessmentName, showSnackbar]);
+  }, [state.questionFile, state.answerKeyFile, state.classId, state.assessmentName, state.markingStrategy, state.totalMarks, showSnackbar]);
 
   // handleSubmit is now simpler, as the config is already in state (unchanged)
   const handleSubmit = async () => {
     dispatch({ type: 'START_SUBMITTING' });
+
     try {
-      const formData = new FormData();
-      formData.append('config', JSON.stringify(state.config));
-      state.answerSheetFiles.forEach(file => formData.append('answer_sheets', file));
+      // The service call is now chosen based on the upload mode.
+      if (state.uploadMode === 'manual') {
+        await assessmentService.createAssessmentJobWithManualUploads({
+          config: state.config,
+          manualStudentFiles: state.manualStudentFiles,
+          outsiders: state.outsiders,
+        });
+      } else {
+        const formData = new FormData();
+        formData.append('config', JSON.stringify(state.config));
+        state.answerSheetFiles.forEach(file => formData.append('answer_sheets', file));
+        await assessmentService.createAssessmentJobV2(formData);
+      }
       
-      await assessmentService.createAssessmentJobV2(formData);
       showSnackbar('Assessment job created! Grading has begun.', 'success');
       navigate('/assessments');
+
     } catch (error) {
       const errorMessage = error.message || 'An unexpected error occurred.';
       dispatch({ type: 'SUBMIT_FAILURE', payload: errorMessage });
@@ -89,7 +136,14 @@ const NewAssessmentV2 = () => {
       case 1:
         return !!state.config && state.config.sections.every(s => s.questions.every(q => q.text.trim() && q.rubric.trim() && q.maxScore > 0));
       case 2:
-        return state.answerSheetFiles.length > 0;
+        if (state.uploadMode === 'batch') {
+          return state.answerSheetFiles.length > 0;
+        }
+        if (state.uploadMode === 'manual') {
+          // Valid if at least one student/outsider has at least one file staged.
+          return Object.values(state.manualStudentFiles).some(fileList => fileList.length > 0);
+        }
+        return false; // Should not happen
       case 3:
         return true;
       default:
@@ -128,16 +182,51 @@ const NewAssessmentV2 = () => {
               </Grid>
               <Grid item xs={12} md={6}>
                 <DocumentUploader
-                  title="Answer Key (Optional)"
+                  title="Answer Key"
                   onFileSelect={(file) => dispatch({ type: 'SET_ANSWER_KEY_FILE', payload: file })}
                   selectedFile={state.answerKeyFile}
                   disabled={isProcessing}
                 />
               </Grid>
             </Grid>
+
+            <FormControl component="fieldset" sx={{ mt: 3 }}>
+              <FormLabel component="legend">Marking Strategy</FormLabel>
+              <RadioGroup
+                row
+                aria-label="marking strategy"
+                name="marking-strategy-group"
+                value={state.markingStrategy}
+                onChange={(e) => dispatch({ type: 'UPDATE_FIELD', payload: { field: 'markingStrategy', value: e.target.value } })}
+              >
+                <FormControlLabel value="document" control={<Radio />} label="Find marks in document" />
+                <FormControlLabel value="ai" control={<Radio />} label="Use AI to assign marks" />
+              </RadioGroup>
+              {state.markingStrategy === 'ai' && (
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="Maximum marks for this exam"
+                  value={state.totalMarks}
+                  onChange={(e) => dispatch({ type: 'UPDATE_FIELD', payload: { field: 'totalMarks', value: parseInt(e.target.value, 10) || 0 } })}
+                  sx={{ mt: 1, ml: 1, maxWidth: '280px' }}
+                  variant="outlined"
+                  size="small"
+                />
+              )}
+            </FormControl>
             
-            <Button variant="contained" onClick={handleStructure} disabled={!state.questionFile || isProcessing} sx={{ mt: 2 }}>
-              {isProcessing ? <CircularProgress size={24} /> : 'Analyze Document(s)'}
+            <Button variant="contained" onClick={handleStructure} disabled={!state.questionFile || !state.answerKeyFile || isProcessing} sx={{ mt: 2, display: 'block' }}>
+              {isProcessing ? (
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <CircularProgress size={24} color="inherit" />
+                  <Typography variant="body2">
+                    Analyzing Document... {state.countdownSeconds > 0 ? `(~${Math.floor(state.countdownSeconds / 60)}:${String(state.countdownSeconds % 60).padStart(2, '0')})` : ''}
+                  </Typography>
+                </Stack>
+              ) : (
+                'Structure Assessment'
+              )}
             </Button>
 
             {state.error && <Alert severity="error" sx={{ mt: 2 }}>{state.error}</Alert>}
@@ -147,13 +236,40 @@ const NewAssessmentV2 = () => {
                 <Typography variant="h6" gutterBottom>Review & Configure</Typography>
                 <StructureReviewer config={state.config} dispatch={dispatch} disabled={isProcessing} />
                 <GradingModeSelector config={state.config} dispatch={dispatch} disabled={isProcessing} />
-                <ScoringConfigurator config={state.config} dispatch={dispatch} disabled={isProcessing} />
               </Box>
             )}
           </Box>
         );
       case 2:
-        return <Step3Upload state={state} dispatch={dispatch} disabled={isProcessing} />;
+        return (
+          <Box>
+            <FormControl component="fieldset" sx={{ mb: 2 }}>
+              <FormLabel component="legend">Upload Method</FormLabel>
+              <RadioGroup
+                row
+                value={state.uploadMode}
+                onChange={(e) => dispatch({ type: 'UPDATE_FIELD', payload: { field: 'uploadMode', value: e.target.value } })}
+              >
+                <FormControlLabel value="batch" control={<Radio />} label="Batch Upload" />
+                <FormControlLabel value="manual" control={<Radio />} label="Manual Upload per Student" />
+              </RadioGroup>
+            </FormControl>
+
+            {state.uploadMode === 'batch' && (
+              <Step3Upload state={state} dispatch={dispatch} disabled={isProcessing} />
+            )}
+            {state.uploadMode === 'manual' && (
+              <ManualUploader
+                classId={state.classId}
+                stagedFiles={state.manualStudentFiles}
+                outsiders={state.outsiders}
+                onFilesStaged={(payload) => dispatch({ type: 'STAGE_MANUAL_FILES', payload })}
+                onAddOutsider={(name) => dispatch({ type: 'ADD_OUTSIDER', payload: name })}
+                disabled={isProcessing}
+              />
+            )}
+          </Box>
+        );
       case 3:
         // A simple review step for the end
         return <Typography>Review your settings and click 'Start Grading' to begin.</Typography>;

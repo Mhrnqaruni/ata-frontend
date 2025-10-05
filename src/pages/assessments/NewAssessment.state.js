@@ -10,26 +10,22 @@ export const initialQuestionV2 = () => ({
 });
 
 // This is the initial state for our new V2 wizard.
-export const initialStateV2 = {
+export const initialState = {
   assessmentName: '',
   classId: '',
+  // --- [NEW STATE FIELDS] ---
   questionFile: null,
   answerKeyFile: null,
-  markingStrategy: 'document', // 'document' or 'ai'
-  totalMarks: 100,
-  uploadMode: 'batch', // 'batch' or 'manual'
+  scoringMethod: 'per_question', // 'per_question' or 'total_score'
+  // --- [END NEW STATE FIELDS] ---
   config: null, // Will hold the AI-parsed V2 config object
   answerSheetFiles: [],
-  manualStudentFiles: {}, // New state: { [entityId]: File[] }
-  outsiders: [], // New state: { id: string, name: string }[]
   status: 'setup', // 'setup', 'parsing', 'reviewing', 'submitting'
   error: null,
-  estimatedSeconds: 0, // Estimated processing time
-  countdownSeconds: 0, // Current countdown value
 };
 
 // This reducer function manages all state transitions for the V2 wizard.
-export function wizardReducerV2(state, action) {
+export function wizardReducer(state, action) {
   switch (action.type) {
     // --- [NEW ACTIONS] ---
     case 'SET_QUESTION_FILE':
@@ -39,28 +35,14 @@ export function wizardReducerV2(state, action) {
     // --- [END NEW ACTIONS] ---
 
     case 'UPDATE_FIELD':
-      // When switching upload modes, reset all file states to prevent conflicts.
-      if (action.payload.field === 'uploadMode' && action.payload.value !== state.uploadMode) {
-        return {
-          ...state,
-          [action.payload.field]: action.payload.value,
-          answerSheetFiles: [],
-          manualStudentFiles: {},
-          outsiders: [],
-        };
-      }
       return { ...state, [action.payload.field]: action.payload.value };
     case 'START_PARSING':
-      return { ...state, status: 'parsing', error: null, config: null, countdownSeconds: state.estimatedSeconds };
+      return { ...state, status: 'parsing', error: null, config: null };
     case 'PARSE_SUCCESS':
       // When parsing succeeds, we populate the config and move to the 'reviewing' state.
-      return { ...state, status: 'reviewing', config: action.payload, countdownSeconds: 0 };
+      return { ...state, status: 'reviewing', config: action.payload };
     case 'PARSE_FAILURE':
-      return { ...state, status: 'setup', error: action.payload, questionFile: null, answerKeyFile: null, countdownSeconds: 0 };
-    case 'SET_ESTIMATED_TIME':
-      return { ...state, estimatedSeconds: action.payload };
-    case 'UPDATE_COUNTDOWN':
-      return { ...state, countdownSeconds: Math.max(0, action.payload) };
+      return { ...state, status: 'setup', error: action.payload, questionFile: null, answerKeyFile: null };
     case 'START_SUBMITTING':
       return { ...state, status: 'submitting', error: null };
     case 'SUBMIT_FAILURE':
@@ -73,27 +55,6 @@ export function wizardReducerV2(state, action) {
     case 'REMOVE_ANSWER_SHEET':
       return { ...state, answerSheetFiles: state.answerSheetFiles.filter(f => f.name !== action.payload) };
     
-    // --- Actions for manual per-student uploads ---
-    case 'ADD_OUTSIDER': {
-      const newOutsider = {
-        id: `outsider_${new Date().getTime()}`, // Temp ID for the UI
-        name: action.payload,
-      };
-      return { ...state, outsiders: [...state.outsiders, newOutsider] };
-    }
-    case 'STAGE_MANUAL_FILES': {
-      const { entityId, files } = action.payload;
-      const existingFiles = state.manualStudentFiles[entityId] || [];
-      const newFiles = files.filter(nf => !existingFiles.some(ef => ef.name === nf.name && ef.size === nf.size));
-      return {
-        ...state,
-        manualStudentFiles: {
-          ...state.manualStudentFiles,
-          [entityId]: [...existingFiles, ...newFiles]
-        }
-      };
-    }
-
     // --- New V2-specific actions for editing the config ---
     case 'UPDATE_CONFIG_FIELD': {
         const { field, value } = action.payload;

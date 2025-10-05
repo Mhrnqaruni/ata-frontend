@@ -56,20 +56,16 @@ const StructureReviewer = ({ config, dispatch, disabled }) => {
                       <TextField fullWidth multiline rows={3} label="Question Text" value={q.text || ''} onChange={(e) => handleQuestionUpdate(section.id, q.id, 'text', e.target.value)} disabled={disabled} />
                       <TextField fullWidth multiline rows={5} label="Grading Rubric / Answer" value={q.rubric || ''} onChange={(e) => handleQuestionUpdate(section.id, q.id, 'rubric', e.target.value)} disabled={disabled} />
                       
-                      {/* --- [THE FIX IS HERE] --- */}
-                      {/* The TextField for Max Score is still here, ensuring its value is managed */}
-                      {/* by the state. However, we have added `display: 'none'` via the sx prop */}
-                      {/* to visually hide it from the user, fulfilling the requirement. */}
                       <TextField
                         type="number"
                         label="Max Score"
-                        value={q.maxScore || 10}
+                        value={q.maxScore || ''}
                         onChange={(e) => handleQuestionUpdate(section.id, q.id, 'maxScore', parseInt(e.target.value, 10) || 0)}
                         disabled={disabled}
-                        sx={{ maxWidth: '150px', display: 'none' }} // <-- THIS IS THE CHANGE
+                        sx={{ maxWidth: '150px' }}
                         inputProps={{ min: 1 }}
+                        placeholder="e.g., 10"
                       />
-                      {/* --- [END OF FIX] --- */}
 
                     </Stack>
                     {questionIndex < section.questions.length - 1 && <Divider sx={{ my: 2 }} />}

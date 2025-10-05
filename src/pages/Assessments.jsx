@@ -97,7 +97,7 @@ const Assessments = () => {
   };
 
   const handleNavigateToNew = () => {
-    navigate('/assessments/new-v2');
+    navigate('/assessments/new');
   };
 
   const renderContent = () => {

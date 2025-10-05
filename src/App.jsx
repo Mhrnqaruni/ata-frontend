@@ -22,6 +22,7 @@ import Register from './pages/Register';
 import ProtectedRoute from './components/common/ProtectedRoute';
 
 // --- Component & Page Imports (Existing) ---
+import ErrorBoundary from './components/common/ErrorBoundary';
 import Layout from './components/common/Layout';
 import Home from './pages/Home';
 import Classes from './pages/Classes';
@@ -31,12 +32,14 @@ import QuestionGenerator from './pages/tools/QuestionGenerator';
 import SlideGenerator from './pages/tools/SlideGenerator';
 import RubricGenerator from './pages/tools/RubricGenerator';
 import Assessments from './pages/Assessments';
-import NewAssessment from './pages/assessments/NewAssessment';
 import NewAssessmentV2 from './pages/assessments/NewAssessmentV2';
-import GradingWorkflow from './pages/grading/GradingWorkflow';
-import FinalResultsPage from './pages/assessments/FinalResultsPage';
+import AssessmentResultsPage from './pages/assessments/AssessmentResultsPage';
+import AssessmentReviewPage from './pages/assessments/AssessmentReviewPage';
+import RedirectReviewToFirstStudent from './pages/assessments/RedirectReviewToFirstStudent';
 import PublicReportView from './pages/public/ReportView';
 import Chatbot from './pages/Chatbot';
+import StudentProfile from './pages/StudentProfile';
+import AdminDashboard from './pages/AdminDashboard';
 
 /**
  * A layout component that wraps all protected pages.
@@ -69,7 +72,10 @@ const ThemedApp = () => {
         {/* --- [CRITICAL MODIFICATION 3/4: DEFINE TRULY PUBLIC ROUTES] --- */}
         {/* This route is accessible to anyone, logged in or not. */}
         <Route path="/report/:report_token" element={<PublicReportView />} />
-        
+
+        {/* --- ADMIN ROUTE (Special Protected Route) --- */}
+        <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+
         {/* --- [CRITICAL MODIFICATION 4/4: DEFINE PROTECTED ROUTES] --- */}
         {/* This parent Route uses the ProtectedRoute component as its element.
             ANY route nested inside this one will first be checked by ProtectedRoute.
@@ -80,17 +86,17 @@ const ThemedApp = () => {
           <Route path="/" element={<Home />} />
           <Route path="/classes" element={<Classes />} />
           <Route path="/classes/:class_id" element={<ClassDetails />} />
+          <Route path="/students/:student_id" element={<StudentProfile />} />
           <Route path="/tools" element={<AITools />} />
           <Route path="/tools/question-generator" element={<QuestionGenerator />} />
           <Route path="/tools/slide-generator" element={<SlideGenerator />} />
           <Route path="/tools/rubric-generator" element={<RubricGenerator />} />
           <Route path="/assessments" element={<Assessments />} />
-          <Route path="/assessments/new" element={<NewAssessment />} />
-          <Route path="/assessments/new-v2" element={<NewAssessmentV2 />} />
-          <Route path="/assessments/:job_id/review" element={<GradingWorkflow />} />
-          <Route path="/assessments/:job_id/results" element={<FinalResultsPage />} />
+          <Route path="/assessments/new" element={<NewAssessmentV2 />} />
+          <Route path="/assessments/:job_id/results" element={<AssessmentResultsPage />} />
+          <Route path="/assessments/:job_id/review/:entity_id" element={<AssessmentReviewPage />} />
           <Route path="/chat/:sessionId?" element={<Chatbot />} />
-          
+
           {/* A catch-all route for any other path, rendered within the protected layout. */}
           <Route path="*" element={<h1>404 Not Found</h1>} />
         </Route>
@@ -107,15 +113,17 @@ const ThemedApp = () => {
  */
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <SnackbarProvider>
-          <ThemeModeProvider>
-            <ThemedApp />
-          </ThemeModeProvider>
-        </SnackbarProvider>
-      </AuthProvider>
-    </Router>
+    <ErrorBoundary>
+      <Router>
+        <AuthProvider>
+          <SnackbarProvider>
+            <ThemeModeProvider>
+              <ThemedApp />
+            </ThemeModeProvider>
+          </SnackbarProvider>
+        </AuthProvider>
+      </Router>
+    </ErrorBoundary>
   );
 }
 
