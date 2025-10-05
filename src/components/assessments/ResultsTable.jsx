@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Box, Typography } from '@mui/material';
+import { Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Box, Typography, useTheme } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
 import StatusChip from './StatusChip';
 import reviewService from '../../services/reviewService';
@@ -7,6 +7,7 @@ import reviewService from '../../services/reviewService';
 const ResultsTable = ({ rows }) => {
   const navigate = useNavigate();
   const { job_id } = useParams();
+  const theme = useTheme();
 
   const handleDownload = (entityId) => {
     reviewService.downloadReport(job_id, entityId)
@@ -83,7 +84,14 @@ const ResultsTable = ({ rows }) => {
 
           {outsiderStudents.length > 0 && (
             <TableRow>
-              <TableCell colSpan={5} sx={{ py: 1, backgroundColor: 'grey.100', fontWeight: 'bold' }}>
+              <TableCell
+                colSpan={5}
+                sx={{
+                  py: 1,
+                  backgroundColor: theme.palette.mode === 'dark' ? 'grey.800' : 'grey.100',
+                  fontWeight: 'bold'
+                }}
+              >
                 <Typography variant="subtitle2" sx={{ pl: 2 }}>Students Not in Roster</Typography>
               </TableCell>
             </TableRow>
