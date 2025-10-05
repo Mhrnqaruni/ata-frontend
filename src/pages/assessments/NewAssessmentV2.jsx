@@ -282,9 +282,14 @@ const NewAssessmentV2 = () => {
 
   return (
     <Paper sx={{ p: { xs: 2, md: 4 }, mx: 'auto', maxWidth: '900px' }}>
-      <Typography variant="h2" sx={{ mb: 4 }}>New Assessment V2</Typography>
+      <Typography variant="h2" sx={{ mb: 4 }}>New Assessment</Typography>
       {state.error && <Alert severity="error" sx={{ mb: 2 }}>{state.error}</Alert>}
-      <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
+      <Stepper
+        activeStep={activeStep}
+        sx={{ mb: 4 }}
+        orientation={{ xs: 'vertical', sm: 'horizontal' }}
+        alternativeLabel={false}
+      >
         {steps.map((label) => <Step key={label}><StepLabel>{label}</StepLabel></Step>)}
       </Stepper>
       <WizardStep title={steps[activeStep]} description={stepDescriptions[activeStep]}>
