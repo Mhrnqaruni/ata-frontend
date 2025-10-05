@@ -105,56 +105,54 @@ const StudentProfile = () => {
                             {classData.assessments.length === 0 ? (
                                 <Alert severity="info">No assessments for this class yet.</Alert>
                             ) : (
-                                <Box sx={{ width: '100%', overflow: 'auto' }}>
-                                    <TableContainer>
-                                        <Table aria-label="assessments table" sx={{ minWidth: 650 }}>
-                                            <TableHead sx={{ backgroundColor: theme.palette.grey[100] }}>
-                                                <TableRow>
-                                                    <TableCell sx={{ fontWeight: 600 }}>Assessment</TableCell>
-                                                    <TableCell sx={{ fontWeight: 600 }}>Date</TableCell>
-                                                    <TableCell sx={{ fontWeight: 600 }}>Mark</TableCell>
-                                                    <TableCell sx={{ fontWeight: 600 }} align="right">Report</TableCell>
+                                <TableContainer>
+                                    <Table aria-label="assessments table">
+                                        <TableHead sx={{ backgroundColor: theme.palette.grey[100] }}>
+                                            <TableRow>
+                                                <TableCell sx={{ fontWeight: 600 }}>Assessment</TableCell>
+                                                <TableCell sx={{ fontWeight: 600 }}>Date</TableCell>
+                                                <TableCell sx={{ fontWeight: 600 }}>Mark</TableCell>
+                                                <TableCell sx={{ fontWeight: 600 }} align="right">Report</TableCell>
+                                            </TableRow>
+                                        </TableHead>
+                                        <TableBody>
+                                            {classData.assessments.map((assessment) => (
+                                                <TableRow
+                                                    key={assessment.jobId}
+                                                    hover
+                                                    sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                                                >
+                                                    <TableCell component="th" scope="row">
+                                                        <Typography variant="body1">{assessment.assessmentName}</Typography>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Typography variant="body2" color="text.secondary">
+                                                            {assessment.createdAt
+                                                                ? new Date(assessment.createdAt).toLocaleDateString()
+                                                                : 'N/A'}
+                                                        </Typography>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Typography variant="body1">
+                                                            {renderMarkCell(assessment)}
+                                                        </Typography>
+                                                    </TableCell>
+                                                    <TableCell align="right">
+                                                        {assessment.jobId && assessment.status !== 'ABSENT' && assessment.status !== 'PENDING_REVIEW' && (
+                                                            <Button
+                                                                size="small"
+                                                                variant="outlined"
+                                                                onClick={() => handleDownloadReport(assessment.jobId)}
+                                                            >
+                                                                Download
+                                                            </Button>
+                                                        )}
+                                                    </TableCell>
                                                 </TableRow>
-                                            </TableHead>
-                                            <TableBody>
-                                                {classData.assessments.map((assessment) => (
-                                                    <TableRow
-                                                        key={assessment.jobId}
-                                                        hover
-                                                        sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                                                    >
-                                                        <TableCell component="th" scope="row">
-                                                            <Typography variant="body1">{assessment.assessmentName}</Typography>
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <Typography variant="body2" color="text.secondary">
-                                                                {assessment.createdAt
-                                                                    ? new Date(assessment.createdAt).toLocaleDateString()
-                                                                    : 'N/A'}
-                                                            </Typography>
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <Typography variant="body1">
-                                                                {renderMarkCell(assessment)}
-                                                            </Typography>
-                                                        </TableCell>
-                                                        <TableCell align="right">
-                                                            {assessment.jobId && assessment.status !== 'ABSENT' && assessment.status !== 'PENDING_REVIEW' && (
-                                                                <Button
-                                                                    size="small"
-                                                                    variant="outlined"
-                                                                    onClick={() => handleDownloadReport(assessment.jobId)}
-                                                                >
-                                                                    Download
-                                                                </Button>
-                                                            )}
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
-                                    </TableContainer>
-                                </Box>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
                             )}
                         </CardContent>
                     </Card>
