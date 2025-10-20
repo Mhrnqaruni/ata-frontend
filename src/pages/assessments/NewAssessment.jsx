@@ -88,7 +88,8 @@ const NewAssessment = () => {
       case 0:
         return !!state.assessmentName.trim() && !!state.classId;
       case 1:
-        return !!state.config && state.config.sections.every(s => s.questions.every(q => q.text.trim() && q.rubric.trim() && q.maxScore != null && q.maxScore >= 0));
+        // Rubric is optional, so only check that text exists and maxScore is valid
+        return !!state.config && state.config.sections.every(s => s.questions.every(q => q.text.trim() && q.maxScore != null && q.maxScore >= 0));
       case 2:
         return state.answerSheetFiles.length > 0;
       case 3:

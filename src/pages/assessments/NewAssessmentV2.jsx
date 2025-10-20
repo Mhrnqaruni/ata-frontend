@@ -136,7 +136,8 @@ const NewAssessmentV2 = () => {
       case 0:
         return !!state.assessmentName.trim() && !!state.classId;
       case 1:
-        return !!state.config && state.config.sections.every(s => s.questions.every(q => q.text.trim() && q.rubric.trim() && q.maxScore > 0));
+        // Rubric is optional, so only check that text exists and maxScore > 0
+        return !!state.config && state.config.sections.every(s => s.questions.every(q => q.text.trim() && q.maxScore > 0));
       case 2:
         if (state.uploadMode === 'batch') {
           return state.answerSheetFiles.length > 0;

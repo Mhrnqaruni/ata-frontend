@@ -54,8 +54,29 @@ const StructureReviewer = ({ config, dispatch, disabled }) => {
                     </ListItem>
                     <Stack spacing={2} sx={{ pl: 4, pt: 1, pb: 2 }}>
                       <TextField fullWidth multiline rows={3} label="Question Text" value={q.text || ''} onChange={(e) => handleQuestionUpdate(section.id, q.id, 'text', e.target.value)} disabled={disabled} />
-                      <TextField fullWidth multiline rows={5} label="Grading Rubric / Answer" value={q.rubric || ''} onChange={(e) => handleQuestionUpdate(section.id, q.id, 'rubric', e.target.value)} disabled={disabled} />
-                      
+
+                      <TextField
+                        fullWidth
+                        multiline
+                        rows={4}
+                        label="Model Answer / Answer Key"
+                        value={q.answer || ''}
+                        onChange={(e) => handleQuestionUpdate(section.id, q.id, 'answer', e.target.value)}
+                        disabled={disabled}
+                        helperText="The correct answer extracted from the answer key document"
+                      />
+
+                      <TextField
+                        fullWidth
+                        multiline
+                        rows={3}
+                        label="Grading Rubric / Marking Scheme"
+                        value={q.rubric || ''}
+                        onChange={(e) => handleQuestionUpdate(section.id, q.id, 'rubric', e.target.value)}
+                        disabled={disabled}
+                        helperText="Key points for marking and grading criteria"
+                      />
+
                       <TextField
                         type="number"
                         label="Max Score"
