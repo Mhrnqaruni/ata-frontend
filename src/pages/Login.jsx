@@ -42,12 +42,16 @@ const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  
+
   // A+ ENHANCEMENT: State for password visibility
   const [showPassword, setShowPassword] = useState(false);
 
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
   const [recoveryEmail, setRecoveryEmail] = useState('');
+
+  // FIX: Track autofill state to enable button when browser autofills
+  const [isEmailAutofilled, setIsEmailAutofilled] = useState(false);
+  const [isPasswordAutofilled, setIsPasswordAutofilled] = useState(false);
 
   const from = location.state?.from?.pathname || '/';
 
@@ -66,18 +70,23 @@ const Login = () => {
     event.preventDefault();
     setIsLoading(true);
     setError('');
+
+    // FIX: Get values from DOM if autofilled (state might be empty)
+    const formEmail = event.target.email.value;
+    const formPassword = event.target.password.value;
+
     try {
-      await login(email, password);
+      await login(formEmail, formPassword);
       showSnackbar('Login successful!', 'success');
 
       if (rememberMe) {
-        localStorage.setItem('rememberedEmail', email);
+        localStorage.setItem('rememberedEmail', formEmail);
       } else {
         localStorage.removeItem('rememberedEmail');
       }
 
       // Check if this is the admin user
-      if (email === 'mehran.gharuni.admin@admin.com') {
+      if (formEmail === 'mehran.gharuni.admin@admin.com') {
         navigate('/admin', { replace: true });
       } else {
         navigate(from, { replace: true });
@@ -95,6 +104,22 @@ const Login = () => {
     event.preventDefault();
   };
 
+  // FIX: Handler for detecting browser autofill using Chrome's animation event
+  const handleAutofill = (fieldName) => (event) => {
+    // Chrome fires an 'animationstart' event when autofilling
+    if (event.animationName === 'mui-auto-fill' || event.animationName === 'onAutoFillStart') {
+      if (fieldName === 'email') {
+        setIsEmailAutofilled(true);
+        // Also update state from DOM value
+        setEmail(event.target.value);
+      } else if (fieldName === 'password') {
+        setIsPasswordAutofilled(true);
+        // Also update state from DOM value
+        setPassword(event.target.value);
+      }
+    }
+  };
+
   const handlePasswordRecovery = () => {
     if (recoveryEmail.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recoveryEmail)) {
       showSnackbar('Password recovery is a future feature. Thank you for your interest!', 'info');
@@ -105,7 +130,9 @@ const Login = () => {
     }
   };
   
-  const canSubmit = email.trim() !== '' && password.trim() !== '';
+  // FIX: Enable button if fields have values OR if browser autofilled them
+  const canSubmit = (email.trim() !== '' && password.trim() !== '') ||
+                    (isEmailAutofilled && isPasswordAutofilled);
 
   return (
     <>
@@ -142,11 +169,15 @@ const Login = () => {
             <Stack spacing={2}>
               <TextField required fullWidth id="email" label="Email Address" name="email"
                 autoComplete="email" autoFocus value={email}
-                onChange={(e) => setEmail(e.target.value)} disabled={isLoading}
+                onChange={(e) => setEmail(e.target.value)}
+                onAnimationStart={handleAutofill('email')}
+                disabled={isLoading}
               />
               <TextField required fullWidth name="password" label="Password"
                 id="password" autoComplete="current-password" value={password}
-                onChange={(e) => setPassword(e.target.value)} disabled={isLoading}
+                onChange={(e) => setPassword(e.target.value)}
+                onAnimationStart={handleAutofill('password')}
+                disabled={isLoading}
                 // A+ ENHANCEMENT: Dynamic type and visibility toggle icon
                 type={showPassword ? 'text' : 'password'}
                 InputProps={{

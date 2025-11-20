@@ -14,6 +14,7 @@ import SchoolOutlined from '@mui/icons-material/SchoolOutlined';
 import AutoAwesomeOutlined from '@mui/icons-material/AutoAwesomeOutlined';
 import GradingOutlined from '@mui/icons-material/GradingOutlined';
 import SmartToyOutlined from '@mui/icons-material/SmartToyOutlined';
+import QuizOutlined from '@mui/icons-material/QuizOutlined';
 import lightLogo from '../../assets/mst_logo_no_bg.png';
 import darkLogo from '../../assets/mst_logo_dark_no_bg.png';
 import { useThemeMode } from '../../hooks/useThemeMode';
@@ -23,6 +24,7 @@ const navItems = [
   { text: 'Your Classes', icon: <SchoolOutlined />, path: '/classes' },
   { text: 'AI Tools', icon: <AutoAwesomeOutlined />, path: '/tools' },
   { text: 'Assessments', icon: <GradingOutlined />, path: '/assessments' },
+  { text: 'Quizzes', icon: <QuizOutlined />, path: '/quizzes' },
   { text: 'Chatbot', icon: <SmartToyOutlined />, path: '/chat' },
 ];
 
