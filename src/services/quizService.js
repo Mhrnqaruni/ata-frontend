@@ -299,6 +299,22 @@ const quizService = {
     }
   },
 
+  // Get latest session for a quiz
+  getLatestSession: async (quizId) => {
+    try {
+      const response = await apiClient.get(`/api/quiz-sessions/quiz/${quizId}/latest`);
+      return response.data;
+    } catch (error) {
+      // If no sessions found (404), return null instead of throwing
+      if (error.response?.status === 404) {
+        return null;
+      }
+      console.error(`Error fetching latest session for quiz ${quizId}:`, error);
+      const errorMessage = error.response?.data?.detail || 'Failed to fetch latest session';
+      throw new Error(errorMessage);
+    }
+  },
+
   // ==================== PARTICIPANT OPERATIONS (PUBLIC) ====================
 
   /**
@@ -358,6 +374,20 @@ const quizService = {
     } catch (error) {
       console.error(`Error fetching leaderboard for session ${sessionId}:`, error);
       const errorMessage = error.response?.data?.detail || "Could not load leaderboard.";
+      throw new Error(errorMessage);
+    }
+  },
+  /**
+   * Get answer review for the current participant
+   */
+  getMyAnswerReview: async (sessionId, guestToken = null) => {
+    try {
+      const headers = guestToken ? { 'X-Guest-Token': guestToken } : {};
+      const response = await apiClient.get(`/api/quiz-sessions/${sessionId}/my-answers`, { headers });
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching answer review for session ${sessionId}:`, error);
+      const errorMessage = error.response?.data?.detail || "Could not load answer review.";
       throw new Error(errorMessage);
     }
   },
@@ -629,6 +659,28 @@ const quizService = {
     } catch (error) {
       console.error(`Error flagging outsider ${outsiderId}:`, error);
       const errorMessage = error.response?.data?.detail || "Could not flag outsider.";
+      throw new Error(errorMessage);
+    }
+  },
+
+  /**
+   * Assign an outsider participant to a roster student.
+   *
+   * @param {string} sessionId - Session ID
+   * @param {string} outsiderId - Outsider record ID
+   * @param {string} targetStudentSchoolId - Correct student school ID
+   * @returns {Promise<Object>} Assignment result
+   */
+  assignOutsiderToStudent: async (sessionId, outsiderId, targetStudentSchoolId) => {
+    try {
+      const response = await apiClient.post(
+        `/api/quiz-sessions/${sessionId}/outsiders/${outsiderId}/assign`,
+        { target_student_school_id: targetStudentSchoolId }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error assigning outsider:', error);
+      const errorMessage = error.response?.data?.detail || 'Failed to assign outsider';
       throw new Error(errorMessage);
     }
   },

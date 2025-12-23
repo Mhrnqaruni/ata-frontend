@@ -34,7 +34,9 @@ import {
   Grid,
   Tooltip,
   CircularProgress,
-  Checkbox
+  Checkbox,
+  Radio,
+  RadioGroup
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -47,6 +49,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import InfoIcon from '@mui/icons-material/Info';
+import DownloadIcon from '@mui/icons-material/Download';
 
 // --- Service Import ---
 import quizService from '../../services/quizService';
@@ -387,11 +390,15 @@ const QuizBuilder = () => {
   const [quizTitle, setQuizTitle] = useState('');
   const [quizDescription, setQuizDescription] = useState('');
   const [quizSettings, setQuizSettings] = useState({
+    mode: 'live',
     shuffle_questions: false,
     shuffle_options: false,
     show_correct_answers: true,
     allow_review: true,
-    show_correct_answer_during_cooldown: true  // NEW: Default to true for better learning outcomes
+    show_correct_answer_during_cooldown: true, // NEW: Default to true for better learning outcomes
+    show_final_score_to_students: true,
+    show_result_feedback_to_students: true,
+    show_leaderboard_to_students: true
   });
 
   // Class selection for roster tracking
@@ -424,6 +431,9 @@ const QuizBuilder = () => {
   const [numQuestions, setNumQuestions] = useState(10);
   const [questionTypes, setQuestionTypes] = useState(['multiple_choice', 'true_false', 'short_answer']);
   const [difficulty, setDifficulty] = useState('medium');
+  const [customInstructions, setCustomInstructions] = useState('');
+  const [deadlineEnabled, setDeadlineEnabled] = useState(false);
+  const [deadlineDuration, setDeadlineDuration] = useState(60);
 
   const { showSnackbar } = useSnackbar();
 
@@ -460,7 +470,14 @@ const QuizBuilder = () => {
       const quiz = await quizService.getQuizById(quizId);
       setQuizTitle(quiz.title);
       setQuizDescription(quiz.description || '');
-      setQuizSettings(quiz.settings || quizSettings);
+      setQuizSettings(quiz.settings || { ...quizSettings, mode: 'live' });
+      if (quiz.settings?.deadline_enabled) {
+        setDeadlineEnabled(true);
+        setDeadlineDuration(quiz.settings.deadline_minutes || 60);
+      } else {
+        setDeadlineEnabled(false);
+        setDeadlineDuration(60);
+      }
       setSelectedClassId(quiz.class_id || ''); // NEW: Load class_id
       if (quiz.questions && quiz.questions.length > 0) {
         setQuestions(quiz.questions.sort((a, b) => a.order_index - b.order_index));
@@ -565,7 +582,11 @@ const QuizBuilder = () => {
       const quizData = {
         title: quizTitle,
         description: quizDescription,
-        settings: quizSettings,
+        settings: {
+          ...quizSettings,
+          deadline_enabled: quizSettings?.mode === 'self_paced' ? deadlineEnabled : false,
+          deadline_minutes: quizSettings?.mode === 'self_paced' && deadlineEnabled ? deadlineDuration : null
+        },
         class_id: selectedClassId || null, // NEW: Include class_id for roster tracking
         questions: questions.map((q, index) => ({
           ...q,
@@ -601,8 +622,8 @@ const QuizBuilder = () => {
 
   // AI Question Import Handler
   const handleAIParse = async () => {
-    if (!uploadedFile) {
-      showSnackbar('Please upload a file first', 'error');
+    if (!uploadedFile && !customInstructions.trim()) {
+      showSnackbar('Please upload a file or provide instructions', 'error');
       return;
     }
 
@@ -610,7 +631,16 @@ const QuizBuilder = () => {
 
     try {
       const formData = new FormData();
-      formData.append('document', uploadedFile);
+      if (uploadedFile) {
+        formData.append('document', uploadedFile);
+      } else {
+        const instructionsFile = new File(
+          [customInstructions.trim()],
+          'instructions.txt',
+          { type: 'text/plain' }
+        );
+        formData.append('document', instructionsFile);
+      }
       formData.append('document_type', documentType);
       if (gradeLevel) {
         formData.append('grade_level', gradeLevel);
@@ -620,15 +650,19 @@ const QuizBuilder = () => {
         formData.append('question_types', questionTypes.join(','));
         formData.append('difficulty', difficulty);
       }
+      if (customInstructions.trim()) {
+        formData.append('custom_instructions', customInstructions.trim());
+      }
 
       console.log('[QuizBuilder] Parsing document with AI:', {
-        fileName: uploadedFile.name,
-        fileType: uploadedFile.type,
+        fileName: uploadedFile ? uploadedFile.name : 'instructions.txt',
+        fileType: uploadedFile ? uploadedFile.type : 'text/plain',
         documentType,
         gradeLevel,
         numQuestions,
         questionTypes: documentType === 'lecture_material' ? questionTypes : 'N/A',
-        difficulty: documentType === 'lecture_material' ? difficulty : 'N/A'
+        difficulty: documentType === 'lecture_material' ? difficulty : 'N/A',
+        customInstructions: customInstructions.trim() || 'N/A'
       });
 
       const response = await quizService.parseQuizDocument(formData);
@@ -671,6 +705,7 @@ const QuizBuilder = () => {
       setQuestions([...existingQuestions, ...newQuestions]);
       setShowAIDialog(false);
       setUploadedFile(null);
+      setCustomInstructions('');
 
       showSnackbar(
         `Successfully imported ${newQuestions.length} question${newQuestions.length > 1 ? 's' : ''}!`,
@@ -681,10 +716,133 @@ const QuizBuilder = () => {
 
     } catch (error) {
       console.error('[QuizBuilder] AI parsing failed:', error);
-      showSnackbar(error.message || 'Failed to parse document. Please try again.', 'error');
+      const rawMessage = error.response?.data?.detail || error.message || '';
+      const friendlyMessage = (rawMessage.includes('RESOURCE_EXHAUSTED') || rawMessage.includes('429'))
+        ? 'AI model is temporarily unavailable. Please try again later or contact support.'
+        : (rawMessage || 'Failed to parse document. Please try again.');
+      showSnackbar(friendlyMessage, 'error');
     } finally {
       setAiParsing(false);
     }
+  };
+
+  const handleCloseAIDialog = () => {
+    if (aiParsing) return;
+    setShowAIDialog(false);
+    setUploadedFile(null);
+    setCustomInstructions('');
+  };
+
+  // Download Questions as CSV
+  const downloadQuestionsCSV = () => {
+    if (questions.length === 0) {
+      showSnackbar('No questions to download', 'warning');
+      return;
+    }
+
+    const headers = [
+      'Question #',
+      'Type',
+      'Question Text',
+      'Option 1',
+      'Option 2',
+      'Option 3',
+      'Option 4',
+      'Option 5',
+      'Option 6',
+      'Correct Answer',
+      'Points',
+      'Time Limit (seconds)',
+      'Explanation'
+    ];
+
+    const escapeCSV = (field) => {
+      if (field === null || field === undefined) return '';
+      const str = String(field);
+      if (str.includes(',') || str.includes('\n') || str.includes('"')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    const formatQuestionType = (questionType) => {
+      if (!questionType) return '';
+      return questionType
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+    };
+
+    const formatCorrectAnswer = (question) => {
+      if (!question) return '';
+      const answers = Array.isArray(question.correct_answer) ? question.correct_answer : [];
+
+      if (question.question_type === 'poll') {
+        return 'N/A (Poll)';
+      }
+
+      if (question.question_type === 'true_false') {
+        const value = answers[0];
+        if (value === true || value === 'true' || value === 'True') return 'True';
+        if (value === false || value === 'false' || value === 'False') return 'False';
+        return value ?? '';
+      }
+
+      if (question.question_type === 'multiple_choice') {
+        return answers.map((answer) => {
+          if (typeof answer === 'number') {
+            return `Option ${answer + 1}`;
+          }
+          if (typeof answer === 'string') {
+            const index = (question.options || []).indexOf(answer);
+            return index >= 0 ? `Option ${index + 1}` : answer;
+          }
+          return String(answer);
+        }).join('; ');
+      }
+
+      if (question.question_type === 'short_answer') {
+        return answers.join('; ');
+      }
+
+      return answers.join('; ');
+    };
+
+    const rows = questions.map((question, index) => {
+      const options = Array.isArray(question.options) ? question.options : [];
+      const row = [
+        index + 1,
+        formatQuestionType(question.question_type),
+        escapeCSV(question.question_text),
+        escapeCSV(options[0] || ''),
+        escapeCSV(options[1] || ''),
+        escapeCSV(options[2] || ''),
+        escapeCSV(options[3] || ''),
+        escapeCSV(options[4] || ''),
+        escapeCSV(options[5] || ''),
+        escapeCSV(formatCorrectAnswer(question)),
+        question.points ?? 10,
+        question.time_limit_seconds ?? '',
+        escapeCSV(question.explanation || '')
+      ];
+      return row.join(',');
+    });
+
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    const fileName = `${(quizTitle || 'quiz').replace(/\s+/g, '_')}_questions.csv`;
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', fileName);
+    link.style.visibility = 'hidden';
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    showSnackbar(`Downloaded ${questions.length} question(s) as CSV`, 'success');
   };
 
   const handlePublish = async () => {
@@ -748,19 +906,10 @@ const QuizBuilder = () => {
           {isEditMode ? 'Edit Quiz' : 'Create New Quiz'}
         </Typography>
         <Button
-          variant="outlined"
-          startIcon={<SaveIcon />}
-          onClick={handleSave}
-          disabled={isSaving}
-          sx={{ mr: 1 }}
-        >
-          Save Draft
-        </Button>
-        <Button
           variant="contained"
           startIcon={<PublishIcon />}
           onClick={() => setPublishDialog(true)}
-          disabled={isSaving}
+          disabled={isSaving || activeStep !== 2}
         >
           Publish Quiz
         </Button>
@@ -787,16 +936,64 @@ const QuizBuilder = () => {
 
       {/* Step Content */}
       {activeStep === 0 && (
-        <Paper sx={{ p: 3, mb: 3 }}>
-          <Typography variant="h5" sx={{ mb: 3 }}>Quiz Information</Typography>
-          <TextField
-            fullWidth
-            label="Quiz Title"
-            value={quizTitle}
-            onChange={(e) => setQuizTitle(e.target.value)}
-            sx={{ mb: 3 }}
-            required
-          />
+        <>
+          {/* Mode Selector - NEW */}
+          <Paper sx={{ p: 3, mb: 3 }}>
+            <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+              Quiz Mode
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Choose how students will take this quiz
+            </Typography>
+
+            <RadioGroup
+              value={quizSettings?.mode || 'live'}
+              onChange={(e) => setQuizSettings(prev => ({
+                ...(prev || {}),
+                mode: e.target.value
+              }))}
+            >
+              <FormControlLabel
+                value="live"
+                control={<Radio />}
+                label={
+                  <Box>
+                    <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                      Live Quiz
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Real-time quiz with WebSocket, all students on same question, per-question timers
+                    </Typography>
+                  </Box>
+                }
+              />
+              <FormControlLabel
+                value="self_paced"
+                control={<Radio />}
+                label={
+                  <Box>
+                    <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                      Self-Paced Assessment
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Students complete at their own pace, navigate freely, no per-question timers
+                    </Typography>
+                  </Box>
+                }
+              />
+            </RadioGroup>
+          </Paper>
+
+          <Paper sx={{ p: 3, mb: 3 }}>
+            <Typography variant="h5" sx={{ mb: 3 }}>Quiz Information</Typography>
+            <TextField
+              fullWidth
+              label="Quiz Title"
+              value={quizTitle}
+              onChange={(e) => setQuizTitle(e.target.value)}
+              sx={{ mb: 3 }}
+              required
+            />
           <TextField
             fullWidth
             multiline
@@ -840,6 +1037,7 @@ const QuizBuilder = () => {
             </Button>
           </Box>
         </Paper>
+        </>
       )}
 
       {activeStep === 1 && (
@@ -885,9 +1083,19 @@ const QuizBuilder = () => {
             <Button onClick={() => setActiveStep(0)}>
               Back
             </Button>
-            <Button variant="contained" onClick={() => setActiveStep(2)}>
-              Next: Settings
-            </Button>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button
+                variant="outlined"
+                startIcon={<DownloadIcon />}
+                onClick={downloadQuestionsCSV}
+                disabled={questions.length === 0}
+              >
+                Download Questions CSV
+              </Button>
+              <Button variant="contained" onClick={() => setActiveStep(2)}>
+                Next: Settings
+              </Button>
+            </Box>
           </Box>
         </Box>
       )}
@@ -896,37 +1104,201 @@ const QuizBuilder = () => {
         <Paper sx={{ p: 3 }}>
           <Typography variant="h5" sx={{ mb: 3 }}>Quiz Settings</Typography>
 
-          <Box sx={{ mb: 3, p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={quizSettings.show_correct_answer_during_cooldown ?? true}
-                  onChange={(e) => setQuizSettings({
-                    ...quizSettings,
-                    show_correct_answer_during_cooldown: e.target.checked
-                  })}
-                  color="primary"
-                />
-              }
-              label={
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Typography>Show Answer Feedback During Cooldown</Typography>
-                  <Tooltip
-                    title="When enabled, students will see if their answer was correct or incorrect during the cooldown period between questions. Recommended for practice quizzes and formative assessments."
-                    arrow
-                  >
-                    <InfoIcon fontSize="small" color="action" />
-                  </Tooltip>
+          {quizSettings?.mode === 'live' && (
+            <Box sx={{ mb: 3, p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={quizSettings.show_correct_answer_during_cooldown ?? true}
+                    onChange={(e) => setQuizSettings({
+                      ...quizSettings,
+                      show_correct_answer_during_cooldown: e.target.checked
+                    })}
+                    color="primary"
+                  />
+                }
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography>Show Answer Feedback During Cooldown</Typography>
+                    <Tooltip
+                      title="When enabled, students will see if their answer was correct or incorrect during the cooldown period between questions. Recommended for practice quizzes and formative assessments."
+                      arrow
+                    >
+                      <InfoIcon fontSize="small" color="action" />
+                    </Tooltip>
+                  </Box>
+                }
+                sx={{ display: 'block' }}
+              />
+              <Typography variant="caption" color="text.secondary" sx={{ ml: 4, display: 'block', mt: 1 }}>
+                {quizSettings.show_correct_answer_during_cooldown ?? true
+                  ? "Students will see immediate feedback (best for learning and practice)"
+                  : "Feedback hidden until quiz ends (best for graded assessments)"}
+              </Typography>
+            </Box>
+          )}
+
+          {quizSettings?.mode === 'live' && (
+            <Box sx={{ mb: 3, p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={quizSettings.show_result_feedback_to_students ?? true}
+                    onChange={(e) => {
+                      const newValue = e.target.checked;
+                      setQuizSettings({
+                        ...quizSettings,
+                        show_result_feedback_to_students: newValue,
+                        show_leaderboard_to_students: newValue
+                          ? quizSettings.show_leaderboard_to_students
+                          : false
+                      });
+                    }}
+                    color="primary"
+                  />
+                }
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography>Show Result Feedback to Students After Quiz</Typography>
+                    <Tooltip
+                      title="When enabled, students can view detailed answer review showing their responses, correct answers, and explanations after the quiz ends. When disabled, students only see a completion message."
+                      arrow
+                    >
+                      <InfoIcon fontSize="small" color="action" />
+                    </Tooltip>
+                  </Box>
+                }
+                sx={{ display: 'block' }}
+              />
+              <Typography variant="caption" color="text.secondary" sx={{ ml: 4, display: 'block', mt: 1 }}>
+                {quizSettings.show_result_feedback_to_students ?? true
+                  ? "Students can review their answers and see explanations"
+                  : "Students only see submission confirmation (no detailed feedback)"}
+              </Typography>
+            </Box>
+          )}
+
+          {quizSettings?.mode === 'live' && (
+            <Box sx={{ mb: 3, p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={quizSettings.show_leaderboard_to_students ?? true}
+                    onChange={(e) => setQuizSettings({
+                      ...quizSettings,
+                      show_leaderboard_to_students: e.target.checked
+                    })}
+                    color="primary"
+                    disabled={!(quizSettings.show_result_feedback_to_students ?? true)}
+                  />
+                }
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography>Show Leaderboard to Students After Quiz</Typography>
+                    <Tooltip
+                      title="When enabled, students see the leaderboard with rankings and scores. Requires result feedback to be enabled."
+                      arrow
+                    >
+                      <InfoIcon fontSize="small" color="action" />
+                    </Tooltip>
+                  </Box>
+                }
+                sx={{ display: 'block' }}
+              />
+              <Typography variant="caption" color="text.secondary" sx={{ ml: 4, display: 'block', mt: 1 }}>
+                {!(quizSettings.show_result_feedback_to_students ?? true)
+                  ? "Disabled (result feedback must be enabled first)"
+                  : (quizSettings.show_leaderboard_to_students ?? true)
+                    ? "Students will see rankings and scores"
+                    : "Leaderboard hidden (students only see their own results)"}
+              </Typography>
+            </Box>
+          )}
+
+          {quizSettings?.mode === 'self_paced' && (
+            <Box sx={{ mb: 3, p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={quizSettings.show_final_score_to_students ?? true}
+                    onChange={(e) => setQuizSettings({
+                      ...quizSettings,
+                      show_final_score_to_students: e.target.checked
+                    })}
+                    color="primary"
+                  />
+                }
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography>Show Final Score to Students</Typography>
+                    <Tooltip
+                      title="When enabled, students will see their final score and percentage after submitting the quiz. When disabled, students only see a confirmation message without score details."
+                      arrow
+                    >
+                      <InfoIcon fontSize="small" color="action" />
+                    </Tooltip>
+                  </Box>
+                }
+                sx={{ display: 'block' }}
+              />
+              <Typography variant="caption" color="text.secondary" sx={{ ml: 4, display: 'block', mt: 1 }}>
+                {quizSettings.show_final_score_to_students ?? true
+                  ? "Students will see their score and percentage after submission"
+                  : "Students will only see submission confirmation (score hidden)"}
+              </Typography>
+            </Box>
+          )}
+
+          {quizSettings?.mode === 'self_paced' && (
+            <Box sx={{ mb: 3, p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={deadlineEnabled}
+                    onChange={(e) => setDeadlineEnabled(e.target.checked)}
+                    color="primary"
+                  />
+                }
+                label={(
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography>Set Time Limit</Typography>
+                    <Tooltip
+                      title="When enabled, the quiz will automatically end and submit all student answers when the time limit is reached."
+                      arrow
+                    >
+                      <InfoIcon fontSize="small" color="action" />
+                    </Tooltip>
+                  </Box>
+                )}
+                sx={{ display: 'block', mb: deadlineEnabled ? 2 : 0 }}
+              />
+
+              {deadlineEnabled && (
+                <Box sx={{ ml: 4, mt: 2 }}>
+                  <TextField
+                    type="number"
+                    label="Time Limit (Minutes)"
+                    value={deadlineDuration}
+                    onChange={(e) => setDeadlineDuration(parseInt(e.target.value, 10) || 60)}
+                    InputProps={{
+                      inputProps: { min: 1, max: 1440 }
+                    }}
+                    sx={{ width: 220 }}
+                    helperText="Quiz will auto-end after this duration from start"
+                  />
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                    The session will end {deadlineDuration} minute{deadlineDuration !== 1 ? 's' : ''} after start.
+                  </Typography>
                 </Box>
-              }
-              sx={{ display: 'block' }}
-            />
-            <Typography variant="caption" color="text.secondary" sx={{ ml: 4, display: 'block', mt: 1 }}>
-              {quizSettings.show_correct_answer_during_cooldown ?? true
-                ? "✅ Students will see immediate feedback (best for learning and practice)"
-                : "❌ Feedback hidden until quiz ends (best for graded assessments)"}
-            </Typography>
-          </Box>
+              )}
+
+              <Typography variant="caption" color="text.secondary" sx={{ ml: 4, display: 'block', mt: 1 }}>
+                {deadlineEnabled
+                  ? 'Students will be automatically submitted when time expires.'
+                  : 'No time limit enabled for this quiz.'}
+              </Typography>
+            </Box>
+          )}
 
           <Alert severity="info" sx={{ mb: 3 }}>
             <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
@@ -967,7 +1339,7 @@ const QuizBuilder = () => {
       </Dialog>
 
       {/* AI Question Import Dialog */}
-      <Dialog open={showAIDialog} onClose={() => !aiParsing && setShowAIDialog(false)} maxWidth="md" fullWidth>
+      <Dialog open={showAIDialog} onClose={handleCloseAIDialog} maxWidth="md" fullWidth>
         <DialogTitle>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <AutoAwesomeIcon color="secondary" />
@@ -1106,6 +1478,19 @@ const QuizBuilder = () => {
               </>
             )}
 
+            <TextField
+              fullWidth
+              multiline
+              rows={3}
+              label="Additional Instructions (Optional)"
+              value={customInstructions}
+              onChange={(e) => setCustomInstructions(e.target.value)}
+              placeholder="Provide extra guidance for question generation (e.g., paste quiz material or add guidance for your file)"
+              sx={{ mb: 3 }}
+              disabled={aiParsing}
+              helperText="You can paste the quiz material here or add guidance for your file"
+            />
+
             {/* File Upload Area */}
             {!aiParsing ? (
               <Box
@@ -1124,7 +1509,7 @@ const QuizBuilder = () => {
                 <input
                   id="ai-file-upload"
                   type="file"
-                  accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx,.csv"
+                  accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx,.csv,.txt"
                   style={{ display: 'none' }}
                   onChange={(e) => setUploadedFile(e.target.files[0])}
                 />
@@ -1133,7 +1518,7 @@ const QuizBuilder = () => {
                   {uploadedFile ? uploadedFile.name : 'Click to upload document'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Supported formats: PDF, JPG, PNG, DOCX, XLSX, CSV
+                  Supported formats: PDF, JPG, PNG, DOCX, XLSX, CSV, TXT
                 </Typography>
                 {uploadedFile && (
                   <Chip
@@ -1158,13 +1543,13 @@ const QuizBuilder = () => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setShowAIDialog(false)} disabled={aiParsing}>
+          <Button onClick={handleCloseAIDialog} disabled={aiParsing}>
             Cancel
           </Button>
           <Button
             onClick={handleAIParse}
             variant="contained"
-            disabled={!uploadedFile || aiParsing}
+            disabled={(!uploadedFile && !customInstructions.trim()) || aiParsing}
             startIcon={<AutoAwesomeIcon />}
           >
             Import Questions

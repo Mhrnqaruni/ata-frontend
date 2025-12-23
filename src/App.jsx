@@ -45,6 +45,9 @@ import QuizBuilder from './pages/quizzes/QuizBuilder';
 import QuizHost from './pages/quizzes/QuizHost';
 import QuizParticipant from './pages/quizzes/QuizParticipant';
 import QuizAnalytics from './pages/quizzes/QuizAnalytics';
+import QuizSPParticipant from './pages/quizzes/QuizSPParticipant';
+import QuizSPHost from './pages/quizzes/QuizSPHost';
+import QuizSPAnalytics from './pages/quizzes/QuizSPAnalytics';
 
 /**
  * A layout component that wraps all protected pages.
@@ -82,6 +85,10 @@ const ThemedApp = () => {
         <Route path="/quiz/join" element={<QuizParticipant />} />
         <Route path="/quiz/join/:roomCode" element={<QuizParticipant />} />
 
+        {/* --- SELF-PACED QUIZ PARTICIPANT ROUTES (Public - No Auth Required) --- */}
+        <Route path="/quiz/sp/join" element={<QuizSPParticipant />} />
+        <Route path="/quiz/sp/join/:accessCode" element={<QuizSPParticipant />} />
+
         {/* --- ADMIN ROUTE (Special Protected Route) --- */}
         <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
 
@@ -109,6 +116,8 @@ const ThemedApp = () => {
           <Route path="/quizzes/:quizId/edit" element={<QuizBuilder />} />
           <Route path="/quizzes/:quizId/analytics" element={<QuizAnalytics />} />
           <Route path="/quizzes/sessions/:sessionId/host" element={<QuizHost />} />
+          <Route path="/quizzes/sp-sessions/:sessionId/host" element={<QuizSPHost />} />
+          <Route path="/quizzes/sp-sessions/:sessionId/analytics" element={<QuizSPAnalytics />} />
           <Route path="/chat/:sessionId?" element={<Chatbot />} />
 
           {/* A catch-all route for any other path, rendered within the protected layout. */}

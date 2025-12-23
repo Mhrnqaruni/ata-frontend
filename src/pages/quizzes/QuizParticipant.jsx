@@ -33,6 +33,7 @@ import TimerIcon from '@mui/icons-material/Timer';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import LoginIcon from '@mui/icons-material/Login';
+import AssignmentIcon from '@mui/icons-material/Assignment';
 
 // --- Service Import ---
 import quizService from '../../services/quizService';
@@ -261,11 +262,11 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
   };
 
   return (
-    <Container maxWidth="md" sx={{ height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', py: 2 }}>
+    <Container maxWidth="md" sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', py: { xs: 2, md: 4 }, px: { xs: 2, md: 3 } }}>
       <Fade in timeout={500}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', maxHeight: '95vh', overflow: 'hidden' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', overflowY: 'auto' }}>
           {/* FIX: Timer - Show question timer or cooldown timer with proper conditions */}
-          {cooldownRemaining > 0 && timeRemaining === 0 ? (
+          {(cooldownRemaining > 0 || cooldownRemaining === -1) && timeRemaining === 0 ? (
             // Cooldown Timer with Answer Feedback - ENHANCED
             <Box sx={{ textAlign: 'center', mb: 2, flexShrink: 0 }}>
               <Paper
@@ -349,19 +350,32 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                   </Fade>
                 )}
 
-                {/* Countdown Timer */}
-                <Typography variant="h5" sx={{ mb: 1, fontWeight: 600 }}>
-                  ⏳ Get Ready!
-                </Typography>
-                <Typography variant="h6" sx={{ mb: 1, opacity: 0.9 }}>
-                  Next Question Starting In
-                </Typography>
-                <Typography variant="h1" sx={{ fontWeight: 900, fontSize: '4rem' }}>
-                  {cooldownRemaining}
-                </Typography>
-                <Typography variant="h6" sx={{ opacity: 0.9 }}>
-                  seconds
-                </Typography>
+                {cooldownRemaining == -1 ? (
+                  <>
+                    <Typography variant="h5" sx={{ mb: 1, fontWeight: 600 }}>
+                      Waiting for Teacher
+                    </Typography>
+                    <Typography variant="h6" sx={{ opacity: 0.9 }}>
+                      The next question will start when your teacher advances
+                    </Typography>
+                  </>
+                ) : (
+                  <>
+                    {/* Countdown Timer */}
+                    <Typography variant="h5" sx={{ mb: 1, fontWeight: 600 }}>
+                      ? Get Ready!
+                    </Typography>
+                    <Typography variant="h6" sx={{ mb: 1, opacity: 0.9 }}>
+                      Next Question Starting In
+                    </Typography>
+                    <Typography variant="h1" sx={{ fontWeight: 900, fontSize: '4rem' }}>
+                      {cooldownRemaining}
+                    </Typography>
+                    <Typography variant="h6" sx={{ opacity: 0.9 }}>
+                      seconds
+                    </Typography>
+                  </>
+                )}
               </Paper>
             </Box>
           ) : timeRemaining > 0 || question.time_limit_seconds > 0 ? (
@@ -383,41 +397,62 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
           ) : null}
 
           {/* Question and Options - Hide during cooldown for cleaner display */}
-          {!(cooldownRemaining > 0 && timeRemaining === 0) && (
+          {!((cooldownRemaining > 0 || cooldownRemaining === -1) && timeRemaining === 0) && (
             <>
               {/* Question - Compact version */}
-              <Paper sx={{ p: 2, mb: 2, textAlign: 'center', flexShrink: 0 }}>
+              <Paper sx={{ p: { xs: 2, md: 3 }, mb: 2, textAlign: 'center', flexShrink: 0 }}>
                 <Chip
                   label={totalQuestions ? `Question ${question.order_index + 1} of ${totalQuestions}` : `Question ${question.order_index + 1}`}
                   color="primary"
                   size="small"
                   sx={{ mb: 1 }}
                 />
-                <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
+                <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5, fontSize: { xs: '1.25rem', md: '1.5rem' } }}>
                   {question.text}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   {question.points} points
                 </Typography>
+
+                {/* Display question image if available */}
+                {question.media_url && (
+                  <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+                    <img
+                      src={question.media_url}
+                      alt="Question illustration"
+                      style={{
+                        maxWidth: '100%',
+                        maxHeight: '300px',
+                        height: 'auto',
+                        borderRadius: '8px',
+                        objectFit: 'contain'
+                      }}
+                    />
+                  </Box>
+                )}
               </Paper>
 
               {/* Answer Options - Compact rendering based on question type */}
               {(question.type === 'multiple_choice' || question.type === 'poll') && question.options && (
-                <Grid container spacing={1.5} sx={{ mb: 2, flexShrink: 0 }}>
+                <Grid container spacing={{ xs: 1.5, md: 2 }} sx={{ mb: 2, flexShrink: 0 }}>
                   {question.options.map((option, index) => (
                     <Grid item xs={12} sm={6} key={index}>
                       <Grow in timeout={200 * (index + 1)}>
                         <Button
                           fullWidth
                           variant={selectedAnswer === index ? 'contained' : 'outlined'}
-                          size="medium"
+                          size="large"
                           onClick={() => handleSelect(index)}
                           disabled={isSubmitted || timeExpired}
                           sx={{
-                            py: 1.5,
-                            fontSize: '1rem',
+                            py: { xs: 2, md: 1.5 },
+                            minHeight: { xs: '56px', md: '48px' },
+                            fontSize: { xs: '1rem', md: '1rem' },
                             textTransform: 'none',
                             borderWidth: 2,
+                            whiteSpace: 'normal',
+                            textAlign: 'left',
+                            justifyContent: 'flex-start',
                             '&:hover': {
                               borderWidth: 2,
                               transform: 'scale(1.02)',
@@ -435,7 +470,7 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
 
               {/* True/False Buttons - Compact */}
               {question.type === 'true_false' && (
-                <Grid container spacing={2} sx={{ maxWidth: 500, mx: 'auto', mb: 2, flexShrink: 0 }}>
+                <Grid container spacing={{ xs: 2, md: 2 }} sx={{ maxWidth: 500, mx: 'auto', mb: 2, flexShrink: 0 }}>
                   <Grid item xs={6}>
                     <Grow in timeout={200}>
                       <Button
@@ -446,8 +481,9 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                         onClick={() => handleSelect(true)}
                         disabled={isSubmitted || timeExpired}
                         sx={{
-                          py: 2,
-                          fontSize: '1.2rem',
+                          py: { xs: 2.5, md: 2 },
+                          minHeight: { xs: '56px', md: '48px' },
+                          fontSize: { xs: '1.1rem', md: '1.2rem' },
                           fontWeight: 700,
                           borderWidth: 2,
                           '&:hover': { borderWidth: 2, transform: 'scale(1.05)', transition: 'transform 0.2s' }
@@ -467,8 +503,9 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                         onClick={() => handleSelect(false)}
                         disabled={isSubmitted || timeExpired}
                         sx={{
-                          py: 2,
-                          fontSize: '1.2rem',
+                          py: { xs: 2.5, md: 2 },
+                          minHeight: { xs: '56px', md: '48px' },
+                          fontSize: { xs: '1.1rem', md: '1.2rem' },
                           fontWeight: 700,
                           borderWidth: 2,
                           '&:hover': { borderWidth: 2, transform: 'scale(1.05)', transition: 'transform 0.2s' }
@@ -522,7 +559,15 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                   size="large"
                   onClick={handleSubmit}
                   disabled={timeExpired}
-                  sx={{ px: 6, py: 1.5, fontSize: '1.1rem', fontWeight: 600 }}
+                  sx={{
+                    px: { xs: 4, md: 6 },
+                    py: { xs: 2, md: 1.5 },
+                    minHeight: { xs: '56px', md: '48px' },
+                    fontSize: { xs: '1.1rem', md: '1.1rem' },
+                    fontWeight: 600,
+                    width: { xs: '100%', sm: 'auto' },
+                    maxWidth: { xs: '100%', sm: '300px' }
+                  }}
                 >
                   Submit Answer
                 </Button>
@@ -531,7 +576,7 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
           )}
 
           {/* FIX: Show appropriate message based on state - Compact */}
-          {cooldownRemaining > 0 && timeRemaining === 0 ? (
+          {(cooldownRemaining > 0 || cooldownRemaining === -1) && timeRemaining === 0 ? (
             // During cooldown period - Hide question/options, show prominent cooldown
             null
           ) : isSubmitted && timeRemaining > 0 ? (
@@ -634,11 +679,206 @@ const LeaderboardDisplay = ({ leaderboard, participantId }) => {
                         <Chip label={`${(participant.total_time_ms / 1000).toFixed(1)}s`} size="small" />
                       </Box>
                     }
+                    secondaryTypographyProps={{ component: 'div' }}
                   />
                 </ListItem>
               </Grow>
             ))}
           </List>
+        </Box>
+      </Fade>
+    </Container>
+  );
+};
+
+
+/**
+ * Answer Review Component
+ */
+const AnswerReviewDisplay = ({ sessionId, guestToken, onViewLeaderboard }) => {
+  const [reviewData, setReviewData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchReview = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await quizService.getMyAnswerReview(sessionId, guestToken);
+        setReviewData(data);
+      } catch (err) {
+        setError(err.message || 'Failed to load answer review.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (sessionId && guestToken) {
+      fetchReview();
+    }
+  }, [sessionId, guestToken]);
+
+  if (loading) {
+    return (
+      <Container maxWidth="md">
+        <Box sx={{ mt: 6, display: 'flex', justifyContent: 'center' }}>
+          <CircularProgress />
+        </Box>
+      </Container>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container maxWidth="md">
+        <Box sx={{ mt: 6 }}>
+          <Alert severity="error">{error}</Alert>
+        </Box>
+      </Container>
+    );
+  }
+
+  if (!reviewData) {
+    return null;
+  }
+
+  return (
+    <Container maxWidth="md">
+      <Fade in timeout={800}>
+        <Box sx={{ mt: 4 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2 }}>
+            <Typography variant="h3" sx={{ fontWeight: 700 }}>
+              Your Results
+            </Typography>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={onViewLeaderboard}
+            >
+              View Leaderboard
+            </Button>
+          </Box>
+
+          <Paper
+            sx={{
+              p: 3,
+              mb: 4,
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white'
+            }}
+          >
+            <Typography variant="h5" gutterBottom>Score Summary</Typography>
+            <Typography variant="h2" sx={{ fontWeight: 900 }}>
+              {reviewData.total_score} / {reviewData.max_possible_score}
+            </Typography>
+            <Typography variant="h6">
+              {reviewData.correct_count} out of {reviewData.total_questions} correct
+            </Typography>
+          </Paper>
+
+          {reviewData.reviews.map((review, index) => {
+            const studentAnswerSet = new Set((review.student_answer || []).map((v) => String(v)));
+            const correctAnswerSet = new Set((review.correct_answer || []).map((v) => String(v)));
+            const studentAnswerText = (review.student_answer || []).map((v) => String(v)).join(', ');
+            const correctAnswerText = (review.correct_answer || []).map((v) => String(v)).join(', ');
+            const isCorrect = review.is_correct === true;
+            const isIncorrect = review.is_correct === false;
+
+            return (
+              <Fade in timeout={200 * (index + 1)} key={`${review.question_number}-${index}`}>
+                <Card sx={{ mb: 3, border: 2, borderColor: isCorrect ? 'success.main' : isIncorrect ? 'error.main' : 'divider' }}>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+                      <Chip label={`Question ${review.question_number}`} color="primary" size="small" />
+                      <Chip
+                        label={`${review.points_earned} / ${review.max_points} pts`}
+                        color={isCorrect ? 'success' : isIncorrect ? 'error' : 'default'}
+                        icon={isCorrect ? <CheckCircleIcon /> : isIncorrect ? <CancelIcon /> : undefined}
+                      />
+                    </Box>
+
+                    <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                      {review.question_text}
+                    </Typography>
+
+                    {review.options && review.options.length > 0 ? (
+                      <List>
+                        {review.options.map((option, optIndex) => {
+                          const optionKey = String(option);
+                          const isStudentAnswer = studentAnswerSet.has(optionKey);
+                          const isCorrectAnswer = correctAnswerSet.has(optionKey);
+
+                          return (
+                            <ListItem
+                              key={`${review.question_number}-opt-${optIndex}`}
+                              sx={{
+                                mb: 1,
+                                borderRadius: 1,
+                                border: 2,
+                                borderColor: isCorrectAnswer
+                                  ? 'success.main'
+                                  : isStudentAnswer
+                                  ? 'error.main'
+                                  : 'divider',
+                                backgroundColor: isCorrectAnswer
+                                  ? 'success.light'
+                                  : isStudentAnswer
+                                  ? 'error.light'
+                                  : 'transparent'
+                              }}
+                            >
+                              <ListItemText
+                                primary={option}
+                                secondary={
+                                  <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
+                                    {isStudentAnswer && (
+                                      <Chip label="Your Answer" size="small" />
+                                    )}
+                                    {isCorrectAnswer && (
+                                      <Chip label="Correct Answer" size="small" color="success" />
+                                    )}
+                                  </Box>
+                                }
+                                secondaryTypographyProps={{ component: 'div' }}
+                              />
+                            </ListItem>
+                          );
+                        })}
+                      </List>
+                    ) : (
+                      <Box sx={{ mb: 2 }}>
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          Your Answer: {studentAnswerText || 'No answer'}
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          Correct Answer: {correctAnswerText || 'N/A'}
+                        </Typography>
+                      </Box>
+                    )}
+
+                    {review.explanation && (
+                      <Alert severity="info" sx={{ mt: 2 }}>
+                        <Typography variant="body2">
+                          Explanation: {review.explanation}
+                        </Typography>
+                      </Alert>
+                    )}
+
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                      Time taken: {review.time_taken_seconds}s
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Fade>
+            );
+          })}
+
+          <Box sx={{ textAlign: 'center', mt: 4 }}>
+            <Button variant="outlined" size="large" onClick={onViewLeaderboard}>
+              Back to Leaderboard
+            </Button>
+          </Box>
         </Box>
       </Fade>
     </Container>
@@ -658,7 +898,11 @@ const QuizParticipant = () => {
   const cooldownTimerRef = useRef(null); // FIX: Store cooldown timer ID for cleanup
   const resyncTimerRef = useRef(null); // FIX: Store resync timer ID
 
-  const [phase, setPhase] = useState('join'); // join, waiting, question, leaderboard, finished
+  const [phase, setPhase] = useState('join');
+  const [showAnswerReview, setShowAnswerReview] = useState(false);
+  const [showResultFeedback, setShowResultFeedback] = useState(true);
+  const [showLeaderboardToStudents, setShowLeaderboardToStudents] = useState(true);
+ // join, waiting, question, leaderboard, finished
   const [session, setSession] = useState(null);
   const [participant, setParticipant] = useState(null);
   const [guestToken, setGuestToken] = useState(null);
@@ -851,6 +1095,9 @@ const QuizParticipant = () => {
           leaderboardTimerRef.current = null;
         }
 
+        setShowResultFeedback(message.show_result_feedback ?? true);
+        setShowLeaderboardToStudents(message.show_leaderboard ?? true);
+
         setPhase('finished');
         break;
 
@@ -865,12 +1112,18 @@ const QuizParticipant = () => {
         // FIX: Question ended, cooldown starting with timestamp synchronization
         console.log('[QuizParticipant] Question ended, cooldown starting:', {
           cooldownSeconds: message.cooldown_seconds,
-          cooldownEndsAt: message.cooldown_ends_at
+          cooldownEndsAt: message.cooldown_ends_at,
+          autoAdvanceEnabled: message.auto_advance_enabled
         });
         setTimeRemaining(0);
         setQuestionExpiresAt(null); // Clear question timer
+        setAutoAdvanceEnabled(message.auto_advance_enabled);
         setCooldownEndsAt(message.cooldown_ends_at); // Set cooldown end timestamp
-        startCooldownTimer(message.cooldown_ends_at, message.cooldown_seconds);
+        if (message.auto_advance_enabled) {
+          startCooldownTimer(message.cooldown_ends_at, message.cooldown_seconds);
+        } else {
+          setCooldownRemaining(-1);
+        }
         break;
 
       case 'answer_submitted':
@@ -887,9 +1140,11 @@ const QuizParticipant = () => {
         console.log('[QuizParticipant] Cooldown started:', {
           cooldownSeconds: message.cooldown_seconds,
           cooldownEndsAt: message.cooldown_ends_at,
+          autoAdvanceEnabled: message.auto_advance_enabled,
           hasFeedback: Boolean(message.your_answer)
         });
         setCooldownSeconds(message.cooldown_seconds);
+        setAutoAdvanceEnabled(message.auto_advance_enabled);
         setCooldownEndsAt(message.cooldown_ends_at); // Set cooldown end timestamp
 
         // NEW: Store cooldown feedback if provided
@@ -901,7 +1156,11 @@ const QuizParticipant = () => {
           setCooldownFeedback(null);
         }
 
-        startCooldownTimer(message.cooldown_ends_at, message.cooldown_seconds);
+        if (message.auto_advance_enabled) {
+          startCooldownTimer(message.cooldown_ends_at, message.cooldown_seconds);
+        } else {
+          setCooldownRemaining(-1);
+        }
         break;
 
       case 'ping':
@@ -921,6 +1180,9 @@ const QuizParticipant = () => {
    * FIX: Timestamp-based timer for question countdown
    * Uses server timestamp to calculate remaining time, eliminating desync
    */
+  // Issue #4 Fix: Client-side timer for UX display only
+  // Server enforces time limits using question_started_at timestamp
+  // Timer is synchronized with server timestamp to prevent local clock manipulation
   const startTimestampTimer = (expiresAtISO, fallbackDuration) => {
     console.log('[QuizParticipant] Starting timestamp-based timer:', {
       expiresAt: expiresAtISO,
@@ -1039,6 +1301,9 @@ const QuizParticipant = () => {
   };
 
   const handleAnswer = async (answer) => {
+    if (phase === 'finished') {
+      return;
+    }
     console.log('[QuizParticipant] Submitting answer:', {
       questionId: currentQuestion.id,
       questionType: currentQuestion.type,
@@ -1065,12 +1330,15 @@ const QuizParticipant = () => {
 
       console.log('[QuizParticipant] Formatted answer for API:', formattedAnswer);
 
+      // Issue #4 Fix: time_taken_ms is for display only
+      // Server calculates actual time from question_started_at timestamp
+      // This prevents timing manipulation attacks via browser DevTools
       await quizService.submitAnswer(
         session.id,
         {
           question_id: currentQuestion.id,
           answer: formattedAnswer,
-          time_taken_ms: timeTaken
+          time_taken_ms: timeTaken  // Display-only, server validates actual time
         },
         guestToken
       );
@@ -1108,22 +1376,116 @@ const QuizParticipant = () => {
   }
 
   if (phase === 'leaderboard') {
-    return <LeaderboardDisplay leaderboard={leaderboard} participantId={participant?.id} />;
+    return showAnswerReview ? (
+      <AnswerReviewDisplay
+        sessionId={session?.id}
+        guestToken={guestToken}
+        onViewLeaderboard={() => setShowAnswerReview(false)}
+      />
+    ) : (
+      <Container maxWidth="md">
+        <Fade in timeout={800}>
+          <Box sx={{ mt: 4 }}>
+            <Box sx={{ textAlign: 'center', mb: 3 }}>
+              <Button
+                variant="contained"
+                size="large"
+                color="secondary"
+                onClick={() => setShowAnswerReview(true)}
+              >
+                View My Answers
+              </Button>
+            </Box>
+            <LeaderboardDisplay leaderboard={leaderboard} participantId={participant?.id} />
+          </Box>
+        </Fade>
+      </Container>
+    );
   }
 
   if (phase === 'finished') {
+    if (!showResultFeedback) {
+      return (
+        <Container maxWidth="md">
+          <Fade in timeout={800}>
+            <Box sx={{ mt: 8, textAlign: 'center' }}>
+              <CheckCircleIcon color="success" sx={{ fontSize: 120, mb: 3 }} />
+              <Typography variant="h3" sx={{ mb: 2, fontWeight: 700 }}>
+                Quiz Completed!
+              </Typography>
+              <Typography variant="h6" color="text.secondary" sx={{ mb: 4 }}>
+                Your answers have been submitted successfully
+              </Typography>
+              <Paper sx={{ p: 4, maxWidth: 500, mx: 'auto' }}>
+                <Typography variant="body1" color="text.secondary">
+                  Thank you for participating. Your teacher will review your responses.
+                </Typography>
+              </Paper>
+            </Box>
+          </Fade>
+        </Container>
+      );
+    }
+
+    if (showAnswerReview) {
+      return (
+        <AnswerReviewDisplay
+          sessionId={session?.id}
+          guestToken={guestToken}
+          onViewLeaderboard={() => setShowAnswerReview(false)}
+        />
+      );
+    }
+
+    if (showLeaderboardToStudents) {
+      return (
+        <Container maxWidth="md">
+          <Fade in timeout={800}>
+            <Box sx={{ mt: 8, textAlign: 'center' }}>
+              <EmojiEventsIcon sx={{ fontSize: 120, color: 'warning.main', mb: 2 }} />
+              <Typography variant="h3" sx={{ mb: 2, fontWeight: 700 }}>
+                Quiz Completed!
+              </Typography>
+              <Typography variant="h5" color="text.secondary" sx={{ mb: 4 }}>
+                Thank you for participating
+              </Typography>
+              <Box sx={{ mb: 4 }}>
+                <Button
+                  variant="contained"
+                  size="large"
+                  color="secondary"
+                  onClick={() => setShowAnswerReview(true)}
+                >
+                  View My Answers
+                </Button>
+              </Box>
+              <LeaderboardDisplay leaderboard={leaderboard} participantId={participant?.id} />
+            </Box>
+          </Fade>
+        </Container>
+      );
+    }
+
     return (
       <Container maxWidth="md">
         <Fade in timeout={800}>
           <Box sx={{ mt: 8, textAlign: 'center' }}>
-            <EmojiEventsIcon sx={{ fontSize: 120, color: 'warning.main', mb: 2 }} />
+            <CheckCircleIcon color="success" sx={{ fontSize: 120, mb: 3 }} />
             <Typography variant="h3" sx={{ mb: 2, fontWeight: 700 }}>
               Quiz Completed!
             </Typography>
-            <Typography variant="h5" color="text.secondary" sx={{ mb: 4 }}>
+            <Typography variant="h6" color="text.secondary" sx={{ mb: 4 }}>
               Thank you for participating
             </Typography>
-            <LeaderboardDisplay leaderboard={leaderboard} participantId={participant?.id} />
+            <Button
+              variant="contained"
+              size="large"
+              color="secondary"
+              onClick={() => setShowAnswerReview(true)}
+              startIcon={<AssignmentIcon />}
+            >
+              View My Answers
+            </Button>
           </Box>
         </Fade>
       </Container>

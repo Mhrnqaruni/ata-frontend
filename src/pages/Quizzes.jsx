@@ -25,7 +25,9 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
-  TextField
+  TextField,
+  Tabs,
+  Tab
 } from '@mui/material';
 import AddOutlined from '@mui/icons-material/AddOutlined';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -40,6 +42,8 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 // --- Service Import for Backend Communication ---
 import quizService from '../services/quizService';
 import classService from '../services/classService';
+import quizSPService from '../services/quizSPService';
+import { useSnackbar } from '../hooks/useSnackbar';
 
 /**
  * Empty state component for when no quizzes exist
@@ -61,7 +65,7 @@ const EmptyState = ({ onAddQuiz }) => (
 /**
  * Quiz card component displaying a single quiz
  */
-const QuizCard = ({ quiz, onEdit, onDuplicate, onDelete, onStartSession, onPublish, onReview }) => {
+const QuizCard = ({ quiz, onEdit, onDuplicate, onDelete, onStartSession, onStartSPSession, onResumeSPSession, activeSession, onPublish, onReview }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useNavigate();
 
@@ -134,6 +138,12 @@ const QuizCard = ({ quiz, onEdit, onDuplicate, onDelete, onStartSession, onPubli
             size="small"
             variant="outlined"
           />
+          <Chip
+            label={quiz.settings?.mode === 'self_paced' ? 'Self-Paced' : 'Live'}
+            size="small"
+            variant="outlined"
+            color={quiz.settings?.mode === 'self_paced' ? 'info' : 'success'}
+          />
           {/* NEW: Display class association if quiz is linked to a class */}
           {quiz.class_name && (
             <Chip
@@ -157,19 +167,57 @@ const QuizCard = ({ quiz, onEdit, onDuplicate, onDelete, onStartSession, onPubli
             variant="contained"
             color="primary"
             startIcon={<AssessmentIcon />}
-            onClick={() => onReview(quiz.id)}
+            onClick={() => onReview()}
           >
             Review Analytics
           </Button>
         ) : quiz.status === 'published' ? (
-          <Button
-            fullWidth
-            variant="contained"
-            startIcon={<PlayArrowIcon />}
-            onClick={() => onStartSession(quiz.id)}
-          >
-            Start Session
-          </Button>
+          quiz.settings?.mode === 'self_paced' ? (
+            activeSession ? (
+              // Active session exists - show "Resume Session"
+              <Button
+                fullWidth
+                variant="contained"
+                color="success"
+                startIcon={<PlayArrowIcon />}
+                onClick={() => onResumeSPSession(activeSession.id)}
+              >
+                Resume Session
+              </Button>
+            ) : (
+              // No active session - show "Start Session"
+              <Button
+                fullWidth
+                variant="contained"
+                startIcon={<PlayArrowIcon />}
+                onClick={() => onStartSPSession(quiz)}
+              >
+                Start Session
+              </Button>
+            )
+          ) : (
+            // Regular quiz - check for active session
+            activeSession ? (
+              <Button
+                fullWidth
+                variant="contained"
+                color="success"
+                startIcon={<PlayArrowIcon />}
+                onClick={() => navigate(`/quizzes/sessions/${activeSession.id}/host`)}
+              >
+                Resume Session
+              </Button>
+            ) : (
+              <Button
+                fullWidth
+                variant="contained"
+                startIcon={<PlayArrowIcon />}
+                onClick={() => onStartSession(quiz.id)}
+              >
+                Host Quiz
+              </Button>
+            )
+          )
         ) : (
           <Button
             fullWidth
@@ -234,6 +282,7 @@ const QuizCard = ({ quiz, onEdit, onDuplicate, onDelete, onStartSession, onPubli
  */
 const Quizzes = () => {
   const navigate = useNavigate();
+  const { showSnackbar } = useSnackbar();
   const [quizzes, setQuizzes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -241,6 +290,13 @@ const Quizzes = () => {
   // NEW: Classes for mapping class_id to class_name
   const [classes, setClasses] = useState([]);
   const [classMap, setClassMap] = useState({});
+
+  // NEW: Mode filter state for tabs
+  const [modeFilter, setModeFilter] = useState('all');
+
+  // NEW: Track active sessions for each quiz
+  const [activeSessions, setActiveSessions] = useState({});
+  const [sessionsLoading, setSessionsLoading] = useState(false);
 
   // Delete confirmation dialog
   const [deleteDialog, setDeleteDialog] = useState({ open: false, quizId: null });
@@ -276,6 +332,63 @@ const Quizzes = () => {
     loadClasses();
   }, []);
 
+  // NEW: Fetch latest session for all quizzes (both self-paced and regular)
+  const fetchLatestSessions = useCallback(async (quizzesList) => {
+    try {
+      setSessionsLoading(true);
+
+      // Filter self-paced quizzes
+      const spQuizzes = quizzesList.filter(q => q.settings?.mode === 'self_paced');
+
+      // Filter regular (live) quizzes
+      const regularQuizzes = quizzesList.filter(q => !q.settings?.mode || q.settings?.mode === 'live');
+
+      // Fetch latest session for each SP quiz
+      const spSessionPromises = spQuizzes.map(async (quiz) => {
+        try {
+          const session = await quizSPService.getLatestSPSession(quiz.id);
+          return { quizId: quiz.id, session };
+        } catch (error) {
+          if (error.message.includes('No sessions found')) {
+            return { quizId: quiz.id, session: null };
+          }
+          return { quizId: quiz.id, session: null };
+        }
+      });
+
+      // Fetch latest session for each regular quiz
+      const regularSessionPromises = regularQuizzes.map(async (quiz) => {
+        try {
+          const session = await quizService.getLatestSession(quiz.id);
+          return { quizId: quiz.id, session };
+        } catch (error) {
+          // getLatestSession returns null for 404, so session will be null
+          return { quizId: quiz.id, session: null };
+        }
+      });
+
+      // Wait for all session fetches to complete
+      const allPromises = [...spSessionPromises, ...regularSessionPromises];
+      const results = await Promise.all(allPromises);
+
+      // Build activeSessions map
+      const sessionsMap = {};
+      results.forEach(({ quizId, session }) => {
+        if (session && (session.status === 'active' || session.status === 'draft' || session.status === 'waiting')) {
+          sessionsMap[quizId] = session;
+        }
+      });
+
+      setActiveSessions(sessionsMap);
+      console.log('[Quizzes] Loaded active sessions:', Object.keys(sessionsMap).length);
+    } catch (error) {
+      console.error('[Quizzes] Failed to fetch sessions:', error);
+      // Don't show error - session tracking is non-critical for page load
+    } finally {
+      setSessionsLoading(false);
+    }
+  }, []);
+
   const fetchQuizzes = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -289,20 +402,23 @@ const Quizzes = () => {
 
       setQuizzes(enrichedQuizzes);
       setError(null);
+
+      // NEW: Fetch latest sessions after quizzes are loaded
+      await fetchLatestSessions(enrichedQuizzes);
     } catch (err) {
       console.error("Failed to fetch quizzes:", err);
       setError(err.message || "Could not load your quizzes.");
     } finally {
       setIsLoading(false);
     }
-  }, [classMap]);
+  }, [classMap, fetchLatestSessions]);
 
   useEffect(() => {
     // Only fetch quizzes after classMap is populated (or empty)
     if (Object.keys(classMap).length >= 0) {
       fetchQuizzes();
     }
-  }, [classMap]);
+  }, [classMap, fetchQuizzes]);
 
   const handleCreateQuiz = () => {
     navigate('/quizzes/new');
@@ -377,11 +493,92 @@ const Quizzes = () => {
     }
   };
 
-  const handleReviewAnalytics = (quizId) => {
-    // Navigate to analytics page for this quiz
-    // We'll need to get the most recent session for this quiz
-    navigate(`/quizzes/${quizId}/analytics`);
+  const handleReviewAnalytics = async (quiz) => {
+    try {
+      // Check if this is a self-paced quiz
+      if (quiz.settings?.mode === 'self_paced') {
+        // For self-paced quizzes, fetch the latest session
+        const latestSession = await quizSPService.getLatestSPSession(quiz.id);
+        navigate(`/quizzes/sp-sessions/${latestSession.id}/analytics`);
+      } else {
+        // For live quizzes, use the quiz analytics page
+        navigate(`/quizzes/${quiz.id}/analytics`);
+      }
+    } catch (error) {
+      console.error('Error navigating to analytics:', error);
+      showSnackbar(error.message || 'No sessions found for this quiz', 'warning');
+    }
   };
+
+  // NEW: Modified to check for existing session first
+  const handleCreateSPSession = async (quiz) => {
+    const quizId = quiz.id;
+    try {
+      // Check if active session already exists
+      const existingSession = activeSessions[quizId];
+
+      if (existingSession) {
+        // Session exists - confirm before creating new one
+        const confirmed = window.confirm(
+          `An active session already exists for this quiz. Do you want to:\n\n` +
+          `- Click "Cancel" to resume the existing session\n` +
+          `- Click "OK" to create a NEW session (students in old session will lose access)`
+        );
+
+        if (!confirmed) {
+          // User chose to resume existing session
+          handleResumeSPSession(existingSession.id);
+          return;
+        }
+
+        // User chose to create new session - proceed
+        console.log('[Quizzes] Creating new session despite existing active session');
+      }
+
+      // Create new session
+      let deadlineMinutes = null;
+      if (quiz.settings?.deadline_enabled && quiz.settings?.deadline_minutes) {
+        deadlineMinutes = quiz.settings.deadline_minutes;
+      }
+
+      const session = await quizSPService.createSPSession(quizId, {
+        class_id: quiz.class_id || null,
+        deadline_minutes: deadlineMinutes,
+        allow_navigation: true,
+        allow_review_before_submit: true,
+        require_all_answers: false,
+        show_timer: true,
+        show_results_immediately: false,
+        show_final_score_to_students: quiz.settings?.show_final_score_to_students ?? true
+      });
+
+      await quizSPService.startSPSession(session.id);
+
+      showSnackbar('Session created!', 'success');
+
+      // Update activeSessions state
+      setActiveSessions(prev => ({
+        ...prev,
+        [quizId]: session
+      }));
+
+      navigate(`/quizzes/sp-sessions/${session.id}/host`);
+    } catch (error) {
+      console.error('Error creating session:', error);
+      showSnackbar(error.message, 'error');
+    }
+  };
+
+  // NEW: Navigate to existing active session
+  const handleResumeSPSession = (sessionId) => {
+    navigate(`/quizzes/sp-sessions/${sessionId}/host`);
+  };
+
+  // NEW: Filter quizzes by mode
+  const filteredQuizzes = quizzes.filter(quiz => {
+    if (modeFilter === 'all') return true;
+    return quiz.settings?.mode === modeFilter || (modeFilter === 'live' && !quiz.settings?.mode);
+  });
 
   const renderContent = () => {
     if (isLoading) {
@@ -419,7 +616,7 @@ const Quizzes = () => {
 
     return (
       <Grid container spacing={3}>
-        {quizzes.map((quiz) => (
+        {filteredQuizzes.map((quiz) => (
           <Grid item xs={12} sm={6} md={4} lg={3} key={quiz.id}>
             <QuizCard
               quiz={quiz}
@@ -427,8 +624,11 @@ const Quizzes = () => {
               onDuplicate={handleOpenDuplicateDialog}
               onDelete={handleOpenDeleteDialog}
               onStartSession={handleStartSession}
+              onStartSPSession={handleCreateSPSession}
+              onResumeSPSession={handleResumeSPSession}
+              activeSession={activeSessions[quiz.id]}
               onPublish={handlePublish}
-              onReview={handleReviewAnalytics}
+              onReview={() => handleReviewAnalytics(quiz)}
             />
           </Grid>
         ))}
@@ -460,6 +660,16 @@ const Quizzes = () => {
             Create New Quiz
           </Button>
         </Box>
+
+        {/* NEW: Mode Filter Tabs */}
+        <Box sx={{ mb: 3 }}>
+          <Tabs value={modeFilter} onChange={(e, newValue) => setModeFilter(newValue)}>
+            <Tab label="All Quizzes" value="all" />
+            <Tab label="Live Quizzes" value="live" />
+            <Tab label="Self-Paced" value="self_paced" />
+          </Tabs>
+        </Box>
+
         {renderContent()}
       </Box>
 

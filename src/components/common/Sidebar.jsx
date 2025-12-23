@@ -28,7 +28,7 @@ const navItems = [
   { text: 'Chatbot', icon: <SmartToyOutlined />, path: '/chat' },
 ];
 
-const copyrightText = "Copyright © 2025 Unique Tech Solution Ltd. All Rights Reserved";
+const copyrightText = "Copyright © 2026 Unique Tech Solution Ltd. All Rights Reserved";
 
 /**
  * The primary navigation component. Supports a collapsible "mini" state on desktop.
