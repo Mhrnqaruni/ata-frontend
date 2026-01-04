@@ -313,9 +313,9 @@ const QuestionEditor = ({ question, index, onChange, onDelete, onDuplicate }) =>
                   Grading Method: Keyword-Based Matching (Not AI-Powered)
                 </Typography>
                 <Typography variant="body2">
-                  Students must include <strong>at least one</strong> of the keywords listed below in their answer to receive credit.
-                  The system checks if any keyword appears in the student's response (case-insensitive).
-                  This is manual keyword validation—enter the exact terms or phrases you expect to see in correct student answers.
+                  Students must include <strong>all</strong> of the keywords listed below in their answer to receive full credit.
+                  The system checks if each keyword appears in the student's response (case-insensitive).
+                  This is manual keyword validation—enter the exact words, separate with comma or enter.
                 </Typography>
               </Alert>
               <TextField
