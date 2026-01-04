@@ -429,7 +429,7 @@ const QuizBuilder = () => {
   const [documentType, setDocumentType] = useState('questions_and_answers');
   const [gradeLevel, setGradeLevel] = useState('');
   const [numQuestions, setNumQuestions] = useState(10);
-  const [questionTypes, setQuestionTypes] = useState(['multiple_choice', 'true_false', 'short_answer']);
+  const [questionTypes, setQuestionTypes] = useState(['multiple_choice']);
   const [difficulty, setDifficulty] = useState('medium');
   const [customInstructions, setCustomInstructions] = useState('');
   const [deadlineEnabled, setDeadlineEnabled] = useState(false);
