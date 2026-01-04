@@ -308,6 +308,16 @@ const QuestionEditor = ({ question, index, onChange, onDelete, onDuplicate }) =>
           {/* Short Answer */}
           {localQuestion.question_type === 'short_answer' && (
             <Grid item xs={12}>
+              <Alert severity="info" sx={{ mb: 2 }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                  Grading Method: Keyword-Based Matching (Not AI-Powered)
+                </Typography>
+                <Typography variant="body2">
+                  Students must include <strong>at least one</strong> of the keywords listed below in their answer to receive credit.
+                  The system checks if any keyword appears in the student's response (case-insensitive).
+                  This is manual keyword validation—enter the exact terms or phrases you expect to see in correct student answers.
+                </Typography>
+              </Alert>
               <TextField
                 fullWidth
                 multiline
