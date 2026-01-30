@@ -149,6 +149,23 @@ const quizSPService = {
   },
 
   /**
+   * Get attendance data with roster and outsiders.
+   *
+   * @param {string} sessionId - Session UUID
+   * @returns {Promise<Object>} Attendance data with enriched roster and outsiders
+   */
+  getSPAttendance: async (sessionId) => {
+    try {
+      const response = await apiClient.get(`/api/quiz-sp-sessions/${sessionId}/attendance`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching SP attendance ${sessionId}:`, error);
+      const errorMessage = error.response?.data?.detail || 'Failed to fetch attendance';
+      throw new Error(errorMessage);
+    }
+  },
+
+  /**
    * Get individual student report.
    *
    * @param {string} sessionId - Session UUID

@@ -20,6 +20,29 @@ const quizService = {
   },
 
   /**
+   * Get finished pre quizzes eligible for linking
+   */
+  getFinishedPreQuizzes: async ({ class_id, mode, include_all_classes = false }) => {
+    try {
+      const params = { mode };
+      if (class_id) {
+        params.class_id = class_id;
+      }
+      if (include_all_classes) {
+        params.include_all_classes = true;
+      }
+      const response = await apiClient.get('/api/quizzes/finished-pre-quizzes', {
+        params
+      });
+      return response.data || [];
+    } catch (error) {
+      console.error("Error fetching finished pre quizzes:", error);
+      const errorMessage = error.response?.data?.detail || "Could not load pre quizzes.";
+      throw new Error(errorMessage);
+    }
+  },
+
+  /**
    * Get a single quiz by ID
    */
   getQuizById: async (quizId) => {
@@ -392,6 +415,24 @@ const quizService = {
     }
   },
 
+  /**
+   * Get current participant's response for a specific question
+   */
+  getMyResponse: async (sessionId, questionId, guestToken = null) => {
+    try {
+      const headers = guestToken ? { 'X-Guest-Token': guestToken } : {};
+      const response = await apiClient.get(
+        `/api/quiz-sessions/${sessionId}/my-response/${questionId}`,
+        { headers }
+      );
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching response for session ${sessionId}:`, error);
+      const errorMessage = error.response?.data?.detail || "Could not load response.";
+      throw new Error(errorMessage);
+    }
+  },
+
   // ==================== ANALYTICS OPERATIONS ====================
 
   /**
@@ -724,6 +765,41 @@ const quizService = {
       console.error("Error parsing quiz document:", error);
       const errorMessage = error.response?.data?.detail || "Failed to parse quiz document. Please try again.";
       throw new Error(errorMessage);
+    }
+  },
+
+  // ==================== QUESTION IMAGE UPLOAD ====================
+  
+  /**
+   * Upload an image for a question
+   * @param {string} questionId - Question ID
+   * @param {FormData} formData - FormData with 'file' field
+   * @returns {Promise<{media_url: string}>}
+   */
+  async uploadQuestionImage(questionId, formData) {
+    try {
+      const response = await apiClient.post(`/api/quizzes/questions/${questionId}/upload-image`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error uploading question image:', error);
+      throw new Error(error.response?.data?.detail || 'Failed to upload image');
+    }
+  },
+
+  /**
+   * Delete an image from a question
+   * @param {string} questionId - Question ID
+   */
+  async deleteQuestionImage(questionId) {
+    try {
+      await apiClient.delete(`/api/quizzes/questions/${questionId}/image`);
+    } catch (error) {
+      console.error('Error deleting question image:', error);
+      throw new Error(error.response?.data?.detail || 'Failed to delete image');
     }
   },
 

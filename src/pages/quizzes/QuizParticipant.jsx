@@ -37,6 +37,7 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 
 // --- Service Import ---
 import quizService from '../../services/quizService';
+import MathTextDisplay from '../../components/common/MathTextDisplay';
 
 /**
  * Join Screen Component
@@ -206,7 +207,7 @@ const WaitingRoom = ({ session, participantName }) => {
 /**
  * Question Display Component
  */
-const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining, autoAdvanceEnabled, totalQuestions, cooldownFeedback }) => {
+const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining, autoAdvanceEnabled, totalQuestions, cooldownFeedback, awaitingNextQuestion }) => {
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [timeExpired, setTimeExpired] = useState(false);
@@ -261,12 +262,14 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
     return 'error';
   };
 
+  const showCooldown = (awaitingNextQuestion || cooldownRemaining > 0 || cooldownRemaining === -1) && timeRemaining === 0;
+
   return (
     <Container maxWidth="md" sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', py: { xs: 2, md: 4 }, px: { xs: 2, md: 3 } }}>
       <Fade in timeout={500}>
         <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', overflowY: 'auto' }}>
           {/* FIX: Timer - Show question timer or cooldown timer with proper conditions */}
-          {(cooldownRemaining > 0 || cooldownRemaining === -1) && timeRemaining === 0 ? (
+          {showCooldown ? (
             // Cooldown Timer with Answer Feedback - ENHANCED
             <Box sx={{ textAlign: 'center', mb: 2, flexShrink: 0 }}>
               <Paper
@@ -276,11 +279,14 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                   px: 4,
                   textAlign: 'center',
                   background: cooldownFeedback
-                    ? (cooldownFeedback.is_correct
-                        ? 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'  // Green gradient if correct
-                        : (cooldownFeedback.did_not_answer
-                            ? 'linear-gradient(135deg, #757F9A 0%, #D7DDE8 100%)'  // Gray if didn't answer
-                            : 'linear-gradient(135deg, #eb3349 0%, #f45c43 100%)'  // Red gradient if incorrect
+                    ? (cooldownFeedback.grading_status === "pending"
+                        ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'  // Purple if pending
+                        : (cooldownFeedback.is_correct
+                            ? 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'  // Green gradient if correct
+                            : (cooldownFeedback.did_not_answer
+                                ? 'linear-gradient(135deg, #757F9A 0%, #D7DDE8 100%)'  // Gray if didn't answer
+                                : 'linear-gradient(135deg, #ee0979 0%, #ff6a00 100%)'  // Red gradient if incorrect
+                              )
                           )
                       )
                     : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',  // Default purple if no feedback
@@ -293,10 +299,23 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                 {cooldownFeedback && (
                   <Fade in timeout={500}>
                     <Box sx={{ mb: 2, pb: 2, borderBottom: '1px solid rgba(255,255,255,0.3)' }}>
-                      {cooldownFeedback.did_not_answer ? (
+                      {cooldownFeedback.grading_status === "pending" ? (
+                        <>
+                          <CircularProgress sx={{ color: 'white', mb: 2 }} size={60} />
+                          <Typography variant="h5" sx={{ mb: 1, fontWeight: 700 }}>
+                            Answer Submitted!
+                          </Typography>
+                          <Typography variant="body1">
+                            {cooldownFeedback.message || "Your short answer is being graded..."}
+                          </Typography>
+                          <Typography variant="body2" sx={{ mt: 2, opacity: 0.9 }}>
+                            Results will appear shortly
+                          </Typography>
+                        </>
+                      ) : cooldownFeedback.did_not_answer ? (
                         <>
                           <Typography variant="h4" sx={{ mb: 1, fontWeight: 700 }}>
-                            ⏰ Time's Up!
+                            Time's Up!
                           </Typography>
                           <Typography variant="h6" sx={{ opacity: 0.9 }}>
                             You didn't submit an answer
@@ -306,22 +325,46 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                         <>
                           <CheckCircleIcon sx={{ fontSize: 60, mb: 1 }} />
                           <Typography variant="h4" sx={{ mb: 1, fontWeight: 700 }}>
-                            ✅ Correct!
+                            Correct!
                           </Typography>
                           <Typography variant="h6" sx={{ opacity: 0.9 }}>
-                            You earned {cooldownFeedback.points_earned} points
+                            +{cooldownFeedback.points_earned} points
                           </Typography>
+
+                          {cooldownFeedback.ai_feedback && (
+                            <Box sx={{ mt: 2, p: 2, bgcolor: 'rgba(255,255,255,0.15)', borderRadius: 2 }}>
+                              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                Feedback: {cooldownFeedback.ai_feedback}
+                              </Typography>
+                            </Box>
+                          )}
+
+                          {!cooldownFeedback.ai_feedback && cooldownFeedback.explanation && (
+                            <Box sx={{ mt: 2, p: 2, bgcolor: 'rgba(255,255,255,0.1)', borderRadius: 2 }}>
+                              <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
+                                {cooldownFeedback.explanation}
+                              </Typography>
+                            </Box>
+                          )}
                         </>
                       ) : (
                         <>
                           <CancelIcon sx={{ fontSize: 60, mb: 1 }} />
                           <Typography variant="h4" sx={{ mb: 1, fontWeight: 700 }}>
-                            ❌ Incorrect
+                            Incorrect
                           </Typography>
                           <Typography variant="h6" sx={{ opacity: 0.9, mb: 1 }}>
-                            0 points
+                            +{cooldownFeedback.points_earned} points
                           </Typography>
-                          {/* Show correct answer if provided */}
+
+                          {cooldownFeedback.ai_feedback && (
+                            <Box sx={{ mt: 2, p: 2, bgcolor: 'rgba(255,255,255,0.15)', borderRadius: 2 }}>
+                              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                Feedback: {cooldownFeedback.ai_feedback}
+                              </Typography>
+                            </Box>
+                          )}
+
                           {cooldownFeedback.correct_answer && (
                             <Box sx={{ mt: 2, p: 2, bgcolor: 'rgba(255,255,255,0.2)', borderRadius: 2 }}>
                               <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
@@ -336,8 +379,8 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                               </Typography>
                             </Box>
                           )}
-                          {/* Show explanation if provided */}
-                          {cooldownFeedback.explanation && (
+
+                          {!cooldownFeedback.ai_feedback && cooldownFeedback.explanation && (
                             <Box sx={{ mt: 1, p: 2, bgcolor: 'rgba(255,255,255,0.1)', borderRadius: 2 }}>
                               <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
                                 {cooldownFeedback.explanation}
@@ -359,11 +402,11 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                       The next question will start when your teacher advances
                     </Typography>
                   </>
-                ) : (
+                ) : cooldownRemaining > 0 ? (
                   <>
                     {/* Countdown Timer */}
                     <Typography variant="h5" sx={{ mb: 1, fontWeight: 600 }}>
-                      ? Get Ready!
+                      Get Ready!
                     </Typography>
                     <Typography variant="h6" sx={{ mb: 1, opacity: 0.9 }}>
                       Next Question Starting In
@@ -373,6 +416,16 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                     </Typography>
                     <Typography variant="h6" sx={{ opacity: 0.9 }}>
                       seconds
+                    </Typography>
+                  </>
+                ) : (
+                  <>
+                    <CircularProgress sx={{ color: 'white', mb: 2 }} size={48} />
+                    <Typography variant="h5" sx={{ mb: 1, fontWeight: 600 }}>
+                      Preparing Next Question
+                    </Typography>
+                    <Typography variant="h6" sx={{ opacity: 0.9 }}>
+                      Please wait while grading completes
                     </Typography>
                   </>
                 )}
@@ -397,7 +450,7 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
           ) : null}
 
           {/* Question and Options - Hide during cooldown for cleaner display */}
-          {!((cooldownRemaining > 0 || cooldownRemaining === -1) && timeRemaining === 0) && (
+          {!showCooldown && (
             <>
               {/* Question - Compact version */}
               <Paper sx={{ p: { xs: 2, md: 3 }, mb: 2, textAlign: 'center', flexShrink: 0 }}>
@@ -407,29 +460,29 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                   size="small"
                   sx={{ mb: 1 }}
                 />
-                <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5, fontSize: { xs: '1.25rem', md: '1.5rem' } }}>
-                  {question.text}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {question.points} points
+                <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5, fontSize: { xs: '1.25rem', md: '1.5rem' } }} component="div">
+                  <MathTextDisplay text={question.text} />
                 </Typography>
 
-                {/* Display question image if available */}
+                {/* Question Image */}
                 {question.media_url && (
-                  <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
-                    <img
-                      src={question.media_url}
-                      alt="Question illustration"
-                      style={{
-                        maxWidth: '100%',
-                        maxHeight: '300px',
-                        height: 'auto',
-                        borderRadius: '8px',
-                        objectFit: 'contain'
+                  <Box sx={{ my: 2, textAlign: 'center' }}>
+                    <img 
+                      src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${question.media_url}`}
+                      alt="Question visual"
+                      style={{ 
+                        maxWidth: '100%', 
+                        maxHeight: 400, 
+                        borderRadius: 8,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
                       }}
                     />
                   </Box>
                 )}
+                <Typography variant="body2" color="text.secondary">
+                  {question.points} points
+                </Typography>
+
               </Paper>
 
               {/* Answer Options - Compact rendering based on question type */}
@@ -460,7 +513,9 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                             }
                           }}
                         >
-                          {option}
+                          <Typography variant="h6" component="div">
+                            <MathTextDisplay text={option} />
+                          </Typography>
                         </Button>
                       </Grow>
                     </Grid>
@@ -528,7 +583,7 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                       rows={3}
                       variant="outlined"
                       placeholder="Type your answer here..."
-                      value={selectedAnswer || ''}
+                      value={(typeof selectedAnswer === 'string' || typeof selectedAnswer === 'number') ? selectedAnswer : ''}
                       onChange={(e) => setSelectedAnswer(e.target.value)}
                       disabled={isSubmitted || timeExpired}
                       sx={{
@@ -576,7 +631,7 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
           )}
 
           {/* FIX: Show appropriate message based on state - Compact */}
-          {(cooldownRemaining > 0 || cooldownRemaining === -1) && timeRemaining === 0 ? (
+          {showCooldown ? (
             // During cooldown period - Hide question/options, show prominent cooldown
             null
           ) : isSubmitted && timeRemaining > 0 ? (
@@ -798,9 +853,23 @@ const AnswerReviewDisplay = ({ sessionId, guestToken, onViewLeaderboard }) => {
                       />
                     </Box>
 
-                    <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-                      {review.question_text}
-                    </Typography>
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }} component="div">
+                <MathTextDisplay text={review.question_text} />
+              </Typography>
+              {review.media_url && (
+                <Box sx={{ mb: 2, textAlign: 'center' }}>
+                  <img
+                    src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${review.media_url}`}
+                    alt="Question visual"
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: 300,
+                      borderRadius: 8,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                    }}
+                  />
+                </Box>
+              )}
 
                     {review.options && review.options.length > 0 ? (
                       <List>
@@ -829,7 +898,7 @@ const AnswerReviewDisplay = ({ sessionId, guestToken, onViewLeaderboard }) => {
                               }}
                             >
                               <ListItemText
-                                primary={option}
+                                primary={<MathTextDisplay text={option} />}
                                 secondary={
                                   <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
                                     {isStudentAnswer && (
@@ -919,15 +988,19 @@ const QuizParticipant = () => {
   const [autoAdvanceEnabled, setAutoAdvanceEnabled] = useState(false);
   const [cooldownSeconds, setCooldownSeconds] = useState(10);
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
+  const [awaitingNextQuestion, setAwaitingNextQuestion] = useState(false);
 
   // NEW: Store answer feedback for cooldown display
   const [cooldownFeedback, setCooldownFeedback] = useState(null);
   // cooldownFeedback structure:
   // {
+  //   grading_status: "pending" | "complete",
   //   is_correct: boolean,
   //   points_earned: number,
   //   correct_answer: [...],  // optional
   //   explanation: string,    // optional
+  //   ai_feedback: string,    // optional
+  //   message: string,        // optional
   //   did_not_answer: boolean // optional
   // }
 
@@ -1024,6 +1097,37 @@ const QuizParticipant = () => {
     }
   };
 
+  const refetchResponseForQuestion = async (questionId) => {
+    if (!session?.id || !guestToken) {
+      return;
+    }
+
+    try {
+      const response = await quizService.getMyResponse(session.id, questionId, guestToken);
+
+      if (response?.grading_status === "pending") {
+        setCooldownFeedback({
+          grading_status: "pending",
+          message: response.message || "Your answer has been submitted!",
+          did_not_answer: false
+        });
+        return;
+      }
+
+      setCooldownFeedback({
+        is_correct: response?.is_correct,
+        points_earned: response?.points_earned || 0,
+        correct_answer: response?.correct_answer,
+        explanation: response?.explanation,
+        ai_feedback: response?.ai_feedback,
+        did_not_answer: false,
+        grading_status: response?.grading_status || "complete"
+      });
+    } catch (error) {
+      console.error('[AI Grading] Failed to fetch updated response:', error);
+    }
+  };
+
   const handleWebSocketMessage = (message) => {
     console.log('[QuizParticipant] Processing WebSocket message:', message.type);
 
@@ -1031,6 +1135,7 @@ const QuizParticipant = () => {
       case 'session_started':
         console.log('[QuizParticipant] Session started');
         setPhase('waiting');
+        setAwaitingNextQuestion(false);
         break;
 
       case 'question_started':
@@ -1047,6 +1152,7 @@ const QuizParticipant = () => {
         setCooldownEndsAt(null);
         setCooldownRemaining(0);
         setCooldownFeedback(null); // NEW: Reset feedback for new question
+        setAwaitingNextQuestion(false);
 
         // FIX: Set question with timestamp synchronization
         setCurrentQuestion(message.question);
@@ -1063,6 +1169,7 @@ const QuizParticipant = () => {
           sessionStatus: session?.status
         });
         setLeaderboard(message.leaderboard || []);
+        setAwaitingNextQuestion(false);
 
         // FIX Issue 1: Only show leaderboard if session is active
         // Don't show it on join (when session is still 'waiting')
@@ -1097,6 +1204,7 @@ const QuizParticipant = () => {
 
         setShowResultFeedback(message.show_result_feedback ?? true);
         setShowLeaderboardToStudents(message.show_leaderboard ?? true);
+        setAwaitingNextQuestion(false);
 
         setPhase('finished');
         break;
@@ -1119,6 +1227,7 @@ const QuizParticipant = () => {
         setQuestionExpiresAt(null); // Clear question timer
         setAutoAdvanceEnabled(message.auto_advance_enabled);
         setCooldownEndsAt(message.cooldown_ends_at); // Set cooldown end timestamp
+        setAwaitingNextQuestion(true);
         if (message.auto_advance_enabled) {
           startCooldownTimer(message.cooldown_ends_at, message.cooldown_seconds);
         } else {
@@ -1130,7 +1239,18 @@ const QuizParticipant = () => {
         // NEW: Store answer result when student submits
         console.log('[QuizParticipant] Answer submitted result:', message.result);
         if (message.result) {
-          setCooldownFeedback(message.result);
+          if (message.result.grading_status === "pending") {
+            setCooldownFeedback({
+              grading_status: "pending",
+              message: message.result.message || "Your answer has been submitted!",
+              did_not_answer: false
+            });
+          } else {
+            setCooldownFeedback({
+              ...message.result,
+              grading_status: "complete"
+            });
+          }
         }
         break;
 
@@ -1146,11 +1266,27 @@ const QuizParticipant = () => {
         setCooldownSeconds(message.cooldown_seconds);
         setAutoAdvanceEnabled(message.auto_advance_enabled);
         setCooldownEndsAt(message.cooldown_ends_at); // Set cooldown end timestamp
+        setAwaitingNextQuestion(true);
 
         // NEW: Store cooldown feedback if provided
         if (message.your_answer) {
           console.log('[QuizParticipant] Cooldown feedback received:', message.your_answer);
-          setCooldownFeedback(message.your_answer);
+          if (message.your_answer.is_correct === null && !message.your_answer.did_not_answer) {
+            setCooldownFeedback((prev) =>
+              prev?.grading_status === "pending"
+                ? prev
+                : {
+                    grading_status: "pending",
+                    message: "Your answer has been submitted!",
+                    did_not_answer: false
+                  }
+            );
+          } else {
+            setCooldownFeedback({
+              ...message.your_answer,
+              grading_status: "complete"
+            });
+          }
         } else {
           console.log('[QuizParticipant] No cooldown feedback (feature disabled)');
           setCooldownFeedback(null);
@@ -1168,6 +1304,13 @@ const QuizParticipant = () => {
         // Respond to heartbeat
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
           wsRef.current.send(JSON.stringify({ type: 'pong' }));
+        }
+        break;
+
+      case 'ai_grading_complete':
+        console.log('[QuizParticipant] AI grading complete:', message);
+        if (message.question_id) {
+          refetchResponseForQuestion(message.question_id);
         }
         break;
 
@@ -1333,7 +1476,7 @@ const QuizParticipant = () => {
       // Issue #4 Fix: time_taken_ms is for display only
       // Server calculates actual time from question_started_at timestamp
       // This prevents timing manipulation attacks via browser DevTools
-      await quizService.submitAnswer(
+      const result = await quizService.submitAnswer(
         session.id,
         {
           question_id: currentQuestion.id,
@@ -1343,7 +1486,25 @@ const QuizParticipant = () => {
         guestToken
       );
 
-      console.log('[QuizParticipant] ✅ Answer submitted successfully');
+      console.log('[QuizParticipant] Answer submitted successfully');
+
+      if (result?.grading_status === "pending") {
+        setCooldownFeedback({
+          grading_status: "pending",
+          message: result.message || "Your answer has been submitted!",
+          did_not_answer: false
+        });
+      } else {
+        setCooldownFeedback({
+          is_correct: result?.is_correct,
+          points_earned: result?.points_earned || 0,
+          correct_answer: result?.correct_answer,
+          explanation: result?.explanation,
+          ai_feedback: result?.ai_feedback,
+          did_not_answer: false,
+          grading_status: "complete"
+        });
+      }
 
       // FIX Issue 1: Do NOT clear timer - it should continue running until time expires
       // This allows all students to see the same countdown and cooldown timing
@@ -1371,6 +1532,7 @@ const QuizParticipant = () => {
         autoAdvanceEnabled={autoAdvanceEnabled}
         totalQuestions={session?.questions?.length}
         cooldownFeedback={cooldownFeedback}
+        awaitingNextQuestion={awaitingNextQuestion}
       />
     );
   }

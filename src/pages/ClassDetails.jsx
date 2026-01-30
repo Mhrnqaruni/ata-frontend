@@ -23,6 +23,8 @@ import StudentTable from '../components/classes/StudentTable';
 import StudentModal from '../components/classes/StudentModal';
 import ConfirmationModal from '../components/common/ConfirmationModal';
 import ClassEditModal from '../components/classes/ClassEditModal';
+import FloatingChatWindow from '../components/chatbot/FloatingChatWindow';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 
 // --- Service Import ---
 import classService from '../services/classService';
@@ -47,6 +49,10 @@ const ClassDetails = () => {
   const [classEditModal, setClassEditModal] = useState({ open: false, state: { isLoading: false, error: null } });
   const [deleteConfirmation, setDeleteConfirmation] = useState({ open: false, type: null, data: null });
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
+
+  // Chat state
+  const [chatOpen, setChatOpen] = useState(false);
+  const [autoSendMessage, setAutoSendMessage] = useState(null);
 
   // --- Data Fetching ---
   const fetchClassDetails = useCallback(async () => {
@@ -142,6 +148,21 @@ const ClassDetails = () => {
   };
   const handleCloseConfirmDelete = () => setDeleteConfirmation({ open: false, type: null, data: null });
 
+  // Handler for student progress tracker button
+  const handleStudentProgressTracker = (student) => {
+    // Create a clear, simple message with student name, ID, and class context
+    const className = classData?.name || 'this class';
+    const message = `Give me Progress Tracker of student ${student.name} ID(${student.studentId}) from ${className} Class please`;
+
+    // Set message to auto-send
+    setAutoSendMessage(message);
+
+    // Open the chat window (or keep it open if already open)
+    setChatOpen(true);
+
+    console.log('[ClassDetails] Opening progress tracker for student:', student.name, student.studentId);
+  };
+
   // --- Render Logic ---
   if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>;
   if (error) return <Box sx={{ p: 3 }}><Alert severity="error"><AlertTitle>Error</AlertTitle>{error}</Alert></Box>;
@@ -153,7 +174,7 @@ const ClassDetails = () => {
 
   const analyticsCards = [
       { id: 'count', title: 'Total Students', value: classData.analytics.studentCount, icon: <PeopleAltOutlined /> },
-      { id: 'avg', title: 'Class Average', value: `${classData.analytics.classAverage}%`, icon: <FunctionsOutlined /> },
+      { id: 'avg', title: 'Class Grade', value: `${classData.analytics.classAverage}%`, icon: <FunctionsOutlined /> },
       { id: 'graded', title: 'Assessments Graded', value: classData.analytics.assessmentsGraded, icon: <FactCheckOutlined /> },
   ];
   
@@ -169,6 +190,22 @@ const ClassDetails = () => {
             <Typography variant="h2" sx={{ wordBreak: 'break-word' }}>{classData.name}</Typography>
             <Stack direction="row" spacing={1} alignItems="center">
                 <Button variant="contained" startIcon={<AddOutlined />} onClick={handleOpenAddStudentModal}>Add Student</Button>
+                <Button
+                  startIcon={<AutoAwesomeIcon />}
+                  onClick={() => setChatOpen(true)}
+                  sx={{
+                    background: 'linear-gradient(90deg, #20c5e8 0%, #4d47e0 100%)',
+                    color: 'white',
+                    boxShadow: '0 3px 5px 2px rgba(32, 197, 232, .3)',
+                    fontWeight: 'bold',
+                    '&:hover': {
+                      background: 'linear-gradient(90deg, #1ba5c8 0%, #3d37c0 100%)',
+                      boxShadow: '0 4px 6px 2px rgba(32, 197, 232, .4)',
+                    }
+                  }}
+                >
+                  Analytics with AI
+                </Button>
                 <Tooltip title="Class Options"><IconButton onClick={handleMenuOpen}><MoreVertIcon /></IconButton></Tooltip>
             </Stack>
         </Box>
@@ -180,8 +217,28 @@ const ClassDetails = () => {
       
       {/* FIX #2: Made the table container more robust to ensure it contains the scroll */}
       <Box sx={{ width: '100%', overflow: 'auto' }}>
-        <StudentTable students={classData.students} onEdit={handleOpenEditStudentModal} onDelete={handleOpenConfirmStudentDelete} />
+        <StudentTable
+          students={classData.students}
+          onEdit={handleOpenEditStudentModal}
+          onDelete={handleOpenConfirmStudentDelete}
+          onProgressTracker={handleStudentProgressTracker}
+        />
       </Box>
+
+      {/* Floating Chat Window */}
+      <FloatingChatWindow
+        open={chatOpen}
+        onClose={() => {
+          setChatOpen(false);
+          setAutoSendMessage(null);
+        }}
+        pageContext="class"
+        entityId={classData?.id}
+        entityType="class"
+        entityName={classData?.name}
+        autoSendMessage={autoSendMessage}
+        onMessageSent={() => setAutoSendMessage(null)}
+      />
 
       <Menu anchorEl={menuAnchorEl} open={Boolean(menuAnchorEl)} onClose={handleMenuClose}>
         <MenuItem onClick={handleOpenClassEditModal}><ListItemIcon><EditOutlined fontSize="small"/></ListItemIcon>Edit Details</MenuItem>

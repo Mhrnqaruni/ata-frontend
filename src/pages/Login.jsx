@@ -75,6 +75,13 @@ const Login = () => {
     const formEmail = event.target.email.value;
     const formPassword = event.target.password.value;
 
+    // Validate that fields are not empty
+    if (!formEmail.trim() || !formPassword.trim()) {
+      setError('Please enter both email and password.');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       await login(formEmail, formPassword);
       showSnackbar('Login successful!', 'success');
@@ -130,9 +137,8 @@ const Login = () => {
     }
   };
   
-  // FIX: Enable button if fields have values OR if browser autofilled them
-  const canSubmit = (email.trim() !== '' && password.trim() !== '') ||
-                    (isEmailAutofilled && isPasswordAutofilled);
+  // Note: Button is always enabled (user request) - validation happens on submit
+  // Previously checked: const canSubmit = (email.trim() !== '' && password.trim() !== '')
 
   return (
     <>
@@ -220,7 +226,7 @@ const Login = () => {
 
               <Button
                 type="submit" fullWidth variant="contained"
-                disabled={isLoading || !canSubmit}
+                disabled={isLoading}
                 sx={{ mt: 1, mb: 2, py: 1.5 }}
               >
                 {isLoading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}

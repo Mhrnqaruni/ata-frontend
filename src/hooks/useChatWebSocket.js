@@ -18,7 +18,8 @@ import { config } from '../config';
  * @returns {object} An object containing the connection state and functions to interact
  *                   with the WebSocket.
  */
-const useChatWebSocket = (setMessages) => {
+const useChatWebSocket = (setMessages, options = {}) => {
+  const { inlineCharts = false } = options;
   // --- State Management (Unchanged) ---
   // These states track the UI/UX of the chat interaction.
   const [isThinking, setIsThinking] = useState(false);      // True from user send until first token arrives.
@@ -29,6 +30,8 @@ const useChatWebSocket = (setMessages) => {
   const socketRef = useRef(null);         // Holds the current WebSocket object.
   const messageQueueRef = useRef([]);     // Queues messages if `sendMessage` is called before connection.
   const currentSessionId = useRef(null);  // Tracks the current session to prevent redundant connections.
+  // NEW: Chart queue for inline charts mode
+  const pendingChartsRef = useRef([]);
 
   /**
    * The core function to establish a WebSocket connection.
@@ -69,6 +72,9 @@ const useChatWebSocket = (setMessages) => {
     const ws = new WebSocket(wsUrl);
     socketRef.current = ws;
 
+    // Store WebSocket reference globally for event dispatching
+    window.currentChatWebSocket = new EventTarget();
+
     // --- WebSocket Event Handlers (Logic is unchanged, but now operate on a secure connection) ---
     ws.onopen = () => {
       setIsConnected(true);
@@ -78,11 +84,54 @@ const useChatWebSocket = (setMessages) => {
 
     ws.onmessage = (event) => {
       const message = JSON.parse(event.data);
+
+      // Handle stage updates
+      if (message.type === 'stage_update') {
+        // Stage updates are handled by parent component
+        // Just pass through the event
+        if (window.currentChatWebSocket) {
+          window.currentChatWebSocket.dispatchEvent(new CustomEvent('stage_update', { detail: message }));
+        }
+        return;
+      }
+
+      // Handle chart data
+      if (message.type === 'chart_data') {
+        // CRITICAL FIX: Buffer charts when using inlineCharts mode
+        // Charts arrive BEFORE stream_start, so we must queue them
+        if (inlineCharts) {
+          pendingChartsRef.current.push(message.data);
+          return;
+        }
+        // Default: Chart data handled by parent component via global event
+        if (window.currentChatWebSocket) {
+          window.currentChatWebSocket.dispatchEvent(new CustomEvent('chart_data', { detail: message }));
+        }
+        return;
+      }
+
+      // Handle disambiguation
+      if (message.type === 'disambiguation') {
+        if (window.currentChatWebSocket) {
+          window.currentChatWebSocket.dispatchEvent(new CustomEvent('disambiguation', { detail: message }));
+        }
+        return;
+      }
+
       switch (message.type) {
         case 'stream_start':
           setIsThinking(false);
           setIsResponding(true);
-          setMessages(prev => [...prev, { id: `msg_bot_${uuidv4()}`, role: 'bot', content: '', isStreaming: true }]);
+          {
+            // CRITICAL FIX: Attach buffered charts to new bot message
+            // This prevents charts from being lost or attached to wrong message
+            const charts = pendingChartsRef.current;
+            pendingChartsRef.current = [];  // Clear buffer
+            setMessages(prev => [
+              ...prev,
+              { id: `msg_bot_${uuidv4()}`, role: 'bot', content: '', isStreaming: true, charts }
+            ]);
+          }
           break;
         case 'stream_token':
           setMessages(prev => prev.map((m, i) => i === prev.length - 1 ? { ...m, content: m.content + message.payload.token } : m));
@@ -100,6 +149,8 @@ const useChatWebSocket = (setMessages) => {
         case 'error':
           setIsThinking(false);
           setIsResponding(false);
+          // CRITICAL FIX: Clear pending charts on error to prevent leakage
+          pendingChartsRef.current = [];
           setMessages(prev => [...prev, { id: `msg_bot_${uuidv4()}`, role: 'bot', content: message.payload.message }]);
           break;
         default:
@@ -112,6 +163,8 @@ const useChatWebSocket = (setMessages) => {
       if (event.code === 1008) {
           // WebSocket closed due to policy violation - likely auth error
       }
+      // CRITICAL FIX: Clear pending charts on close to prevent leakage
+      pendingChartsRef.current = [];
       setIsConnected(false);
       setIsThinking(false);
       setIsResponding(false);
@@ -119,6 +172,7 @@ const useChatWebSocket = (setMessages) => {
     
     ws.onerror = (error) => {
       console.error("WebSocket error:", error);
+      pendingChartsRef.current = [];
       setIsConnected(false);
       setIsThinking(false);
       setIsResponding(false);
@@ -127,14 +181,17 @@ const useChatWebSocket = (setMessages) => {
   }, [setMessages]); // The dependency array is correct.
 
   // The sendMessage function remains unchanged.
-  const sendMessage = useCallback((messageText, fileId = null) => {
+  const sendMessage = useCallback((messageText, fileId = null, context = null) => {
     const payload = { 
       type: 'user_message', 
       payload: { 
         text: messageText,
         file_id: fileId
-      } 
+      }
     };
+    if (context) {
+      payload.payload.context = context;
+    }
 
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
       socketRef.current.send(JSON.stringify(payload));

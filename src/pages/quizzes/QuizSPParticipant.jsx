@@ -39,6 +39,8 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 
 import quizSPService from '../../services/quizSPService';
 import { useSnackbar } from '../../hooks/useSnackbar';
+import MathTextDisplay from '../../components/common/MathTextDisplay';
+import MathInputWithPreview from '../../components/common/MathInputWithPreview';
 
 /**
  * Join Screen Component - Student enters access code and info
@@ -238,9 +240,25 @@ const QuestionDisplay = ({
           color="primary"
           sx={{ mb: 2 }}
         />
-        <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
-          {question.question_text}
+        <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }} component="div">
+          <MathTextDisplay text={question.question_text} />
         </Typography>
+
+        {/* Question Image */}
+        {question.media_url && (
+          <Box sx={{ my: 2, textAlign: 'center' }}>
+            <img 
+              src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${question.media_url}`}
+              alt="Question visual"
+              style={{ 
+                maxWidth: '100%', 
+                maxHeight: 400, 
+                borderRadius: 8,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+              }}
+            />
+          </Box>
+        )}
         {question.points && (
           <Typography variant="body2" color="text.secondary">
             {question.points} points
@@ -275,8 +293,8 @@ const QuestionDisplay = ({
                 ) : (
                   <RadioButtonUncheckedIcon color="action" sx={{ mr: 2 }} />
                 )}
-                <Typography variant="h6">
-                  {option}
+                <Typography variant="h6" component="div">
+                  <MathTextDisplay text={option} />
                 </Typography>
               </CardContent>
             </Card>
@@ -335,14 +353,14 @@ const QuestionDisplay = ({
 
       {/* Short Answer */}
       {question.question_type === 'short_answer' && (
-        <TextField
-          fullWidth
+        <MathInputWithPreview
           multiline
           rows={4}
-          placeholder="Type your answer here..."
-          value={currentAnswer || ''}
+          placeholder="Type your answer here... (Use $ for math formulas, e.g., $x^2 + 3$)"
+          value={(typeof currentAnswer === 'string' || typeof currentAnswer === 'number') ? currentAnswer : ''}
           onChange={handleShortAnswerChange}
           variant="outlined"
+          helperText="Tip: Wrap math in $ for formulas (e.g., $sqrt(16)$ or $pi*r^2$)"
         />
       )}
 
@@ -371,8 +389,8 @@ const QuestionDisplay = ({
                 ) : (
                   <RadioButtonUncheckedIcon color="action" sx={{ mr: 2 }} />
                 )}
-                <Typography variant="h6">
-                  {option}
+                <Typography variant="h6" component="div">
+                  <MathTextDisplay text={option} />
                 </Typography>
               </CardContent>
             </Card>
@@ -672,9 +690,23 @@ const AnswerReviewDisplaySP = ({ sessionId, studentToken, onBack }) => {
                       />
                     </Box>
 
-                    <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-                      {review.question_text}
+                    <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }} component="div">
+                      <MathTextDisplay text={review.question_text} />
                     </Typography>
+                    {review.media_url && (
+                      <Box sx={{ mb: 2, textAlign: 'center' }}>
+                        <img
+                          src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${review.media_url}`}
+                          alt="Question visual"
+                          style={{
+                            maxWidth: '100%',
+                            maxHeight: 300,
+                            borderRadius: 8,
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                          }}
+                        />
+                      </Box>
+                    )}
 
                     {review.options && review.options.length > 0 ? (
                       <List>
@@ -703,7 +735,7 @@ const AnswerReviewDisplaySP = ({ sessionId, studentToken, onBack }) => {
                               }}
                             >
                               <ListItemText
-                                primary={option}
+                                primary={<MathTextDisplay text={option} />}
                                 secondary={
                                   <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
                                     {isStudentAnswer && (
@@ -853,6 +885,8 @@ const QuizSPParticipant = () => {
   const [isReviewMode, setIsReviewMode] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [gradingStatus, setGradingStatus] = useState(null); // null | "ai_grading" | "complete" | "error"
+  const [feedback, setFeedback] = useState(null);
   const [isAutoSubmitting, setIsAutoSubmitting] = useState(false);
   const [finalResult, setFinalResult] = useState(null);
 
@@ -947,6 +981,11 @@ const QuizSPParticipant = () => {
     }));
   };
 
+  useEffect(() => {
+    setGradingStatus(null);
+    setFeedback(null);
+  }, [currentQuestionIndex]);
+
   // Handle save answer (submit to backend)
   const handleSaveAnswer = async () => {
     const currentQuestion = questions[currentQuestionIndex];
@@ -955,6 +994,11 @@ const QuizSPParticipant = () => {
     if (answer === undefined || answer === null || answer === '') {
       // Skip if no answer
       return;
+    }
+
+    const isShortAnswer = currentQuestion.question_type === "short_answer";
+    if (isShortAnswer) {
+      setGradingStatus("ai_grading");
     }
 
     try {
@@ -973,9 +1017,22 @@ const QuizSPParticipant = () => {
         completed_question_ids: [...(prev.completed_question_ids || []), currentQuestion.id]
       }));
 
+      if (isShortAnswer) {
+        setFeedback({
+          is_correct: result.is_correct,
+          points_earned: result.points_earned,
+          ai_feedback: result.ai_feedback,
+          explanation: result.explanation
+        });
+        setGradingStatus("complete");
+      }
+
     } catch (error) {
       console.error('Error saving answer:', error);
-      // Don't show error to user, just log it (they can retry)
+      if (isShortAnswer) {
+        setGradingStatus("error");
+      }
+      showSnackbar(error.message || 'Failed to submit answer', 'error');
     }
   };
 
@@ -1143,6 +1200,53 @@ const QuizSPParticipant = () => {
         totalQuestions={questions.length}
         currentIndex={currentQuestionIndex}
       />
+
+      {/* AI Grading Loading State (Short Answer) */}
+      {gradingStatus === "ai_grading" && (
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 2,
+            mt: 3,
+            p: 3,
+            bgcolor: 'rgba(103, 58, 183, 0.1)',
+            borderRadius: 2
+          }}
+        >
+          <CircularProgress sx={{ color: 'primary.main' }} size={50} />
+          <Typography variant="h6" color="primary">
+            AI is grading your answer...
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            This may take a moment
+          </Typography>
+        </Box>
+      )}
+
+      {/* Answer Feedback (after grading complete) */}
+      {gradingStatus === "complete" && feedback && (
+        <Alert severity={feedback.is_correct ? "success" : "warning"} sx={{ mt: 2 }}>
+          <Typography variant="h6">
+            {feedback.is_correct ? "Correct!" : "Incorrect"} ({feedback.points_earned}/{currentQuestion.points} points)
+          </Typography>
+
+          {feedback.ai_feedback && (
+            <Box sx={{ mt: 2, p: 2, bgcolor: 'rgba(0,0,0,0.05)', borderRadius: 1 }}>
+              <Typography variant="body2">
+                <strong>AI Feedback:</strong> {feedback.ai_feedback}
+              </Typography>
+            </Box>
+          )}
+
+          {!feedback.ai_feedback && feedback.explanation && (
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              {feedback.explanation}
+            </Typography>
+          )}
+        </Alert>
+      )}
 
       {/* Navigation Controls */}
       <Paper sx={{ p: 3 }}>

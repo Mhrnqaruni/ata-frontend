@@ -5,13 +5,15 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
 // --- MUI Component Imports ---
-import { Box, Card, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, IconButton, Tooltip, useTheme } from '@mui/material';
+import { Box, Card, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel, Typography, IconButton, Tooltip, useTheme } from '@mui/material';
+import useTableSort from '../../hooks/useTableSort';
 
 // --- Icon Imports ---
 import EditOutlined from '@mui/icons-material/EditOutlined';
 import DeleteOutlineOutlined from '@mui/icons-material/DeleteOutlineOutlined';
 import PersonAddOutlined from '@mui/icons-material/PersonAddOutlined';
 import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 
 /**
  * A purely presentational component that renders a table of students.
@@ -23,9 +25,24 @@ import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined';
  * @param {function} props.onEdit - Callback function for when the edit button is clicked.
  * @param {function} props.onDelete - Callback function for when the delete button is clicked.
  */
-const StudentTable = ({ students, onEdit, onDelete }) => {
+const StudentTable = ({ students, onEdit, onDelete, onProgressTracker }) => {
   const theme = useTheme();
   const navigate = useNavigate();
+
+  // Configure sortable columns
+  const columnConfig = {
+    name: { type: 'string' },
+    studentId: { type: 'string' },
+    overallGrade: { type: 'percentage' }
+  };
+
+  // Use sorting hook - default sort by name ascending
+  const { sortedData, requestSort, sortColumn, sortDirection } = useTableSort(
+    students || [],
+    columnConfig,
+    'name',
+    'asc'
+  );
 
   /**
    * A helper function to determine the text color for a grade based on its value.
@@ -62,16 +79,40 @@ const StudentTable = ({ students, onEdit, onDelete }) => {
           {/* --- Table Header --- */}
           <TableHead sx={{ backgroundColor: theme.palette.grey[100] }}>
             <TableRow>
-              <TableCell sx={{ fontWeight: 600 }}>Student Name</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Student ID</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Overall Grade</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>
+                <TableSortLabel
+                  active={sortColumn === 'name'}
+                  direction={sortColumn === 'name' ? sortDirection : 'asc'}
+                  onClick={() => requestSort('name')}
+                >
+                  Student Name
+                </TableSortLabel>
+              </TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>
+                <TableSortLabel
+                  active={sortColumn === 'studentId'}
+                  direction={sortColumn === 'studentId' ? sortDirection : 'asc'}
+                  onClick={() => requestSort('studentId')}
+                >
+                  Student ID
+                </TableSortLabel>
+              </TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>
+                <TableSortLabel
+                  active={sortColumn === 'overallGrade'}
+                  direction={sortColumn === 'overallGrade' ? sortDirection : 'asc'}
+                  onClick={() => requestSort('overallGrade')}
+                >
+                  Overall Grade
+                </TableSortLabel>
+              </TableCell>
               <TableCell sx={{ fontWeight: 600 }} align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
 
           {/* --- Table Body --- */}
           <TableBody>
-            {students.map((student) => (
+            {sortedData.map((student) => (
               <TableRow
                 key={student.id} // The key is critical for React's rendering performance.
                 hover // Adds a hover effect to the row.
@@ -94,6 +135,20 @@ const StudentTable = ({ students, onEdit, onDelete }) => {
                   <Tooltip title="View Profile">
                     <IconButton onClick={() => navigate(`/students/${student.id}`)} aria-label={`view ${student.name} profile`}>
                       <VisibilityOutlined fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Progress Tracker with AI">
+                    <IconButton
+                      onClick={() => onProgressTracker(student)}
+                      aria-label={`track ${student.name} progress`}
+                      sx={{
+                        color: 'primary.main',
+                        '&:hover': {
+                          backgroundColor: 'primary.lighter'
+                        }
+                      }}
+                    >
+                      <TrendingUpIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
                   <Tooltip title="Edit Student">

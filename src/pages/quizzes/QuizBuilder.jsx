@@ -50,11 +50,15 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import InfoIcon from '@mui/icons-material/Info';
 import DownloadIcon from '@mui/icons-material/Download';
+import ImageIcon from '@mui/icons-material/Image';
+import CloseIcon from '@mui/icons-material/Close';
 
 // --- Service Import ---
 import quizService from '../../services/quizService';
 import classService from '../../services/classService';
 import { useSnackbar } from '../../hooks/useSnackbar';
+import useNumberInput from '../../hooks/useNumberInput';
+import MathInputWithPreview from '../../components/common/MathInputWithPreview';
 
 /**
  * Question type options
@@ -69,7 +73,7 @@ const QUESTION_TYPES = [
 /**
  * Question Editor Component
  */
-const QuestionEditor = ({ question, index, onChange, onDelete, onDuplicate }) => {
+const QuestionEditor = ({ question, index, onChange, onDelete, onDuplicate, handleImageUpload, handleImageDelete, uploadingImages }) => {
   const [localQuestion, setLocalQuestion] = useState(question);
   const [shortAnswerText, setShortAnswerText] = useState('');
 
@@ -80,6 +84,27 @@ const QuestionEditor = ({ question, index, onChange, onDelete, onDuplicate }) =>
       setShortAnswerText(question.correct_answer.join('\n'));
     }
   }, [question]);
+
+  // Number input hooks for Points and Time Limit fields
+  const pointsInputProps = useNumberInput(
+    localQuestion.points !== undefined ? localQuestion.points : (localQuestion.question_type === 'poll' ? 0 : 10),
+    (num) => handleChange('points', num),
+    {
+      defaultValue: localQuestion.question_type === 'poll' ? 0 : 10,
+      min: 0,
+      max: 100
+    }
+  );
+
+  const timeLimitInputProps = useNumberInput(
+    localQuestion.time_limit_seconds || 30,
+    (num) => handleChange('time_limit_seconds', num),
+    {
+      defaultValue: 30,
+      min: 5,
+      max: 300
+    }
+  );
 
   const handleChange = (field, value) => {
     const updated = { ...localQuestion, [field]: value };
@@ -207,8 +232,7 @@ const QuestionEditor = ({ question, index, onChange, onDelete, onDuplicate }) =>
               fullWidth
               type="number"
               label="Points"
-              value={localQuestion.points !== undefined ? localQuestion.points : (localQuestion.question_type === 'poll' ? 0 : 10)}
-              onChange={(e) => handleChange('points', parseInt(e.target.value) || 0)}
+              {...pointsInputProps}
               InputProps={{ inputProps: { min: 0, max: 100 } }}
               helperText={localQuestion.question_type === 'poll' ? "Polls typically have 0 points" : ""}
             />
@@ -220,23 +244,90 @@ const QuestionEditor = ({ question, index, onChange, onDelete, onDuplicate }) =>
               fullWidth
               type="number"
               label="Time Limit (seconds)"
-              value={localQuestion.time_limit_seconds || 30}
-              onChange={(e) => handleChange('time_limit_seconds', parseInt(e.target.value) || 30)}
+              {...timeLimitInputProps}
               InputProps={{ inputProps: { min: 5, max: 300 } }}
             />
           </Grid>
 
-          {/* Question Text */}
+          {/* Question Text with Image Upload */}
           <Grid item xs={12}>
-            <TextField
-              fullWidth
-              multiline
-              rows={2}
-              label="Question Text"
-              value={localQuestion.question_text || ''}
-              onChange={(e) => handleChange('question_text', e.target.value)}
-              placeholder="Enter your question here..."
-            />
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+              {/* Question Text Field */}
+              <Box sx={{ flex: 1 }}>
+                <MathInputWithPreview
+                  multiline
+                  rows={2}
+                  label="Question Text"
+                  value={localQuestion.question_text || ''}
+                  onChange={(e) => handleChange('question_text', e.target.value)}
+                  placeholder="Enter your question here... (For math formulas use $ and $$)"
+                  helperText="Tip: Wrap math in $ for inline (e.g., $x^2 + 3$) or $$ for display mode (e.g., $$sqrt(x)$$)"
+                />
+              </Box>
+
+              {/* Image Upload Button */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'center', mt: 1 }}>
+                <Button
+                  variant="outlined"
+                  component="label"
+                  startIcon={<ImageIcon />}
+                  size="small"
+                  disabled={uploadingImages[index]}
+                  sx={{ whiteSpace: 'nowrap', minWidth: 120 }}
+                >
+                  {uploadingImages[index] ? 'Uploading...' : (localQuestion.media_url ? 'Change' : 'Add Image')}
+                  <input
+                    type="file"
+                    hidden
+                    accept="image/png,image/jpeg,image/jpg,image/gif"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        handleImageUpload(index, file);
+                      }
+                      e.target.value = ''; // Reset input
+                    }}
+                  />
+                </Button>
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem', textAlign: 'center' }}>
+                  PNG, JPG, GIF
+                  <br />
+                  (max 5MB)
+                </Typography>
+              </Box>
+            </Box>
+
+            {/* Image Preview (if uploaded) */}
+            {localQuestion.media_url && (
+              <Box sx={{ mt: 2, p: 2, border: '1px solid #e0e0e0', borderRadius: 2, bgcolor: '#f9f9f9' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                    Question Image Preview:
+                  </Typography>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleImageDelete(index)}
+                    color="error"
+                    sx={{ ml: 1 }}
+                  >
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+                <Box sx={{ textAlign: 'center' }}>
+                  <img 
+                    src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${localQuestion.media_url}`}
+                    alt="Question visual"
+                    style={{ 
+                      maxWidth: '100%', 
+                      maxHeight: 200, 
+                      borderRadius: 8,
+                      display: 'inline-block',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                    }}
+                  />
+                </Box>
+              </Box>
+            )}
           </Grid>
 
           {/* Multiple Choice Options */}
@@ -246,7 +337,7 @@ const QuestionEditor = ({ question, index, onChange, onDelete, onDuplicate }) =>
                 Answer Options (Select the correct answer)
               </Typography>
               {(localQuestion.options || ['', '', '', '']).map((option, optionIndex) => (
-                <Box key={optionIndex} sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                <Box key={optionIndex} sx={{ display: 'flex', gap: 1, mb: 1, alignItems: 'flex-start' }}>
                   <FormControlLabel
                     control={
                       <Switch
@@ -256,14 +347,16 @@ const QuestionEditor = ({ question, index, onChange, onDelete, onDuplicate }) =>
                       />
                     }
                     label=""
+                    sx={{ mt: 1 }}
                   />
-                  <TextField
-                    fullWidth
-                    size="small"
-                    label={`Option ${optionIndex + 1}`}
-                    value={option}
-                    onChange={(e) => handleOptionChange(optionIndex, e.target.value)}
-                  />
+                  <Box sx={{ flex: 1 }}>
+                    <MathInputWithPreview
+                      size="small"
+                      label={`Option ${optionIndex + 1}`}
+                      value={option}
+                      onChange={(e) => handleOptionChange(optionIndex, e.target.value)}
+                    />
+                  </Box>
                   {localQuestion.options.length > 2 && (
                     <IconButton
                       size="small"
@@ -317,6 +410,9 @@ const QuestionEditor = ({ question, index, onChange, onDelete, onDuplicate }) =>
                   The system checks if each keyword appears in the student's response (case-insensitive).
                   This is manual keyword validation—enter the exact words, separate with comma or enter.
                 </Typography>
+                <Typography variant="body2" sx={{ mt: 1, fontWeight: 600 }}>
+                  Math Formulas: Students can type formulas using $ syntax (e.g., $x^2 + 3$)
+                </Typography>
               </Alert>
               <TextField
                 fullWidth
@@ -347,8 +443,7 @@ const QuestionEditor = ({ question, index, onChange, onDelete, onDuplicate }) =>
               </Typography>
               {(localQuestion.options || ['', '']).map((option, optionIndex) => (
                 <Box key={optionIndex} sx={{ display: 'flex', gap: 1, mb: 1 }}>
-                  <TextField
-                    fullWidth
+                  <MathInputWithPreview
                     size="small"
                     label={`Option ${optionIndex + 1}`}
                     value={option}
@@ -416,6 +511,15 @@ const QuizBuilder = () => {
   const [classList, setClassList] = useState([]);
   const [classesLoading, setClassesLoading] = useState(true);
 
+  // Pre/Post quiz linking
+  const [quizPhase, setQuizPhase] = useState('normal');
+  const [linkedPreQuizId, setLinkedPreQuizId] = useState(null);
+  const [linkedPreQuiz, setLinkedPreQuiz] = useState(null);
+  const [preQuizList, setPreQuizList] = useState([]);
+  const [preQuizDialogOpen, setPreQuizDialogOpen] = useState(false);
+  const [preQuizLoading, setPreQuizLoading] = useState(false);
+  const [preQuizError, setPreQuizError] = useState(null);
+
   // Questions
   const [questions, setQuestions] = useState([
     {
@@ -446,6 +550,28 @@ const QuizBuilder = () => {
   const [deadlineDuration, setDeadlineDuration] = useState(60);
 
   const { showSnackbar } = useSnackbar();
+  const [uploadingImages, setUploadingImages] = useState({});
+
+  // Number input hooks for deadline duration and AI questions count
+  const deadlineDurationInputProps = useNumberInput(
+    deadlineDuration,
+    setDeadlineDuration,
+    {
+      defaultValue: 60,
+      min: 1,
+      max: 1440
+    }
+  );
+
+  const numQuestionsInputProps = useNumberInput(
+    numQuestions,
+    setNumQuestions,
+    {
+      defaultValue: 10,
+      min: 1,
+      max: 50
+    }
+  );
 
   // NEW: Fetch classes on component mount
   useEffect(() => {
@@ -480,7 +606,14 @@ const QuizBuilder = () => {
       const quiz = await quizService.getQuizById(quizId);
       setQuizTitle(quiz.title);
       setQuizDescription(quiz.description || '');
-      setQuizSettings(quiz.settings || { ...quizSettings, mode: 'live' });
+      const normalizedSettings = quiz.settings ? { ...quiz.settings } : { ...quizSettings, mode: 'live' };
+      if (!normalizedSettings.mode || normalizedSettings.mode === 'synchronous') {
+        normalizedSettings.mode = 'live';
+      }
+      if (['self_paced', 'self-paced', 'sp'].includes(normalizedSettings.mode)) {
+        normalizedSettings.mode = 'self_paced';
+      }
+      setQuizSettings(normalizedSettings);
       if (quiz.settings?.deadline_enabled) {
         setDeadlineEnabled(true);
         setDeadlineDuration(quiz.settings.deadline_minutes || 60);
@@ -489,6 +622,19 @@ const QuizBuilder = () => {
         setDeadlineDuration(60);
       }
       setSelectedClassId(quiz.class_id || ''); // NEW: Load class_id
+      setQuizPhase(quiz.quiz_phase || 'normal');
+      setLinkedPreQuizId(quiz.linked_quiz_id || null);
+      if (quiz.quiz_phase === 'post' && quiz.linked_quiz_id) {
+        try {
+          const linkedQuiz = await quizService.getQuizById(quiz.linked_quiz_id);
+          setLinkedPreQuiz(linkedQuiz);
+        } catch (error) {
+          console.warn('[QuizBuilder] Failed to load linked pre quiz details:', error);
+          setLinkedPreQuiz({ id: quiz.linked_quiz_id, title: 'Linked Pre Quiz' });
+        }
+      } else {
+        setLinkedPreQuiz(null);
+      }
       if (quiz.questions && quiz.questions.length > 0) {
         setQuestions(quiz.questions.sort((a, b) => a.order_index - b.order_index));
       }
@@ -498,6 +644,127 @@ const QuizBuilder = () => {
       setError(err.message || "Failed to load quiz.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const resetPrePostSelection = () => {
+    setQuizPhase('normal');
+    setLinkedPreQuizId(null);
+    setLinkedPreQuiz(null);
+    setPreQuizList([]);
+  };
+
+  const formatModeLabel = (modeValue) => (modeValue === 'self_paced' ? 'Self-paced' : 'Live');
+
+  const getSelectedClassLabel = () => {
+    if (!selectedClassId) {
+      return 'All classes';
+    }
+    const cls = classList.find((c) => c.id === selectedClassId);
+    return cls?.name || 'Unknown class';
+  };
+
+  const fetchPreQuizList = async () => {
+    const modeParam = quizSettings?.mode === 'self_paced' ? 'self_paced' : 'live';
+    const altMode = modeParam === 'live' ? 'self_paced' : 'live';
+    const classParam = selectedClassId || null;
+    const includeAllClasses = !selectedClassId;
+
+    try {
+      setPreQuizLoading(true);
+      setPreQuizError(null);
+      const preQuizzes = await quizService.getFinishedPreQuizzes({
+        class_id: classParam,
+        mode: modeParam,
+        include_all_classes: includeAllClasses
+      });
+
+      if (preQuizzes && preQuizzes.length > 0) {
+        setPreQuizList(preQuizzes);
+        return;
+      }
+
+      // Probe alternate mode for the same class in case the mode is mismatched
+      const altPreQuizzes = await quizService.getFinishedPreQuizzes({
+        class_id: classParam,
+        mode: altMode,
+        include_all_classes: includeAllClasses
+      });
+
+      if (altPreQuizzes && altPreQuizzes.length > 0) {
+        setQuizSettings(prev => ({ ...(prev || {}), mode: altMode }));
+        setPreQuizList(altPreQuizzes);
+        showSnackbar(
+          `No ${formatModeLabel(modeParam)} pre-quizzes found. Switched to ${formatModeLabel(altMode)} to match available pre-quizzes.`,
+          'info'
+        );
+        return;
+      }
+
+      setPreQuizList([]);
+      setPreQuizError(
+        `No eligible pre-quizzes for ${getSelectedClassLabel()} (${formatModeLabel(modeParam)}). ` +
+        'Make sure the pre-quiz is completed, and the class/mode match.'
+      );
+    } catch (error) {
+      console.error('[QuizBuilder] Failed to load pre quizzes:', error);
+      setPreQuizError(error.message || 'Failed to load pre quizzes');
+      setPreQuizList([]);
+    } finally {
+      setPreQuizLoading(false);
+    }
+  };
+
+  const handleOpenPreQuizDialog = async () => {
+    setPreQuizDialogOpen(true);
+    await fetchPreQuizList();
+  };
+
+  const handleClosePreQuizDialog = () => {
+    setPreQuizDialogOpen(false);
+    if (quizPhase === 'post' && !linkedPreQuizId) {
+      setQuizPhase('normal');
+    }
+  };
+
+  const handleSelectPreQuiz = (quiz) => {
+    setLinkedPreQuizId(quiz.id);
+    setLinkedPreQuiz(quiz);
+    if ((quiz.class_id || '') !== selectedClassId) {
+      setSelectedClassId(quiz.class_id || '');
+    }
+    setPreQuizDialogOpen(false);
+  };
+
+  const handleQuizPhaseChange = (value) => {
+    if (value === 'post') {
+      setQuizPhase('post');
+      if (!linkedPreQuizId) {
+        handleOpenPreQuizDialog();
+      }
+      return;
+    }
+
+    setQuizPhase(value);
+    setLinkedPreQuizId(null);
+    setLinkedPreQuiz(null);
+  };
+
+  const handleModeChange = (value) => {
+    setQuizSettings(prev => ({
+      ...(prev || {}),
+      mode: value
+    }));
+
+    if (quizPhase === 'post' || linkedPreQuizId) {
+      resetPrePostSelection();
+    }
+  };
+
+  const handleClassChange = (value) => {
+    setSelectedClassId(value);
+    if (quizPhase === 'post' || linkedPreQuizId) {
+      resetPrePostSelection();
     }
   };
 
@@ -536,9 +803,106 @@ const QuizBuilder = () => {
     setQuestions(newQuestions);
   };
 
+  const handleImageUpload = async (questionIndex, file) => {
+    // Validate file size
+    if (file.size > 5 * 1024 * 1024) {
+      showSnackbar('Image too large (max 5MB)', 'error');
+      return;
+    }
+
+    try {
+      setUploadingImages(prev => ({ ...prev, [questionIndex]: true }));
+
+      // Check if question has an ID
+      let question = questions[questionIndex];
+      
+      if (!question.id) {
+        // Quiz not saved yet - auto-save first
+        showSnackbar('Saving quiz...', 'info');
+        
+        const savedQuizId = await handleSave();
+        
+        if (!savedQuizId) {
+          showSnackbar('Failed to save quiz. Please fix validation errors first.', 'error');
+          setUploadingImages(prev => ({ ...prev, [questionIndex]: false }));
+          return;
+        }
+        
+        // After save in CREATE mode, navigation happens which remounts component
+        // We can't continue in the old component context
+        // So we need to tell the user to click upload again
+        if (!isEditMode) {
+          showSnackbar('Quiz saved! Please click the upload button again to add the image.', 'info');
+          setUploadingImages(prev => ({ ...prev, [questionIndex]: false }));
+          return;
+        }
+        
+        // In EDIT mode, no navigation happens, so we can proceed
+        // But we need to get the updated question from state
+        question = questions[questionIndex];
+        
+        if (!question.id) {
+          showSnackbar('Please try uploading the image again', 'warning');
+          setUploadingImages(prev => ({ ...prev, [questionIndex]: false }));
+          return;
+        }
+      }
+
+      // Create FormData
+      const formData = new FormData();
+      formData.append('file', file);
+
+      // Upload
+      const response = await quizService.uploadQuestionImage(question.id, formData);
+
+      // Update question with media_url
+      const newQuestions = [...questions];
+      newQuestions[questionIndex] = {
+        ...newQuestions[questionIndex],
+        media_url: response.media_url
+      };
+      setQuestions(newQuestions);
+
+      showSnackbar('Image uploaded successfully!', 'success');
+    } catch (error) {
+      console.error('Failed to upload image:', error);
+      showSnackbar(error.message || 'Failed to upload image', 'error');
+    } finally {
+      setUploadingImages(prev => ({ ...prev, [questionIndex]: false }));
+    }
+  };
+
+  const handleImageDelete = async (questionIndex) => {
+    const question = questions[questionIndex];
+    if (!question.id) return;
+
+    try {
+      await quizService.deleteQuestionImage(question.id);
+
+      // Update question to remove media_url
+      const newQuestions = [...questions];
+      newQuestions[questionIndex] = {
+        ...newQuestions[questionIndex],
+        media_url: null
+      };
+      setQuestions(newQuestions);
+
+      showSnackbar('Image deleted successfully', 'success');
+    } catch (error) {
+      console.error('Failed to delete image:', error);
+      showSnackbar(error.message || 'Failed to delete image', 'error');
+    }
+  };
+
   const validateQuiz = () => {
     if (!quizTitle.trim()) {
       return "Quiz title is required.";
+    }
+    if (quizPhase === 'post' && !linkedPreQuizId) {
+      return "Post quizzes must link to a completed pre quiz.";
+    }
+    if (quizPhase !== 'post' && linkedPreQuizId) {
+      return "Linked pre quiz is only allowed for post quizzes.";
     }
     if (questions.length === 0) {
       return "At least one question is required.";
@@ -592,6 +956,8 @@ const QuizBuilder = () => {
       const quizData = {
         title: quizTitle,
         description: quizDescription,
+        quiz_phase: quizPhase,
+        linked_quiz_id: quizPhase === 'post' ? linkedPreQuizId : null,
         settings: {
           ...quizSettings,
           deadline_enabled: quizSettings?.mode === 'self_paced' ? deadlineEnabled : false,
@@ -958,14 +1324,12 @@ const QuizBuilder = () => {
 
             <RadioGroup
               value={quizSettings?.mode || 'live'}
-              onChange={(e) => setQuizSettings(prev => ({
-                ...(prev || {}),
-                mode: e.target.value
-              }))}
+              onChange={(e) => handleModeChange(e.target.value)}
             >
               <FormControlLabel
                 value="live"
                 control={<Radio />}
+                disabled={quizPhase === 'post'}
                 label={
                   <Box>
                     <Typography variant="body1" sx={{ fontWeight: 600 }}>
@@ -980,6 +1344,7 @@ const QuizBuilder = () => {
               <FormControlLabel
                 value="self_paced"
                 control={<Radio />}
+                disabled={quizPhase === 'post'}
                 label={
                   <Box>
                     <Typography variant="body1" sx={{ fontWeight: 600 }}>
@@ -992,6 +1357,58 @@ const QuizBuilder = () => {
                 }
               />
             </RadioGroup>
+          </Paper>
+
+          <Paper sx={{ p: 3, mb: 3 }}>
+            <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+              Quiz Phase
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Set this quiz as a normal quiz, a pre-quiz, or a post-quiz linked to a completed pre-quiz.
+            </Typography>
+
+            <RadioGroup
+              value={quizPhase}
+              onChange={(e) => handleQuizPhaseChange(e.target.value)}
+            >
+              <FormControlLabel
+                value="normal"
+                control={<Radio />}
+                label="Normal quiz (no pre/post)"
+              />
+              <FormControlLabel
+                value="pre"
+                control={<Radio />}
+                label="Pre-quiz"
+              />
+              <FormControlLabel
+                value="post"
+                control={<Radio />}
+                label="Post-quiz (linked to a completed pre-quiz)"
+              />
+            </RadioGroup>
+
+            {quizPhase === 'post' && (
+              <Box sx={{ mt: 2 }}>
+                {linkedPreQuiz ? (
+                  <Alert severity="info" sx={{ mb: 2 }}>
+                    Linked Pre Quiz: {linkedPreQuiz.display_title || linkedPreQuiz.title || 'Pre Quiz'}
+                  </Alert>
+                ) : (
+                  <Alert severity="warning" sx={{ mb: 2 }}>
+                    Select a completed pre-quiz to link this post quiz.
+                  </Alert>
+                )}
+                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <Button variant="outlined" onClick={handleOpenPreQuizDialog}>
+                    {linkedPreQuiz ? 'Change Linked Pre Quiz' : 'Select Pre Quiz'}
+                  </Button>
+                  <Typography variant="caption" color="text.secondary">
+                    Class and mode are locked while Post Quiz is selected.
+                  </Typography>
+                </Box>
+              </Box>
+            )}
           </Paper>
 
           <Paper sx={{ p: 3, mb: 3 }}>
@@ -1021,8 +1438,8 @@ const QuizBuilder = () => {
             <Select
               value={selectedClassId}
               label="Class (Optional - for student roster tracking)"
-              onChange={(e) => setSelectedClassId(e.target.value)}
-              disabled={classesLoading}
+              onChange={(e) => handleClassChange(e.target.value)}
+              disabled={classesLoading || quizPhase === 'post'}
             >
               <MenuItem value="">
                 <em>No Class (All Students Can Join)</em>
@@ -1086,6 +1503,9 @@ const QuizBuilder = () => {
               onChange={handleQuestionChange}
               onDelete={deleteQuestion}
               onDuplicate={duplicateQuestion}
+              handleImageUpload={handleImageUpload}
+              handleImageDelete={handleImageDelete}
+              uploadingImages={uploadingImages}
             />
           ))}
 
@@ -1288,8 +1708,7 @@ const QuizBuilder = () => {
                   <TextField
                     type="number"
                     label="Time Limit (Minutes)"
-                    value={deadlineDuration}
-                    onChange={(e) => setDeadlineDuration(parseInt(e.target.value, 10) || 60)}
+                    {...deadlineDurationInputProps}
                     InputProps={{
                       inputProps: { min: 1, max: 1440 }
                     }}
@@ -1345,6 +1764,74 @@ const QuizBuilder = () => {
           <Button onClick={handlePublish} variant="contained" disabled={isSaving}>
             Publish
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Pre-Quiz Selection Dialog */}
+      <Dialog open={preQuizDialogOpen} onClose={handleClosePreQuizDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>Select a Completed Pre-Quiz</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Only completed pre-quizzes with the same class and mode are available.
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
+            Current filter: {getSelectedClassLabel()} • {formatModeLabel(quizSettings?.mode === 'self_paced' ? 'self_paced' : 'live')}
+          </Typography>
+
+          {preQuizLoading && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+              <CircularProgress />
+            </Box>
+          )}
+
+          {!preQuizLoading && preQuizError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {preQuizError}
+            </Alert>
+          )}
+
+          {!preQuizLoading && !preQuizError && preQuizList.length === 0 && (
+            <Alert severity="info">
+              No eligible pre-quizzes found. Complete a pre-quiz session first.
+            </Alert>
+          )}
+
+          {!preQuizLoading && !preQuizError && preQuizList.length > 0 && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {preQuizList.map((quiz) => (
+                <Box
+                  key={quiz.id}
+                  sx={{
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 1,
+                    p: 2,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: 2
+                  }}
+                >
+                  <Box>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                      {quiz.display_title || quiz.title}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {quiz.question_count || 0} questions • {quiz.class_id
+                        ? (classList.find((cls) => cls.id === quiz.class_id)?.name || 'Unknown class')
+                        : 'No class'}
+                    </Typography>
+                  </Box>
+                  <Button variant="outlined" onClick={() => handleSelectPreQuiz(quiz)}>
+                    Select
+                  </Button>
+                </Box>
+              ))}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClosePreQuizDialog}>Cancel</Button>
         </DialogActions>
       </Dialog>
 
@@ -1413,8 +1900,7 @@ const QuizBuilder = () => {
                   fullWidth
                   type="number"
                   label="Number of Questions to Generate"
-                  value={numQuestions}
-                  onChange={(e) => setNumQuestions(parseInt(e.target.value) || 10)}
+                  {...numQuestionsInputProps}
                   sx={{ mb: 3 }}
                   disabled={aiParsing}
                   InputProps={{ inputProps: { min: 1, max: 50 } }}

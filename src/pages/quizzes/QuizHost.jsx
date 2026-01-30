@@ -50,6 +50,7 @@ import CheckIcon from '@mui/icons-material/Check';
 
 // --- Service Import ---
 import quizService from '../../services/quizService';
+import useNumberInput from '../../hooks/useNumberInput';
 
 // --- QR Code Import ---
 import { QRCodeSVG } from 'qrcode.react';
@@ -450,6 +451,31 @@ const QuizHost = () => {
   const [autoAdvanceEnabled, setAutoAdvanceEnabled] = useState(true);
   const [cooldownSeconds, setCooldownSeconds] = useState(10);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false); // FIX #5: Loading state for config
+
+  // Number input hook for cooldown seconds with custom onChange for debounced API updates
+  const cooldownInputProps = useNumberInput(
+    cooldownSeconds,
+    (newValue) => {
+      setCooldownSeconds(newValue);
+
+      // Trigger debounced API call when value changes (part of original logic)
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+
+      if (autoAdvanceEnabled) {
+        debounceTimerRef.current = setTimeout(() => {
+          console.log('[QuizHost] Debounced auto-advance update:', newValue);
+          handleToggleAutoAdvance(true, newValue);
+        }, 500);
+      }
+    },
+    {
+      defaultValue: 10,
+      min: 1,
+      max: 60
+    }
+  );
 
   // Timer state for teacher display
   const [timeRemaining, setTimeRemaining] = useState(0);
@@ -1250,25 +1276,7 @@ const QuizHost = () => {
                   <TextField
                     label="Cooldown (seconds)"
                     type="number"
-                    value={cooldownSeconds}
-                    onChange={(e) => {
-                      const val = Math.max(1, parseInt(e.target.value) || 10);
-                      setCooldownSeconds(val);
-
-                      // FIX #2: Debounce API calls to prevent race conditions
-                      // Clear existing debounce timer
-                      if (debounceTimerRef.current) {
-                        clearTimeout(debounceTimerRef.current);
-                      }
-
-                      // Wait 500ms after user stops typing before calling API
-                      if (autoAdvanceEnabled) {
-                        debounceTimerRef.current = setTimeout(() => {
-                          console.log('[QuizHost] Debounced auto-advance update:', val);
-                          handleToggleAutoAdvance(true, val);
-                        }, 500);
-                      }
-                    }}
+                    {...cooldownInputProps}
                     disabled={!autoAdvanceEnabled}
                     size="small"
                     sx={{ ml: 2, width: 150 }}
@@ -1357,6 +1365,20 @@ const QuizHost = () => {
                 <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
                   {currentQuestion.text}
                 </Typography>
+                {currentQuestion.media_url && (
+                  <Box sx={{ mb: 2, textAlign: 'center' }}>
+                    <img
+                      src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${currentQuestion.media_url}`}
+                      alt="Question visual"
+                      style={{
+                        maxWidth: '100%',
+                        maxHeight: 300,
+                        borderRadius: 8,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                      }}
+                    />
+                  </Box>
+                )}
                 {currentQuestion.options && (
                   <Grid container spacing={2}>
                     {currentQuestion.options.map((option, index) => (

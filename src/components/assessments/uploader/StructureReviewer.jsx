@@ -8,6 +8,32 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+import useNumberInput from '../../../hooks/useNumberInput';
+
+// Helper component for max score input with empty state support
+const MaxScoreField = ({ value, onChange, disabled }) => {
+  const inputProps = useNumberInput(
+    value || 0,
+    onChange,
+    {
+      defaultValue: 0,
+      min: 1,
+      max: 1000
+    }
+  );
+
+  return (
+    <TextField
+      type="number"
+      label="Max Score"
+      {...inputProps}
+      disabled={disabled}
+      sx={{ maxWidth: '150px' }}
+      inputProps={{ min: 1 }}
+      placeholder="e.g., 10"
+    />
+  );
+};
 
 const StructureReviewer = ({ config, dispatch, disabled }) => {
   // All handler functions are correct and remain unchanged.
@@ -77,15 +103,10 @@ const StructureReviewer = ({ config, dispatch, disabled }) => {
                         helperText="Key points for marking and grading criteria"
                       />
 
-                      <TextField
-                        type="number"
-                        label="Max Score"
-                        value={q.maxScore || ''}
-                        onChange={(e) => handleQuestionUpdate(section.id, q.id, 'maxScore', parseInt(e.target.value, 10) || 0)}
+                      <MaxScoreField
+                        value={q.maxScore || 0}
+                        onChange={(value) => handleQuestionUpdate(section.id, q.id, 'maxScore', value)}
                         disabled={disabled}
-                        sx={{ maxWidth: '150px' }}
-                        inputProps={{ min: 1 }}
-                        placeholder="e.g., 10"
                       />
 
                     </Stack>

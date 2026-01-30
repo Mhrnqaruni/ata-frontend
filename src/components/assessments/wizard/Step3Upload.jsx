@@ -7,7 +7,17 @@ import FileUploadZone from '../../../components/common/FileUploadZone';
 
 const Step3Upload = ({ state, dispatch, disabled }) => (
     <>
-        <FileUploadZone onDrop={acceptedFiles => dispatch({ type: 'ADD_ANSWER_SHEETS', payload: acceptedFiles })} disabled={disabled} />
+        <FileUploadZone
+            onDrop={acceptedFiles => dispatch({ type: 'ADD_ANSWER_SHEETS', payload: acceptedFiles })}
+            disabled={disabled}
+            accept={{
+                'application/pdf': ['.pdf'],
+                'image/jpeg': ['.jpeg', '.jpg'],
+                'image/png': ['.png'],
+                'image/gif': ['.gif'],
+                'image/webp': ['.webp']
+            }}
+        />
         <List sx={{ mt: 2, maxHeight: 300, overflow: 'auto' }}>
           {state.answerSheetFiles.map(file => (
             <ListItem key={file.path || file.name} secondaryAction={<IconButton edge="end" onClick={() => dispatch({ type: 'REMOVE_ANSWER_SHEET', payload: file.name })} disabled={disabled}><DeleteIcon /></IconButton>}>

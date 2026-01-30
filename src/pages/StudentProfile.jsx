@@ -1,10 +1,127 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link as RouterLink } from 'react-router-dom';
-import { Box, Typography, Paper, CircularProgress, Alert, Button, Chip, Card, CardContent, Breadcrumbs, Link, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, useTheme, Dialog, DialogTitle, DialogContent, DialogActions, Grid, Divider, Snackbar } from '@mui/material';
+import { Box, Typography, Paper, CircularProgress, Alert, Button, Chip, Card, CardContent, Breadcrumbs, Link, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel, useTheme, Dialog, DialogTitle, DialogContent, DialogActions, Grid, Divider, Snackbar, Tooltip, IconButton } from '@mui/material';
 import { useAuth } from '../hooks/useAuth';
 import studentService from '../services/studentService';
 import reviewService from '../services/reviewService';
 import api from '../services/api';
+import useTableSort from '../hooks/useTableSort';
+import FloatingChatWindow from '../components/chatbot/FloatingChatWindow';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+
+/**
+ * AssessmentsTable component with sorting capability
+ * Extracted to allow use of hooks (can't use hooks in map)
+ */
+const AssessmentsTable = ({ assessments, theme, renderTypeChip, renderMarkCell, handleDownloadReport, handleDownloadQuizReport }) => {
+    // Configure sortable columns
+    const columnConfig = {
+        assessmentName: { type: 'string' },
+        createdAt: { type: 'date' },
+        totalScore: { type: 'number' }
+    };
+
+    // Use sorting hook - default sort by date descending (most recent first)
+    const { sortedData, requestSort, sortColumn, sortDirection } = useTableSort(
+        assessments || [],
+        columnConfig,
+        'createdAt',
+        'desc'
+    );
+
+    if (!assessments || assessments.length === 0) {
+        return <Alert severity="info">No assessments for this class yet.</Alert>;
+    }
+
+    return (
+        <TableContainer>
+            <Table aria-label="assessments table">
+                <TableHead sx={{ backgroundColor: theme.palette.grey[100] }}>
+                    <TableRow>
+                        <TableCell sx={{ fontWeight: 600 }}>Type</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>
+                            <TableSortLabel
+                                active={sortColumn === 'assessmentName'}
+                                direction={sortColumn === 'assessmentName' ? sortDirection : 'asc'}
+                                onClick={() => requestSort('assessmentName')}
+                            >
+                                Assessment
+                            </TableSortLabel>
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>
+                            <TableSortLabel
+                                active={sortColumn === 'createdAt'}
+                                direction={sortColumn === 'createdAt' ? sortDirection : 'asc'}
+                                onClick={() => requestSort('createdAt')}
+                            >
+                                Date
+                            </TableSortLabel>
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>
+                            <TableSortLabel
+                                active={sortColumn === 'totalScore'}
+                                direction={sortColumn === 'totalScore' ? sortDirection : 'asc'}
+                                onClick={() => requestSort('totalScore')}
+                            >
+                                Mark
+                            </TableSortLabel>
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 600 }} align="right">Actions</TableCell>
+                    </TableRow>
+                </TableHead>
+                <TableBody>
+                    {sortedData.map((assessment, index) => (
+                        <TableRow
+                            key={assessment.type === 'quiz' ? `quiz-${assessment.sessionId}` : `exam-${assessment.jobId}`}
+                            hover
+                            sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                        >
+                            <TableCell>
+                                {renderTypeChip(assessment.type)}
+                            </TableCell>
+                            <TableCell component="th" scope="row">
+                                <Typography variant="body1">{assessment.assessmentName}</Typography>
+                            </TableCell>
+                            <TableCell>
+                                <Typography variant="body2" color="text.secondary">
+                                    {assessment.createdAt
+                                        ? new Date(assessment.createdAt).toLocaleDateString()
+                                        : 'N/A'}
+                                </Typography>
+                            </TableCell>
+                            <TableCell>
+                                <Typography variant="body1">
+                                    {renderMarkCell(assessment)}
+                                </Typography>
+                            </TableCell>
+                            <TableCell align="right">
+                                {assessment.type === 'exam' && assessment.jobId && assessment.status !== 'ABSENT' && assessment.status !== 'PENDING_REVIEW' && (
+                                    <Button
+                                        size="small"
+                                        variant="outlined"
+                                        onClick={() => handleDownloadReport(assessment.jobId)}
+                                    >
+                                        Download Report
+                                    </Button>
+                                )}
+                                {assessment.type === 'quiz' && assessment.status === 'GRADED' && (
+                                    <Button
+                                        size="small"
+                                        variant="outlined"
+                                        onClick={() => handleDownloadQuizReport(assessment)}
+                                    >
+                                        Download Report
+                                    </Button>
+                                )}
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        </TableContainer>
+    );
+};
 
 const StudentProfile = () => {
     const { student_id } = useParams();
@@ -22,6 +139,9 @@ const StudentProfile = () => {
     // Snackbar state for download notification
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
+
+    // Chat state
+    const [chatOpen, setChatOpen] = useState(false);
 
     useEffect(() => {
         const fetchStudentData = async () => {
@@ -50,16 +170,40 @@ const StudentProfile = () => {
         }
     };
 
-    const handleDownloadQuizReport = async (sessionId, participantId, studentName) => {
+    const handleDownloadQuizReport = async (assessment) => {
         try {
             // Show notification that report is being generated
             setSnackbarMessage('Generating report with AI feedback...');
             setSnackbarOpen(true);
 
-            const response = await api.get(
-                `/api/quiz-sessions/${sessionId}/participants/${participantId}/report.docx`,
-                { responseType: 'blob' }
-            );
+            if (!assessment || !assessment.sessionId) {
+                setSnackbarMessage('Missing quiz session data. Please refresh the page and try again.');
+                return;
+            }
+
+            const isSelfPaced = (assessment.assessmentName || '').includes('(SP)');
+            const studentName = studentData?.name || 'Student';
+            let response;
+
+            if (isSelfPaced) {
+                if (!studentData?.id) {
+                    setSnackbarMessage('Missing student ID. Please refresh the page and try again.');
+                    return;
+                }
+                response = await api.get(
+                    `/api/quiz-sp-sessions/${assessment.sessionId}/student/${studentData.id}/report.docx`,
+                    { responseType: 'blob' }
+                );
+            } else {
+                if (!assessment.participantId) {
+                    setSnackbarMessage('Missing participant data. Please refresh the page and try again.');
+                    return;
+                }
+                response = await api.get(
+                    `/api/quiz-sessions/${assessment.sessionId}/participants/${assessment.participantId}/report.docx`,
+                    { responseType: 'blob' }
+                );
+            }
 
             // Create blob URL
             const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -69,7 +213,7 @@ const StudentProfile = () => {
             link.href = url;
 
             // Extract filename from Content-Disposition header or use default
-            let filename = `${studentName || 'Student'}_Quiz_Report.docx`;
+            let filename = `${studentName}_Quiz_Report.docx`;
             const contentDisposition = response.headers['content-disposition'];
             if (contentDisposition) {
                 const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
@@ -153,6 +297,17 @@ const StudentProfile = () => {
         return <Alert severity="info">No student data found.</Alert>;
     }
 
+    const overallAveragePercent = (() => {
+        const rows = (studentData.classSummaries || []).flatMap((summary) => summary.assessments || []);
+        const gradedRows = rows.filter(
+            (row) => row.status === 'GRADED' && row.totalScore !== null && row.maxTotalScore
+        );
+        if (gradedRows.length === 0) return null;
+        const percentages = gradedRows.map((row) => (row.totalScore / row.maxTotalScore) * 100);
+        const sum = percentages.reduce((acc, val) => acc + val, 0);
+        return sum / percentages.length;
+    })();
+
     return (
         <Box>
             <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
@@ -163,15 +318,51 @@ const StudentProfile = () => {
             </Breadcrumbs>
 
             <Paper sx={{ p: 3, mb: 3 }}>
-                <Typography variant="h4" gutterBottom>{studentData.name}</Typography>
-                <Typography variant="body1" color="text.secondary" gutterBottom>
-                    Student ID: {studentData.studentId}
-                </Typography>
-                <Typography variant="h5" color="primary" sx={{ mt: 2 }}>
-                    Overall Average: {studentData.overallAveragePercent !== null
-                        ? `${studentData.overallAveragePercent.toFixed(2)}%`
-                        : 'N/A'}
-                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
+                    <Box sx={{ flex: 1 }}>
+                        <Typography variant="h4" gutterBottom>{studentData.name}</Typography>
+                        <Typography variant="body1" color="text.secondary" gutterBottom>
+                            Student ID: {studentData.studentId}
+                        </Typography>
+                        <Typography variant="h5" color="primary" sx={{ mt: 2 }}>
+                            Overall Grade: {studentData.overallAveragePercent !== null
+                                ? `${studentData.overallAveragePercent.toFixed(2)}%`
+                                : 'N/A'}
+                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+                            <Typography variant="body1" color="text.secondary">
+                                Overall Average: {overallAveragePercent !== null
+                                    ? `${overallAveragePercent.toFixed(2)}%`
+                                    : 'N/A'}
+                            </Typography>
+                            <Tooltip
+                                title="Overall Average is the simple mean of graded quiz/exam percentages. Overall Grade is weighted by points."
+                                placement="right"
+                            >
+                                <IconButton size="small" aria-label="Overall Average explanation">
+                                    <HelpOutlineIcon fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
+                        </Box>
+                    </Box>
+                    <Button
+                        startIcon={<AutoAwesomeIcon />}
+                        onClick={() => setChatOpen(true)}
+                        sx={{
+                            background: 'linear-gradient(90deg, #20c5e8 0%, #4d47e0 100%)',
+                            color: 'white',
+                            boxShadow: '0 3px 5px 2px rgba(32, 197, 232, .3)',
+                            fontWeight: 'bold',
+                            whiteSpace: 'nowrap',
+                            '&:hover': {
+                                background: 'linear-gradient(90deg, #1ba5c8 0%, #3d37c0 100%)',
+                                boxShadow: '0 4px 6px 2px rgba(32, 197, 232, .4)',
+                            }
+                        }}
+                    >
+                        Analytics with AI
+                    </Button>
+                </Box>
             </Paper>
 
             {studentData.classSummaries.length === 0 ? (
@@ -184,84 +375,33 @@ const StudentProfile = () => {
                                 {classData.className}
                             </Typography>
                             <Typography variant="h6" color="secondary" sx={{ mb: 2 }}>
-                                Class Average: {classData.averagePercent !== null
+                                Class Grade: {classData.averagePercent !== null
                                     ? `${classData.averagePercent.toFixed(2)}%`
                                     : 'N/A'}
                             </Typography>
 
-                            {classData.assessments.length === 0 ? (
-                                <Alert severity="info">No assessments for this class yet.</Alert>
-                            ) : (
-                                <TableContainer>
-                                    <Table aria-label="assessments table">
-                                        <TableHead sx={{ backgroundColor: theme.palette.grey[100] }}>
-                                            <TableRow>
-                                                <TableCell sx={{ fontWeight: 600 }}>Type</TableCell>
-                                                <TableCell sx={{ fontWeight: 600 }}>Assessment</TableCell>
-                                                <TableCell sx={{ fontWeight: 600 }}>Date</TableCell>
-                                                <TableCell sx={{ fontWeight: 600 }}>Mark</TableCell>
-                                                <TableCell sx={{ fontWeight: 600 }} align="right">Actions</TableCell>
-                                            </TableRow>
-                                        </TableHead>
-                                        <TableBody>
-                                            {classData.assessments.map((assessment, index) => (
-                                                <TableRow
-                                                    key={assessment.type === 'quiz' ? `quiz-${assessment.sessionId}` : `exam-${assessment.jobId}`}
-                                                    hover
-                                                    sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                                                >
-                                                    <TableCell>
-                                                        {renderTypeChip(assessment.type)}
-                                                    </TableCell>
-                                                    <TableCell component="th" scope="row">
-                                                        <Typography variant="body1">{assessment.assessmentName}</Typography>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Typography variant="body2" color="text.secondary">
-                                                            {assessment.createdAt
-                                                                ? new Date(assessment.createdAt).toLocaleDateString()
-                                                                : 'N/A'}
-                                                        </Typography>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Typography variant="body1">
-                                                            {renderMarkCell(assessment)}
-                                                        </Typography>
-                                                    </TableCell>
-                                                    <TableCell align="right">
-                                                        {assessment.type === 'exam' && assessment.jobId && assessment.status !== 'ABSENT' && assessment.status !== 'PENDING_REVIEW' && (
-                                                            <Button
-                                                                size="small"
-                                                                variant="outlined"
-                                                                onClick={() => handleDownloadReport(assessment.jobId)}
-                                                            >
-                                                                Download Report
-                                                            </Button>
-                                                        )}
-                                                        {assessment.type === 'quiz' && assessment.status === 'GRADED' && (
-                                                            <Button
-                                                                size="small"
-                                                                variant="outlined"
-                                                                onClick={() => handleDownloadQuizReport(
-                                                                    assessment.sessionId,
-                                                                    assessment.participantId,
-                                                                    studentData.name
-                                                                )}
-                                                            >
-                                                                Download Report
-                                                            </Button>
-                                                        )}
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                </TableContainer>
-                            )}
+                            <AssessmentsTable
+                                assessments={classData.assessments}
+                                theme={theme}
+                                renderTypeChip={renderTypeChip}
+                                renderMarkCell={renderMarkCell}
+                                handleDownloadReport={handleDownloadReport}
+                                handleDownloadQuizReport={handleDownloadQuizReport}
+                            />
                         </CardContent>
                     </Card>
                 ))
             )}
+
+            {/* Floating Chat Window */}
+            <FloatingChatWindow
+                open={chatOpen}
+                onClose={() => setChatOpen(false)}
+                pageContext="student"
+                entityId={studentData?.id}
+                entityType="student"
+                entityName={studentData?.name}
+            />
 
             {/* Quiz Details Modal */}
             <Dialog

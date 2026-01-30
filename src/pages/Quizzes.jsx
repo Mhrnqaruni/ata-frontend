@@ -65,7 +65,7 @@ const EmptyState = ({ onAddQuiz }) => (
 /**
  * Quiz card component displaying a single quiz
  */
-const QuizCard = ({ quiz, onEdit, onDuplicate, onDelete, onStartSession, onStartSPSession, onResumeSPSession, activeSession, onPublish, onReview }) => {
+const QuizCard = ({ quiz, displayTitle, onEdit, onDuplicate, onDelete, onStartSession, onStartSPSession, onResumeSPSession, activeSession, onPublish, onReview }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useNavigate();
 
@@ -112,7 +112,7 @@ const QuizCard = ({ quiz, onEdit, onDuplicate, onDelete, onStartSession, onStart
       <CardContent sx={{ flexGrow: 1 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
           <Typography variant="h5" component="div" sx={{ fontWeight: 600, flex: 1 }}>
-            {quiz.title}
+            {displayTitle}
           </Typography>
           <IconButton size="small" onClick={handleMenuOpen}>
             <MoreVertIcon />
@@ -307,6 +307,13 @@ const Quizzes = () => {
     quizId: null,
     newTitle: ''
   });
+
+  const formatTitle = (quiz) => {
+    if (quiz.display_title) return quiz.display_title;
+    if (quiz.quiz_phase === 'pre') return `Pre - ${quiz.title}`;
+    if (quiz.quiz_phase === 'post') return `Post - ${quiz.title}`;
+    return quiz.title;
+  };
 
   // NEW: Fetch classes for mapping class_id to class_name
   useEffect(() => {
@@ -620,6 +627,7 @@ const Quizzes = () => {
           <Grid item xs={12} sm={6} md={4} lg={3} key={quiz.id}>
             <QuizCard
               quiz={quiz}
+              displayTitle={formatTitle(quiz)}
               onEdit={handleEditQuiz}
               onDuplicate={handleOpenDuplicateDialog}
               onDelete={handleOpenDeleteDialog}

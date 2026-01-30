@@ -16,6 +16,7 @@ import WizardStep from '../../components/assessments/WizardStep';
 import assessmentService from '../../services/assessmentService';
 import classService from '../../services/classService';
 import { useSnackbar } from '../../hooks/useSnackbar';
+import useNumberInput from '../../hooks/useNumberInput';
 import { wizardReducerV2, initialStateV2 } from './NewAssessmentV2.state';
 
 const steps = ['Setup', 'Define Assessment', 'Upload Answers', 'Submit'];
@@ -36,6 +37,17 @@ const NewAssessmentV2 = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [classes, setClasses] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Number input hook for total marks
+  const totalMarksInputProps = useNumberInput(
+    state.totalMarks,
+    (value) => dispatch({ type: 'UPDATE_FIELD', payload: { field: 'totalMarks', value } }),
+    {
+      defaultValue: 0,
+      min: 0,
+      max: 1000
+    }
+  );
 
   // Load class list on mount (unchanged)
   useEffect(() => {
@@ -210,8 +222,7 @@ const NewAssessmentV2 = () => {
                   fullWidth
                   type="number"
                   label="Maximum marks for this exam"
-                  value={state.totalMarks}
-                  onChange={(e) => dispatch({ type: 'UPDATE_FIELD', payload: { field: 'totalMarks', value: parseInt(e.target.value, 10) || 0 } })}
+                  {...totalMarksInputProps}
                   sx={{ mt: 1, ml: 1, maxWidth: '280px' }}
                   variant="outlined"
                   size="small"

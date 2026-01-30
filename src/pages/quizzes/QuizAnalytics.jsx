@@ -15,6 +15,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TableSortLabel,
   Paper,
   Chip,
   IconButton,
@@ -45,8 +46,12 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
+import ImageIcon from '@mui/icons-material/Image';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 
 import quizService from '../../services/quizService';
+import useTableSort from '../../hooks/useTableSort';
+import FloatingChatWindow from '../../components/chatbot/FloatingChatWindow';
 
 /**
  * Summary stat cards component
@@ -112,10 +117,108 @@ const SessionSummaryCards = ({ analytics }) => {
   );
 };
 
+const PrePostComparisonSection = ({ comparison }) => {
+  if (!comparison) {
+    return null;
+  }
+
+  if (comparison.available === false) {
+    return (
+      <Alert severity="info" sx={{ mb: 4 }}>
+        Pre/Post comparison unavailable: {comparison.reason || 'No completed pre session.'}
+      </Alert>
+    );
+  }
+
+  const formatMetricLabel = (key) =>
+    key.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+
+  const formatMetricValue = (key, value) => {
+    if (value === null || value === undefined) return 'N/A';
+    if (key.includes('accuracy_rate')) {
+      return `${(value * 100).toFixed(1)}%`;
+    }
+    if (key.includes('completion_rate')) {
+      return `${Number(value).toFixed(1)}%`;
+    }
+    if (Number.isInteger(value)) return value;
+    return Number(value).toFixed(2);
+  };
+
+  const formatDeltaValue = (key, value) => {
+    if (value === null || value === undefined) return 'N/A';
+    const formatted = formatMetricValue(key, Math.abs(value));
+    const sign = value > 0 ? '+' : value < 0 ? '-' : '';
+    return `${sign}${formatted}`;
+  };
+
+  return (
+    <Card sx={{ mb: 4 }}>
+      <CardContent>
+        <Typography variant="h5" gutterBottom>
+          Pre vs Post Comparison
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          {comparison.pre_quiz_title || 'Pre Quiz'} vs {comparison.post_quiz_title || 'Post Quiz'}
+        </Typography>
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Metric</TableCell>
+                <TableCell align="right">Pre</TableCell>
+                <TableCell align="right">Post</TableCell>
+                <TableCell align="right">Delta</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {Object.entries(comparison.metrics || {}).map(([key, values]) => (
+                <TableRow key={key}>
+                  <TableCell>{formatMetricLabel(key)}</TableCell>
+                  <TableCell align="right">{formatMetricValue(key, values?.pre)}</TableCell>
+                  <TableCell align="right">{formatMetricValue(key, values?.post)}</TableCell>
+                  <TableCell
+                    align="right"
+                    sx={{
+                      color:
+                        values?.delta > 0 ? 'success.main' :
+                        values?.delta < 0 ? 'error.main' :
+                        'text.secondary'
+                    }}
+                  >
+                    {formatDeltaValue(key, values?.delta)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </CardContent>
+    </Card>
+  );
+};
+
 /**
  * Class Students Table - Shows all rostered students with ABSENT status for non-participants
  */
 const ClassStudentsTable = ({ students, sessionId, onDownloadReport }) => {
+  // Configure sortable columns
+  const columnConfig = {
+    rank: { type: 'number' },
+    name: { type: 'string' },
+    score: { type: 'number' },
+    correct_answers: { type: 'number' },
+    accuracy: { type: 'percentage' }
+  };
+
+  // Use sorting hook - default sort by rank ascending
+  const { sortedData, requestSort, sortColumn, sortDirection } = useTableSort(
+    students || [],
+    columnConfig,
+    'rank',
+    'asc'
+  );
+
   if (!students || students.length === 0) {
     return null;
   }
@@ -133,18 +236,58 @@ const ClassStudentsTable = ({ students, sessionId, onDownloadReport }) => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Rank</TableCell>
-                <TableCell>Name</TableCell>
+                <TableCell>
+                  <TableSortLabel
+                    active={sortColumn === 'rank'}
+                    direction={sortColumn === 'rank' ? sortDirection : 'asc'}
+                    onClick={() => requestSort('rank')}
+                  >
+                    Rank
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell>
+                  <TableSortLabel
+                    active={sortColumn === 'name'}
+                    direction={sortColumn === 'name' ? sortDirection : 'asc'}
+                    onClick={() => requestSort('name')}
+                  >
+                    Name
+                  </TableSortLabel>
+                </TableCell>
                 <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Student ID</TableCell>
-                <TableCell align="right">Score</TableCell>
-                <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Correct</TableCell>
-                <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' } }}>Accuracy</TableCell>
+                <TableCell align="right">
+                  <TableSortLabel
+                    active={sortColumn === 'score'}
+                    direction={sortColumn === 'score' ? sortDirection : 'asc'}
+                    onClick={() => requestSort('score')}
+                  >
+                    Score
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+                  <TableSortLabel
+                    active={sortColumn === 'correct_answers'}
+                    direction={sortColumn === 'correct_answers' ? sortDirection : 'asc'}
+                    onClick={() => requestSort('correct_answers')}
+                  >
+                    Correct
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
+                  <TableSortLabel
+                    active={sortColumn === 'accuracy'}
+                    direction={sortColumn === 'accuracy' ? sortDirection : 'asc'}
+                    onClick={() => requestSort('accuracy')}
+                  >
+                    Accuracy
+                  </TableSortLabel>
+                </TableCell>
                 <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Status</TableCell>
                 <TableCell align="center">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {students.map((student) => (
+              {sortedData.map((student) => (
                 <TableRow key={student.student_db_id}>
                   <TableCell>
                     {student.rank ? (
@@ -493,9 +636,36 @@ const QuestionBreakdown = ({ questions }) => {
                 <TableRow key={q.question_id}>
                   <TableCell>{index + 1}</TableCell>
                   <TableCell>
-                    <Typography variant="body2" sx={{ maxWidth: { xs: 150, sm: 300 }, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {q.question_text}
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="body2" sx={{ maxWidth: { xs: 150, sm: 300 }, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {q.question_text}
+                      </Typography>
+                      {q.media_url && (
+                        <Tooltip title="View question image">
+                          <IconButton
+                            size="small"
+                            onClick={() => {
+                              // Open dialog with image
+                              const dialog = document.createElement('div');
+                              dialog.innerHTML = `
+                                <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 9999;" onclick="this.remove()">
+                                  <div style="background: white; padding: 24px; border-radius: 8px; max-width: 90%; max-height: 90%; overflow: auto;" onclick="event.stopPropagation()">
+                                    <h3 style="margin-top: 0;">Question ${index + 1}</h3>
+                                    <p style="margin: 16px 0;">${q.question_text}</p>
+                                    <img src="${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${q.media_url}" alt="Question" style="max-width: 100%; border-radius: 8px;" />
+                                    <button onclick="this.closest('[style*=fixed]').remove()" style="margin-top: 16px; padding: 8px 16px; cursor: pointer;">Close</button>
+                                  </div>
+                                </div>
+                              `;
+                              document.body.appendChild(dialog.firstElementChild);
+                            }}
+                            sx={{ color: 'primary.main' }}
+                          >
+                            <ImageIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </Box>
                   </TableCell>
                   <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                     <Chip label={q.question_type} size="small" variant="outlined" />
@@ -573,6 +743,9 @@ const QuizAnalytics = () => {
   // Individual download notification
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
+
+  // Chat state
+  const [chatOpen, setChatOpen] = useState(false);
 
   useEffect(() => {
     fetchEnhancedAnalyticsData();
@@ -731,24 +904,46 @@ const QuizAnalytics = () => {
             </Typography>
           )}
         </Box>
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, width: { xs: '100%', md: 'auto' } }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, width: { xs: '100%', md: 'auto' }, alignItems: 'center' }}>
           {totalGradedParticipants > 0 && (
             <Button
               variant="contained"
               startIcon={<CloudDownloadIcon />}
               onClick={handleDownloadAllReports}
-              color="primary"
-              fullWidth={{ xs: true, sm: false }}
-              sx={{ whiteSpace: 'nowrap' }}
+              sx={{
+                whiteSpace: 'nowrap',
+                bgcolor: 'primary.main',
+                '&:hover': {
+                  bgcolor: 'primary.dark'
+                }
+              }}
             >
               Download All ({totalGradedParticipants})
             </Button>
           )}
           <Button
+            startIcon={<AutoAwesomeIcon />}
+            onClick={() => setChatOpen(true)}
+            sx={{
+              background: 'linear-gradient(90deg, #20c5e8 0%, #4d47e0 100%)',
+              color: 'white',
+              boxShadow: '0 3px 5px 2px rgba(32, 197, 232, .3)',
+              fontWeight: 'bold',
+              whiteSpace: 'nowrap',
+              '&:hover': {
+                background: 'linear-gradient(90deg, #1ba5c8 0%, #3d37c0 100%)',
+                boxShadow: '0 4px 6px 2px rgba(32, 197, 232, .4)',
+              }
+            }}
+          >
+            Analytics with AI
+          </Button>
+          <Button
             variant="outlined"
-            startIcon={<DownloadIcon />}
+            size="small"
+            startIcon={<DownloadIcon fontSize="small" />}
             onClick={handleExportCSV}
-            fullWidth={{ xs: true, sm: false }}
+            sx={{ whiteSpace: 'nowrap' }}
           >
             Export CSV
           </Button>
@@ -757,6 +952,11 @@ const QuizAnalytics = () => {
 
       {/* Summary Cards */}
       <SessionSummaryCards analytics={enhancedData.analytics} />
+
+      {/* Pre/Post Comparison */}
+      {enhancedData.analytics.pre_post_comparison && (
+        <PrePostComparisonSection comparison={enhancedData.analytics.pre_post_comparison} />
+      )}
 
       {/* PARTICIPANTS SECTION - FIRST PRIORITY */}
       <Typography variant="h4" gutterBottom sx={{ mt: 4, mb: 3 }}>
@@ -836,6 +1036,16 @@ const QuizAnalytics = () => {
       {enhancedData.analytics.question_analytics && enhancedData.analytics.question_analytics.length > 0 && (
         <QuestionBreakdown questions={enhancedData.analytics.question_analytics} />
       )}
+
+      {/* Floating Chat Window */}
+      <FloatingChatWindow
+        open={chatOpen}
+        onClose={() => setChatOpen(false)}
+        pageContext="quiz_session"
+        entityId={enhancedData.sessionId}
+        entityType="quiz_session"
+        entityName={enhancedData.analytics.quiz_title || 'Quiz'}
+      />
 
       {/* Download Progress Dialog */}
       <DownloadProgressDialog

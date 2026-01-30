@@ -2,6 +2,9 @@
 
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import path from 'path';
+
+const userHome = process.env.USERPROFILE || process.env.HOME;
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -23,5 +26,9 @@ export default defineConfig({
       // though Vite may handle localhost implicitly.
       ".localhost",
     ],
+    // Allow KaTeX fonts when resolved outside the project root (dev only).
+    fs: {
+      allow: [path.resolve(__dirname), userHome].filter(Boolean)
+    }
   },
 });
