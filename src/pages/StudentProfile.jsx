@@ -186,12 +186,12 @@ const StudentProfile = () => {
             let response;
 
             if (isSelfPaced) {
-                if (!studentData?.id) {
-                    setSnackbarMessage('Missing student ID. Please refresh the page and try again.');
+                if (!studentData?.studentId) {
+                    setSnackbarMessage('Missing student school ID. Please refresh the page and try again.');
                     return;
                 }
                 response = await api.get(
-                    `/api/quiz-sp-sessions/${assessment.sessionId}/student/${studentData.id}/report.docx`,
+                    `/api/quiz-sp-sessions/${assessment.sessionId}/student/${studentData.studentId}/report.docx`,
                     { responseType: 'blob' }
                 );
             } else {
