@@ -32,7 +32,7 @@ const Login = () => {
   // --- Hook Initialization ---
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { login, isAuthenticated, isAuthLoading, user } = useAuth();
   const { showSnackbar } = useSnackbar();
   const { mode } = useThemeMode();
 
@@ -64,6 +64,20 @@ const Login = () => {
     }
   }, []);
 
+  useEffect(() => {
+    if (isAuthLoading || isLoading || !isAuthenticated) {
+      return;
+    }
+
+    if (user?.role === 'admin') {
+      navigate('/admin', { replace: true });
+    } else if (user?.role === 'parent') {
+      navigate('/parent-pending', { replace: true });
+    } else if (user?.role === 'teacher') {
+      navigate('/', { replace: true });
+    }
+  }, [isAuthLoading, isLoading, isAuthenticated, user, navigate]);
+
 
   // --- Event Handlers ---
   const handleSubmit = async (event) => {
@@ -83,7 +97,7 @@ const Login = () => {
     }
 
     try {
-      await login(formEmail, formPassword);
+      const currentUser = await login(formEmail, formPassword);
       showSnackbar('Login successful!', 'success');
 
       if (rememberMe) {
@@ -92,9 +106,10 @@ const Login = () => {
         localStorage.removeItem('rememberedEmail');
       }
 
-      // Check if this is the admin user
-      if (formEmail === 'mehran.gharuni.admin@admin.com') {
+      if (currentUser?.role === 'admin') {
         navigate('/admin', { replace: true });
+      } else if (currentUser?.role === 'parent') {
+        navigate('/parent-pending', { replace: true });
       } else {
         navigate(from, { replace: true });
       }

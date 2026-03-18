@@ -7,9 +7,9 @@ import { useNavigate, Link as RouterLink } from 'react-router-dom';
 // --- MUI Component Imports ---
 import {
   Box, Paper, Typography, TextField, Button, Stack,
-  CircularProgress, Alert, Link, Avatar, FormControlLabel, Checkbox
+  CircularProgress, Alert, Link, FormControlLabel, Checkbox,
+  FormControl, FormLabel, RadioGroup, Radio
 } from '@mui/material';
-import PersonAddOutlinedIcon from '@mui/icons-material/PersonAddOutlined';
 
 // --- Custom Hook & Asset Imports ---
 import { useAuth } from '../hooks/useAuth';
@@ -29,7 +29,12 @@ const Register = () => {
   const { mode } = useThemeMode();
 
   // --- Local State Management ---
-  const [formData, setFormData] = useState({ fullName: '', email: '', password: '' });
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    password: '',
+    accountType: 'teacher',
+  });
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
@@ -77,8 +82,14 @@ const Register = () => {
         throw new Error("Please correct the errors before submitting.");
       }
 
-      await register(formData.fullName, formData.email, formData.password);
-      showSnackbar('Account created successfully! Please sign in.', 'success');
+      await register({
+        fullName: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+        accountType: formData.accountType,
+      });
+      const accountLabel = formData.accountType === 'parent' ? 'Parent' : 'Teacher';
+      showSnackbar(`${accountLabel} account created successfully! Please sign in.`, 'success');
       navigate('/login');
     } catch (err) {
       // Errors from the validate function will be caught here,
@@ -130,6 +141,23 @@ const Register = () => {
 
         <Box component="form" onSubmit={handleSubmit} noValidate sx={{ width: '100%' }}>
           <Stack spacing={2}>
+            <FormControl component="fieldset" disabled={isLoading}>
+              <FormLabel component="legend">Account type</FormLabel>
+              <RadioGroup
+                row
+                name="accountType"
+                value={formData.accountType}
+                onChange={handleChange}
+              >
+                <FormControlLabel value="teacher" control={<Radio />} label="Teacher" />
+                <FormControlLabel value="parent" control={<Radio />} label="Parent" />
+              </RadioGroup>
+              <Typography variant="body2" color="text.secondary">
+                {formData.accountType === 'parent'
+                  ? 'Parents use the separate parent portal and can start with no linked students.'
+                  : 'Teachers use the main ATA application with classes, quizzes, assessments, and analytics.'}
+              </Typography>
+            </FormControl>
             <TextField
               required fullWidth id="fullName" label="Full Name" name="fullName"
               autoComplete="name" autoFocus value={formData.fullName} onChange={handleChange}

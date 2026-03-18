@@ -14,8 +14,11 @@ const WS_BASE_URL = IS_PRODUCTION
   ? `wss://${API_BASE_URL.replace(/^https?:\/\//, '')}`
   : `ws://${API_BASE_URL.replace(/^https?:\/\//, '')}`;
 
+const PARENT_PORTAL_URL = import.meta.env.VITE_PARENT_PORTAL_URL || '';
+
 // 4. Export the configured URLs for the rest of the app to use
 export const config = {
   apiBaseUrl: API_BASE_URL,
   wsBaseUrl: WS_BASE_URL,
+  parentPortalUrl: PARENT_PORTAL_URL,
 };

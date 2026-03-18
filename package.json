@@ -6,7 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "bootstrap:parent-portal": "npm --prefix apps/parent-portal install",
+    "dev:parent-portal": "npm run bootstrap:parent-portal && npm --prefix apps/parent-portal run dev",
+    "build:parent-portal": "npm run bootstrap:parent-portal && npm --prefix apps/parent-portal run build",
+    "preview:parent-portal": "npm run bootstrap:parent-portal && npm --prefix apps/parent-portal run preview",
+    "build:all": "npm run build && npm run build:parent-portal"
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.2.4",

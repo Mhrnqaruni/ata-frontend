@@ -22,11 +22,13 @@ import { useAuth } from '../../hooks/useAuth';
  *
  * @param {object} props
  * @param {React.ReactNode} props.children - The component/page to render if the user is authenticated.
+ * @param {string} [props.requiredRole] - Optional role required to render the route.
+ * @param {string} [props.redirectTo] - Optional override for the unauthorized redirect path.
  */
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ children, requiredRole, redirectTo }) => {
   // --- Consume Global Authentication State ---
   // We get both the authentication status and the initial loading status from our context.
-  const { isAuthenticated, isAuthLoading } = useAuth();
+  const { isAuthenticated, isAuthLoading, user } = useAuth();
   
   // The `useLocation` hook from React Router gives us information about the current URL.
   // We need this to remember where the user was trying to go before we redirected them.
@@ -67,6 +69,17 @@ const ProtectedRoute = ({ children }) => {
     //   then access this state to redirect the user back to their original
     //   destination after they successfully log in.
     return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+
+  if (requiredRole && user?.role !== requiredRole) {
+    const fallbackPath =
+      redirectTo ??
+      (user?.role === 'admin'
+        ? '/admin'
+        : user?.role === 'parent'
+          ? '/parent-pending'
+          : '/login');
+    return <Navigate to={fallbackPath} replace />;
   }
 
   // --- 3. Handle the Authenticated State ---

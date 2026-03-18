@@ -10,13 +10,13 @@ import authService from '../services/authService';
 
 // --- Create the Context ---
 // The context is initialized with a default shape that reflects the provider's value.
-const AuthContext = createContext({
+  const AuthContext = createContext({
   user: null,
   isAuthenticated: false,
   isAuthLoading: true, // Application starts in an "auth-loading" state.
   login: async (email, password) => {},
   logout: () => {},
-  register: async (fullName, email, password) => {},
+  register: async (_payload) => {},
 });
 
 /**
@@ -76,16 +76,17 @@ export const AuthProvider = ({ children }) => {
       // 4. Update the global state.
       setUser(currentUser);
       // The calling component (`Login.jsx`) will be responsible for navigation.
+      return currentUser;
     } catch (error) {
       // Re-throw the error so the Login page can display it to the user.
       throw error;
     }
   }, []);
 
-  const register = useCallback(async (fullName, email, password) => {
+  const register = useCallback(async ({ fullName, email, password, accountType }) => {
     // We re-throw the error so the Register page can display it.
     // On success, this function does nothing further. The user must manually log in.
-    await authService.register(fullName, email, password);
+    await authService.register({ fullName, email, password, accountType });
   }, []);
 
   const logout = useCallback(() => {

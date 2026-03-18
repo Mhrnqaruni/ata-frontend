@@ -1,0 +1,36 @@
+{
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/parent-portal/",
+      "permanent": false
+    },
+    {
+      "source": "/parent-portal",
+      "destination": "/parent-portal/",
+      "permanent": false
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/parent-portal/assets/(.*)",
+      "destination": "/assets/$1"
+    },
+    {
+      "source": "/parent-portal/icon.png",
+      "destination": "/icon.png"
+    },
+    {
+      "source": "/parent-portal/mst_logo_no_bg.png",
+      "destination": "/mst_logo_no_bg.png"
+    },
+    {
+      "source": "/parent-portal/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/parent-portal/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

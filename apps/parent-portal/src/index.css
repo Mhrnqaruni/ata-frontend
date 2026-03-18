@@ -1,0 +1,147 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * ATA Parent Portal Theme
+ *
+ * Aligns NoobBook's Tailwind/shadcn stack with ATA's purple/neutral visual language
+ * without importing MUI into this frontend.
+ */
+
+@layer base {
+  :root {
+    --background: 220 43% 97%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 260 100% 51%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 251 45% 95%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 220 30% 95%;
+    --muted-foreground: 219 15% 46%;
+
+    --accent: 259 100% 97%;
+    --accent-foreground: 260 100% 35%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 20% 90%;
+    --input: 220 20% 90%;
+    --ring: 260 100% 51%;
+
+    /* Border radius */
+    --radius: 0.5rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+  .dark {
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    background-image:
+      radial-gradient(circle at top left, rgba(84, 3, 255, 0.08), transparent 30%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 250, 252, 0.96));
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Animated audio bars for playing indicator */
+@keyframes audio-bar-1 { 0%, 100% { height: 20%; } 50% { height: 80%; } }
+@keyframes audio-bar-2 { 0%, 100% { height: 60%; } 50% { height: 20%; } }
+@keyframes audio-bar-3 { 0%, 100% { height: 40%; } 50% { height: 100%; } }
+@keyframes audio-bar-4 { 0%, 100% { height: 70%; } 50% { height: 30%; } }
+
+.audio-bar { @apply bg-primary rounded-full; }
+.audio-bar:nth-child(1) { animation: audio-bar-1 1.2s ease-in-out infinite; }
+.audio-bar:nth-child(2) { animation: audio-bar-2 1.2s ease-in-out infinite 0.15s; }
+.audio-bar:nth-child(3) { animation: audio-bar-3 1.2s ease-in-out infinite 0.3s; }
+.audio-bar:nth-child(4) { animation: audio-bar-4 1.2s ease-in-out infinite 0.45s; }
+
+/* Audio seekbar — amber track with lighter unfilled portion */
+.audio-seekbar {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  background: hsl(var(--primary) / 0.2);
+}
+.audio-seekbar::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: hsl(var(--primary) / 0.2);
+}
+.audio-seekbar::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: hsl(var(--primary));
+  margin-top: -3px;
+}
+.audio-seekbar::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: hsl(var(--primary) / 0.2);
+}
+.audio-seekbar::-moz-range-progress {
+  height: 4px;
+  border-radius: 2px;
+  background: hsl(var(--primary));
+}
+.audio-seekbar::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: none;
+  background: hsl(var(--primary));
+}
+
+/* Smooth panel collapse/expand animation
+ * Targets react-resizable-panels flex properties.
+ * ease-out gives a natural deceleration — fast start, smooth stop. */
+[data-panel] {
+  transition: flex-basis 300ms ease-out, flex-grow 300ms ease-out, flex-shrink 300ms ease-out;
+}
+
+/* Disable transition during drag resize so manual resizing stays snappy */
+[data-panel-group]:has([data-resize-handle-state="drag"]) [data-panel] {
+  transition: none !important;
+}

@@ -40,6 +40,7 @@ import PublicReportView from './pages/public/ReportView';
 import Chatbot from './pages/Chatbot';
 import StudentProfile from './pages/StudentProfile';
 import AdminDashboard from './pages/AdminDashboard';
+import ParentPortalPending from './pages/ParentPortalPending';
 import Quizzes from './pages/Quizzes';
 import QuizBuilder from './pages/quizzes/QuizBuilder';
 import QuizHost from './pages/quizzes/QuizHost';
@@ -90,14 +91,35 @@ const ThemedApp = () => {
         <Route path="/quiz/sp/join/:accessCode" element={<QuizSPParticipant />} />
 
         {/* --- ADMIN ROUTE (Special Protected Route) --- */}
-        <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute requiredRole="admin" redirectTo="/">
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/parent-pending"
+          element={
+            <ProtectedRoute requiredRole="parent" redirectTo="/">
+              <ParentPortalPending />
+            </ProtectedRoute>
+          }
+        />
 
         {/* --- [CRITICAL MODIFICATION 4/4: DEFINE PROTECTED ROUTES] --- */}
         {/* This parent Route uses the ProtectedRoute component as its element.
             ANY route nested inside this one will first be checked by ProtectedRoute.
             If the user is not authenticated, they will be redirected to /login
             and none of the child routes will ever be rendered. */}
-        <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+        <Route
+          element={
+            <ProtectedRoute requiredRole="teacher">
+              <AppLayout />
+            </ProtectedRoute>
+          }
+        >
           {/* All application pages that require a user to be logged in go here. */}
           <Route path="/" element={<Home />} />
           <Route path="/classes" element={<Classes />} />

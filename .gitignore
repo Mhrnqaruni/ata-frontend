@@ -74,3 +74,5 @@ dist-ssr
 
 # Local secret environment variables (as per our handbook)
 .env.local
+.vercel/
+.railway/

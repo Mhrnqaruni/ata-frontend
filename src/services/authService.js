@@ -16,21 +16,24 @@ const authService = {
   /**
    * Sends a registration request to the backend.
    *
-   * @param {string} fullName - The user's full name.
-   * @param {string} email - The user's email address.
-   * @param {string} password - The user's plain-text password.
+   * @param {object} payload
+   * @param {string} payload.fullName - The user's full name.
+   * @param {string} payload.email - The user's email address.
+   * @param {string} payload.password - The user's plain-text password.
+   * @param {string} payload.accountType - The selected public account type.
    * @returns {Promise<object>} A promise that resolves to the new user's public
    *                            data (id, email, fullName) on success.
    * @throws {Error} Throws an error with a user-friendly message on failure.
    */
-  register: async (fullName, email, password) => {
+  register: async ({ fullName, email, password, accountType = 'teacher' }) => {
     try {
       // The payload object uses standard JavaScript camelCase.
       // A future interceptor in `apiClient` can handle conversion to snake_case if needed.
       const payload = {
-        fullName: fullName,
-        email: email,
-        password: password,
+        fullName,
+        email,
+        password,
+        accountType,
       };
       // Make a POST request to the /api/auth/register endpoint.
       const response = await apiClient.post('/api/auth/register', payload);
