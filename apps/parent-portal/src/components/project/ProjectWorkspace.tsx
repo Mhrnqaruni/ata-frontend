@@ -4,7 +4,7 @@ import { SourcesPanel } from '../sources';
 import { ChatPanel } from '../chat';
 import { StudioPanel, type StudioSignal } from '../studio';
 import { ProjectHeader } from './ProjectHeader';
-import { CaretLeft, CaretRight, Warning } from '@phosphor-icons/react';
+import { CaretLeft, CaretRight } from '@phosphor-icons/react';
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -58,15 +58,6 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({
         : canUseAiForChild(linkedStudentId)
     );
   const canUseStudyChat = canUseAiWorkspace && (!isParentWorkspace || isToolAllowed('study_chat'));
-  const manualLearnerName =
-    typeof project.context_meta?.manual_learner_name === 'string'
-      ? project.context_meta.manual_learner_name
-      : null;
-  const workspaceNotice = child
-    ? `${child.student_name} child-linked workspace`
-    : manualLearnerName
-      ? `${manualLearnerName} manual learner workspace`
-      : 'Standalone parent workspace';
 
   const handleCostsChange = useCallback(() => {
     // Header cost tracking is intentionally hidden in parent runtime.
@@ -203,10 +194,6 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({
           </ResizablePanelGroup>
         </div>
 
-        <div className="flex items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground">
-          <Warning size={12} />
-          <span>{workspaceNotice}. MST Parent Portal AI can make mistakes. Please verify important information.</span>
-        </div>
       </div>
     </div>
   );
