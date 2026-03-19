@@ -1,6 +1,18 @@
 {
   "rewrites": [
     {
+      "source": "/parent-portal",
+      "destination": "https://mst-parent-portal.vercel.app/parent-portal/"
+    },
+    {
+      "source": "/parent-portal/",
+      "destination": "https://mst-parent-portal.vercel.app/parent-portal/"
+    },
+    {
+      "source": "/parent-portal/:path*",
+      "destination": "https://mst-parent-portal.vercel.app/parent-portal/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
