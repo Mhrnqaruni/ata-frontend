@@ -57,7 +57,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="container mx-auto px-4 h-full flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Ghost size={24} weight="fill" className="text-primary" />
-            <h1 className="text-lg font-semibold">NoobBook</h1>
+            <h1 className="text-lg font-semibold">MST Parent Portal</h1>
           </div>
 
           <div className="flex items-center gap-2">

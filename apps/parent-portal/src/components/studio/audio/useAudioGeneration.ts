@@ -4,9 +4,10 @@
  * Includes playback state management with a shared audio element.
  */
 
+import axios from 'axios';
 import { useState, useRef } from 'react';
 import { audioAPI, type AudioJob } from '@/lib/api/studio';
-import { api, getAuthUrl } from '@/lib/api/client';
+import { getAuthUrl, resolveApiUrl } from '@/lib/api/client';
 import type { StudioSignal } from '../types';
 import { useToast } from '../../ui/toast';
 import { createLogger } from '@/lib/logger';
@@ -218,7 +219,7 @@ export const useAudioGeneration = (projectId: string) => {
     if (!job.audio_url) return;
 
     try {
-      const response = await api.get(job.audio_url, { responseType: 'blob' });
+      const response = await axios.get(resolveApiUrl(job.audio_url), { responseType: 'blob' });
       const blob = new Blob([response.data]);
       const url = URL.createObjectURL(blob);
 

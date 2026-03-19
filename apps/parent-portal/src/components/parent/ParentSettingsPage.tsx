@@ -324,7 +324,7 @@ export const ParentSettingsPage: React.FC = () => {
             <CardTitle className="flex items-center gap-2">
               <Link size={18} className="text-primary" />
               Connection requests
-              <span className="text-xs font-normal text-muted-foreground">(write community form)</span>
+              <span className="text-xs font-normal text-muted-foreground">(comming soon)</span>
             </CardTitle>
             <CardDescription>
               Request access to real MST students. Admin approval is still required before any child data becomes visible.

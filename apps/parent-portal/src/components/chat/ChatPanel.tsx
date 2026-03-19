@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
 import { Sparkle } from '@phosphor-icons/react';
 import { Skeleton } from '../ui/skeleton';
 import { chatsAPI } from '@/lib/api/chats';
@@ -35,6 +36,27 @@ interface ChatPanelProps {
   canUseStudyChat?: boolean;
   linkedStudentId?: string | null;
 }
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const getRequestErrorMessage = (err: unknown, fallback: string): string => {
+  if (axios.isAxiosError(err)) {
+    const apiError = err.response?.data;
+    if (apiError && typeof apiError === 'object' && 'error' in apiError) {
+      const message = apiError.error;
+      if (typeof message === 'string' && message.trim()) {
+        return message;
+      }
+    }
+    if (typeof err.message === 'string' && err.message.trim()) {
+      return err.message;
+    }
+  }
+  if (err instanceof Error && err.message.trim()) {
+    return err.message;
+  }
+  return fallback;
+};
 
 export const ChatPanel: React.FC<ChatPanelProps> = ({
   projectId,
@@ -90,12 +112,22 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
    * Load sources for the project (for header display)
    */
   const loadSources = async () => {
-    try {
-      const data = await sourcesAPI.listSources(projectId);
-      setSources(data);
-    } catch (err) {
-      log.error({ err }, 'failed to Lloading sourcesE');
+    let lastError: unknown = null;
+
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const data = await sourcesAPI.listSources(projectId);
+        setSources(data);
+        return;
+      } catch (err) {
+        lastError = err;
+        if (attempt === 0) {
+          await delay(800);
+        }
+      }
     }
+
+    log.error({ err: lastError }, 'failed to load sources');
   };
 
   /**
@@ -117,9 +149,26 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
    * Load all chats for the project
    */
   const loadChats = async () => {
+    let lastError: unknown = null;
+
     try {
       setLoading(true);
-      const chats = await chatsAPI.listChats(projectId);
+      let chats: ChatMetadata[] = [];
+
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          chats = await chatsAPI.listChats(projectId);
+          break;
+        } catch (err) {
+          lastError = err;
+          if (attempt === 0) {
+            await delay(800);
+          } else {
+            throw err;
+          }
+        }
+      }
+
       setAllChats(chats);
 
       // If we have chats and no active chat, load the first one
@@ -127,8 +176,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
         await loadFullChat(chats[0].id);
       }
     } catch (err) {
-      log.error({ err }, 'failed to Lloading chatsE');
-      error('Failed to load chats');
+      log.error({ err }, 'failed to load chats');
+      error(getRequestErrorMessage(lastError ?? err, 'Failed to load chats'));
     } finally {
       setLoading(false);
     }
@@ -264,7 +313,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
         }
       }, 4000);
     } catch (err) {
-      log.error({ err }, 'failed to Lsending messageE');
+      log.error({ err }, 'failed to send message');
       error('Failed to send message');
       // Remove the optimistic message on error
       setActiveChat((prev) => {
@@ -291,7 +340,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
       setShowChatList(false);
       success('New chat created');
     } catch (err) {
-      log.error({ err }, 'failed to Lcreating chatE');
+      log.error({ err }, 'failed to create chat');
       error('Failed to create chat');
     }
   };

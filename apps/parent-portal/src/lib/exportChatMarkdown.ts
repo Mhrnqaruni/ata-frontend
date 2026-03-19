@@ -117,7 +117,7 @@ export async function exportChatAsMarkdown({
   // Messages
   for (const msg of messages) {
     lines.push('');
-    const roleName = msg.role === 'user' ? 'User' : 'NoobBook';
+    const roleName = msg.role === 'user' ? 'User' : 'MST';
     lines.push(`### ${roleName}`);
     lines.push(`*${formatDate(msg.timestamp)}*`);
     lines.push('');

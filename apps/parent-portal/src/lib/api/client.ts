@@ -11,15 +11,31 @@ import { getAccessToken, getRefreshToken, setSession, clearSession } from '../au
 import { createLogger } from '@/lib/logger';
 
 const log = createLogger('api-client');
+const DEFAULT_DEV_API_HOST = 'http://localhost:5001';
+
+function deriveApiHost(apiUrl?: string): string {
+  if (!apiUrl) {
+    return DEFAULT_DEV_API_HOST;
+  }
+  if (apiUrl.startsWith('/')) {
+    return '';
+  }
+  try {
+    return new URL(apiUrl).origin;
+  } catch {
+    return '';
+  }
+}
 
 // Base host URL (without /api/v1 path) - used for file URLs, static assets.
-// When VITE_API_HOST is set to "" (Docker via nginx proxy), same-origin requests
-// are used. When unset (local dev), falls back to localhost:5001.
+const envApiUrl = import.meta.env.VITE_API_URL;
+// When VITE_API_HOST is set to "" (same-origin proxy), relative asset URLs stay same-origin.
+// When VITE_API_URL is present but VITE_API_HOST is omitted, derive the host from VITE_API_URL
+// so browser elements do not fall back to localhost in production.
 const envHost = import.meta.env.VITE_API_HOST;
-export const API_HOST = envHost !== undefined ? envHost : 'http://localhost:5001';
+export const API_HOST = envHost !== undefined ? envHost : deriveApiHost(envApiUrl);
 
 // Full API URL (with /api/v1 path) - used for API requests
-const envApiUrl = import.meta.env.VITE_API_URL;
 const API_BASE_URL = envApiUrl !== undefined ? envApiUrl : `${API_HOST}/api/v1`;
 
 export const api = axios.create({
@@ -136,10 +152,25 @@ axios.interceptors.response.use(
  */
 export function getAuthUrl(url: string): string {
   const token = getAccessToken();
-  const fullUrl = url.startsWith('http') ? url : `${API_HOST}${url}`;
+  const fullUrl = resolveApiUrl(url);
   if (!token) return fullUrl;
   const separator = fullUrl.includes('?') ? '&' : '?';
   return `${fullUrl}${separator}token=${token}`;
+}
+
+export function resolveApiUrl(url: string): string {
+  if (url.startsWith('http')) {
+    return url;
+  }
+  if (url.startsWith('/api/')) {
+    return `${API_HOST}${url}`;
+  }
+
+  const normalizedPath = url.startsWith('/') ? url : `/${url}`;
+  if (API_BASE_URL.endsWith('/')) {
+    return `${API_BASE_URL.slice(0, -1)}${normalizedPath}`;
+  }
+  return `${API_BASE_URL}${normalizedPath}`;
 }
 
 export { API_BASE_URL };

@@ -154,7 +154,7 @@ export const DatabaseTab: React.FC<DatabaseTabProps> = ({ isAtLimit, onAddDataba
           </div>
 
           <p className="text-xs text-muted-foreground">
-            NoobBook will capture a schema snapshot, generate a summary, and enable live SQL queries in chat.
+            MST will capture a schema snapshot, generate a summary, and enable live SQL queries in chat.
           </p>
         </>
       )}
