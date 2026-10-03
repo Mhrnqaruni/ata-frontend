@@ -9,23 +9,9 @@ import axios, { AxiosError } from 'axios';
 import type { InternalAxiosRequestConfig } from 'axios';
 import { getAccessToken, getRefreshToken, setSession, clearSession } from '../auth/session';
 import { createLogger } from '@/lib/logger';
+import { deriveApiHost } from './urlHelpers';
 
 const log = createLogger('api-client');
-const DEFAULT_DEV_API_HOST = 'http://localhost:5001';
-
-function deriveApiHost(apiUrl?: string): string {
-  if (!apiUrl) {
-    return DEFAULT_DEV_API_HOST;
-  }
-  if (apiUrl.startsWith('/')) {
-    return '';
-  }
-  try {
-    return new URL(apiUrl).origin;
-  } catch {
-    return '';
-  }
-}
 
 // Base host URL (without /api/v1 path) - used for file URLs, static assets.
 const envApiUrl = import.meta.env.VITE_API_URL;
