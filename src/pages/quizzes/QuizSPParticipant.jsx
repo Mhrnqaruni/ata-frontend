@@ -1,6 +1,7 @@
 // /src/pages/quizzes/QuizSPParticipant.jsx
 
 import React, { useState, useEffect, useCallback } from 'react';
+import joinLogo from '../../assets/mst_logo_no_bg.png';
 import { useParams } from 'react-router-dom';
 import {
   Box,
@@ -81,18 +82,19 @@ const JoinScreen = ({ onJoin }) => {
   return (
     <Container maxWidth="sm">
       <Fade in timeout={800}>
-        <Box sx={{ mt: 8, textAlign: 'center' }}>
-          <Typography variant="h3" sx={{ mb: 1, fontWeight: 700 }}>
-            Join Self-Paced Quiz
+        <Box sx={{ mt: { xs: 4, md: 8 }, textAlign: 'center' }}>
+          <img alt="MySmartTeach" className="mst-join-logo" src={joinLogo} />
+          <Typography component="h1" variant="h1" sx={{ mb: 1 }}>
+            Join a self-paced quiz
           </Typography>
-          <Typography variant="h6" color="text.secondary" sx={{ mb: 4 }}>
-            Enter the access code provided by your teacher
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+            Type the access code your teacher gave you.
           </Typography>
 
-          <Paper sx={{ p: 4 }}>
+          <Paper className="mst-rim mst-join-card" sx={{ p: { xs: 3, sm: 4 }, textAlign: 'left' }}>
             <TextField
               fullWidth
-              label="Access Code"
+              label="Access code"
               value={accessCode}
               onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
               placeholder="ABC123"
@@ -102,8 +104,8 @@ const JoinScreen = ({ onJoin }) => {
                   fontSize: '2rem',
                   textAlign: 'center',
                   letterSpacing: 8,
-                  fontWeight: 700,
-                  fontFamily: 'monospace'
+                  fontWeight: 600,
+                  fontFamily: 'var(--font-mono)'
                 },
                 maxLength: 6
               }}
@@ -112,7 +114,7 @@ const JoinScreen = ({ onJoin }) => {
 
             <TextField
               fullWidth
-              label="Your Name"
+              label="Your name"
               value={guestName}
               onChange={(e) => setGuestName(e.target.value)}
               placeholder="John Doe"
@@ -146,9 +148,9 @@ const JoinScreen = ({ onJoin }) => {
               onClick={handleJoin}
               disabled={isJoining || !accessCode.trim() || !studentId.trim() || !guestName.trim()}
               startIcon={isJoining ? <CircularProgress size={20} /> : null}
-              sx={{ py: 2, fontSize: '1.2rem' }}
+              sx={{ py: 1.5, fontSize: 16, minHeight: 48 }}
             >
-              {isJoining ? 'Joining...' : 'Join Quiz'}
+              {isJoining ? 'Joining…' : 'Join quiz'}
             </Button>
           </Paper>
         </Box>
@@ -198,9 +200,9 @@ const DeadlineTimer = ({ deadline }) => {
     <Typography
       variant="body2"
       sx={{
-        fontWeight: 700,
+        fontWeight: 600,
         color: isUrgent ? 'error.main' : 'warning.dark',
-        fontFamily: 'monospace'
+        fontFamily: 'var(--font-mono)'
       }}
     >
       {timeLeft}
@@ -279,7 +281,7 @@ const QuestionDisplay = ({
                 cursor: 'pointer',
                 border: 2,
                 borderColor: currentAnswer === index ? 'primary.main' : 'divider',
-                backgroundColor: currentAnswer === index ? 'primary.light' : 'background.paper',
+                backgroundColor: currentAnswer === index ? 'action.selected' : 'background.paper',
                 '&:hover': {
                   borderColor: 'primary.main',
                   backgroundColor: 'action.hover'
@@ -311,7 +313,7 @@ const QuestionDisplay = ({
               cursor: 'pointer',
               border: 2,
               borderColor: currentAnswer === true ? 'primary.main' : 'divider',
-              backgroundColor: currentAnswer === true ? 'primary.light' : 'background.paper',
+              backgroundColor: currentAnswer === true ? 'action.selected' : 'background.paper',
               '&:hover': {
                 borderColor: 'primary.main',
                 backgroundColor: 'action.hover'
@@ -333,7 +335,7 @@ const QuestionDisplay = ({
               cursor: 'pointer',
               border: 2,
               borderColor: currentAnswer === false ? 'primary.main' : 'divider',
-              backgroundColor: currentAnswer === false ? 'primary.light' : 'background.paper',
+              backgroundColor: currentAnswer === false ? 'action.selected' : 'background.paper',
               '&:hover': {
                 borderColor: 'primary.main',
                 backgroundColor: 'action.hover'
@@ -375,7 +377,7 @@ const QuestionDisplay = ({
                 cursor: 'pointer',
                 border: 2,
                 borderColor: currentAnswer === index ? 'primary.main' : 'divider',
-                backgroundColor: currentAnswer === index ? 'primary.light' : 'background.paper',
+                backgroundColor: currentAnswer === index ? 'action.selected' : 'background.paper',
                 '&:hover': {
                   borderColor: 'primary.main',
                   backgroundColor: 'action.hover'
@@ -430,7 +432,7 @@ const QuestionPalette = ({
                     cursor: 'pointer',
                     border: 2,
                     borderColor: isCurrent ? 'primary.main' : isAnswered ? 'success.main' : 'divider',
-                    backgroundColor: isCurrent ? 'primary.light' : isAnswered ? 'success.light' : 'background.paper',
+                    backgroundColor: isCurrent ? 'action.selected' : isAnswered ? 'success.light' : 'background.paper',
                     '&:hover': {
                       borderColor: 'primary.main'
                     }
@@ -485,7 +487,7 @@ const ReviewScreen = ({
   return (
     <Container maxWidth="md">
       <Paper sx={{ p: 4, mb: 3 }}>
-        <Typography variant="h4" sx={{ mb: 2, fontWeight: 700 }}>
+        <Typography variant="h4" sx={{ mb: 2, fontWeight: 600 }}>
           Review Your Answers
         </Typography>
         <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
@@ -532,7 +534,7 @@ const ReviewScreen = ({
                     </Typography>
 
                     {isAnswered ? (
-                      <Typography variant="body1" color="primary.main" sx={{ fontWeight: 600 }}>
+                      <Typography variant="body1" color="primary.light" sx={{ fontWeight: 600 }}>
                         Answer: {
                           question.question_type === 'multiple_choice' || question.question_type === 'poll'
                             ? (question.options?.[answers[question.id]] ?? 'Not selected')
@@ -644,7 +646,7 @@ const AnswerReviewDisplaySP = ({ sessionId, studentToken, onBack }) => {
       <Fade in timeout={800}>
         <Box sx={{ mt: 4 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2 }}>
-            <Typography variant="h3" sx={{ fontWeight: 700 }}>
+            <Typography variant="h3" sx={{ fontWeight: 600 }}>
               Your Results
             </Typography>
             <Button variant="contained" color="primary" onClick={onBack}>
@@ -656,12 +658,13 @@ const AnswerReviewDisplaySP = ({ sessionId, studentToken, onBack }) => {
             sx={{
               p: 3,
               mb: 4,
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              color: 'white'
+              bgcolor: 'background.paper',
+              border: '1px solid', borderColor: 'divider',
+              color: 'text.primary'
             }}
           >
             <Typography variant="h5" gutterBottom>Score Summary</Typography>
-            <Typography variant="h2" sx={{ fontWeight: 900 }}>
+            <Typography variant="h2" sx={{ fontWeight: 600 }}>
               {reviewData.total_score} / {reviewData.max_possible_score}
             </Typography>
             <Typography variant="h6">
@@ -811,8 +814,8 @@ const CompletedScreen = ({ finalResult, quizTitle, wasAutoSubmitted, sessionData
     <Container maxWidth="sm">
       <Fade in timeout={800}>
         <Box sx={{ mt: 8, textAlign: 'center' }}>
-          <CheckCircleIcon color="success" sx={{ fontSize: 120, mb: 3 }} />
-          <Typography variant="h3" sx={{ mb: 2, fontWeight: 700 }}>
+          <CheckCircleIcon color="success" sx={{ fontSize: 56, mb: 3 }} />
+          <Typography variant="h3" sx={{ mb: 2, fontWeight: 600 }}>
             Quiz Submitted!
           </Typography>
           {wasAutoSubmitted && (
@@ -831,7 +834,7 @@ const CompletedScreen = ({ finalResult, quizTitle, wasAutoSubmitted, sessionData
 
             {finalResult && showScore && (
               <Box sx={{ mt: 3 }}>
-                <Typography variant="h2" color="primary.main" sx={{ fontWeight: 700, mb: 1 }}>
+                <Typography variant="h2" color="primary.light" sx={{ fontWeight: 600, mb: 1 }}>
                   {finalResult.percentage.toFixed(1)}%
                 </Typography>
                 <Typography variant="h5" color="text.secondary">
@@ -1166,7 +1169,7 @@ const QuizSPParticipant = () => {
       <Paper sx={{ p: 3, mb: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
           <Box>
-            <Typography variant="h5" sx={{ fontWeight: 700 }}>
+            <Typography variant="h5" sx={{ fontWeight: 600 }}>
               {sessionData.quiz_title}
             </Typography>
             <Typography variant="body2" color="text.secondary">
@@ -1211,11 +1214,11 @@ const QuizSPParticipant = () => {
             gap: 2,
             mt: 3,
             p: 3,
-            bgcolor: 'rgba(103, 58, 183, 0.1)',
+            bgcolor: 'action.selected',
             borderRadius: 2
           }}
         >
-          <CircularProgress sx={{ color: 'primary.main' }} size={50} />
+          <CircularProgress sx={{ color: 'primary.light' }} size={50} />
           <Typography variant="h6" color="primary">
             AI is grading your answer...
           </Typography>
@@ -1233,7 +1236,7 @@ const QuizSPParticipant = () => {
           </Typography>
 
           {feedback.ai_feedback && (
-            <Box sx={{ mt: 2, p: 2, bgcolor: 'rgba(0,0,0,0.05)', borderRadius: 1 }}>
+            <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
               <Typography variant="body2">
                 <strong>AI Feedback:</strong> {feedback.ai_feedback}
               </Typography>

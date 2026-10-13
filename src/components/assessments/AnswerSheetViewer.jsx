@@ -41,7 +41,7 @@ const AnswerSheetViewer = ({ fileUrl, studentName }) => {
   return (
     <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <CardHeader title="Student Answer Sheet" />
-      <Box sx={{ flexGrow: 1, overflow: 'auto', display: 'flex', justifyContent: 'center', p: 1, backgroundColor: 'grey.100' }}>
+      <Box sx={{ flexGrow: 1, overflow: 'auto', display: 'flex', justifyContent: 'center', p: 1, backgroundColor: 'action.hover' }}>
         {renderContent()}
       </Box>
     </Card>

@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  Container, Typography, Box, Paper, CircularProgress, Alert, TextField, Button,
-  Divider, Grid
+  Container, Typography, Box, Paper, CircularProgress, Alert, TextField, Button, Divider, Grid, Card, Skeleton
 } from '@mui/material';
 import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import reviewService from '../../services/reviewService';
 import { useSnackbar } from '../../hooks/useSnackbar';
 import StatusChip from '../../components/assessments/StatusChip';
+import PageHeader from '../../components/common/PageHeader';
 
 const AssessmentReviewPage = () => {
   const navigate = useNavigate();
@@ -93,52 +93,49 @@ const AssessmentReviewPage = () => {
 
   // Render a single question card
   const renderQuestionCard = (q, index) => (
-    <Paper key={q.questionId} sx={{ p: 3, mb: 3 }}>
-      <Grid container spacing={2}>
-        <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6">Question {index + 1}</Typography>
-          <StatusChip status={q.status} />
-        </Grid>
-        <Grid item xs={12}>
-          <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>{q.questionText}</Typography>
-        </Grid>
-        <Grid item xs={12}>
-          <Typography variant="subtitle2" color="text.secondary">Student's Answer:</Typography>
-          <Box sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1, minHeight: 80, whiteSpace: 'pre-wrap', bgcolor: '#f9f9f9' }}>
-            <Typography variant="body2">{q.studentAnswer || "No answer extracted."}</Typography>
-          </Box>
-        </Grid>
-        <Grid item xs={4}>
-          <TextField
-            fullWidth
-            label={`Grade (out of ${q.maxScore})`}
-            type="number"
-            value={q.grade ?? ''}
-            onChange={(e) => handleLocalChange(q.questionId, 'grade', e.target.value)}
-            InputProps={{ inputProps: { min: 0, max: q.maxScore } }}
-          />
-        </Grid>
-        <Grid item xs={8}>
-          <TextField
-            fullWidth
-            label="Feedback"
-            multiline
-            rows={3}
-            value={q.feedback ?? ''}
-            onChange={(e) => handleLocalChange(q.questionId, 'feedback', e.target.value)}
-          />
-        </Grid>
-        <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <Button variant="contained" onClick={() => handleSaveQuestion(q.questionId)}>
-            Save Question
-          </Button>
-        </Grid>
-      </Grid>
-    </Paper>
+    <Card className="mst-rim mst-review-q" key={q.questionId}>
+      <div className="mst-review-q-head">
+        <span aria-hidden="true" className="mst-question-num">{index + 1}</span>
+        <h3 className="mst-review-q-title">Question {index + 1}</h3>
+        <StatusChip status={q.status} />
+      </div>
+      <p className="mst-review-q-text">{q.questionText}</p>
+      <div className="mst-review-answer">
+        <span className="mst-review-answer-label">Student's answer</span>
+        <span className="mst-review-answer-text">{q.studentAnswer || "No answer was read from the sheet."}</span>
+      </div>
+      <div className="mst-review-fields">
+        <TextField
+          label={`Mark (out of ${q.maxScore})`}
+          type="number"
+          value={q.grade ?? ''}
+          onChange={(e) => handleLocalChange(q.questionId, 'grade', e.target.value)}
+          InputProps={{ inputProps: { min: 0, max: q.maxScore } }}
+        />
+        <TextField
+          fullWidth
+          label="Feedback for the student"
+          multiline
+          minRows={3}
+          value={q.feedback ?? ''}
+          onChange={(e) => handleLocalChange(q.questionId, 'feedback', e.target.value)}
+        />
+      </div>
+      <div className="mst-review-q-foot">
+        <Button variant="contained" onClick={() => handleSaveQuestion(q.questionId)}>
+          Save question
+        </Button>
+      </div>
+    </Card>
   );
 
   if (loading) {
-    return <Container sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Container>;
+    return (
+      <Box>
+        <Skeleton height={64} sx={{ mb: 3.5, maxWidth: 360 }} variant="rounded" />
+        {[0, 1, 2].map((i) => <Skeleton height={260} key={i} sx={{ mb: 2 }} variant="rectangular" />)}
+      </Box>
+    );
   }
 
   if (error) {
@@ -150,37 +147,23 @@ const AssessmentReviewPage = () => {
   }
 
   return (
-    <Box sx={{ flexGrow: 1, mb: 8 }}>
-      <Container maxWidth="md" sx={{ mt: 4 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={() => navigate(`/assessments/${job_id}/results`)}>
-            Back to Results
-          </Button>
-        </Box>
-
-        <Typography variant="h4">{data?.assessmentName}</Typography>
-        <Typography variant="h6" color="text.secondary">Reviewing: {data?.studentName} ({data?.studentId})</Typography>
-        <Divider sx={{ my: 2 }} />
+    <Box sx={{ maxWidth: 1120, mx: 'auto' }}>
+      <Box>
+        <PageHeader
+          backLabel="Back to results"
+          backTo={`/assessments/${job_id}/results`}
+          breadcrumbs={[{ label: 'Assessments', to: '/assessments' }, { label: data?.assessmentName || 'Results', to: `/assessments/${job_id}/results` }, { label: data?.studentName || 'Review' }]}
+          leading={<span aria-hidden="true" className="mst-avatar" data-size="lg">{(data?.studentName || '?').trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase()).join('')}</span>}
+          subtitle={`${data?.assessmentName}${data?.studentId ? ` · Student ID ${data.studentId}` : ''}`}
+          title={data?.studentName || 'Review'}
+        />
 
         {/* Pending Questions Section */}
         {pendingQuestions.length > 0 && (
           <Box sx={{ mb: 4 }}>
-            <Box
-              sx={{
-                mb: 3,
-                p: 2,
-                bgcolor: '#FFF4E5',
-                borderLeft: '4px solid #FF9800',
-                borderRadius: 1
-              }}
-            >
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#663C00', mb: 0.5 }}>
-                Pending Review
-              </Typography>
-              <Typography variant="body2" sx={{ color: '#8D6708' }}>
-                The following {pendingQuestions.length} {pendingQuestions.length === 1 ? 'question requires' : 'questions require'} your attention and grading.
-              </Typography>
-            </Box>
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              <strong>{pendingQuestions.length} {pendingQuestions.length === 1 ? 'question needs' : 'questions need'} your mark.</strong> The three AI marks didn't agree, so these wait for you.
+            </Alert>
             {pendingQuestions.map((q, idx) => {
               // Find the original index for correct question numbering
               const originalIndex = perQ.findIndex(pq => pq.questionId === q.questionId);
@@ -191,25 +174,10 @@ const AssessmentReviewPage = () => {
 
         {/* All Questions Section */}
         <Box>
-          <Box
-            sx={{
-              mb: 3,
-              p: 2,
-              bgcolor: '#E3F2FD',
-              borderLeft: '4px solid #2196F3',
-              borderRadius: 1
-            }}
-          >
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#0D47A1', mb: 0.5 }}>
-              All Questions
-            </Typography>
-            <Typography variant="body2" sx={{ color: '#1565C0' }}>
-              Complete overview of all {allQuestions.length} questions with their grades and feedback.
-            </Typography>
-          </Box>
+          <div className="mst-section-label">All questions · {allQuestions.length}</div>
           {allQuestions.map((q, idx) => renderQuestionCard(q, idx))}
         </Box>
-      </Container>
+      </Box>
     </Box>
   );
 };

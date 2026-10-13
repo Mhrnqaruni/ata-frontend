@@ -1,21 +1,14 @@
 // /src/components/assessments/CompletedStats.jsx
 import React from 'react';
-import { Box, Stack, Typography } from '@mui/material';
 
+// Two small figures on a finished assessment's card.
 const CompletedStats = ({ results }) => {
-    if (!results) return null; // Defensive check
-
+    if (!results) return null;
     return (
-        <Stack direction="row" spacing={4} alignItems="center">
-            <Box>
-                <Typography variant="h3">{results.classAverage}%</Typography>
-                <Typography variant="body2" color="text.secondary">Class Average</Typography>
-            </Box>
-            <Box>
-                <Typography variant="h3">#{results.hardestQuestion}</Typography>
-                <Typography variant="body2" color="text.secondary">Hardest Question</Typography>
-            </Box>
-        </Stack>
+        <div className="mst-minis">
+            <div className="mst-mini"><span className="mst-mini-value">{results.classAverage}%</span><span className="mst-mini-label">Class average</span></div>
+            <div className="mst-mini"><span className="mst-mini-value">Q{results.hardestQuestion}</span><span className="mst-mini-label">Hardest question</span></div>
+        </div>
     );
 };
 

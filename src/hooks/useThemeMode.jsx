@@ -25,6 +25,12 @@ export const ThemeModeProvider = ({ children }) => {
   // across browser refreshes and sessions.
   useEffect(() => {
     localStorage.setItem('themeMode', mode);
+    // Keep the root in step with the choice (index.html sets it once before React loads): the app's
+    // stylesheet keys its ground and glass tokens off this attribute.
+    const root = document.documentElement;
+    root.setAttribute('data-theme-mode', mode);
+    root.style.colorScheme = mode;
+    root.style.background = mode === 'dark' ? '#060a1a' : '#f4f6fc';
   }, [mode]);
 
   // --- The Toggle Function ---

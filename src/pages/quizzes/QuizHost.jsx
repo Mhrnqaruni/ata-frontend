@@ -2,6 +2,8 @@
 
 // --- Core React Imports ---
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
+import HourglassEmptyRoundedIcon from '@mui/icons-material/HourglassEmptyRounded';
 import { useNavigate, useParams } from 'react-router-dom';
 
 // --- MUI Component Imports ---
@@ -66,7 +68,7 @@ const RosterPanel = ({ roster, session, isLoading }) => {
     <Card sx={{ mb: 2 }}>
       <CardContent>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <PeopleIcon sx={{ mr: 1, fontSize: 28, color: 'primary.main' }} />
+          <PeopleIcon sx={{ mr: 1, fontSize: 28, color: 'primary.light' }} />
           <Typography variant="h6" sx={{ fontWeight: 600, flex: 1 }}>
             Class Roster Attendance
           </Typography>
@@ -97,21 +99,19 @@ const RosterPanel = ({ roster, session, isLoading }) => {
             {/* Stats Summary */}
             <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
               <Chip
-                label={`✓ Joined: ${roster.total_joined}`}
+                icon={<CheckRoundedIcon />}
+                label={`Joined ${roster.total_joined}`}
                 color="success"
-                variant="outlined"
                 size="small"
               />
               <Chip
-                label={`⏳ Absent: ${roster.total_absent}`}
-                color="error"
-                variant="outlined"
+                icon={<HourglassEmptyRoundedIcon />}
+                label={`Not joined ${roster.total_absent}`}
                 size="small"
               />
               <Chip
-                label={`📊 Join Rate: ${Math.round(roster.join_rate * 100)}%`}
-                color="info"
-                variant="outlined"
+                label={`Join rate ${Math.round(roster.join_rate * 100)}%`}
+                color="primary"
                 size="small"
               />
             </Box>
@@ -140,7 +140,7 @@ const RosterPanel = ({ roster, session, isLoading }) => {
                     height: 36
                   }}
                 >
-                  {entry.joined ? '✓' : '⏳'}
+                  {entry.joined ? <CheckRoundedIcon fontSize="small" /> : <HourglassEmptyRoundedIcon fontSize="small" />}
                 </Avatar>
               </ListItemAvatar>
               <ListItemText
@@ -171,7 +171,7 @@ const RosterPanel = ({ roster, session, isLoading }) => {
               </List>
             ) : (
               <Box sx={{ textAlign: 'center', py: 4 }}>
-                <PeopleIcon sx={{ fontSize: 60, color: 'text.disabled', mb: 2 }} />
+                <PeopleIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 2 }} />
                 <Typography color="text.secondary">
                   No students found in this class
                 </Typography>
@@ -243,7 +243,7 @@ const OutsiderPanel = ({ outsiders, sessionId, onOutsiderUpdate }) => {
         <CardContent>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
             <Typography variant="h6" sx={{ fontWeight: 600, flex: 1, color: 'warning.dark' }}>
-              ⚠️ Outsider Students
+              Students not on the roster
             </Typography>
             <Chip
               label={`${outsiders.length} Total`}
@@ -377,7 +377,7 @@ const Leaderboard = ({ participants }) => {
               <Avatar
                 sx={{
                   bgcolor: getMedalColor(index + 1),
-                  fontWeight: 'bold',
+                  fontWeight: 600,
                   fontSize: '1.2rem'
                 }}
               >
@@ -1038,11 +1038,11 @@ const QuizHost = () => {
         sx={{
           p: 4,
           mb: 3,
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white'
+
+          color: 'text.primary'
         }}
       >
-        <Typography variant="h3" sx={{ mb: 3, fontWeight: 700, textAlign: 'center' }}>
+        <Typography component="h1" variant="h1" sx={{ mb: 3, fontWeight: 600, textAlign: 'center' }}>
           {quiz?.title}
         </Typography>
 
@@ -1059,26 +1059,29 @@ const QuizHost = () => {
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 1,
-                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                  backgroundColor: 'action.hover',
                   borderRadius: 2,
                   px: 3,
                   py: 1.5,
-                  border: '3px dashed rgba(255, 255, 255, 0.5)',
+                  border: '1px solid', borderColor: 'divider',
                   mb: 3
                 }}
               >
                 <Typography
                   variant="h2"
                   sx={{
-                    fontWeight: 900,
-                    letterSpacing: 8,
-                    fontFamily: 'monospace'
+                    fontWeight: 600,
+                    fontSize: { xs: 40, sm: 52 },
+                    lineHeight: 1.2,
+                    fontVariantNumeric: 'tabular-nums',
+                    letterSpacing: { xs: 2, sm: 6 },
+                    fontFamily: 'var(--font-mono)'
                   }}
                 >
                   {session?.room_code}
                 </Typography>
                 <Tooltip title="Copy room code">
-                  <IconButton onClick={copyRoomCode} sx={{ color: 'white' }}>
+                  <IconButton onClick={copyRoomCode} sx={{ color: 'primary.light' }}>
                     <ContentCopyIcon />
                   </IconButton>
                 </Tooltip>
@@ -1094,7 +1097,7 @@ const QuizHost = () => {
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: 1,
-                    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                    backgroundColor: 'action.hover',
                     borderRadius: 1,
                     px: 2,
                     py: 1,
@@ -1104,7 +1107,7 @@ const QuizHost = () => {
                   <Typography
                     variant="body2"
                     sx={{
-                      fontFamily: 'monospace',
+                      fontFamily: 'var(--font-mono)',
                       fontSize: '0.9rem',
                       wordBreak: 'break-all'
                     }}
@@ -1112,7 +1115,7 @@ const QuizHost = () => {
                     {getJoinUrl()}
                   </Typography>
                   <Tooltip title="Copy join link">
-                    <IconButton onClick={copyJoinUrl} size="small" sx={{ color: 'white' }}>
+                    <IconButton onClick={copyJoinUrl} size="small" sx={{ color: 'primary.light' }}>
                       <ContentCopyIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
@@ -1152,8 +1155,10 @@ const QuizHost = () => {
 
         <Box sx={{ textAlign: 'center', mt: 2 }}>
           <Chip
-            label={wsConnected ? '🟢 Live Connected' : '🔴 Disconnected'}
-            sx={{ backgroundColor: 'rgba(255, 255, 255, 0.2)', color: 'white' }}
+            className="mst-status"
+            color={wsConnected ? 'success' : 'error'}
+            icon={<span aria-hidden="true" className="mst-dot mst-chip-dot" data-pulse={wsConnected ? 'true' : undefined} />}
+            label={wsConnected ? 'Live · connected' : 'Disconnected'}
           />
         </Box>
       </Paper>
@@ -1166,9 +1171,9 @@ const QuizHost = () => {
           <Card sx={{ mb: 2 }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <PeopleIcon sx={{ mr: 1, fontSize: 40, color: 'primary.main' }} />
+                <PeopleIcon sx={{ mr: 1, fontSize: 40, color: 'primary.light' }} />
                 <Box>
-                  <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                  <Typography variant="h4" sx={{ fontWeight: 600 }}>
                     {session?.participant_count || 0}
                   </Typography>
                   <Typography color="text.secondary">Participants</Typography>
@@ -1190,7 +1195,7 @@ const QuizHost = () => {
                       <Typography variant="subtitle2" sx={{ mb: 1, textAlign: 'center' }}>
                         Next Question Starting In
                       </Typography>
-                      <Typography variant="h2" sx={{ fontWeight: 700, color: 'primary.main', textAlign: 'center', mb: 2 }}>
+                      <Typography variant="h2" sx={{ fontWeight: 600, color: 'primary.light', textAlign: 'center', mb: 2 }}>
                         {cooldownRemaining}s
                       </Typography>
                     </Alert>
@@ -1203,7 +1208,7 @@ const QuizHost = () => {
                       <Typography
                         variant="h3"
                         color={timeRemaining > 10 ? 'success.main' : timeRemaining > 5 ? 'warning.main' : 'error.main'}
-                        sx={{ fontWeight: 700 }}
+                        sx={{ fontWeight: 600 }}
                       >
                         {timeRemaining}s
                       </Typography>
@@ -1224,7 +1229,7 @@ const QuizHost = () => {
           <Card sx={{ mb: 2 }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>Current Question</Typography>
-              <Typography variant="h3" color="primary" sx={{ fontWeight: 700 }}>
+              <Typography variant="h3" color="primary" sx={{ fontWeight: 600 }}>
                 {session?.current_question_index !== null
                   ? session.current_question_index + 1
                   : '-'}
@@ -1259,9 +1264,9 @@ const QuizHost = () => {
 
               {/* FIX Issue 2: Auto-Advance Controls - Only show BEFORE quiz starts */}
               {session?.status === 'waiting' && (
-                <Box sx={{ mb: 2, p: 2, border: '1px solid #e0e0e0', borderRadius: 1, backgroundColor: '#f9f9f9' }}>
+                <Box sx={{ mb: 2, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1, backgroundColor: 'action.hover' }}>
                   <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-                    ⚙️ Auto-Advance Settings (Configure Before Starting)
+                    Auto-advance (set before you start)
                   </Typography>
                   <FormControlLabel
                     control={
@@ -1271,7 +1276,7 @@ const QuizHost = () => {
                         color="primary"
                       />
                     }
-                    label="Enable Auto-Advance"
+                    label="Move on automatically"
                   />
                   <TextField
                     label="Cooldown (seconds)"
@@ -1291,7 +1296,7 @@ const QuizHost = () => {
               {/* Show read-only auto-advance status during active quiz */}
               {session?.status === 'active' && autoAdvanceEnabled && (
                 <Alert severity="info" sx={{ mb: 2 }}>
-                  🚀 Auto-Advance Enabled ({cooldownSeconds}s cooldown)
+                  Auto-advance is on ({cooldownSeconds}s pause between questions)
                 </Alert>
               )}
 
@@ -1354,7 +1359,7 @@ const QuizHost = () => {
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                   <Typography variant="h6" sx={{ fontWeight: 600, flex: 1 }}>
-                    📝 Current Question Preview
+                    Current question
                   </Typography>
                   <Chip
                     label={`Question ${session.current_question_index + 1} / ${session?.questions?.length || 0}`}
@@ -1405,7 +1410,7 @@ const QuizHost = () => {
           <Card sx={{ mb: 2 }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                <LeaderboardIcon sx={{ mr: 1, fontSize: 32, color: 'primary.main' }} />
+                <LeaderboardIcon sx={{ mr: 1, fontSize: 32, color: 'primary.light' }} />
                 <Typography variant="h5" sx={{ fontWeight: 600 }}>
                   Live Leaderboard
                 </Typography>

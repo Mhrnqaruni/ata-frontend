@@ -1,8 +1,11 @@
 // /src/pages/Assessments.jsx (COMPLETE MERGED CODE)
 
 import React, { useState, useEffect, useCallback } from 'react';
+import AddCard from '../components/common/AddCard';
 import { useNavigate } from 'react-router-dom';
-import { Box, Button, Typography, Stack, Skeleton, Alert, AlertTitle } from '@mui/material';
+import { Box, Button, Skeleton, Alert, AlertTitle } from '@mui/material';
+import PageHeader from '../components/common/PageHeader';
+import EmptyStateCard from '../components/common/EmptyState';
 import AddOutlined from '@mui/icons-material/AddOutlined';
 import AssignmentTurnedInOutlined from '@mui/icons-material/AssignmentTurnedInOutlined';
 
@@ -13,28 +16,23 @@ import { useSnackbar } from '../hooks/useSnackbar';
 
 // --- [MISSING PART 1: ADDED BACK] ---
 const EmptyState = ({ onGradeNew }) => (
-  <Box sx={{ textAlign: 'center', mt: 8, p: 4, backgroundColor: 'grey.50', borderRadius: 2 }}>
-    <AssignmentTurnedInOutlined sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-    <Typography variant="h3" gutterBottom>
-      Grade your first assessment
-    </Typography>
-    <Typography color="text.secondary" sx={{ mb: 3, maxWidth: '500px', mx: 'auto' }}>
-      Save hours of time by letting the AI do the heavy lifting. Create a new grading job to get started.
-    </Typography>
-    <Button variant="contained" startIcon={<AddOutlined />} onClick={onGradeNew}>
-      Grade New Assessment
-    </Button>
-  </Box>
+  <EmptyStateCard
+    action={<Button variant="contained" startIcon={<AddOutlined />} onClick={onGradeNew}>Grade new assessment</Button>}
+    icon={<AssignmentTurnedInOutlined />}
+    title="Grade your first assessment"
+  >
+    Upload a question paper, its mark scheme and your students' answer sheets. AI marks each answer three times.
+  </EmptyStateCard>
 );
 // --- [END OF MISSING PART 1] ---
 
 // --- [MISSING PART 2: ADDED BACK] ---
 const LoadingSkeletons = () => (
-  <Stack spacing={3}>
+  <div className="mst-grid mst-grid-3">
     {Array.from(new Array(3)).map((_, index) => (
-      <Skeleton key={index} variant="rectangular" height={150} sx={{ borderRadius: 2 }} />
+      <Skeleton key={index} variant="rectangular" height={188} />
     ))}
-  </Stack>
+  </div>
 );
 // --- [END OF MISSING PART 2] ---
 
@@ -102,11 +100,11 @@ const Assessments = () => {
 
   const renderContent = () => {
     if (isLoading) return <LoadingSkeletons />;
-    if (error) return <Alert severity="error"><AlertTitle>Error</AlertTitle>{error}</Alert>;
+    if (error) return <Alert severity="error"><AlertTitle>Couldn't load your assessments</AlertTitle>{error}</Alert>;
     if (assessments.length === 0) return <EmptyState onGradeNew={handleNavigateToNew} />;
     
     return (
-      <Stack spacing={3}>
+      <Box className="mst-grid" sx={{ gridTemplateColumns: 'minmax(0,1fr)', '@media(min-width:1000px)': { gridTemplateColumns: 'repeat(2,minmax(0,1fr))' }, '@media(min-width:1280px)': { gridTemplateColumns: 'repeat(3,minmax(0,1fr))' } }}>
         {assessments.map((job) => (
           <AssessmentCard 
             key={job.id} 
@@ -114,33 +112,25 @@ const Assessments = () => {
             onDelete={() => handleOpenConfirm(job)} 
           />
         ))}
-      </Stack>
+        <AddCard hint="A paper, its mark scheme and the answer sheets" label="Grade a new assessment" minHeight={188} onClick={handleNavigateToNew} />
+      </Box>
     );
   };
 
   return (
     <Box>
-      <Box sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          mb: 4,
-          flexDirection: { xs: 'column', sm: 'row' },
-          alignItems: { xs: 'stretch', sm: 'center' }
-        }}>
-        <Typography variant="h2" sx={{ mb: { xs: 2, sm: 0 } }}>
-          Assessments
-        </Typography>
-        <Button variant="contained" startIcon={<AddOutlined />} onClick={handleNavigateToNew} sx={{ width: { xs: '100%', sm: 'auto' } }}>
-          Grade New Assessment
-        </Button>
-      </Box>
+      <PageHeader
+        actions={<Button variant="contained" startIcon={<AddOutlined />} onClick={handleNavigateToNew}>Grade new assessment</Button>}
+        subtitle="Handwritten answers, marked three times by AI and checked by you."
+        title="Assessments"
+      />
       {renderContent()}
       
       <ConfirmationModal
         open={isConfirmOpen}
         onClose={handleCloseConfirm}
         onConfirm={handleConfirmDelete}
-        title="Delete Assessment?"
+        title="Delete this assessment?"
         description={`Are you sure you want to permanently delete the assessment "${jobToDelete?.assessmentName}"? This action cannot be undone.`}
       />
     </Box>

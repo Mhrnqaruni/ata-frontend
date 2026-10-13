@@ -2,10 +2,12 @@
 
 // --- Core React Imports ---
 import React, { useState, useEffect, useCallback } from 'react';
+import AddCard from '../components/common/AddCard';
 import { useNavigate } from 'react-router-dom';
 
 // --- MUI Component Imports ---
-import { Box, Button, Typography, Grid, Skeleton, Alert, AlertTitle } from '@mui/material';
+import { Box, Button, Skeleton, Alert, AlertTitle } from '@mui/material';
+import SchoolOutlined from '@mui/icons-material/SchoolOutlined';
 import AddOutlined from '@mui/icons-material/AddOutlined';
 
 // --- Custom Component Imports ---
@@ -14,20 +16,10 @@ import AddClassModal from '../components/classes/AddClassModal';
 
 // --- Service Import for Backend Communication ---
 import classService from '../services/classService';
+import PageHeader from '../components/common/PageHeader';
+import EmptyState from '../components/common/EmptyState';
 
 // --- Sub-Component for the Empty State ---
-const EmptyState = ({ onAddClass }) => (
-  <Box sx={{ textAlign: 'center', mt: 8 }}>
-    <Typography variant="h3" gutterBottom>Create your first class</Typography>
-    <Typography color="text.secondary" sx={{ mb: 3 }}>
-      Get started by adding a class and its students, either manually or by uploading a roster.
-    </Typography>
-    <Button variant="contained" startIcon={<AddOutlined />} onClick={onAddClass}>
-      Add New Class
-    </Button>
-  </Box>
-);
-
 /**
  * The main dashboard page for the "Your Classes" feature. This is the final,
  * robust version with all bug fixes and defensive checks.
@@ -83,52 +75,48 @@ const Classes = () => {
   const renderContent = () => {
     if (isLoading) {
       return (
-        <Grid container spacing={3}>
+        <div className="mst-grid mst-grid-auto">
           {Array.from(new Array(3)).map((_, index) => (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
-              <Skeleton variant="rectangular" height={200} sx={{ borderRadius: 2 }} />
-            </Grid>
+            <Skeleton height={168} key={index} variant="rectangular" />
           ))}
-        </Grid>
+        </div>
       );
     }
     if (error) {
-      return <Alert severity="error"><AlertTitle>Error</AlertTitle>{error}</Alert>;
+      return <Alert severity="error"><AlertTitle>Couldn't load your classes</AlertTitle>{error}</Alert>;
     }
-    // <<< CORRECTION: Added a defensive check to prevent crashes if the API
-    // ever returns something that isn't an array.
     if (!Array.isArray(classes)) {
       return <Alert severity="warning">Could not display class data due to an unexpected format.</Alert>;
     }
     if (classes.length === 0) {
-      return <EmptyState onAddClass={handleOpenModal} />;
+      return (
+        <EmptyState
+          action={<Button onClick={handleOpenModal} startIcon={<AddOutlined />} variant="contained">Add class</Button>}
+          icon={<SchoolOutlined />}
+          title="Create your first class"
+        >
+          Add a class and its students by hand, or upload a roster.
+        </EmptyState>
+      );
     }
     return (
-      <Grid container spacing={3}>
+      <div className="mst-grid mst-grid-auto">
         {classes.map((classItem) => (
           <ClassCard key={classItem.id} classData={classItem} />
         ))}
-      </Grid>
+        <AddCard hint="By hand or from a roster file" label="Add a class" onClick={handleOpenModal} />
+      </div>
     );
   };
 
   return (
     <>
       <Box>
-        <Box sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          mb: 4,
-          flexDirection: { xs: 'column', sm: 'row' },
-          alignItems: { xs: 'stretch', sm: 'center' }
-        }}>
-          <Typography variant="h2" sx={{ mb: { xs: 2, sm: 0 } }}>
-            Your Classes
-          </Typography>
-          <Button variant="contained" startIcon={<AddOutlined />} onClick={handleOpenModal} sx={{ width: { xs: '100%', sm: 'auto' } }}>
-            Add New Class
-          </Button>
-        </Box>
+        <PageHeader
+          actions={<Button onClick={handleOpenModal} startIcon={<AddOutlined />} variant="contained">Add class</Button>}
+          subtitle="Your rosters, grades and each student's progress."
+          title="Classes"
+        />
         {renderContent()}
       </Box>
 

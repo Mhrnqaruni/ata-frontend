@@ -1,14 +1,16 @@
 // /src/pages/AITools.jsx
 
 import React, { useState } from 'react'; // <<< IMPORT useState
-import { Box, Typography, Grid, Button } from '@mui/material'; // <<< IMPORT Button
+
+import { Box, Button } from '@mui/material';
+import PageHeader from '../components/common/PageHeader';
 
 // Custom Component Imports
 import ToolCard from '../components/tools/ToolCard';
 import HistoryModal from '../components/tools/HistoryModal'; // <<< NEW IMPORT
 
 // Icon Imports
-import QuestionAnswerOutlined from '@mui/icons-material/QuestionAnswerOutlined';
+import QuizOutlined from '@mui/icons-material/QuizOutlined';
 import SlideshowOutlined from '@mui/icons-material/SlideshowOutlined';
 import RuleOutlined from '@mui/icons-material/RuleOutlined';
 import HistoryOutlined from '@mui/icons-material/HistoryOutlined'; // <<< NEW IMPORT
@@ -16,21 +18,21 @@ import HistoryOutlined from '@mui/icons-material/HistoryOutlined'; // <<< NEW IM
 const aiToolsData = [
   {
     id: 'question-generator',
-    title: 'Question Generator',
+    title: 'Question generator',
     description: 'Create quizzes and checks for understanding.',
-    icon: <QuestionAnswerOutlined />,
+    icon: <QuizOutlined />,
     path: '/tools/question-generator',
   },
   {
     id: 'slide-generator',
-    title: 'Slide Generator',
+    title: 'Slide generator',
     description: 'Produce structured presentation outlines.',
     icon: <SlideshowOutlined />,
     path: '/tools/slide-generator',
   },
   {
     id: 'rubric-generator',
-    title: 'Rubric Generator',
+    title: 'Rubric generator',
     description: 'Build detailed grading rubrics for assignments.',
     icon: <RuleOutlined />,
     path: '/tools/rubric-generator',
@@ -49,26 +51,18 @@ const AITools = () => {
   return (
     <>
       <Box>
-        {/* --- [START] UPGRADED PAGE HEADER --- */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-          <Typography variant="h2">
-            AI Tools
-          </Typography>
-          <Button
-            variant="outlined"
-            startIcon={<HistoryOutlined />}
-            onClick={() => setIsHistoryOpen(true)}
-          >
-            View History
-          </Button>
-        </Box>
+        <PageHeader
+          actions={<Button onClick={() => setIsHistoryOpen(true)} startIcon={<HistoryOutlined />} variant="outlined">History</Button>}
+          subtitle="Create classroom materials in seconds, then save what you like."
+          title="AI tools"
+        />
         {/* --- [END] UPGRADED PAGE HEADER --- */}
 
-        <Grid container spacing={3}>
+        <div className="mst-grid mst-grid-3">
           {aiToolsData.map((tool) => (
             <ToolCard key={tool.id} tool={tool} />
           ))}
-        </Grid>
+        </div>
       </Box>
 
       {/* --- [START] NEW MODAL RENDER --- */}

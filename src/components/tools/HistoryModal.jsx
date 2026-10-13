@@ -176,7 +176,7 @@ const HistoryModal = ({ open, onClose }) => {
                         </Tooltip>
                       </Stack>
                       <Divider />
-                      <Box sx={{ mt: 2, maxHeight: 400, overflowY: 'auto', whiteSpace: 'pre-wrap', bgcolor: 'grey.50', p: 2, borderRadius: 1, fontFamily: 'monospace' }}>
+                      <Box sx={{ mt: 2, maxHeight: 400, overflowY: 'auto', whiteSpace: 'pre-wrap', bgcolor: 'action.hover', p: 2, borderRadius: 1, fontFamily: 'var(--font-mono)' }}>
                         {item.generated_content}
                       </Box>
                     </AccordionDetails>

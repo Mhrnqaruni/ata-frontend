@@ -1,9 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Container, Typography, Box, CircularProgress, Alert, Grid } from '@mui/material';
+import { Box, Alert, Skeleton } from '@mui/material';
+import PeopleAltOutlined from '@mui/icons-material/PeopleAltOutlined';
+import FunctionsOutlined from '@mui/icons-material/FunctionsOutlined';
+import RateReviewOutlined from '@mui/icons-material/RateReviewOutlined';
 import reviewService from '../../services/reviewService';
 import ResultsTable from '../../components/assessments/ResultsTable';
 import StatusChip from '../../components/assessments/StatusChip';
+import PageHeader from '../../components/common/PageHeader';
+import InfoCard from '../../components/home/InfoCard';
+
+// Three figures worked out from the rows on screen (nothing extra is fetched)
+const summarise = (rows = []) => {
+  const present = rows.filter((s) => s.status !== 'ABSENT');
+  const graded = present.filter((s) => s.status !== 'PENDING_REVIEW' && s.totalScore != null && s.maxTotalScore > 0);
+  const average = graded.length ? graded.reduce((sum, s) => sum + (s.totalScore / s.maxTotalScore) * 100, 0) / graded.length : null;
+  return { students: rows.length, average, pending: rows.filter((s) => s.status === 'PENDING_REVIEW').length };
+};
 
 const AssessmentResultsPage = () => {
   const { job_id } = useParams();
@@ -31,28 +44,37 @@ const AssessmentResultsPage = () => {
   }, [job_id]);
 
   if (loading) {
-    return <Container sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Container>;
+    return (
+      <Box>
+        <Skeleton height={64} sx={{ mb: 3.5, maxWidth: 360 }} variant="rounded" />
+        <div className="mst-grid mst-grid-3">{[0, 1, 2].map((i) => <Skeleton height={104} key={i} variant="rectangular" />)}</div>
+        <Skeleton height={280} sx={{ mt: 4 }} variant="rectangular" />
+      </Box>
+    );
   }
 
   if (error) {
-    return <Container sx={{ mt: 4 }}><Alert severity="error">{error}</Alert></Container>;
+    return <Alert severity="error">{error}</Alert>;
   }
 
-  return (
-    <Container maxWidth="lg" sx={{ mt: 4 }}>
-      <Grid container justifyContent="space-between" alignItems="flex-start" spacing={2} sx={{ mb: 2 }}>
-        <Grid item>
-          <Typography variant="h4" gutterBottom>{results?.assessmentName || 'Assessment Results'}</Typography>
-        </Grid>
-        <Grid item>
-          {results?.status && <StatusChip status={results.status} />}
-        </Grid>
-      </Grid>
+  const rows = results?.students ?? [];
+  const sum = summarise(rows);
 
-      <Box mt={2}>
-        <ResultsTable rows={results?.students ?? []} />
-      </Box>
-    </Container>
+  return (
+    <Box>
+      <PageHeader
+        breadcrumbs={[{ label: 'Assessments', to: '/assessments' }, { label: results?.assessmentName || 'Results' }]}
+        title={results?.assessmentName || 'Assessment results'}
+        titleAdornment={results?.status ? <StatusChip status={results.status} /> : null}
+      />
+      <div className="mst-grid mst-grid-3">
+        <InfoCard icon={<PeopleAltOutlined />} title="Students" value={sum.students} />
+        <InfoCard icon={<FunctionsOutlined />} title="Average" value={sum.average == null ? '—' : `${sum.average.toFixed(1)}%`} />
+        <InfoCard icon={<RateReviewOutlined />} title="Pending review" tone={sum.pending ? 'warn' : 'ok'} value={sum.pending} />
+      </div>
+      <div className="mst-section-label">Students</div>
+      <ResultsTable rows={rows} />
+    </Box>
   );
 };
 

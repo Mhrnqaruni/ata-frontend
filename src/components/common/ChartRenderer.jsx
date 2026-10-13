@@ -5,7 +5,7 @@ import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
-import { Paper, Typography, Box, Alert } from '@mui/material';
+import { Paper, Typography, Box, Alert, useTheme } from '@mui/material';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
 
@@ -22,6 +22,7 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'
  *   }
  */
 const ChartRenderer = ({ data }) => {
+  const theme = useTheme();
   if (!data || !data.chart_type) {
     return null;
   }
@@ -41,12 +42,12 @@ const ChartRenderer = ({ data }) => {
           return (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
+                <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
+                <XAxis dataKey="name" tick={{ fill: theme.palette.text.secondary, fontSize: 13 }} stroke={theme.palette.divider} />
+                <YAxis tick={{ fill: theme.palette.text.secondary, fontSize: 13 }} stroke={theme.palette.divider} />
+                <Tooltip contentStyle={{ backgroundColor: theme.palette.background.paper, color: theme.palette.text.primary, borderColor: theme.palette.divider }} />
                 <Legend />
-                <Bar dataKey="value" fill="#8884d8" />
+                <Bar dataKey="value" fill={theme.palette.primary.light} />
               </BarChart>
             </ResponsiveContainer>
           );
@@ -55,12 +56,12 @@ const ChartRenderer = ({ data }) => {
           return (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
+                <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
+                <XAxis dataKey="name" tick={{ fill: theme.palette.text.secondary, fontSize: 13 }} stroke={theme.palette.divider} />
+                <YAxis tick={{ fill: theme.palette.text.secondary, fontSize: 13 }} stroke={theme.palette.divider} />
+                <Tooltip contentStyle={{ backgroundColor: theme.palette.background.paper, color: theme.palette.text.primary, borderColor: theme.palette.divider }} />
                 <Legend />
-                <Bar dataKey="value" fill="#8884d8" />
+                <Bar dataKey="value" fill={theme.palette.primary.light} />
               </BarChart>
             </ResponsiveContainer>
           );
@@ -69,12 +70,12 @@ const ChartRenderer = ({ data }) => {
           return (
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
+                <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
+                <XAxis dataKey="name" tick={{ fill: theme.palette.text.secondary, fontSize: 13 }} stroke={theme.palette.divider} />
+                <YAxis tick={{ fill: theme.palette.text.secondary, fontSize: 13 }} stroke={theme.palette.divider} />
+                <Tooltip contentStyle={{ backgroundColor: theme.palette.background.paper, color: theme.palette.text.primary, borderColor: theme.palette.divider }} />
                 <Legend />
-                <Line type="monotone" dataKey="value" stroke="#8884d8" />
+                <Line type="monotone" dataKey="value" stroke={theme.palette.primary.light} />
               </LineChart>
             </ResponsiveContainer>
           );
@@ -90,14 +91,14 @@ const ChartRenderer = ({ data }) => {
                   labelLine={false}
                   label={(entry) => entry.name}
                   outerRadius={80}
-                  fill="#8884d8"
+                  fill={theme.palette.primary.light}
                   dataKey="value"
                 >
                   {chartData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip contentStyle={{ backgroundColor: theme.palette.background.paper, color: theme.palette.text.primary, borderColor: theme.palette.divider }} />
               </PieChart>
             </ResponsiveContainer>
           );

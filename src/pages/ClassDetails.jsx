@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link as RouterLink, useNavigate } from 'react-router-dom';
 
 // --- MUI Component Imports ---
-import { Box, Button, Typography, Grid, Skeleton, Alert, AlertTitle, Breadcrumbs, Link, Stack, IconButton, Tooltip, CircularProgress, Menu, MenuItem, ListItemIcon } from '@mui/material';
+import { Box, Button, Skeleton, Alert, AlertTitle, IconButton, Tooltip, Menu, MenuItem, ListItemIcon } from '@mui/material';
 
 // --- Icon Imports ---
 import AddOutlined from '@mui/icons-material/AddOutlined';
@@ -25,6 +25,7 @@ import ConfirmationModal from '../components/common/ConfirmationModal';
 import ClassEditModal from '../components/classes/ClassEditModal';
 import FloatingChatWindow from '../components/chatbot/FloatingChatWindow';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import PageHeader from '../components/common/PageHeader';
 
 // --- Service Import ---
 import classService from '../services/classService';
@@ -164,66 +165,55 @@ const ClassDetails = () => {
   };
 
   // --- Render Logic ---
-  if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>;
-  if (error) return <Box sx={{ p: 3 }}><Alert severity="error"><AlertTitle>Error</AlertTitle>{error}</Alert></Box>;
-  if (!classData) return <Box sx={{ p: 3 }}><Alert severity="warning">Could not find class data.</Alert></Box>;
+  if (isLoading) {
+    return (
+      <Box>
+        <Skeleton height={36} sx={{ mb: 1, maxWidth: 220 }} variant="rounded" />
+        <Skeleton height={44} sx={{ mb: 3.5, maxWidth: 360 }} variant="rounded" />
+        <div className="mst-grid mst-grid-3">{[0, 1, 2].map((i) => <Skeleton height={104} key={i} variant="rectangular" />)}</div>
+        <Skeleton height={320} sx={{ mt: 4 }} variant="rectangular" />
+      </Box>
+    );
+  }
+  if (error) return <Alert severity="error"><AlertTitle>Couldn't load this class</AlertTitle>{error}</Alert>;
+  if (!classData) return <Alert severity="warning">Could not find class data.</Alert>;
 
   const confirmationDescription = deleteConfirmation.type === 'student'
     ? `Are you sure you want to remove ${deleteConfirmation.data?.name}? This action cannot be undone.`
     : `Are you sure you want to delete the class "${deleteConfirmation.data?.name}"? All associated students will also be removed. This action is irreversible.`;
 
   const analyticsCards = [
-      { id: 'count', title: 'Total Students', value: classData.analytics.studentCount, icon: <PeopleAltOutlined /> },
-      { id: 'avg', title: 'Class Grade', value: `${classData.analytics.classAverage}%`, icon: <FunctionsOutlined /> },
-      { id: 'graded', title: 'Assessments Graded', value: classData.analytics.assessmentsGraded, icon: <FactCheckOutlined /> },
+      { id: 'count', title: 'Students', value: classData.analytics.studentCount, icon: <PeopleAltOutlined /> },
+      { id: 'avg', title: 'Class grade', value: `${classData.analytics.classAverage}%`, icon: <FunctionsOutlined /> },
+      { id: 'graded', title: 'Assessments graded', value: classData.analytics.assessmentsGraded, icon: <FactCheckOutlined />, tone: 'ok' },
   ];
   
   return (
-    <>
-      <Box sx={{ mb: 4 }}>
-        <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
-          <Link component={RouterLink} underline="hover" color="inherit" to="/classes">Your Classes</Link>
-          <Typography color="text.primary">{classData.name}</Typography>
-        </Breadcrumbs>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-            {/* FIX #1: Added wordBreak to prevent long class names from causing overflow */}
-            <Typography variant="h2" sx={{ wordBreak: 'break-word' }}>{classData.name}</Typography>
-            <Stack direction="row" spacing={1} alignItems="center">
-                <Button variant="contained" startIcon={<AddOutlined />} onClick={handleOpenAddStudentModal}>Add Student</Button>
-                <Button
-                  startIcon={<AutoAwesomeIcon />}
-                  onClick={() => setChatOpen(true)}
-                  sx={{
-                    background: 'linear-gradient(90deg, #20c5e8 0%, #4d47e0 100%)',
-                    color: 'white',
-                    boxShadow: '0 3px 5px 2px rgba(32, 197, 232, .3)',
-                    fontWeight: 'bold',
-                    '&:hover': {
-                      background: 'linear-gradient(90deg, #1ba5c8 0%, #3d37c0 100%)',
-                      boxShadow: '0 4px 6px 2px rgba(32, 197, 232, .4)',
-                    }
-                  }}
-                >
-                  Analytics with AI
-                </Button>
-                <Tooltip title="Class Options"><IconButton onClick={handleMenuOpen}><MoreVertIcon /></IconButton></Tooltip>
-            </Stack>
-        </Box>
-      </Box>
+    <Box>
+      <PageHeader
+        actions={
+          <>
+            <Button variant="contained" startIcon={<AddOutlined />} onClick={handleOpenAddStudentModal}>Add student</Button>
+            <Button className="mst-ai" startIcon={<AutoAwesomeIcon />} onClick={() => setChatOpen(true)} variant="contained">Analytics with AI</Button>
+          </>
+        }
+        titleAdornment={<Tooltip title="Class options"><IconButton aria-label="Class options" onClick={handleMenuOpen}><MoreVertIcon /></IconButton></Tooltip>}
+        breadcrumbs={[{ label: 'Classes', to: '/classes' }, { label: classData.name }]}
+        subtitle={classData.description || undefined}
+        title={classData.name}
+      />
 
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        {analyticsCards.map(card => (<Grid item xs={12} sm={6} md={4} key={card.id}><InfoCard title={card.title} value={card.value} icon={card.icon} /></Grid>))}
-      </Grid>
-      
-      {/* FIX #2: Made the table container more robust to ensure it contains the scroll */}
-      <Box sx={{ width: '100%', overflow: 'auto' }}>
-        <StudentTable
-          students={classData.students}
-          onEdit={handleOpenEditStudentModal}
-          onDelete={handleOpenConfirmStudentDelete}
-          onProgressTracker={handleStudentProgressTracker}
-        />
-      </Box>
+      <div className="mst-grid mst-grid-3">
+        {analyticsCards.map((card) => <InfoCard icon={card.icon} key={card.id} title={card.title} tone={card.tone} value={card.value} />)}
+      </div>
+
+      <div className="mst-section-label">Students</div>
+      <StudentTable
+        students={classData.students}
+        onEdit={handleOpenEditStudentModal}
+        onDelete={handleOpenConfirmStudentDelete}
+        onProgressTracker={handleStudentProgressTracker}
+      />
 
       {/* Floating Chat Window */}
       <FloatingChatWindow
@@ -241,15 +231,15 @@ const ClassDetails = () => {
       />
 
       <Menu anchorEl={menuAnchorEl} open={Boolean(menuAnchorEl)} onClose={handleMenuClose}>
-        <MenuItem onClick={handleOpenClassEditModal}><ListItemIcon><EditOutlined fontSize="small"/></ListItemIcon>Edit Details</MenuItem>
-        <MenuItem onClick={handleExportRoster}><ListItemIcon><DownloadOutlined fontSize="small"/></ListItemIcon>Export Roster (.csv)</MenuItem>
-        <MenuItem onClick={handleOpenConfirmClassDelete} sx={{ color: 'error.main' }}><ListItemIcon><DeleteOutlineOutlined fontSize="small" color="error"/></ListItemIcon>Delete Class</MenuItem>
+        <MenuItem onClick={handleOpenClassEditModal}><ListItemIcon><EditOutlined fontSize="small"/></ListItemIcon>Edit details</MenuItem>
+        <MenuItem onClick={handleExportRoster}><ListItemIcon><DownloadOutlined fontSize="small"/></ListItemIcon>Export roster (.csv)</MenuItem>
+        <MenuItem onClick={handleOpenConfirmClassDelete} sx={{ color: 'error.main' }}><ListItemIcon><DeleteOutlineOutlined fontSize="small" color="error"/></ListItemIcon>Delete class</MenuItem>
       </Menu>
 
       <StudentModal open={studentModal.open} onClose={handleStudentModalClose} onSubmit={handleStudentModalSubmit} mode={studentModal.mode} initialData={studentModal.data} isLoading={studentModal.state.isLoading} error={studentModal.state.error}/>
       <ClassEditModal open={classEditModal.open} onClose={handleClassEditModalClose} onSubmit={handleClassEditModalSubmit} initialData={classData} isLoading={classEditModal.state.isLoading} error={classEditModal.state.error}/>
       <ConfirmationModal open={deleteConfirmation.open} onClose={handleCloseConfirmDelete} onConfirm={deleteConfirmation.type === 'student' ? handleDeleteStudent : handleDeleteClass} title={`Delete ${deleteConfirmation.type === 'student' ? 'Student' : 'Class'}`} description={confirmationDescription}/>
-    </>
+    </Box>
   );
 };
 

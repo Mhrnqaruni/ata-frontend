@@ -21,32 +21,33 @@ import CloudDoneOutlined from '@mui/icons-material/CloudDoneOutlined';
 
 // Internal State Component for when the panel is empty
 const EmptyState = () => (
-    <Box sx={{ textAlign: 'center', p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-      <AutoAwesomeOutlined sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
-      <Typography variant="h3" gutterBottom>Content will appear here</Typography>
-      <Typography color="text.secondary">Configure your settings on the left and click 'Generate' to get started.</Typography>
-    </Box>
+    <div className="mst-output-empty">
+      <span aria-hidden="true" className="mst-empty-icon" data-ai="true"><AutoAwesomeOutlined /></span>
+      <h2 className="mst-empty-title">Your result will appear here</h2>
+      <p className="mst-empty-text">Choose your settings, then press Generate.</p>
+    </div>
 );
 
-// Internal State Component for when the content is loading
+// While the AI works: a moving gradient bar along the card's top edge and the shape of what's coming
 const LoadingState = () => (
-    <Box sx={{ p: 3 }}>
-        <Skeleton variant="text" width="40%" sx={{ fontSize: '1.25rem' }} />
-        <Skeleton variant="text" width="20%" sx={{ fontSize: '1rem', mb: 2 }} />
-        <Divider />
-        <Skeleton variant="text" sx={{ mt: 2 }} />
-        <Skeleton variant="text" width="80%" />
-        <Skeleton variant="text" />
-        <Skeleton variant="text" width="90%" />
-        <Skeleton variant="text" width="75%" />
-    </Box>
+    <div className="mst-output-loading" aria-busy="true" aria-live="polite">
+        <div className="mst-ai-bar mst-output-bar" />
+        <Box sx={{ p: 3 }}>
+            <span className="mst-visually-hidden">Generating…</span>
+            <Skeleton variant="rounded" width="40%" height={24} sx={{ mb: 1.5 }} />
+            <Skeleton variant="rounded" width="22%" height={16} sx={{ mb: 3 }} />
+            <Skeleton variant="rounded" height={72} sx={{ mb: 1.5 }} />
+            <Skeleton variant="rounded" height={72} sx={{ mb: 1.5 }} />
+            <Skeleton variant="rounded" height={72} />
+        </Box>
+    </div>
 );
 
 // Internal State Component for when an error has occurred
 const ErrorState = ({ error }) => (
-    <Box sx={{ p: 3, height: '100%' }}>
-      <Alert severity="error" sx={{height: '100%'}}>
-        <AlertTitle>Generation Failed</AlertTitle>
+    <Box sx={{ p: 3 }}>
+      <Alert severity="error">
+        <AlertTitle>Generation failed</AlertTitle>
         {error || 'An unknown error occurred.'}
       </Alert>
     </Box>
@@ -79,8 +80,8 @@ const OutputPanel = ({ isLoading, error, generatedContent, onClear, onSave, isSa
     return (
       <>
         {/* Header with Title and Action Buttons */}
-        <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-          <Typography variant="h4">Generated Output</Typography>
+        <Box className="mst-card-head" sx={{ flexShrink: 0 }}>
+          <Typography component="h2" variant="h4">Result</Typography>
           <Stack direction="row" spacing={1} alignItems="center">
             
             <Button
@@ -95,7 +96,7 @@ const OutputPanel = ({ isLoading, error, generatedContent, onClear, onSave, isSa
               onClick={onSave}
               disabled={isSaving || isSaved}
             >
-              {isSaving ? 'Saving...' : isSaved ? 'Saved' : 'Save'}
+              {isSaving ? 'Saving…' : isSaved ? 'Saved' : 'Save'}
             </Button>
 
             <Button
@@ -132,7 +133,7 @@ const OutputPanel = ({ isLoading, error, generatedContent, onClear, onSave, isSa
             components={{
               // Text and Header overrides
               p: ({node, ...props}) => <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }} {...props} />,
-              strong: ({node, ...props}) => <Typography component="span" sx={{ fontWeight: 'bold' }} {...props} />,
+              strong: ({node, ...props}) => <Typography component="span" sx={{ fontWeight: 600 }} {...props} />,
               li: ({node, ...props}) => <li><Typography variant="body1" component="span" sx={{ whiteSpace: 'pre-wrap' }} {...props} /></li>,
               h1: ({node, ...props}) => <Typography variant="h1" gutterBottom {...props} />,
               h2: ({node, ...props}) => <Typography variant="h2" gutterBottom {...props} />,
@@ -146,7 +147,7 @@ const OutputPanel = ({ isLoading, error, generatedContent, onClear, onSave, isSa
               thead: ({node, ...props}) => <TableHead sx={{ bgcolor: 'action.hover' }} {...props} />,
               tbody: ({node, ...props}) => <TableBody {...props} />,
               tr: ({node, ...props}) => <TableRow {...props} />,
-              th: ({node, ...props}) => <TableCell sx={{ fontWeight: 'bold' }} {...props} />,
+              th: ({node, ...props}) => <TableCell sx={{ fontWeight: 600 }} {...props} />,
               td: ({node, ...props}) => <TableCell {...props} />,
             }}
           >
@@ -158,7 +159,7 @@ const OutputPanel = ({ isLoading, error, generatedContent, onClear, onSave, isSa
   };
 
   return (
-    <Card sx={{ minHeight: 450, height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Card className="mst-rim mst-output" sx={{ display: 'flex', flexDirection: 'column' }}>
       {renderContent()}
     </Card>
   );

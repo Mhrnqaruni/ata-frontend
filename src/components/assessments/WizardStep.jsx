@@ -1,21 +1,12 @@
-// /src/components/assessments/WizardStep.jsx
-
 import React from 'react';
-import { Box, Typography, Divider } from '@mui/material';
 
-const WizardStep = ({ title, description, children }) => {
-  return (
-    <Box>
-      <Typography variant="h3">{title}</Typography>
-      <Typography color="text.secondary" sx={{ mt: 1 }}>
-        {description}
-      </Typography>
-      <Divider sx={{ my: 3 }} />
-      <Box>
-        {children}
-      </Box>
-    </Box>
-  );
-};
+// A wizard step's heading: its name and one line on what to do here.
+const WizardStep = ({ title, description, children }) => (
+  <section className="mst-step-section">
+    <h2 className="mst-step-title">{title}</h2>
+    {description ? <p className="mst-step-desc">{description}</p> : null}
+    <div className="mst-step-body">{children}</div>
+  </section>
+);
 
 export default WizardStep;

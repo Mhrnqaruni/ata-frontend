@@ -11,7 +11,10 @@ import {
   Divider,
   Paper,
   Chip,
+  Skeleton,
+  TextField,
 } from '@mui/material';
+import { initialsOf } from '../../classes/StudentTable';
 import AddIcon from '@mui/icons-material/Add';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 
@@ -52,10 +55,13 @@ const ManualUploader = ({ classId, onFilesStaged, onAddOutsider, stagedFiles = {
     fileInputRef.current.click();
   };
 
-  const handleOutsiderClick = () => {
-    const outsiderName = prompt("Please enter the name for this outsider student:", "Unknown Student");
-    if (outsiderName && onAddOutsider) {
-      onAddOutsider(outsiderName);
+  const [outsiderName, setOutsiderName] = useState('');
+  const addOutsider = (event) => {
+    event.preventDefault();
+    const name = outsiderName.trim();
+    if (name && onAddOutsider) {
+      onAddOutsider(name);
+      setOutsiderName('');
     }
   };
 
@@ -78,25 +84,26 @@ const ManualUploader = ({ classId, onFilesStaged, onAddOutsider, stagedFiles = {
     currentUploadTarget.current = null;
   };
 
-  const renderUploadAction = (type, entityId) => {
-    const numFiles = stagedFiles[entityId]?.length || 0;
-
+  const renderRow = (type, entity, secondary) => {
+    const files = stagedFiles[entity.id] || [];
     return (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-        {numFiles > 0 && <Chip label={`${numFiles} file(s)`} color="primary" size="small" />}
-        <Button
-          variant="outlined"
-          startIcon={<UploadFileIcon />}
-          onClick={() => handleUploadClick(type, entityId)}
-          disabled={disabled}
-        >
-          {numFiles > 0 ? 'Add More' : 'Upload'}
+      <li className="mst-manual-row" key={entity.id}>
+        <span aria-hidden="true" className="mst-avatar">{initialsOf(entity.name)}</span>
+        <span className="mst-manual-text">
+          <span className="mst-manual-name">{entity.name}</span>
+          <span className="mst-manual-meta">{secondary}</span>
+        </span>
+        <span className="mst-manual-files">
+          {files.length > 0 ? <Chip color="success" label={`${files.length} ${files.length === 1 ? 'page' : 'pages'} added`} size="small" /> : null}
+        </span>
+        <Button disabled={disabled} onClick={() => handleUploadClick(type, entity.id)} size="small" startIcon={<UploadFileIcon />} variant="outlined">
+          {files.length > 0 ? 'Add more' : 'Add pages'}
         </Button>
-      </Box>
+      </li>
     );
   };
 
-  if (isLoading) return <CircularProgress />;
+  if (isLoading) return <Box sx={{ display: 'grid', gap: 1 }}>{[0, 1, 2].map((i) => <Skeleton height={56} key={i} variant="rounded" />)}</Box>;
   if (error) return <Alert severity="error">{error}</Alert>;
 
   return (
@@ -110,49 +117,24 @@ const ManualUploader = ({ classId, onFilesStaged, onAddOutsider, stagedFiles = {
         accept="image/*"
         disabled={disabled}
       />
-      <Typography variant="h6" gutterBottom>Student Roster</Typography>
-      <Paper>
-        <List>
-          {students.map((student, index) => (
-            <React.Fragment key={student.id}>
-              <ListItem secondaryAction={renderUploadAction('student', student.id)}>
-                <ListItemText primary={student.name} secondary={`ID: ${student.studentId}`} />
-              </ListItem>
-              {index < students.length - 1 && <Divider />}
-            </React.Fragment>
-          ))}
-        </List>
-      </Paper>
-
-      <Divider sx={{ my: 2 }}><Typography variant="overline">Or</Typography></Divider>
-
-      <Button
-        variant="contained"
-        color="secondary"
-        startIcon={<AddIcon />}
-        onClick={handleOutsiderClick}
-        disabled={disabled}
-      >
-        Add Outsider Submission
-      </Button>
-
-      {outsiders.length > 0 && (
-        <Box mt={3}>
-          <Typography variant="h6" gutterBottom>Outsider Submissions</Typography>
-          <Paper>
-            <List>
-              {outsiders.map((outsider, index) => (
-                <React.Fragment key={outsider.id}>
-                  <ListItem secondaryAction={renderUploadAction('outsider', outsider.id)}>
-                    <ListItemText primary={outsider.name} secondary={`Temp ID: ${outsider.id}`} />
-                  </ListItem>
-                  {index < outsiders.length - 1 && <Divider />}
-                </React.Fragment>
-              ))}
-            </List>
-          </Paper>
-        </Box>
-      )}
+      <div className="mst-files">
+        <div className="mst-files-head"><span>Class roster · {students.length} {students.length === 1 ? 'student' : 'students'}</span></div>
+        <ul className="mst-files-list" aria-label="Students in this class">
+          {students.map((student) => renderRow('student', student, `ID ${student.studentId}`))}
+          {outsiders.map((outsider) => renderRow('outsider', outsider, 'Not in this class'))}
+        </ul>
+      </div>
+      <form className="mst-inline-add" onSubmit={addOutsider}>
+        <TextField
+          disabled={disabled}
+          label="Add a student who isn't in this class"
+          onChange={(e) => setOutsiderName(e.target.value)}
+          placeholder="Their full name"
+          size="small"
+          value={outsiderName}
+        />
+        <Button disabled={disabled || !outsiderName.trim()} startIcon={<AddIcon />} type="submit" variant="outlined">Add</Button>
+      </form>
     </Box>
   );
 };

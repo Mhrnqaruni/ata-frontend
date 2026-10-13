@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Box, CircularProgress, Typography, IconButton, Tooltip, Paper, Chip, Button } from '@mui/material';
 import { v4 as uuidv4 } from 'uuid';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import HistoryIcon from '@mui/icons-material/History';
 import DownloadIcon from '@mui/icons-material/Download';
 
@@ -271,67 +272,36 @@ const Chatbot = () => {
   const isInputDisabled = isThinking || isResponding || isMessagesLoading;
 
   return (
-    <Box sx={{ display: 'flex', height: 'calc(100vh - 64px - 48px)', flexDirection: 'column', overflow: 'hidden' }}>
-      {/* Header */}
-      <Paper
-        elevation={2}
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          p: 2,
-          borderBottom: 1,
-          borderColor: 'divider',
-          bgcolor: 'background.paper',
-          borderRadius: 0,
-          flexShrink: 0  // Prevent header from shrinking
-        }}
-      >
-        {/* LEFT SIDE: Title + Stage */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Typography variant="h4" sx={{ fontWeight: 600 }}>
-            Chat Assistant
-          </Typography>
-          {stage && (
-            <Chip size="small" label={stage} color="info" variant="outlined" />
-          )}
-        </Box>
-
-        {/* RIGHT SIDE: History + Download buttons */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Tooltip title="Chat History">
-            <IconButton onClick={handleOpenHistory}>
-              <HistoryIcon />
-            </IconButton>
-          </Tooltip>
-
-          <Button
-            variant="outlined"
-            startIcon={isDownloading ? <CircularProgress size={16} /> : <DownloadIcon />}
-            onClick={handleDownloadReport}
-            disabled={!sessionId || isDownloading}
-            sx={{
-              whiteSpace: 'nowrap',
-              textTransform: 'none',
-              fontWeight: 500
-            }}
-          >
-            {isDownloading ? 'Generating...' : 'Download as Report'}
-          </Button>
-        </Box>
-      </Paper>
+    <Box className="mst-chat-page">
+      <header className="mst-chat-head">
+        <span aria-hidden="true" className="mst-msg-avatar"><AutoAwesomeIcon /></span>
+        <div className="mst-chat-head-text">
+          <h1 className="mst-chat-title">Assistant</h1>
+          {stage ? <Chip size="small" label={stage} color="primary" /> : <span className="mst-hint">Answers from your classes, students and quizzes</span>}
+        </div>
+        <Tooltip title="Chat history">
+          <IconButton aria-label="Chat history" onClick={handleOpenHistory}>
+            <HistoryIcon />
+          </IconButton>
+        </Tooltip>
+        <Button
+          variant="outlined"
+          startIcon={isDownloading ? <CircularProgress size={16} /> : <DownloadIcon />}
+          onClick={handleDownloadReport}
+          disabled={!sessionId || isDownloading}
+          sx={{ whiteSpace: 'nowrap' }}
+        >
+          {isDownloading ? 'Preparing…' : 'Download report'}
+        </Button>
+      </header>
 
       {/* Messages Area */}
       <Box
         ref={messagesBoxRef}
         onScroll={handleMessagesScroll}
-        sx={{
-          flex: 1,
-          minHeight: 0,  // CRITICAL: Allow flex shrinking
-          overflow: 'auto',
-          bgcolor: 'background.default'
-        }}
+        className="mst-chat-scroll"
       >
+        <div className="mst-chat-column">
         {isMessagesLoading ? (
           <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <CircularProgress />
@@ -366,12 +336,12 @@ const Chatbot = () => {
                         cursor: 'pointer',
                         transition: 'all 0.2s',
                         '&:hover': {
-                          bgcolor: 'primary.light',
+                          bgcolor: 'action.selected',
                           transform: 'translateX(4px)'
                         }
                       }}
                     >
-                      <Typography variant="body1" fontWeight="bold">
+                      <Typography variant="body1" fontWeight={600}>
                         {match.name || match.title}
                       </Typography>
                       {match.studentId && (
@@ -392,15 +362,17 @@ const Chatbot = () => {
             )}
           </>
         )}
+        </div>
       </Box>
 
-      {/* Input Area */}
+      <div className="mst-chat-column mst-chat-composer-wrap">
       <ChatInput
         onSendMessage={handleSendMessage}
         disabled={isInputDisabled}
         isResponding={isResponding}
         onStopGeneration={handleStopGeneration}
       />
+      </div>
 
       {/* History Menu */}
       <ChatHistoryMenu

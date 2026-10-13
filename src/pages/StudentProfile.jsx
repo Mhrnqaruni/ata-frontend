@@ -1,6 +1,7 @@
+import '../components/common/responsive-table.css';
 import React, { useState, useEffect } from 'react';
 import { useParams, Link as RouterLink } from 'react-router-dom';
-import { Box, Typography, Paper, CircularProgress, Alert, Button, Chip, Card, CardContent, Breadcrumbs, Link, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel, useTheme, Dialog, DialogTitle, DialogContent, DialogActions, Grid, Divider, Snackbar, Tooltip, IconButton } from '@mui/material';
+import { Box, Typography, Paper, CircularProgress, Alert, Button, Chip, Card, CardContent, Skeleton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel, useTheme, Dialog, DialogTitle, DialogContent, DialogActions, Grid, Divider, Snackbar, Tooltip, IconButton } from '@mui/material';
 import { useAuth } from '../hooks/useAuth';
 import studentService from '../services/studentService';
 import reviewService from '../services/reviewService';
@@ -9,6 +10,9 @@ import useTableSort from '../hooks/useTableSort';
 import FloatingChatWindow from '../components/chatbot/FloatingChatWindow';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import DownloadRounded from '@mui/icons-material/DownloadRounded';
+import PageHeader from '../components/common/PageHeader';
+import { initialsOf } from '../components/classes/StudentTable';
 
 /**
  * AssessmentsTable component with sorting capability
@@ -36,11 +40,11 @@ const AssessmentsTable = ({ assessments, theme, renderTypeChip, renderMarkCell, 
 
     return (
         <TableContainer>
-            <Table aria-label="assessments table">
-                <TableHead sx={{ backgroundColor: theme.palette.grey[100] }}>
+            <Table className="mst-responsive-table mst-sortable-table mst-table" aria-label="Assessments">
+                <TableHead>
                     <TableRow>
-                        <TableCell sx={{ fontWeight: 600 }}>Type</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>
+                        <TableCell sx={{ width: 96 }}>Type</TableCell>
+                        <TableCell sx={{ width: '34%' }}>
                             <TableSortLabel
                                 active={sortColumn === 'assessmentName'}
                                 direction={sortColumn === 'assessmentName' ? sortDirection : 'asc'}
@@ -49,7 +53,7 @@ const AssessmentsTable = ({ assessments, theme, renderTypeChip, renderMarkCell, 
                                 Assessment
                             </TableSortLabel>
                         </TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>
+                        <TableCell>
                             <TableSortLabel
                                 active={sortColumn === 'createdAt'}
                                 direction={sortColumn === 'createdAt' ? sortDirection : 'asc'}
@@ -58,7 +62,7 @@ const AssessmentsTable = ({ assessments, theme, renderTypeChip, renderMarkCell, 
                                 Date
                             </TableSortLabel>
                         </TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>
+                        <TableCell>
                             <TableSortLabel
                                 active={sortColumn === 'totalScore'}
                                 direction={sortColumn === 'totalScore' ? sortDirection : 'asc'}
@@ -67,51 +71,49 @@ const AssessmentsTable = ({ assessments, theme, renderTypeChip, renderMarkCell, 
                                 Mark
                             </TableSortLabel>
                         </TableCell>
-                        <TableCell sx={{ fontWeight: 600 }} align="right">Actions</TableCell>
+                        <TableCell align="right" sx={{ width: 200 }}>Report</TableCell>
                     </TableRow>
                 </TableHead>
                 <TableBody>
                     {sortedData.map((assessment, index) => (
                         <TableRow
                             key={assessment.type === 'quiz' ? `quiz-${assessment.sessionId}` : `exam-${assessment.jobId}`}
-                            hover
-                            sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                         >
-                            <TableCell>
+                            <TableCell data-label="Type">
                                 {renderTypeChip(assessment.type)}
                             </TableCell>
-                            <TableCell component="th" scope="row">
-                                <Typography variant="body1">{assessment.assessmentName}</Typography>
+                            <TableCell component="th" scope="row" data-label="Assessment">
+                                <span className="mst-cell-strong">{assessment.assessmentName}</span>
                             </TableCell>
-                            <TableCell>
-                                <Typography variant="body2" color="text.secondary">
+                            <TableCell data-label="Date">
+                                <span className="mst-cell-muted">
                                     {assessment.createdAt
-                                        ? new Date(assessment.createdAt).toLocaleDateString()
-                                        : 'N/A'}
-                                </Typography>
+                                        ? new Date(assessment.createdAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
+                                        : '—'}
+                                </span>
                             </TableCell>
-                            <TableCell>
-                                <Typography variant="body1">
-                                    {renderMarkCell(assessment)}
-                                </Typography>
+                            <TableCell data-label="Mark">
+                                {renderMarkCell(assessment)}
                             </TableCell>
-                            <TableCell align="right">
+                            <TableCell align="right" data-label="Actions">
                                 {assessment.type === 'exam' && assessment.jobId && assessment.status !== 'ABSENT' && assessment.status !== 'PENDING_REVIEW' && (
                                     <Button
                                         size="small"
+                                        startIcon={<DownloadRounded />}
                                         variant="outlined"
                                         onClick={() => handleDownloadReport(assessment.jobId)}
                                     >
-                                        Download Report
+                                        Download report
                                     </Button>
                                 )}
                                 {assessment.type === 'quiz' && assessment.status === 'GRADED' && (
                                     <Button
                                         size="small"
+                                        startIcon={<DownloadRounded />}
                                         variant="outlined"
                                         onClick={() => handleDownloadQuizReport(assessment)}
                                     >
-                                        Download Report
+                                        Download report
                                     </Button>
                                 )}
                             </TableCell>
@@ -120,6 +122,19 @@ const AssessmentsTable = ({ assessments, theme, renderTypeChip, renderMarkCell, 
                 </TableBody>
             </Table>
         </TableContainer>
+    );
+};
+
+const GradeRing = ({ value }) => {
+    const pct = value === null || value === undefined ? null : Math.max(0, Math.min(100, value));
+    return (
+        <div className="mst-ring" role="img" aria-label={pct === null ? 'Overall grade not available' : `Overall grade ${pct.toFixed(0)} percent`}>
+            <svg viewBox="0 0 96 96" aria-hidden="true">
+                <circle className="mst-ring-track" cx="48" cy="48" r="40" />
+                {pct !== null ? <circle className="mst-ring-value" cx="48" cy="48" pathLength="100" r="40" strokeDasharray={`${pct} 100`} /> : null}
+            </svg>
+            <span className="mst-ring-text">{pct === null ? '—' : `${pct.toFixed(0)}%`}</span>
+        </div>
     );
 };
 
@@ -273,20 +288,31 @@ const StudentProfile = () => {
         }
         if (assessment.totalScore !== null && assessment.maxTotalScore) {
             const percentage = Math.round((assessment.totalScore / assessment.maxTotalScore) * 100);
-            return `${assessment.totalScore} / ${assessment.maxTotalScore} (${percentage}%)`;
+            return (
+                <span className="mst-mark">
+                    <span className="mst-mark-value">{assessment.totalScore} / {assessment.maxTotalScore}</span>
+                    <span className="mst-mark-pct">{percentage}%</span>
+                </span>
+            );
         }
-        return 'N/A';
+        return <span className="mst-cell-muted">—</span>;
     };
 
     const renderTypeChip = (type) => {
         if (type === 'quiz') {
-            return <Chip label="Quiz" color="info" size="small" sx={{ mr: 1 }} />;
+            return <Chip label="Quiz" color="secondary" size="small" />;
         }
-        return <Chip label="Exam" color="primary" size="small" sx={{ mr: 1 }} />;
+        return <Chip label="Exam" color="primary" size="small" />;
     };
 
     if (loading) {
-        return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>;
+        return (
+            <Box>
+                <Skeleton height={64} sx={{ mb: 3.5, maxWidth: 420 }} variant="rounded" />
+                <Skeleton height={168} sx={{ mb: 3 }} variant="rectangular" />
+                <Skeleton height={260} variant="rectangular" />
+            </Box>
+        );
     }
 
     if (error) {
@@ -310,85 +336,66 @@ const StudentProfile = () => {
 
     return (
         <Box>
-            <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
-                <Link component={RouterLink} underline="hover" color="inherit" to="/classes">
-                    Classes
-                </Link>
-                <Typography color="text.primary">{studentData.name}</Typography>
-            </Breadcrumbs>
+            <PageHeader
+                actions={<Button className="mst-ai" onClick={() => setChatOpen(true)} startIcon={<AutoAwesomeIcon />} variant="contained">Analytics with AI</Button>}
+                breadcrumbs={[{ label: 'Classes', to: '/classes' }, { label: studentData.name }]}
+                leading={<span aria-hidden="true" className="mst-avatar" data-size="lg">{initialsOf(studentData.name)}</span>}
+                subtitle={`Student ID ${studentData.studentId}`}
+                title={studentData.name}
+            />
 
-            <Paper sx={{ p: 3, mb: 3 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
-                    <Box sx={{ flex: 1 }}>
-                        <Typography variant="h4" gutterBottom>{studentData.name}</Typography>
-                        <Typography variant="body1" color="text.secondary" gutterBottom>
-                            Student ID: {studentData.studentId}
-                        </Typography>
-                        <Typography variant="h5" color="primary" sx={{ mt: 2 }}>
-                            Overall Grade: {studentData.overallAveragePercent !== null
-                                ? `${studentData.overallAveragePercent.toFixed(2)}%`
-                                : 'N/A'}
-                        </Typography>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
-                            <Typography variant="body1" color="text.secondary">
-                                Overall Average: {overallAveragePercent !== null
-                                    ? `${overallAveragePercent.toFixed(2)}%`
-                                    : 'N/A'}
-                            </Typography>
-                            <Tooltip
-                                title="Overall Average is the simple mean of graded quiz/exam percentages. Overall Grade is weighted by points."
-                                placement="right"
-                            >
-                                <IconButton size="small" aria-label="Overall Average explanation">
-                                    <HelpOutlineIcon fontSize="small" />
-                                </IconButton>
-                            </Tooltip>
-                        </Box>
-                    </Box>
-                    <Button
-                        startIcon={<AutoAwesomeIcon />}
-                        onClick={() => setChatOpen(true)}
-                        sx={{
-                            background: 'linear-gradient(90deg, #20c5e8 0%, #4d47e0 100%)',
-                            color: 'white',
-                            boxShadow: '0 3px 5px 2px rgba(32, 197, 232, .3)',
-                            fontWeight: 'bold',
-                            whiteSpace: 'nowrap',
-                            '&:hover': {
-                                background: 'linear-gradient(90deg, #1ba5c8 0%, #3d37c0 100%)',
-                                boxShadow: '0 4px 6px 2px rgba(32, 197, 232, .4)',
-                            }
-                        }}
-                    >
-                        Analytics with AI
-                    </Button>
-                </Box>
-            </Paper>
+            <section aria-label="Grades" className="mst-g1 mst-rim mst-profile-hero" data-enter="">
+                <GradeRing value={studentData.overallAveragePercent} />
+                <div className="mst-profile-hero-text">
+                    <div className="mst-profile-hero-label">Overall grade</div>
+                    <div className="mst-profile-hero-note">Weighted by points across every graded quiz and exam.</div>
+                    <div className="mst-profile-hero-avg">
+                        Overall average <strong>{overallAveragePercent !== null ? `${overallAveragePercent.toFixed(1)}%` : '—'}</strong>
+                        <Tooltip title="Overall average is the simple mean of graded quiz and exam percentages. Overall grade is weighted by points.">
+                            <IconButton aria-label="What's the difference between overall grade and overall average?" size="small">
+                                <HelpOutlineIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                    </div>
+                </div>
+                {(() => {
+                    const rows = (studentData.classSummaries || []).flatMap((summary) => summary.assessments || []);
+                    const count = (status) => rows.filter((row) => row.status === status).length;
+                    return (
+                        <div className="mst-minis mst-profile-minis">
+                            <div className="mst-mini"><span className="mst-mini-value">{count('GRADED')}</span><span className="mst-mini-label">Graded</span></div>
+                            <div className="mst-mini"><span className="mst-mini-value">{count('PENDING_REVIEW')}</span><span className="mst-mini-label">Waiting for you</span></div>
+                            <div className="mst-mini"><span className="mst-mini-value">{count('ABSENT')}</span><span className="mst-mini-label">Absent</span></div>
+                        </div>
+                    );
+                })()}
+                <div className="mst-profile-hero-classes" hidden={(studentData.classSummaries || []).length < 2}>
+                    {(studentData.classSummaries || []).map((summary) => (
+                        <div className="mst-profile-hero-class" key={summary.classId}>
+                            <span>{summary.className}</span>
+                            <strong>{summary.averagePercent !== null ? `${summary.averagePercent.toFixed(1)}%` : '—'}</strong>
+                        </div>
+                    ))}
+                </div>
+            </section>
 
             {studentData.classSummaries.length === 0 ? (
                 <Alert severity="info">No classes or assessments found for this student.</Alert>
             ) : (
                 studentData.classSummaries.map((classData) => (
-                    <Card key={classData.classId} sx={{ mb: 3 }}>
-                        <CardContent>
-                            <Typography variant="h5" gutterBottom>
-                                {classData.className}
-                            </Typography>
-                            <Typography variant="h6" color="secondary" sx={{ mb: 2 }}>
-                                Class Grade: {classData.averagePercent !== null
-                                    ? `${classData.averagePercent.toFixed(2)}%`
-                                    : 'N/A'}
-                            </Typography>
-
-                            <AssessmentsTable
-                                assessments={classData.assessments}
-                                theme={theme}
-                                renderTypeChip={renderTypeChip}
-                                renderMarkCell={renderMarkCell}
-                                handleDownloadReport={handleDownloadReport}
-                                handleDownloadQuizReport={handleDownloadQuizReport}
-                            />
-                        </CardContent>
+                    <Card className="mst-rim mst-class-section" data-enter="" key={classData.classId}>
+                        <div className="mst-card-head">
+                            <h2 className="mst-card-title">{classData.className}</h2>
+                            {studentData.classSummaries.length > 1 ? <Chip color="primary" label={`Class grade ${classData.averagePercent !== null ? `${classData.averagePercent.toFixed(1)}%` : '—'}`} size="small" /> : null}
+                        </div>
+                        <AssessmentsTable
+                            assessments={classData.assessments}
+                            theme={theme}
+                            renderTypeChip={renderTypeChip}
+                            renderMarkCell={renderMarkCell}
+                            handleDownloadReport={handleDownloadReport}
+                            handleDownloadQuizReport={handleDownloadQuizReport}
+                        />
                     </Card>
                 ))
             )}
@@ -504,7 +511,7 @@ const StudentProfile = () => {
 
                                             {/* Show explanation if available */}
                                             {response.explanation && (
-                                                <Typography variant="body2" sx={{ mt: 1, p: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
+                                                <Typography variant="body2" sx={{ mt: 1, p: 1, bgcolor: 'action.hover', borderRadius: 1 }}>
                                                     <strong>Explanation:</strong> {response.explanation}
                                                 </Typography>
                                             )}

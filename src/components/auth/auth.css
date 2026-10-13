@@ -1,0 +1,633 @@
+/* =====================================================================================================
+   The sign-in surface (AuthFrame + GradingLine). Method and values: the Moby Argus handbook
+   (PORTABLE_HANDBOOK.md §9–§17) and the designer's spec of 2026-10-12. Light is MST's default theme.
+   ===================================================================================================== */
+.mst-auth,
+.mst-dialog {
+  /* light (default) */
+  --ground: #f4f6fc;
+  --bloom-teal: rgb(20 184 214 / 0.2);
+  --bloom-violet: rgb(124 77 230 / 0.16);
+  --bloom-blue: rgb(61 91 219 / 0.18);
+  --bloom-magenta: rgb(200 60 170 / 0.1);
+  --rule: rgb(30 41 90 / 0.05);
+  --ink: #15181d;
+  --ink-2: #4a5465;
+  --accent: #3d5bd9;
+  --accent-ink: #3451c7;
+  --accent-solid: #3a55d0;
+  --accent-hover: #4562e0;
+  --accent-tint: rgb(61 91 219 / 0.16);
+  --ok: #1e7a35;
+  --warn: #b25000;
+  --bad-tint: rgb(196 43 28 / 0.08);
+  --bad-edge: rgb(196 43 28 / 0.3);
+  --bad-ink: #a32317;
+  --paper: #ffffff;
+  --paper-edge: rgb(16 24 40 / 0.3);
+  --pen: #3451c7;
+  --badge-ink: #ffffff;
+  --st-fill: #ffffff;
+  --st-edge: rgb(16 24 40 / 0.4);
+  --st-line: rgb(16 24 40 / 0.22);
+  --tile: #ffffff;
+  --halo: #f4f6fc;
+  --field-fill: rgb(255 255 255 / 0.85);
+  --field-edge: rgb(16 24 40 / 0.5);
+  --autofill: #fdfdff;
+  --pill-edge: rgb(16 24 40 / 0.14);
+  --glass-fill: rgb(255 255 255 / 0.42);
+  --glass-blur: blur(20px) saturate(180%);
+  --glass-solid: #ffffff;
+  --glass-sheen: linear-gradient(180deg, rgb(255 255 255 / 0.55), rgb(255 255 255 / 0.18));
+  --glass-rim: linear-gradient(140deg, #fff, rgb(255 255 255 / 0.45) 30%, rgb(16 24 40 / 0.1) 100%);
+  --glass-spec: rgb(255 255 255 / 0.5);
+  --glass-shadow: inset 0 1px 0 #fff, inset 0 0 0 1px rgb(255 255 255 / 0.35), 0 0 0 1px rgb(16 24 40 / 0.06);
+  --scrim: rgb(4 8 20 / 0.4);
+  --ai-a: #3d6bf0;
+  --ai-b: #7a4bd8;
+  --ai-fill-a: 0.1;
+  --orb-a: rgb(20 184 214 / 0.42);
+  --orb-b: rgb(124 77 230 / 0.34);
+  --card-glow: 0 1px 2px rgb(30 41 90 / 0.08), 0 24px 64px -24px rgb(30 41 90 / 0.28);
+}
+.mst-auth[data-mode="dark"],
+.mst-dialog[data-mode="dark"] {
+  --ground: #060a1a;
+  --bloom-teal: rgb(34 211 238 / 0.14);
+  --bloom-violet: rgb(139 92 246 / 0.26);
+  --bloom-blue: rgb(59 91 219 / 0.32);
+  --bloom-magenta: rgb(217 70 239 / 0.12);
+  --rule: rgb(255 255 255 / 0.035);
+  --ink: rgb(246 247 250 / 0.96);
+  --ink-2: rgb(246 247 250 / 0.7);
+  --accent: #7c9cff;
+  --accent-ink: #a5b8ff;
+  --accent-solid: #3a55d0;
+  --accent-hover: #4562e0;
+  --accent-tint: rgb(124 156 255 / 0.22);
+  --ok: #3ddc97;
+  --warn: #ffb545;
+  --bad-tint: rgb(255 107 107 / 0.14);
+  --bad-edge: rgb(255 107 107 / 0.32);
+  --bad-ink: #ffb3b3;
+  --paper: #eef1f8;
+  --paper-edge: transparent;
+  --pen: #3a55d0;
+  --badge-ink: #0b1020;
+  --st-fill: #10162e;
+  --st-edge: rgb(255 255 255 / 0.3);
+  --st-line: rgb(255 255 255 / 0.22);
+  --tile: #101a3e;
+  --halo: #060a1a;
+  --field-fill: rgb(8 12 28 / 0.45);
+  --field-edge: rgb(255 255 255 / 0.38);
+  --autofill: #161d3a;
+  --pill-edge: rgb(255 255 255 / 0.16);
+  --glass-fill: rgb(18 24 48 / 0.46);
+  --glass-blur: blur(28px) saturate(170%);
+  --glass-solid: #141a33;
+  --glass-sheen: linear-gradient(180deg, rgb(255 255 255 / 0.1), rgb(255 255 255 / 0.03) 42%, rgb(255 255 255 / 0.015));
+  --glass-rim: linear-gradient(140deg, rgb(255 255 255 / 0.55), rgb(255 255 255 / 0.12) 28%, rgb(255 255 255 / 0.04) 58%, rgb(160 190 255 / 0.3));
+  --glass-spec: rgb(255 255 255 / 0.12);
+  --glass-shadow: inset 0 1px 0 rgb(255 255 255 / 0.22), inset 0 -1px 0 rgb(255 255 255 / 0.06), inset 0 0 32px rgb(255 255 255 / 0.035);
+  --orb-a: rgb(34 211 238 / 0.32);
+  --orb-b: rgb(139 92 246 / 0.46);
+  --card-glow: 0 1px 2px rgb(2 6 23 / 0.35), 0 24px 64px -24px rgb(2 6 23 / 0.7);
+  color-scheme: dark;
+}
+
+/* ── two halves: the brand panel (left) and the sign-in side (right). No scroll on a laptop or desktop. ─── */
+.mst-auth {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  grid-template-areas: "story side";
+  height: 100vh;
+  height: 100dvh;
+  min-height: 600px;
+  overflow: hidden;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-ui);
+}
+
+/* the right side: the theme's ground — soft brand blooms and faint exercise-book lines, never moving */
+.mst-auth-side {
+  grid-area: side;
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  overflow: hidden auto;
+  padding: 32px 40px 24px;
+}
+.mst-auth-side::before,
+.mst-auth-side::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+.mst-auth-side::before {
+  background:
+    radial-gradient(60% 50% at 70% 42%, var(--bloom-blue), transparent 70%),
+    radial-gradient(45% 40% at 92% 92%, var(--bloom-violet), transparent 70%),
+    radial-gradient(40% 36% at 96% 6%, var(--bloom-magenta), transparent 70%),
+    radial-gradient(45% 40% at 8% 96%, var(--bloom-teal), transparent 70%);
+}
+.mst-auth-side::after {
+  background: repeating-linear-gradient(to bottom, transparent 0 31px, var(--rule) 31px 32px);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 45%);
+  mask-image: linear-gradient(to right, transparent 0%, #000 45%);
+}
+.mst-auth-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(420px, 100%);
+}
+.mst-auth-logo {
+  display: block;
+  height: 64px;
+  width: auto;
+  margin: 0 0 28px;
+}
+.mst-auth-cardwrap {
+  position: relative;
+  z-index: 0;
+  width: 100%;
+}
+/* the card's soft shadow lives on its own layer (an outer shadow on a blurred element gets cut off) */
+.mst-auth-cardwrap::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 28px;
+  box-shadow: var(--card-glow);
+  pointer-events: none;
+}
+/* two soft brand orbs straddle the card's edges, so the glass visibly frosts the colour behind it */
+.mst-auth-cardwrap::after {
+  content: "";
+  position: absolute;
+  inset: -240px;
+  z-index: -2;
+  background:
+    radial-gradient(130px 130px at 330px 330px, var(--orb-a), transparent 70%),
+    radial-gradient(190px 170px at calc(100% - 290px) calc(100% - 280px), var(--orb-b), transparent 70%);
+  pointer-events: none;
+}
+
+/* the left side: a deep brand panel in BOTH themes (the logo's blue → violet), like Moby's navy panel. It
+   redefines the drawing's tokens locally, so the line draws in the panel's palette. */
+.mst-auth-story {
+  grid-area: story;
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  overflow: hidden;
+  padding: 28px clamp(24px, 4vw, 56px);
+  --ink: rgb(246 247 250 / 0.96);
+  --ink-2: rgb(246 247 250 / 0.74);
+  --accent: #7ea2ff;
+  --accent-ink: #b3c4ff;
+  --ok: #3ddc97;
+  --warn: #ffb545;
+  --paper: #eef1f8;
+  --paper-edge: transparent;
+  --pen: #3a55d0;
+  --badge-ink: #0b1020;
+  --st-fill: #121a45;
+  --st-edge: rgb(255 255 255 / 0.32);
+  --st-line: rgb(255 255 255 / 0.24);
+  --tile: #142057;
+  --halo: #0d1440;
+  --pill-edge: rgb(255 255 255 / 0.2);
+  --glass-fill: rgb(255 255 255 / 0.06);
+  --ai-a: #4f8bff;
+  --ai-b: #9b6bff;
+  --ai-fill-a: 0.2;
+  color: var(--ink);
+  color-scheme: dark;
+  background:
+    radial-gradient(70% 50% at 10% 4%, rgb(34 211 238 / 0.18), transparent 70%),
+    radial-gradient(60% 50% at 96% 96%, rgb(155 107 255 / 0.32), transparent 72%),
+    radial-gradient(50% 40% at 92% 30%, rgb(217 70 239 / 0.1), transparent 70%),
+    linear-gradient(165deg, #12205a 0%, #0b1238 52%, #150f3e 100%);
+}
+/* a faint ring behind the drawing, echoing the star tile */
+.mst-auth-story::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: min(86%, 86vh);
+  aspect-ratio: 1;
+  border: clamp(28px, 5vh, 56px) solid rgb(255 255 255 / 0.03);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.mst-auth-story .gl { width: min(640px, 100%); }
+/* the tall drawing is sized to the screen's height: large on a desktop, never taller than the window */
+.mst-auth-story .gl[data-kind="t"] .gl-svg {
+  width: 100%;
+  height: clamp(380px, calc(100vh - 160px), 780px);
+  height: clamp(380px, calc(100dvh - 160px), 780px);
+}
+.mst-auth-story .gl-top { margin-bottom: 16px; }
+/* the tall drawing's labels are a touch larger: the drawing scales down on short laptop screens */
+.gl[data-kind="t"] .gl-label { font-size: 14px; }
+/* one caption line fits the panel's width, so only one line is reserved (the still frame's two lines size themselves) */
+.mst-auth-story .gl-caption { height: 1.4em; margin-top: 16px; text-align: center; }
+.mst-auth-story .gl[data-still="true"] .gl-caption { height: auto; }
+.mst-auth-story .gl-top { justify-content: center; }
+
+/* ── the liquid-glass card: blur + saturate, a rim of light, a top highlight; no displacement lens ──── */
+.mst-glass {
+  position: relative;
+  isolation: isolate;
+  border-radius: 28px;
+  background: var(--glass-sheen), var(--glass-fill);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow);
+  color: var(--ink);
+}
+.mst-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--glass-rim);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+.mst-glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: radial-gradient(120% 55% at 18% -8%, var(--glass-spec), transparent 58%);
+  pointer-events: none;
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .mst-glass { background: var(--glass-sheen), var(--glass-solid); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .mst-glass { background: var(--glass-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+@media (prefers-contrast: more) {
+  .mst-glass { background: var(--glass-solid); outline: 1px solid var(--field-edge); }
+}
+.mst-auth-card {
+  width: 100%;
+  padding: 36px;
+}
+
+/* ── the card's contents ────────────────────────────────────────────────────────────────────────── */
+.mst-auth-head { margin: 0 0 24px; }
+.mst-auth-head h1 {
+  margin: 0 0 8px;
+  font: 600 28px/1.14 var(--font-display);
+  letter-spacing: -0.034em;
+  color: var(--ink);
+}
+.mst-auth-head p {
+  margin: 0;
+  text-wrap: balance;
+  font: 400 16px/1.5 var(--font-ui);
+  color: var(--ink-2);
+}
+.mst-field { display: grid; gap: 6px; }
+.mst-glass .mst-field-label.MuiFormLabel-root {
+  font: 500 14px/1.3 var(--font-ui);
+  color: var(--ink);
+}
+.mst-glass .mst-field-label.MuiFormLabel-root.Mui-focused { color: var(--ink); }
+.mst-glass .MuiOutlinedInput-root {
+  min-height: 46px;
+  border-radius: 12px;
+  background: var(--field-fill);
+  color: var(--ink);
+  font: 400 16px/1.4 var(--font-ui);
+  transition: box-shadow 0.15s ease;
+}
+.mst-glass .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline { border-color: var(--field-edge); border-width: 1px; }
+.mst-glass .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline { border-color: var(--accent-ink); }
+.mst-glass .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline { border-color: var(--accent-ink); border-width: 1.5px; }
+.mst-glass .MuiOutlinedInput-root.Mui-focused { box-shadow: 0 0 0 4px var(--accent-tint); }
+.mst-glass .MuiOutlinedInput-input { padding: 12px 14px; font-size: 16px; }
+.mst-glass .MuiOutlinedInput-input::placeholder { color: var(--ink-2); opacity: 1; }
+/* Chrome's autofill paint, neutralised — MUI's own `mui-auto-fill` animation is kept: Login listens for it */
+.mst-glass .MuiOutlinedInput-input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px var(--autofill) inset;
+  -webkit-text-fill-color: var(--ink);
+  caret-color: var(--ink);
+  border-radius: inherit;
+}
+.mst-glass .MuiInputAdornment-root .MuiIconButton-root { width: 36px; height: 36px; color: var(--ink-2); }
+.mst-glass .MuiInputAdornment-root .MuiIconButton-root svg { font-size: 20px; }
+.mst-glass .MuiInputAdornment-root .MuiIconButton-root:hover,
+.mst-glass .MuiInputAdornment-root .MuiIconButton-root.Mui-focusVisible { background: none; color: var(--ink); }
+.mst-glass .MuiInputAdornment-root .MuiIconButton-root .MuiTouchRipple-root { display: none; }
+.mst-glass .MuiInputAdornment-root .MuiIconButton-root.Mui-focusVisible { outline: 2px solid var(--accent-ink); outline-offset: -2px; }
+.mst-glass .MuiOutlinedInput-root.Mui-error .MuiOutlinedInput-notchedOutline { border-color: var(--bad-ink); }
+.mst-field-help.MuiFormHelperText-root { margin: 0 2px; font: 400 14px/1.4 var(--font-ui); color: var(--ink-2); }
+.mst-field-help.MuiFormHelperText-root.Mui-error { color: var(--bad-ink); }
+
+/* account type (sign-up): real radio buttons drawn as one segmented control; the brand gradient slides */
+.mst-seg { min-width: 0; margin: 0; padding: 0; border: 0; }
+.mst-seg > legend { float: none; padding: 0; margin: 0 0 6px; font: 500 14px/1.3 var(--font-ui); color: var(--ink); }
+.mst-seg-track {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 3px;
+  border: 1px solid var(--field-edge);
+  border-radius: 999px;
+  background: var(--field-fill);
+}
+.mst-seg-thumb {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  border-radius: 999px;
+  background: linear-gradient(120deg, var(--ai-a), var(--ai-b));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.28), 0 6px 16px -8px rgb(61 91 219 / 0.7);
+  transition: transform 0.38s cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+.mst-seg[data-value="parent"] .mst-seg-thumb { transform: translateX(100%); }
+.mst-seg-option { position: relative; z-index: 1; display: grid; cursor: pointer; }
+.mst-seg-option input { position: absolute; inset: 0; z-index: 1; margin: 0; opacity: 0; cursor: inherit; }
+.mst-seg-option span {
+  display: grid;
+  place-items: center;
+  min-height: 38px;
+  border-radius: 999px;
+  font: 500 14px/1 var(--font-ui);
+  color: var(--ink-2);
+  transition: color 0.25s ease;
+}
+.mst-seg-option:hover span { color: var(--ink); }
+.mst-seg-option input:checked + span { color: #fff; }
+.mst-seg-option input:focus-visible + span { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+.mst-seg:disabled { opacity: 0.6; }
+.mst-seg:disabled .mst-seg-option { cursor: default; }
+.mst-seg-help { margin: 6px 2px 0; font: 400 14px/1.4 var(--font-ui); color: var(--ink-2); }
+@media (prefers-reduced-motion: reduce) { .mst-seg-thumb, .mst-seg-option span { transition: none; } }
+
+/* the Remember me / Forgot password row */
+.mst-glass .MuiFormControlLabel-root { margin-left: -6px; }
+.mst-glass .MuiFormControlLabel-root .MuiTypography-root { font: 500 14px/1.3 var(--font-ui); color: var(--ink-2); }
+.mst-glass .MuiCheckbox-root { padding: 6px; color: var(--field-edge); }
+.mst-glass .MuiCheckbox-root.Mui-checked { color: var(--accent-solid); }
+.mst-glass .MuiButton-text {
+  min-height: 36px;
+  padding: 0 6px;
+  font: 500 14px/1 var(--font-ui);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--accent-ink);
+}
+/* the one primary action */
+.mst-glass .MuiButton-containedPrimary {
+  min-height: 48px;
+  border-radius: 999px;
+  background: var(--accent-solid);
+  color: #fff;
+  font: 600 16px/1 var(--font-ui);
+  letter-spacing: -0.01em;
+  text-transform: none;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.22), 0 10px 24px -10px rgb(58 85 208 / 0.55);
+  transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+.mst-glass .MuiButton-containedPrimary:hover { background: var(--accent-hover); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.22), 0 12px 28px -10px rgb(58 85 208 / 0.6); }
+.mst-glass .MuiButton-containedPrimary:active { transform: scale(0.99); }
+.mst-glass .MuiButton-containedPrimary.Mui-disabled { background: var(--accent-solid); color: #fff; opacity: 0.6; }
+.mst-glass .MuiButton-outlined { border-radius: 999px; text-transform: none; font: 500 14px/1 var(--font-ui); }
+.mst-glass .MuiAlert-standardError {
+  border: 1px solid var(--bad-edge);
+  border-radius: 12px;
+  background: var(--bad-tint);
+  color: var(--bad-ink);
+  font: 500 14px/1.4 var(--font-ui);
+  padding: 4px 12px;
+}
+.mst-glass .MuiAlert-standardError .MuiAlert-icon { color: var(--bad-ink); font-size: 18px; }
+/* the terms line wraps to two lines: its tick box sits with the first line */
+.mst-glass .mst-auth-terms.MuiFormControlLabel-root { align-items: flex-start; margin-right: 0; }
+.mst-glass .mst-auth-terms .MuiTypography-root { padding-top: 9px; text-wrap: pretty; }
+.mst-glass .mst-auth-terms .MuiLink-root { color: var(--accent-ink); text-decoration: underline; text-underline-offset: 3px; }
+.mst-auth-signup.MuiTypography-root { font: 500 14px/1.4 var(--font-ui); color: var(--ink-2); }
+.mst-auth-signup .MuiLink-root { color: var(--accent-ink); font: inherit; font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
+
+/* the theme switch: a small glass pill, top-right */
+.mst-auth-theme {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px 0 10px;
+  border: 1px solid var(--pill-edge);
+  border-radius: 999px;
+  background: var(--glass-fill);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18), 0 6px 18px -10px rgb(2 6 23 / 0.45);
+  color: var(--ink);
+  font: 500 14px/1 var(--font-ui);
+  cursor: pointer;
+}
+.mst-auth-theme svg { font-size: 18px; }
+.mst-auth-theme:focus-visible,
+.gl-play:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+
+/* the forgot-password dialog: the same glass, over a soft scrim */
+.mst-dialog.MuiPaper-root {
+  border-radius: 24px;
+  overflow: visible;
+  background: var(--glass-sheen), var(--glass-fill);
+  background-color: transparent;
+  -webkit-backdrop-filter: blur(28px) saturate(170%);
+  backdrop-filter: blur(28px) saturate(170%);
+  box-shadow: var(--glass-shadow), var(--card-glow);
+  color: var(--ink);
+  background-image: var(--glass-sheen);
+}
+.mst-dialog-backdrop.MuiBackdrop-root { background: rgb(4 8 20 / 0.4); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+.mst-dialog .MuiDialogTitle-root { font: 600 20px/1.3 var(--font-display); letter-spacing: -0.02em; }
+.mst-dialog .MuiDialogContent-root .MuiTypography-root { font: 400 15px/1.5 var(--font-ui); color: var(--ink-2); }
+.mst-dialog .MuiDialogActions-root { padding: 4px 24px 24px; gap: 8px; }
+.mst-dialog-backdrop.is-light.MuiBackdrop-root { background: rgb(244 246 252 / 0.55); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+
+/* ── the grading line (GradingLine.jsx) ─────────────────────────────────────────────────────────── */
+.gl { --gl-accent: var(--accent); width: 100%; }
+.gl-top { display: flex; align-items: center; gap: 12px; margin: 0 0 20px; }
+.gl-play {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--pill-edge);
+  border-radius: 10px;
+  background: var(--glass-fill);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.gl-play svg { width: 14px; height: 14px; fill: currentColor; }
+.gl-play:hover { color: var(--ink); }
+.gl-title { font: 600 13px/1 var(--font-ui); letter-spacing: 0.085em; text-transform: uppercase; color: var(--ink-2); }
+.gl-tag { padding: 3px 9px; border: 1px solid var(--pill-edge); border-radius: 999px; font: 500 13px/1.2 var(--font-ui); color: var(--ink-2); }
+.gl-svg { display: block; width: 100%; height: auto; overflow: visible; pointer-events: none; }
+
+.gl-line { fill: none; stroke: var(--st-line); stroke-width: 1.25; }
+.gl-trail { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; opacity: 0; transition: opacity 0.4s ease; }
+.gl-trail.is-ok { stroke: var(--ok); }
+.gl-trail.is-warn { stroke: var(--warn); }
+.gl-summary, .gl-ghost { opacity: 0; }
+.gl[data-still="true"] .gl-summary { opacity: 0.9; }
+.gl[data-still="true"] .gl-summary .gl-trail { opacity: 1; }
+.gl[data-still="true"] .gl-ghost { opacity: 1; }
+
+.gl-station circle { fill: var(--st-fill); stroke: var(--st-edge); stroke-width: 1.25; transition: stroke 0.2s ease, fill 0.2s ease; }
+.gl-icon { fill: none; stroke: var(--ink-2); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: stroke 0.2s ease; }
+.gl-station.is-active circle { stroke: var(--accent); stroke-width: 1.75; }
+.gl-station.is-active .gl-icon { stroke: var(--ink); }
+.gl-station.is-ok circle { stroke: var(--ok); fill: color-mix(in srgb, var(--ok) 14%, var(--st-fill)); }
+.gl-station.is-ok .gl-icon { stroke: var(--ok); }
+.gl-station.is-warn circle { stroke: var(--warn); fill: color-mix(in srgb, var(--warn) 18%, var(--st-fill)); }
+.gl-station.is-warn .gl-icon { stroke: var(--warn); }
+.gl-station.is-lit circle { stroke: var(--accent); stroke-width: 1.75; fill: color-mix(in srgb, var(--accent) 16%, var(--st-fill)); }
+.gl-station.is-lit .gl-icon { stroke: var(--accent); }
+
+.gl-label {
+  fill: var(--ink-2);
+  font: 600 13px var(--font-ui);
+  letter-spacing: 0.085em;
+  text-transform: uppercase;
+  paint-order: stroke;
+  stroke: var(--halo);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+.gl-label.is-strong { fill: var(--ink); }
+.gl-label.is-ok { fill: var(--ok); }
+.gl-label.is-warn { fill: var(--warn); }
+
+/* MySmartTeach */
+.gl-tile-box { fill: var(--tile); stroke: var(--st-edge); stroke-width: 1.25; transition: stroke 0.3s ease; }
+.gl-tile.is-lit .gl-tile-box { stroke: var(--accent); stroke-width: 1.75; }
+.gl-tile-glow { opacity: 0; transition: opacity 0.6s ease; }
+.gl-tile.is-lit .gl-tile-glow { opacity: 0.8; }
+.gl-tile-wave { fill: none; stroke: var(--accent); stroke-width: 1.5; opacity: 0; }
+
+/* the three markings, stacked together like Moby's scenario boxes */
+.gl-gate-under { fill: var(--st-fill); }
+.gl-gate-box { fill: url(#gl-ai-fill); stroke: url(#gl-ai-edge); stroke-width: 1.25; stroke-opacity: 0.55; transition: stroke-opacity 0.3s ease; }
+.gl-gate.is-open .gl-gate-box { stroke-opacity: 1; stroke-width: 1.5; }
+.gl-gate-shine { opacity: 0; transition: opacity 0.25s ease; mix-blend-mode: screen; }
+.gl-gate-star { fill: url(#gl-ai-edge); }
+.gl-gate-name { fill: var(--ink-2); font: 500 13px var(--font-ui); }
+.gl-gate.is-open .gl-gate-name { fill: var(--ink); }
+.gl-gate-mark { fill: var(--ink-2); font: 600 13px var(--font-ui); font-variant-numeric: tabular-nums; }
+.gl-gate-mark.is-set { fill: var(--ink); }
+.gl-gate.is-ok .gl-gate-mark { fill: var(--ok); }
+.gl-gate.is-warn .gl-gate-mark { fill: var(--warn); }
+
+/* the agreement ring: the Moby gauge, in three parts — one per marking */
+.gl-seg-bg { fill: none; stroke: var(--st-edge); stroke-width: 6; opacity: 0.45; }
+.gl-seg { fill: none; stroke: var(--ink-2); stroke-width: 6; stroke-dasharray: 100 100; stroke-dashoffset: 100; }
+.gl-ring.is-ok .gl-seg { stroke: var(--ok); }
+.gl-ring.is-warn .gl-seg { stroke: var(--warn); }
+.gl-ring-core { fill: var(--st-fill); }
+.gl-ring-value { fill: var(--ink); font: 600 18px var(--font-display); font-variant-numeric: tabular-nums; }
+.gl-ring.is-warn .gl-ring-value { fill: var(--warn); }
+.gl-fork { fill: var(--ink-2); }
+.gl-ping { fill: none; stroke: var(--accent); stroke-width: 1.5; opacity: 0; }
+.gl-ping.is-ok { stroke: var(--ok); }
+.gl-scan { fill: none; stroke: var(--warn); stroke-width: 1.75; stroke-linecap: round; stroke-dasharray: 3 5.2; opacity: 0; transition: opacity 0.2s ease; }
+
+/* the sheets: white paper, handwriting in pen blue; the header turns accent when it becomes feedback */
+.gl-sheet-glow { fill: url(#gl-glow); }
+.gl-sheet-shadow { fill: rgb(10 16 40 / 0.16); }
+.gl-sheet-paper { fill: var(--paper); stroke: var(--paper-edge); stroke-width: 1; }
+.gl-sheet-head { fill: var(--accent); opacity: 0; }
+.gl-sheet-head.is-on { opacity: 1; }
+.gl-sheet-pen { fill: none; stroke: var(--pen); stroke-width: 1.3; stroke-linecap: round; opacity: 0.85; }
+.gl-badge circle { fill: var(--warn); }
+.gl-badge.is-ok circle { fill: var(--ok); }
+.gl-badge-tick { fill: none; stroke: var(--badge-ink); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+.gl-badge.is-ok .gl-badge-tick { opacity: 1; }
+.gl-badge-q { fill: var(--badge-ink); font: 600 13px var(--font-ui); opacity: 0; transform: scale(0.72); transform-box: fill-box; transform-origin: center; }
+.gl-badge.is-warn .gl-badge-q { opacity: 1; }
+.gl-chip-glow { fill: url(#gl-glow); }
+.gl-chip-core { fill: var(--accent); stroke: var(--st-fill); stroke-width: 1.5; }
+.gl-clip rect { fill: var(--accent); }
+.gl-ghost-badge { fill: var(--ok); }
+.gl-ghost-tick { fill: none; stroke: var(--badge-ink); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* the narration: one sentence at a time (the old one leaves first, never two overlapping) */
+.gl-caption {
+  position: relative;
+  height: 2.8em;
+  margin: 20px 0 0;
+  font: 500 18px/1.35 var(--font-display);
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.gl-caption > span { position: absolute; inset: 0; opacity: 0; transform: translateY(6px); transition: opacity 0.2s ease, transform 0.2s ease; }
+.gl-caption > span.is-on { opacity: 1; transform: none; transition: opacity 0.45s ease 0.22s, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.22s; }
+.gl[data-still="true"] .gl-caption > span { opacity: 0; transform: none; transition: none; }
+.gl[data-still="true"] .gl-caption > span.gl-caption-still { opacity: 1; }
+.gl-caption-line { display: block; }
+.gl[data-still="true"] .gl-caption { height: auto; }
+.gl[data-still="true"] .gl-caption > span.gl-caption-still { position: static; }
+.gl-caption { text-wrap: balance; }
+@media (prefers-reduced-motion: reduce) {
+  .gl-caption > span, .gl-caption > span.is-on { transform: none; transition: opacity 0.2s linear; }
+  .mst-glass .MuiButton-containedPrimary { transition: none; }
+}
+
+/* ── below 1024px: one column — the sign-in first, the story under it (the page may scroll on phones) ── */
+@media (max-width: 1023px) {
+  .mst-auth { display: block; height: auto; min-height: 100vh; min-height: 100dvh; overflow: visible; }
+  .mst-auth-side { padding: 64px 16px 40px; min-height: auto; }
+  .mst-auth-story { padding: 40px 16px 48px; }
+  .mst-auth-theme { top: 16px; right: 16px; }
+}
+@media (max-width: 600px) {
+  .mst-auth-logo { height: 48px; margin-bottom: 20px; }
+  .mst-auth-card { padding: 24px; }
+  .mst-glass { border-radius: 24px; -webkit-backdrop-filter: blur(18px) saturate(160%); backdrop-filter: blur(18px) saturate(160%); }
+  .mst-auth-theme { padding: 0 10px; }
+  .mst-auth-theme span { display: none; }
+}
+/* short laptop windows: a tighter card so nothing scrolls */
+@media (min-width: 1024px) and (max-height: 800px) {
+  .mst-auth-side { padding-block: 20px; }
+  .mst-auth:has(.mst-seg) .mst-auth-logo { height: 44px; margin-bottom: 14px; }
+  .mst-auth-card { padding: 26px 30px; }
+  .mst-auth-head { margin-bottom: 18px; }
+  .mst-auth:has(.mst-seg) .mst-auth-head p { display: none; }
+  .mst-glass .mst-auth-stack.MuiStack-root > :not(style) ~ :not(style) { margin-top: 12px; }
+  .mst-glass .MuiOutlinedInput-root { min-height: 44px; }
+  .mst-glass .MuiOutlinedInput-input { padding-block: 11px; }
+}

@@ -16,6 +16,7 @@ import SourceInputBlock from '../../components/tools/SourceInputBlock'; // <<< U
 
 // MUI Icon Imports
 import RuleOutlined from '@mui/icons-material/RuleOutlined';
+import AutoAwesomeRounded from '@mui/icons-material/AutoAwesomeRounded';
 import TuneOutlined from '@mui/icons-material/TuneOutlined';
 
 // Service Imports
@@ -106,15 +107,15 @@ const SettingsPanel = ({
     const isFormValid = (formState.assignment_text.trim().length > 10 || formState.assignment_file !== null || formState.assignment_library.selected_chapters.length > 0) && formState.criteria.length > 1 && formState.levels.length > 1;
 
     return (
-        <Card variant="outlined" sx={{ borderColor: 'divider' }}>
+        <Card className="mst-rim mst-tool-settings">
             <form onSubmit={onSubmit}>
-                <CardHeader avatar={<TuneOutlined color="primary" />} title="Settings" titleTypographyProps={{ variant: 'h3' }} />
+                <CardHeader avatar={<span aria-hidden="true" className="mst-tile" data-size="sm"><TuneOutlined /></span>} title="Settings" titleTypographyProps={{ variant: 'h3', component: 'h2' }} />
                 <Divider />
                 <CardContent>
                     <Stack spacing={4}>
                         <FormControl fullWidth disabled={isLoading}>
-                            <InputLabel>Grade Level</InputLabel>
-                            <Select name="grade_level" value={formState.grade_level} label="Grade Level" onChange={(e) => setFormState({...formState, grade_level: e.target.value})}>
+                            <InputLabel>Grade level</InputLabel>
+                            <Select name="grade_level" value={formState.grade_level} label="Grade level" onChange={(e) => setFormState({...formState, grade_level: e.target.value})}>
                                 <MenuItem value="Primary School">Primary School</MenuItem>
                                 <MenuItem value="Secondary School">Secondary School</MenuItem>
                                 <MenuItem value="Years 10 & 11 (GCSE)">Years 10 & 11 (GCSE)</MenuItem>
@@ -124,7 +125,7 @@ const SettingsPanel = ({
                         
                         {/* --- Render the first SourceInputBlock for the Assignment Context --- */}
                         <SourceInputBlock
-                            label="Assignment Context (The 'What' to Grade)"
+                            label="What's being graded"
                             textValue={formState.assignment_text}
                             fileValue={formState.assignment_file}
                             librarySelection={formState.assignment_library}
@@ -139,10 +140,10 @@ const SettingsPanel = ({
                         {/* --- Render a simplified input for the Rubric Guidance --- */}
                         <Box>
                             <Typography variant="overline" color="text.secondary">
-                                Optional: Rubric Guidance (The 'How' to Grade)
+                                Rubric guidance (optional)
                             </Typography>
                             <TextField
-                                label="Paste a sample rubric or grading notes here"
+                                label="Sample rubric or grading notes"
                                 multiline
                                 rows={6}
                                 fullWidth
@@ -153,15 +154,15 @@ const SettingsPanel = ({
                         </Box>
 
                         {/* --- Render Chip Inputs for Criteria and Levels --- */}
-                        <ChipInput label="Criteria (Rows)" items={formState.criteria} setItems={setCriteria} disabled={isLoading} />
-                        <ChipInput label="Performance Levels (Columns)" items={formState.levels} setItems={setLevels} disabled={isLoading} />
+                        <ChipInput label="Criteria (rows)" items={formState.criteria} setItems={setCriteria} disabled={isLoading} />
+                        <ChipInput label="Performance levels (columns)" items={formState.levels} setItems={setLevels} disabled={isLoading} />
                         
                     </Stack>
                 </CardContent>
                 <Divider />
-                <CardActions sx={{ p: 2, justifyContent: 'flex-end' }}>
-                    <Button type="submit" variant="contained" disabled={!isFormValid || isLoading} startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}>
-                        {isLoading ? 'Generating...' : 'Generate Rubric'}
+                <CardActions className="mst-tool-actions">
+                    <Button className="mst-ai" fullWidth size="large" type="submit" variant="contained" disabled={!isFormValid || isLoading} startIcon={isLoading ? <CircularProgress size={18} color="inherit" /> : <AutoAwesomeRounded />}>
+                        {isLoading ? 'Generating…' : 'Generate rubric'}
                     </Button>
                 </CardActions>
             </form>
@@ -279,7 +280,8 @@ const RubricGenerator = () => {
 
   return (
     <ToolPageLayout
-      title="Rubric Generator"
+      title="Rubric generator"
+      subtitle="Grading rubrics with clear criteria and levels."
       icon={<RuleOutlined />}
       settingsPanel={
         <SettingsPanel

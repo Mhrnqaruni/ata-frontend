@@ -16,6 +16,7 @@ import FileUploadZone from '../../components/tools/FileUploadZone';
 
 // MUI Icon Imports
 import SlideshowOutlined from '@mui/icons-material/SlideshowOutlined';
+import AutoAwesomeRounded from '@mui/icons-material/AutoAwesomeRounded';
 import TuneOutlined from '@mui/icons-material/TuneOutlined';
 
 // Service Imports
@@ -95,16 +96,16 @@ const SettingsPanel = ({
     const isFormValid = (formState.source_text.trim().length > 10 || formState.source_file !== null || formState.selected_chapters.length > 0);
 
     return (
-        <Card variant="outlined" sx={{ borderColor: 'divider' }}>
+        <Card className="mst-rim mst-tool-settings">
             <form onSubmit={onSubmit}>
-                <CardHeader avatar={<TuneOutlined color="primary" />} title="Settings" titleTypographyProps={{ variant: 'h3' }} />
+                <CardHeader avatar={<span aria-hidden="true" className="mst-tile" data-size="sm"><TuneOutlined /></span>} title="Settings" titleTypographyProps={{ variant: 'h3', component: 'h2' }} />
                 <Divider />
                 <CardContent>
                     <Stack spacing={3}>
                         {/* --- SLIDE-SPECIFIC SETTINGS --- */}
                         <FormControl fullWidth disabled={isLoading || activeTab === 2}>
-                            <InputLabel id="grade-level-label">Grade Level</InputLabel>
-                            <Select name="grade_level" value={formState.grade_level} label="Grade Level" onChange={handleInputChange}>
+                            <InputLabel id="grade-level-label">Grade level</InputLabel>
+                            <Select name="grade_level" value={formState.grade_level} label="Grade level" onChange={handleInputChange}>
                                 <MenuItem value="Primary School">Primary School</MenuItem>
                                 <MenuItem value="Secondary School">Secondary School</MenuItem>
                                 <MenuItem value="Years 10 & 11 (GCSE)">Years 10 & 11 (GCSE)</MenuItem>
@@ -115,7 +116,7 @@ const SettingsPanel = ({
                         <TextField
                             name="num_slides"
                             type="number"
-                            label="Number of Slides (3-20)"
+                            label="Number of slides (3–20)"
                             value={formState.num_slides}
                             onChange={handleInputChange}
                             disabled={isLoading}
@@ -123,8 +124,8 @@ const SettingsPanel = ({
                         />
 
                         <FormControl fullWidth disabled={isLoading}>
-                            <InputLabel id="slide-style-label">Slide Style</InputLabel>
-                            <Select name="slide_style" value={formState.slide_style} label="Slide Style" onChange={handleInputChange}>
+                            <InputLabel id="slide-style-label">Slide style</InputLabel>
+                            <Select name="slide_style" value={formState.slide_style} label="Slide style" onChange={handleInputChange}>
                                 <MenuItem value="informative">Informative</MenuItem>
                                 <MenuItem value="engaging">Engaging</MenuItem>
                                 <MenuItem value="professional">Professional</MenuItem>
@@ -133,30 +134,30 @@ const SettingsPanel = ({
 
                         <FormControlLabel
                             control={<Switch checked={formState.include_speaker_notes} onChange={handleInputChange} name="include_speaker_notes" />}
-                            label="Include Speaker Notes"
+                            label="Include speaker notes"
                             disabled={isLoading}
                         />
                         {/* --- END SLIDE-SPECIFIC SETTINGS --- */}
 
                         <Box>
-                            <Typography variant="overline" color="text.secondary">Source Material</Typography>
-                            <Tabs value={activeTab} onChange={handleTabChange} variant="fullWidth" sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                                <Tab label="Type Text" disabled={isLoading} />
-                                <Tab label="Upload File" disabled={isLoading} />
-                                <Tab label="From Library" disabled={isLoading || libraryLoading} />
+                            <Typography className="mst-field-group" component="div" variant="overline">Source material</Typography>
+                            <Tabs value={activeTab} onChange={handleTabChange} variant="fullWidth" sx={{ width: '100%' }}>
+                                <Tab label="Text" disabled={isLoading} />
+                                <Tab label="File" disabled={isLoading} />
+                                <Tab label="Library" disabled={isLoading || libraryLoading} />
                             </Tabs>
                             {/* --- CORRECTED AND COMPLETED TAB CONTENT --- */}
                             <Box sx={{ pt: 2, minHeight: 290 }}>
-                                {activeTab === 0 && <TextField name="source_text" label="Topic or Source Text" multiline rows={10} fullWidth value={formState.source_text} onChange={handleInputChange} disabled={isLoading} />}
+                                {activeTab === 0 && <TextField name="source_text" label="Topic or source text" multiline rows={10} fullWidth value={formState.source_text} onChange={handleInputChange} disabled={isLoading} />}
                                 {activeTab === 1 && <FileUploadZone file={formState.source_file} setFile={setFile} isLoading={isLoading} />}
                                 {activeTab === 2 && (
                                     libraryLoading ? <Box sx={{display: 'flex', justifyContent: 'center', pt: 4}}><CircularProgress /></Box> :
                                     <Stack spacing={2}>
-                                        <Autocomplete options={libraryTree} getOptionLabel={(option) => option.name} value={formState.selected_level} onChange={(e, val) => handleLibraryChange('selected_level', val)} renderInput={(params) => <TextField {...params} label="Select Level" />} />
-                                        <Autocomplete options={yearOptions} getOptionLabel={(option) => option.name} value={formState.selected_year} onChange={(e, val) => handleLibraryChange('selected_year', val)} disabled={!formState.selected_level} renderInput={(params) => <TextField {...params} label="Select Year" />} />
-                                        <Autocomplete options={subjectOptions} getOptionLabel={(option) => option.name} value={formState.selected_subject} onChange={(e, val) => handleLibraryChange('selected_subject', val)} disabled={!formState.selected_year} renderInput={(params) => <TextField {...params} label="Select Subject" />} />
-                                        <Autocomplete options={bookOptions} getOptionLabel={(option) => option.name} value={formState.selected_book} onChange={(e, val) => handleLibraryChange('selected_book', val)} disabled={!formState.selected_subject} renderInput={(params) => <TextField {...params} label="Select Book" />} />
-                                        <Autocomplete multiple options={chapterOptions} getOptionLabel={(option) => option.name} value={formState.selected_chapters} onChange={(e, val) => handleLibraryChange('selected_chapters', val)} disabled={!formState.selected_book} renderInput={(params) => <TextField {...params} label="Select Chapters (up to 5)" />} limitTags={3} />
+                                        <Autocomplete options={libraryTree} getOptionLabel={(option) => option.name} value={formState.selected_level} onChange={(e, val) => handleLibraryChange('selected_level', val)} renderInput={(params) => <TextField {...params} label="Level" />} />
+                                        <Autocomplete options={yearOptions} getOptionLabel={(option) => option.name} value={formState.selected_year} onChange={(e, val) => handleLibraryChange('selected_year', val)} disabled={!formState.selected_level} renderInput={(params) => <TextField {...params} label="Year" />} />
+                                        <Autocomplete options={subjectOptions} getOptionLabel={(option) => option.name} value={formState.selected_subject} onChange={(e, val) => handleLibraryChange('selected_subject', val)} disabled={!formState.selected_year} renderInput={(params) => <TextField {...params} label="Subject" />} />
+                                        <Autocomplete options={bookOptions} getOptionLabel={(option) => option.name} value={formState.selected_book} onChange={(e, val) => handleLibraryChange('selected_book', val)} disabled={!formState.selected_subject} renderInput={(params) => <TextField {...params} label="Book" />} />
+                                        <Autocomplete multiple options={chapterOptions} getOptionLabel={(option) => option.name} value={formState.selected_chapters} onChange={(e, val) => handleLibraryChange('selected_chapters', val)} disabled={!formState.selected_book} renderInput={(params) => <TextField {...params} label="Chapters (up to 5)" />} limitTags={3} />
                                     </Stack>
                                 )}
                             </Box>
@@ -164,9 +165,9 @@ const SettingsPanel = ({
                     </Stack>
                 </CardContent>
                 <Divider />
-                <CardActions sx={{ p: 2, justifyContent: 'flex-end' }}>
-                    <Button type="submit" variant="contained" disabled={!isFormValid || isLoading} startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}>
-                        {isLoading ? 'Generating...' : 'Generate Slides'}
+                <CardActions className="mst-tool-actions">
+                    <Button className="mst-ai" fullWidth size="large" type="submit" variant="contained" disabled={!isFormValid || isLoading} startIcon={isLoading ? <CircularProgress size={18} color="inherit" /> : <AutoAwesomeRounded />}>
+                        {isLoading ? 'Generating…' : 'Generate slides'}
                     </Button>
                 </CardActions>
             </form>
@@ -294,7 +295,8 @@ const SlideGenerator = () => {
 
   return (
     <ToolPageLayout
-      title="Slide Generator"
+      title="Slide generator"
+      subtitle="A structured slide outline, with speaker notes if you want them."
       icon={<SlideshowOutlined />}
       settingsPanel={
         <SettingsPanel

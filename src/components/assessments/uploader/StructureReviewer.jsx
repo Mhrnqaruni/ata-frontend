@@ -2,8 +2,7 @@
 
 import React from 'react';
 import {
-  Box, Typography, Paper, TextField, Stack, IconButton, Fab, Divider,
-  Accordion, AccordionSummary, AccordionDetails, List, ListItem, ListItemText
+  Box, Typography, Paper, TextField, Stack, IconButton, Fab, Divider, Accordion, AccordionSummary, AccordionDetails, List, ListItem, ListItemText, Button, Tooltip
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -25,10 +24,11 @@ const MaxScoreField = ({ value, onChange, disabled }) => {
   return (
     <TextField
       type="number"
-      label="Max Score"
+      label="Marks"
+      className="mst-sr-marks"
       {...inputProps}
       disabled={disabled}
-      sx={{ maxWidth: '150px' }}
+      sx={{ maxWidth: 150 }}
       inputProps={{ min: 1 }}
       placeholder="e.g., 10"
     />
@@ -55,73 +55,68 @@ const StructureReviewer = ({ config, dispatch, disabled }) => {
 
   return (
     <Stack spacing={2}>
-      <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-        Our AI has analyzed your document and structured it into the sections and questions below. Please review, edit, and confirm the details before proceeding.
+      <Typography variant="body1" color="text.secondary">
+        AI read your documents and laid out each question. Edit anything that isn't right before you continue.
       </Typography>
       
       {config.sections.map((section, sectionIndex) => (
-        <Paper key={section.id} elevation={2} sx={{ overflow: 'hidden' }}>
+        <Box key={section.id}>
           <Accordion defaultExpanded>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h6">{`Section ${sectionIndex + 1}: ${section.title}`}</Typography>
+              <Typography variant="h3" component="h4">{`Section ${sectionIndex + 1} · ${section.title}`}</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <List>
+              <div className="mst-sr-list">
                 {section.questions.map((q, questionIndex) => (
-                  <React.Fragment key={q.id}>
-                    <ListItem
-                      secondaryAction={
-                        <IconButton edge="end" onClick={() => handleDeleteQuestion(section.id, q.id)} disabled={disabled}>
-                          <DeleteIcon />
-                        </IconButton>
-                      }
-                    >
-                      <ListItemText primary={<Typography variant="subtitle1" component="div">{`Question ${questionIndex + 1}`}</Typography>} />
-                    </ListItem>
-                    <Stack spacing={2} sx={{ pl: 4, pt: 1, pb: 2 }}>
-                      <TextField fullWidth multiline rows={3} label="Question Text" value={q.text || ''} onChange={(e) => handleQuestionUpdate(section.id, q.id, 'text', e.target.value)} disabled={disabled} />
-
-                      <TextField
-                        fullWidth
-                        multiline
-                        rows={4}
-                        label="Model Answer / Answer Key"
-                        value={q.answer || ''}
-                        onChange={(e) => handleQuestionUpdate(section.id, q.id, 'answer', e.target.value)}
-                        disabled={disabled}
-                        helperText="The correct answer extracted from the answer key document"
-                      />
-
-                      <TextField
-                        fullWidth
-                        multiline
-                        rows={3}
-                        label="Grading Rubric / Marking Scheme"
-                        value={q.rubric || ''}
-                        onChange={(e) => handleQuestionUpdate(section.id, q.id, 'rubric', e.target.value)}
-                        disabled={disabled}
-                        helperText="Key points for marking and grading criteria"
-                      />
-
+                  <div className="mst-sr-q" key={q.id}>
+                    <div className="mst-sr-q-head">
+                      <span aria-hidden="true" className="mst-question-num">{questionIndex + 1}</span>
+                      <span className="mst-sr-q-title">{`Question ${questionIndex + 1}`}</span>
                       <MaxScoreField
                         value={q.maxScore || 0}
                         onChange={(value) => handleQuestionUpdate(section.id, q.id, 'maxScore', value)}
                         disabled={disabled}
                       />
-
-                    </Stack>
-                    {questionIndex < section.questions.length - 1 && <Divider sx={{ my: 2 }} />}
-                  </React.Fragment>
+                      <Tooltip title="Remove question">
+                        <span>
+                          <IconButton aria-label={`Remove question ${questionIndex + 1}`} className="mst-danger-icon" onClick={() => handleDeleteQuestion(section.id, q.id)} disabled={disabled}>
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                    </div>
+                    <TextField fullWidth multiline minRows={2} label="Question" value={q.text || ''} onChange={(e) => handleQuestionUpdate(section.id, q.id, 'text', e.target.value)} disabled={disabled} />
+                    <div className="mst-form-row">
+                      <TextField
+                        fullWidth
+                        multiline
+                        minRows={1}
+                        label="Model answer"
+                        value={q.answer || ''}
+                        onChange={(e) => handleQuestionUpdate(section.id, q.id, 'answer', e.target.value)}
+                        disabled={disabled}
+                        helperText="Read from the answer key"
+                      />
+                      <TextField
+                        fullWidth
+                        multiline
+                        minRows={1}
+                        label="Marking scheme"
+                        value={q.rubric || ''}
+                        onChange={(e) => handleQuestionUpdate(section.id, q.id, 'rubric', e.target.value)}
+                        disabled={disabled}
+                        helperText="What earns the marks"
+                      />
+                    </div>
+                  </div>
                 ))}
-              </List>
-              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                <Fab size="small" color="secondary" aria-label="add question" onClick={() => handleAddQuestion(section.id)} disabled={disabled}>
-                  <AddIcon />
-                </Fab>
-              </Box>
+              </div>
+              <Button disabled={disabled} onClick={() => handleAddQuestion(section.id)} size="small" startIcon={<AddIcon />} sx={{ mt: 1 }} variant="text">
+                Add a question
+              </Button>
             </AccordionDetails>
           </Accordion>
-        </Paper>
+        </Box>
       ))}
     </Stack>
   );

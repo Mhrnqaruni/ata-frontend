@@ -1,3 +1,4 @@
+import ComparisonTableContainer from '../components/common/ComparisonTableContainer';
 // /src/pages/AdminDashboard.jsx
 
 import React, { useEffect, useState } from 'react';
@@ -66,107 +67,107 @@ const AdminDashboard = () => {
 
   return (
     <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-      <Typography variant="h3" gutterBottom fontWeight="bold" color="primary">
-        🔒 Super Admin Dashboard
+      <Typography component="h1" variant="h1" gutterBottom fontWeight={600} color="text.primary">
+        Admin dashboard
       </Typography>
 
       {/* SUMMARY STATISTICS - BOLD AND PROMINENT */}
-      <Paper elevation={3} sx={{ p: 3, mb: 4, bgcolor: 'primary.main', color: 'white' }}>
-        <Typography variant="h5" gutterBottom fontWeight="bold">
-          📊 DATABASE SUMMARY
+      <Paper elevation={3} sx={{ p: 3, mb: 4, bgcolor: 'background.paper', color: 'text.primary', border: '1px solid', borderColor: 'divider' }}>
+        <Typography variant="h5" gutterBottom fontWeight={600}>
+          Database summary
         </Typography>
         <Grid container spacing={2}>
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ bgcolor: 'rgba(255,255,255,0.9)' }}>
+            <Card sx={{ bgcolor: 'background.paper' }}>
               <CardContent>
-                <Typography variant="h4" fontWeight="bold" color="primary">
+                <Typography variant="h4" fontWeight={600} color="primary.light">
                   {summary.total_users}
                 </Typography>
-                <Typography variant="body1" fontWeight="bold">
+                <Typography variant="body1" fontWeight={600}>
                   Total Users
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ bgcolor: 'rgba(255,255,255,0.9)' }}>
+            <Card sx={{ bgcolor: 'background.paper' }}>
               <CardContent>
-                <Typography variant="h4" fontWeight="bold" color="primary">
+                <Typography variant="h4" fontWeight={600} color="primary.light">
                   {summary.total_classes}
                 </Typography>
-                <Typography variant="body1" fontWeight="bold">
+                <Typography variant="body1" fontWeight={600}>
                   Total Classes
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ bgcolor: 'rgba(255,255,255,0.9)' }}>
+            <Card sx={{ bgcolor: 'background.paper' }}>
               <CardContent>
-                <Typography variant="h4" fontWeight="bold" color="primary">
+                <Typography variant="h4" fontWeight={600} color="primary.light">
                   {summary.total_students}
                 </Typography>
-                <Typography variant="body1" fontWeight="bold">
+                <Typography variant="body1" fontWeight={600}>
                   Total Students
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ bgcolor: 'rgba(255,255,255,0.9)' }}>
+            <Card sx={{ bgcolor: 'background.paper' }}>
               <CardContent>
-                <Typography variant="h4" fontWeight="bold" color="primary">
+                <Typography variant="h4" fontWeight={600} color="primary.light">
                   {summary.total_assessments}
                 </Typography>
-                <Typography variant="body1" fontWeight="bold">
+                <Typography variant="body1" fontWeight={600}>
                   Total Assessments
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ bgcolor: 'rgba(255,255,255,0.9)' }}>
+            <Card sx={{ bgcolor: 'background.paper' }}>
               <CardContent>
-                <Typography variant="h4" fontWeight="bold" color="success.main">
+                <Typography variant="h4" fontWeight={600} color="success.main">
                   {summary.total_results}
                 </Typography>
-                <Typography variant="body1" fontWeight="bold">
+                <Typography variant="body1" fontWeight={600}>
                   Total Results
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ bgcolor: 'rgba(255,255,255,0.9)' }}>
+            <Card sx={{ bgcolor: 'background.paper' }}>
               <CardContent>
-                <Typography variant="h4" fontWeight="bold" color="success.main">
+                <Typography variant="h4" fontWeight={600} color="success.main">
                   {summary.total_chat_sessions}
                 </Typography>
-                <Typography variant="body1" fontWeight="bold">
+                <Typography variant="body1" fontWeight={600}>
                   Chat Sessions
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ bgcolor: 'rgba(255,255,255,0.9)' }}>
+            <Card sx={{ bgcolor: 'background.paper' }}>
               <CardContent>
-                <Typography variant="h4" fontWeight="bold" color="success.main">
+                <Typography variant="h4" fontWeight={600} color="success.main">
                   {summary.total_generations}
                 </Typography>
-                <Typography variant="body1" fontWeight="bold">
+                <Typography variant="body1" fontWeight={600}>
                   AI Generations
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ bgcolor: 'rgba(255,255,255,0.9)' }}>
+            <Card sx={{ bgcolor: 'background.paper' }}>
               <CardContent>
-                <Typography variant="h4" fontWeight="bold" color="success.main">
+                <Typography variant="h4" fontWeight={600} color="success.main">
                   {summary.total_memberships}
                 </Typography>
-                <Typography variant="body1" fontWeight="bold">
+                <Typography variant="body1" fontWeight={600}>
                   Class Memberships
                 </Typography>
               </CardContent>
@@ -180,12 +181,12 @@ const AdminDashboard = () => {
       {/* USERS TABLE */}
       <Accordion defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="h6" fontWeight="bold">
-            👥 Users ({users.length})
+          <Typography variant="h6" fontWeight={600}>
+            Users ({users.length})
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <TableContainer component={Paper}>
+          <ComparisonTableContainer component={Paper}>
             <Table size="small">
               <TableHead>
                 <TableRow>
@@ -214,19 +215,19 @@ const AdminDashboard = () => {
                 ))}
               </TableBody>
             </Table>
-          </TableContainer>
+          </ComparisonTableContainer>
         </AccordionDetails>
       </Accordion>
 
       {/* CLASSES TABLE */}
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="h6" fontWeight="bold">
-            🏫 Classes ({classes.length})
+          <Typography variant="h6" fontWeight={600}>
+            Classes ({classes.length})
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <TableContainer component={Paper}>
+          <ComparisonTableContainer component={Paper}>
             <Table size="small">
               <TableHead>
                 <TableRow>
@@ -247,19 +248,19 @@ const AdminDashboard = () => {
                 ))}
               </TableBody>
             </Table>
-          </TableContainer>
+          </ComparisonTableContainer>
         </AccordionDetails>
       </Accordion>
 
       {/* STUDENTS TABLE */}
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="h6" fontWeight="bold">
-            🎓 Students ({students.length})
+          <Typography variant="h6" fontWeight={600}>
+            Students ({students.length})
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <TableContainer component={Paper}>
+          <ComparisonTableContainer component={Paper}>
             <Table size="small">
               <TableHead>
                 <TableRow>
@@ -282,19 +283,19 @@ const AdminDashboard = () => {
                 ))}
               </TableBody>
             </Table>
-          </TableContainer>
+          </ComparisonTableContainer>
         </AccordionDetails>
       </Accordion>
 
       {/* ASSESSMENTS TABLE */}
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="h6" fontWeight="bold">
-            📝 Assessments ({assessments.length})
+          <Typography variant="h6" fontWeight={600}>
+            Assessments ({assessments.length})
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <TableContainer component={Paper}>
+          <ComparisonTableContainer component={Paper}>
             <Table size="small">
               <TableHead>
                 <TableRow>
@@ -311,7 +312,7 @@ const AdminDashboard = () => {
                   <TableRow key={assessment.id}>
                     <TableCell>{assessment.id.substring(0, 8)}...</TableCell>
                     <TableCell>
-                      <Chip label={assessment.status} color="primary" size="small" />
+                      <Chip label={assessment.status} color="primary.light" size="small" />
                     </TableCell>
                     <TableCell>{assessment.owner_email}</TableCell>
                     <TableCell>{assessment.total_pages || 'N/A'}</TableCell>
@@ -321,19 +322,19 @@ const AdminDashboard = () => {
                 ))}
               </TableBody>
             </Table>
-          </TableContainer>
+          </ComparisonTableContainer>
         </AccordionDetails>
       </Accordion>
 
       {/* RESULTS TABLE (Limited to 100) */}
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="h6" fontWeight="bold">
-            ✅ Results (Showing first 100 of {summary.total_results})
+          <Typography variant="h6" fontWeight={600}>
+            Results (Showing first 100 of {summary.total_results})
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <TableContainer component={Paper}>
+          <ComparisonTableContainer component={Paper}>
             <Table size="small">
               <TableHead>
                 <TableRow>
@@ -358,19 +359,19 @@ const AdminDashboard = () => {
                 ))}
               </TableBody>
             </Table>
-          </TableContainer>
+          </ComparisonTableContainer>
         </AccordionDetails>
       </Accordion>
 
       {/* OUTSIDER STUDENTS TABLE */}
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="h6" fontWeight="bold">
-            👤 Outsider Students ({outsider_students.length})
+          <Typography variant="h6" fontWeight={600}>
+            Outsider Students ({outsider_students.length})
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <TableContainer component={Paper}>
+          <ComparisonTableContainer component={Paper}>
             <Table size="small">
               <TableHead>
                 <TableRow>
@@ -389,19 +390,19 @@ const AdminDashboard = () => {
                 ))}
               </TableBody>
             </Table>
-          </TableContainer>
+          </ComparisonTableContainer>
         </AccordionDetails>
       </Accordion>
 
       {/* CHAT SESSIONS TABLE */}
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="h6" fontWeight="bold">
-            💬 Chat Sessions ({chat_sessions.length})
+          <Typography variant="h6" fontWeight={600}>
+            Chat Sessions ({chat_sessions.length})
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <TableContainer component={Paper}>
+          <ComparisonTableContainer component={Paper}>
             <Table size="small">
               <TableHead>
                 <TableRow>
@@ -422,19 +423,19 @@ const AdminDashboard = () => {
                 ))}
               </TableBody>
             </Table>
-          </TableContainer>
+          </ComparisonTableContainer>
         </AccordionDetails>
       </Accordion>
 
       {/* AI GENERATIONS TABLE */}
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="h6" fontWeight="bold">
-            🤖 AI Generations ({generations.length})
+          <Typography variant="h6" fontWeight={600}>
+            AI Generations ({generations.length})
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <TableContainer component={Paper}>
+          <ComparisonTableContainer component={Paper}>
             <Table size="small">
               <TableHead>
                 <TableRow>
@@ -453,19 +454,19 @@ const AdminDashboard = () => {
                 ))}
               </TableBody>
             </Table>
-          </TableContainer>
+          </ComparisonTableContainer>
         </AccordionDetails>
       </Accordion>
 
       {/* AI MODEL RUNS TABLE */}
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="h6" fontWeight="bold">
-            🧠 AI Model Runs ({ai_runs.length})
+          <Typography variant="h6" fontWeight={600}>
+            AI Model Runs ({ai_runs.length})
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <TableContainer component={Paper}>
+          <ComparisonTableContainer component={Paper}>
             <Table size="small">
               <TableHead>
                 <TableRow>
@@ -488,7 +489,7 @@ const AdminDashboard = () => {
                 ))}
               </TableBody>
             </Table>
-          </TableContainer>
+          </ComparisonTableContainer>
         </AccordionDetails>
       </Accordion>
     </Container>

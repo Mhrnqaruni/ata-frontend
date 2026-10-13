@@ -56,17 +56,17 @@ export const SnackbarProvider = ({ children }) => {
       */}
       <Snackbar
         open={snackbarState.open}
-        autoHideDuration={6000} // Hide automatically after 6 seconds.
+        autoHideDuration={4500}
         onClose={handleClose}
         // Position the snackbar at the bottom center of the screen.
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
         {/*
           The Alert component provides the actual visual style (color, icon)
           for the message, based on the 'severity' state. The onClose prop
           adds the 'X' close button to the alert.
         */}
-        <Alert onClose={handleClose} severity={snackbarState.severity} sx={{ width: '100%' }}>
+        <Alert className="mst-toast" onClose={handleClose} severity={snackbarState.severity} sx={{ width: '100%' }}>
           {snackbarState.message}
         </Alert>
       </Snackbar>

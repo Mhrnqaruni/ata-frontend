@@ -167,10 +167,10 @@ const ContextualChat = ({
         <Box sx={{ mb: 2 }}>
           <Alert severity="info" icon={<BarChartIcon />}>
             <Typography variant="body2">
-              {stage === 'planning' && '🤔 Analyzing your question and planning the analysis...'}
-              {stage === 'querying' && '🔍 Querying the database...'}
-              {stage === 'analyzing' && '📊 Analyzing the data...'}
-              {stage === 'synthesizing' && '✍️ Preparing your answer...'}
+              {stage === 'planning' && 'Planning the analysis…'}
+              {stage === 'querying' && 'Looking up your data…'}
+              {stage === 'analyzing' && 'Analysing the data…'}
+              {stage === 'synthesizing' && 'Writing the answer…'}
             </Typography>
             <LinearProgress sx={{ mt: 1 }} />
           </Alert>

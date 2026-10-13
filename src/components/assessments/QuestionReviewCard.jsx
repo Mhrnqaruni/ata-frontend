@@ -49,7 +49,7 @@ const QuestionReviewCard = ({
           {/* Left Column: Student's Answer */}
           <Grid item xs={12} md={6}>
             <Typography variant="overline" color="text.secondary">Student's Transcribed Answer</Typography>
-            <Paper variant="outlined" sx={{ p: 2, mt: 1, whiteSpace: 'pre-wrap', bgcolor: (theme) => theme.palette.mode === 'dark' ? 'grey.900' : 'grey.100', minHeight: 150, fontFamily: 'monospace' }}>
+            <Paper variant="outlined" sx={{ p: 2, mt: 1, whiteSpace: 'pre-wrap', bgcolor: (theme) => theme.palette.mode === 'dark' ? 'grey.900' : 'grey.100', minHeight: 150, fontFamily: 'var(--font-mono)' }}>
               {questionData.studentAnswer || "No answer was extracted for this question."}
             </Paper>
           </Grid>
@@ -89,7 +89,7 @@ const QuestionReviewCard = ({
               {questionData.aiResponses.attempts.map(attempt => (
                 <Paper key={attempt.attempt} variant="outlined" sx={{ p: 2, opacity: 0.8 }}>
                    <Stack direction="row" justifyContent="space-between" alignItems="center">
-                    <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
+                    <Typography variant="caption" sx={{ fontWeight: 600 }}>
                         AI Grader #{attempt.attempt}:
                     </Typography>
                     <Tooltip
@@ -103,7 +103,7 @@ const QuestionReviewCard = ({
                         <IconButton size="small"><InfoOutlined fontSize="inherit" /></IconButton>
                     </Tooltip>
                   </Stack>
-                  <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.8rem', mt: 1 }}>
+                  <Typography variant="body2" sx={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', mt: 1 }}>
                     {attempt.error
                       ? <Typography component="span" color="error">{attempt.error}</Typography>
                       : `Suggested Grade: ${attempt.grade} — Feedback: "${attempt.feedback}"`

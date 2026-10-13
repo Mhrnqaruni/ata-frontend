@@ -3,6 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { Box, FormControl, FormLabel, RadioGroup, FormControlLabel, Radio, Select, MenuItem, InputLabel, CircularProgress } from '@mui/material';
 import libraryService from '../../../services/libraryService';
+import ChoiceCards from '../../common/ChoiceCards';
+import FactCheckOutlined from '@mui/icons-material/FactCheckOutlined';
+import MenuBookOutlined from '@mui/icons-material/MenuBookOutlined';
 
 const GradingModeSelector = ({ config, dispatch, disabled }) => {
   const [libraryIndex, setLibraryIndex] = useState(null);
@@ -24,25 +27,26 @@ const GradingModeSelector = ({ config, dispatch, disabled }) => {
   };
 
   return (
-    <FormControl component="fieldset" fullWidth disabled={disabled}>
-      <FormLabel component="legend">Grading Method</FormLabel>
-      <RadioGroup
-        row
+    <Box sx={{ mt: 3 }}>
+      <ChoiceCards
+        disabled={disabled}
+        legend="What should answers be marked against?"
+        name="grading-mode"
+        onChange={(value) => handleUpdate('gradingMode', value)}
+        options={[
+          { value: 'answer_key_provided', label: 'The answer key you uploaded', description: 'Marks follow your mark scheme.', icon: <FactCheckOutlined /> },
+          { value: 'library', label: 'A source from the library', description: 'Marks follow a textbook chapter.', icon: <MenuBookOutlined /> },
+        ]}
         value={config.gradingMode || 'answer_key_provided'}
-        onChange={(e) => handleUpdate('gradingMode', e.target.value)}
-      >
-        <FormControlLabel value="answer_key_provided" control={<Radio />} label="Answer Key in Document" />
-        <FormControlLabel value="library" control={<Radio />} label="Grade from ATA Library" />
-      </RadioGroup>
-      
+      />
       {config.gradingMode === 'library' && (
-        <Box sx={{ mt: 2, pl: 2 }}>
+        <Box sx={{ mt: 2, maxWidth: 520 }}>
           {isLoading ? <CircularProgress size={24} /> : (
             <FormControl fullWidth>
-              <InputLabel>Select Library Source</InputLabel>
+              <InputLabel>Library source</InputLabel>
               <Select
                 value={config.librarySource || ''}
-                label="Select Library Source"
+                label="Library source"
                 onChange={(e) => handleUpdate('librarySource', e.target.value)}
               >
                 {/* This would be a recursive function in a real app, but for now we map */}
@@ -57,7 +61,7 @@ const GradingModeSelector = ({ config, dispatch, disabled }) => {
           )}
         </Box>
       )}
-    </FormControl>
+    </Box>
   );
 };
 
