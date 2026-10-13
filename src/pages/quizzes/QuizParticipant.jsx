@@ -2,6 +2,7 @@
 
 // --- Core React Imports ---
 import React, { useState, useEffect, useRef } from 'react';
+import joinLogo from '../../assets/mst_logo_no_bg.png';
 import { useParams, useSearchParams } from 'react-router-dom';
 
 // --- MUI Component Imports ---
@@ -93,18 +94,19 @@ const JoinScreen = ({ onJoin }) => {
   return (
     <Container maxWidth="sm">
       <Fade in timeout={800}>
-        <Box sx={{ mt: 8, textAlign: 'center' }}>
-          <Typography variant="h2" sx={{ mb: 1, fontWeight: 700 }}>
-            Join Quiz
+        <Box sx={{ mt: { xs: 4, md: 8 }, textAlign: 'center' }}>
+          <img alt="MySmartTeach" className="mst-join-logo" src={joinLogo} />
+          <Typography component="h1" variant="h1" sx={{ mb: 1 }}>
+            Join the quiz
           </Typography>
-          <Typography variant="h6" color="text.secondary" sx={{ mb: 4 }}>
-            Enter your information to join the quiz
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+            Type the room code your teacher shows you.
           </Typography>
 
-          <Paper sx={{ p: 4 }}>
+          <Paper className="mst-rim mst-join-card" sx={{ p: { xs: 3, sm: 4 }, textAlign: 'left' }}>
             <TextField
               fullWidth
-              label="Room Code"
+              label="Room code"
               value={roomCode}
               onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
               placeholder="ABC123"
@@ -114,8 +116,8 @@ const JoinScreen = ({ onJoin }) => {
                   fontSize: '2rem',
                   textAlign: 'center',
                   letterSpacing: 8,
-                  fontWeight: 700,
-                  fontFamily: 'monospace'
+                  fontWeight: 600,
+                  fontFamily: 'var(--font-mono)'
                 },
                 maxLength: 6
               }}
@@ -124,7 +126,7 @@ const JoinScreen = ({ onJoin }) => {
 
             <TextField
               fullWidth
-              label="Your Name"
+              label="Your name"
               value={guestName}
               onChange={(e) => setGuestName(e.target.value)}
               placeholder="e.g., John Doe"
@@ -158,9 +160,9 @@ const JoinScreen = ({ onJoin }) => {
               onClick={handleJoin}
               disabled={isJoining || !roomCode.trim() || !guestName.trim()}
               startIcon={isJoining ? <CircularProgress size={20} /> : <LoginIcon />}
-              sx={{ py: 2, fontSize: '1.2rem' }}
+              sx={{ py: 1.5, fontSize: 16, minHeight: 48 }}
             >
-              {isJoining ? 'Joining...' : 'Join Quiz'}
+              {isJoining ? 'Joining…' : 'Join quiz'}
             </Button>
           </Paper>
         </Box>
@@ -177,8 +179,8 @@ const WaitingRoom = ({ session, participantName }) => {
     <Container maxWidth="md">
       <Fade in timeout={800}>
         <Box sx={{ mt: 8, textAlign: 'center' }}>
-          <HourglassEmptyIcon sx={{ fontSize: 120, color: 'primary.main', mb: 2 }} />
-          <Typography variant="h3" sx={{ mb: 2, fontWeight: 700 }}>
+          <HourglassEmptyIcon sx={{ fontSize: 56, color: 'primary.light', mb: 2 }} />
+          <Typography variant="h3" sx={{ mb: 2, fontWeight: 600 }}>
             Welcome, {participantName}!
           </Typography>
           <Typography variant="h5" color="text.secondary" sx={{ mb: 4 }}>
@@ -278,19 +280,12 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                   py: 3,
                   px: 4,
                   textAlign: 'center',
-                  background: cooldownFeedback
-                    ? (cooldownFeedback.grading_status === "pending"
-                        ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'  // Purple if pending
-                        : (cooldownFeedback.is_correct
-                            ? 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'  // Green gradient if correct
-                            : (cooldownFeedback.did_not_answer
-                                ? 'linear-gradient(135deg, #757F9A 0%, #D7DDE8 100%)'  // Gray if didn't answer
-                                : 'linear-gradient(135deg, #ee0979 0%, #ff6a00 100%)'  // Red gradient if incorrect
-                              )
-                          )
-                      )
-                    : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',  // Default purple if no feedback
-                  color: 'white',
+                  bgcolor: cooldownFeedback
+                    ? cooldownFeedback.grading_status === "pending" ? 'action.selected'
+                    : cooldownFeedback.is_correct ? 'success.light'
+                    : cooldownFeedback.did_not_answer ? 'action.hover' : 'error.light'
+                    : 'action.selected',
+                  color: 'text.primary', border: '1px solid', borderColor: 'divider',
                   borderRadius: 3,
                   transition: 'all 0.3s ease-in-out'
                 }}
@@ -298,11 +293,11 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                 {/* Answer Feedback (if available) */}
                 {cooldownFeedback && (
                   <Fade in timeout={500}>
-                    <Box sx={{ mb: 2, pb: 2, borderBottom: '1px solid rgba(255,255,255,0.3)' }}>
+                    <Box sx={{ mb: 2, pb: 2, borderBottom: '1px solid var(--mst-border)' }}>
                       {cooldownFeedback.grading_status === "pending" ? (
                         <>
-                          <CircularProgress sx={{ color: 'white', mb: 2 }} size={60} />
-                          <Typography variant="h5" sx={{ mb: 1, fontWeight: 700 }}>
+                          <CircularProgress sx={{ color: 'text.primary', mb: 2 }} size={60} />
+                          <Typography variant="h5" sx={{ mb: 1, fontWeight: 600 }}>
                             Answer Submitted!
                           </Typography>
                           <Typography variant="body1">
@@ -314,7 +309,7 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                         </>
                       ) : cooldownFeedback.did_not_answer ? (
                         <>
-                          <Typography variant="h4" sx={{ mb: 1, fontWeight: 700 }}>
+                          <Typography variant="h4" sx={{ mb: 1, fontWeight: 600 }}>
                             Time's Up!
                           </Typography>
                           <Typography variant="h6" sx={{ opacity: 0.9 }}>
@@ -324,7 +319,7 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                       ) : cooldownFeedback.is_correct ? (
                         <>
                           <CheckCircleIcon sx={{ fontSize: 60, mb: 1 }} />
-                          <Typography variant="h4" sx={{ mb: 1, fontWeight: 700 }}>
+                          <Typography variant="h4" sx={{ mb: 1, fontWeight: 600 }}>
                             Correct!
                           </Typography>
                           <Typography variant="h6" sx={{ opacity: 0.9 }}>
@@ -332,7 +327,7 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                           </Typography>
 
                           {cooldownFeedback.ai_feedback && (
-                            <Box sx={{ mt: 2, p: 2, bgcolor: 'rgba(255,255,255,0.15)', borderRadius: 2 }}>
+                            <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
                               <Typography variant="body2" sx={{ fontWeight: 500 }}>
                                 Feedback: {cooldownFeedback.ai_feedback}
                               </Typography>
@@ -340,7 +335,7 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                           )}
 
                           {!cooldownFeedback.ai_feedback && cooldownFeedback.explanation && (
-                            <Box sx={{ mt: 2, p: 2, bgcolor: 'rgba(255,255,255,0.1)', borderRadius: 2 }}>
+                            <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
                               <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
                                 {cooldownFeedback.explanation}
                               </Typography>
@@ -350,7 +345,7 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                       ) : (
                         <>
                           <CancelIcon sx={{ fontSize: 60, mb: 1 }} />
-                          <Typography variant="h4" sx={{ mb: 1, fontWeight: 700 }}>
+                          <Typography variant="h4" sx={{ mb: 1, fontWeight: 600 }}>
                             Incorrect
                           </Typography>
                           <Typography variant="h6" sx={{ opacity: 0.9, mb: 1 }}>
@@ -358,7 +353,7 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                           </Typography>
 
                           {cooldownFeedback.ai_feedback && (
-                            <Box sx={{ mt: 2, p: 2, bgcolor: 'rgba(255,255,255,0.15)', borderRadius: 2 }}>
+                            <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
                               <Typography variant="body2" sx={{ fontWeight: 500 }}>
                                 Feedback: {cooldownFeedback.ai_feedback}
                               </Typography>
@@ -366,7 +361,7 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                           )}
 
                           {cooldownFeedback.correct_answer && (
-                            <Box sx={{ mt: 2, p: 2, bgcolor: 'rgba(255,255,255,0.2)', borderRadius: 2 }}>
+                            <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
                               <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
                                 Correct Answer:
                               </Typography>
@@ -381,7 +376,7 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                           )}
 
                           {!cooldownFeedback.ai_feedback && cooldownFeedback.explanation && (
-                            <Box sx={{ mt: 1, p: 2, bgcolor: 'rgba(255,255,255,0.1)', borderRadius: 2 }}>
+                            <Box sx={{ mt: 1, p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
                               <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
                                 {cooldownFeedback.explanation}
                               </Typography>
@@ -411,7 +406,7 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                     <Typography variant="h6" sx={{ mb: 1, opacity: 0.9 }}>
                       Next Question Starting In
                     </Typography>
-                    <Typography variant="h1" sx={{ fontWeight: 900, fontSize: '4rem' }}>
+                    <Typography variant="h1" sx={{ fontWeight: 600, fontSize: '4rem' }}>
                       {cooldownRemaining}
                     </Typography>
                     <Typography variant="h6" sx={{ opacity: 0.9 }}>
@@ -420,7 +415,7 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                   </>
                 ) : (
                   <>
-                    <CircularProgress sx={{ color: 'white', mb: 2 }} size={48} />
+                    <CircularProgress sx={{ color: 'text.primary', mb: 2 }} size={48} />
                     <Typography variant="h5" sx={{ mb: 1, fontWeight: 600 }}>
                       Preparing Next Question
                     </Typography>
@@ -436,7 +431,7 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
             <Box sx={{ flexShrink: 0 }}>
               <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mb: 1 }}>
                 <TimerIcon sx={{ mr: 1, color: getProgressColor() }} />
-                <Typography variant="h5" color={`${getProgressColor()}.main`} sx={{ fontWeight: 700 }}>
+                <Typography variant="h5" color={`${getProgressColor()}.main`} sx={{ fontWeight: 600 }}>
                   {timeRemaining}s
                 </Typography>
               </Box>
@@ -539,12 +534,12 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                           py: { xs: 2.5, md: 2 },
                           minHeight: { xs: '56px', md: '48px' },
                           fontSize: { xs: '1.1rem', md: '1.2rem' },
-                          fontWeight: 700,
+                          fontWeight: 600,
                           borderWidth: 2,
                           '&:hover': { borderWidth: 2, transform: 'scale(1.05)', transition: 'transform 0.2s' }
                         }}
                       >
-                        ✓ True
+                        True
                       </Button>
                     </Grow>
                   </Grid>
@@ -561,12 +556,12 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                           py: { xs: 2.5, md: 2 },
                           minHeight: { xs: '56px', md: '48px' },
                           fontSize: { xs: '1.1rem', md: '1.2rem' },
-                          fontWeight: 700,
+                          fontWeight: 600,
                           borderWidth: 2,
                           '&:hover': { borderWidth: 2, transform: 'scale(1.05)', transition: 'transform 0.2s' }
                         }}
                       >
-                        ✗ False
+                        False
                       </Button>
                     </Grow>
                   </Grid>
@@ -638,7 +633,7 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
             // Submitted but timer still running
             <Fade in>
               <Alert severity="success" sx={{ mt: 1, flexShrink: 0 }}>
-                <Typography variant="body1" sx={{ fontWeight: 600 }}>✅ Answer submitted!</Typography>
+                <Typography variant="body1" sx={{ fontWeight: 600 }}>Answer submitted</Typography>
                 <Typography variant="body2">Waiting for other participants...</Typography>
               </Alert>
             </Fade>
@@ -668,7 +663,7 @@ const LeaderboardDisplay = ({ leaderboard, participantId }) => {
     <Container maxWidth="md">
       <Fade in timeout={800}>
         <Box sx={{ mt: 4 }}>
-          <Typography variant="h3" sx={{ textAlign: 'center', mb: 4, fontWeight: 700 }}>
+          <Typography variant="h3" sx={{ textAlign: 'center', mb: 4, fontWeight: 600 }}>
             Leaderboard
           </Typography>
 
@@ -679,12 +674,12 @@ const LeaderboardDisplay = ({ leaderboard, participantId }) => {
                 p: 3,
                 mb: 4,
                 textAlign: 'center',
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: 'white'
+                bgcolor: 'action.selected',
+                color: 'text.primary'
               }}
             >
               <Typography variant="h6" gutterBottom>Your Position</Typography>
-              <Typography variant="h2" sx={{ fontWeight: 900 }}>
+              <Typography variant="h2" sx={{ fontWeight: 600 }}>
                 #{currentRank}
               </Typography>
               <Typography variant="h5" sx={{ mt: 1 }}>
@@ -701,7 +696,7 @@ const LeaderboardDisplay = ({ leaderboard, participantId }) => {
                   sx={{
                     mb: 2,
                     borderRadius: 2,
-                    backgroundColor: participant.participant_id === participantId ? 'primary.light' : 'action.hover',
+                    backgroundColor: participant.participant_id === participantId ? 'action.selected' : 'action.hover',
                     border: 2,
                     borderColor: index < 3 ? 'warning.main' : 'divider',
                     boxShadow: participant.participant_id === participantId ? 4 : 1
@@ -714,7 +709,7 @@ const LeaderboardDisplay = ({ leaderboard, participantId }) => {
                         width: 56,
                         height: 56,
                         fontSize: '1.5rem',
-                        fontWeight: 'bold'
+                        fontWeight: 600
                       }}
                     >
                       {index < 3 ? <EmojiEventsIcon fontSize="large" /> : index + 1}
@@ -803,7 +798,7 @@ const AnswerReviewDisplay = ({ sessionId, guestToken, onViewLeaderboard }) => {
       <Fade in timeout={800}>
         <Box sx={{ mt: 4 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2 }}>
-            <Typography variant="h3" sx={{ fontWeight: 700 }}>
+            <Typography variant="h3" sx={{ fontWeight: 600 }}>
               Your Results
             </Typography>
             <Button
@@ -819,12 +814,13 @@ const AnswerReviewDisplay = ({ sessionId, guestToken, onViewLeaderboard }) => {
             sx={{
               p: 3,
               mb: 4,
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              color: 'white'
+              bgcolor: 'background.paper',
+              border: '1px solid', borderColor: 'divider',
+              color: 'text.primary'
             }}
           >
             <Typography variant="h5" gutterBottom>Score Summary</Typography>
-            <Typography variant="h2" sx={{ fontWeight: 900 }}>
+            <Typography variant="h2" sx={{ fontWeight: 600 }}>
               {reviewData.total_score} / {reviewData.max_possible_score}
             </Typography>
             <Typography variant="h6">
@@ -1571,8 +1567,8 @@ const QuizParticipant = () => {
         <Container maxWidth="md">
           <Fade in timeout={800}>
             <Box sx={{ mt: 8, textAlign: 'center' }}>
-              <CheckCircleIcon color="success" sx={{ fontSize: 120, mb: 3 }} />
-              <Typography variant="h3" sx={{ mb: 2, fontWeight: 700 }}>
+              <CheckCircleIcon color="success" sx={{ fontSize: 56, mb: 3 }} />
+              <Typography variant="h3" sx={{ mb: 2, fontWeight: 600 }}>
                 Quiz Completed!
               </Typography>
               <Typography variant="h6" color="text.secondary" sx={{ mb: 4 }}>
@@ -1604,8 +1600,8 @@ const QuizParticipant = () => {
         <Container maxWidth="md">
           <Fade in timeout={800}>
             <Box sx={{ mt: 8, textAlign: 'center' }}>
-              <EmojiEventsIcon sx={{ fontSize: 120, color: 'warning.main', mb: 2 }} />
-              <Typography variant="h3" sx={{ mb: 2, fontWeight: 700 }}>
+              <EmojiEventsIcon sx={{ fontSize: 56, color: 'warning.main', mb: 2 }} />
+              <Typography variant="h3" sx={{ mb: 2, fontWeight: 600 }}>
                 Quiz Completed!
               </Typography>
               <Typography variant="h5" color="text.secondary" sx={{ mb: 4 }}>
@@ -1632,8 +1628,8 @@ const QuizParticipant = () => {
       <Container maxWidth="md">
         <Fade in timeout={800}>
           <Box sx={{ mt: 8, textAlign: 'center' }}>
-            <CheckCircleIcon color="success" sx={{ fontSize: 120, mb: 3 }} />
-            <Typography variant="h3" sx={{ mb: 2, fontWeight: 700 }}>
+            <CheckCircleIcon color="success" sx={{ fontSize: 56, mb: 3 }} />
+            <Typography variant="h3" sx={{ mb: 2, fontWeight: 600 }}>
               Quiz Completed!
             </Typography>
             <Typography variant="h6" color="text.secondary" sx={{ mb: 4 }}>

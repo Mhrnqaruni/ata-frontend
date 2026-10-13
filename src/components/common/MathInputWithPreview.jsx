@@ -34,9 +34,9 @@ const MathInputWithPreview = ({
           sx={{ 
             mt: 1, 
             p: 2, 
-            border: '1px solid #e0e0e0', 
+            border: '1px solid', borderColor: 'divider',
             borderRadius: 1, 
-            bgcolor: '#f9f9f9' 
+            bgcolor: 'action.hover'
           }}
         >
           <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>

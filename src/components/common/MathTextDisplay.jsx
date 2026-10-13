@@ -25,7 +25,7 @@ const MathTextDisplay = ({ text, component: Component = 'span', ...props }) => {
           );
         } else if (part.type === 'error') {
           return (
-            <span key={idx} style={{ color: 'crimson', background: '#fee', padding: '2px 4px', borderRadius: '2px' }}>
+            <span key={idx} style={{ color: 'var(--mst-error)', background: 'var(--mst-error-surface)', padding: '2px 4px', borderRadius: '2px' }}>
               [Math Error: {part.content}]
             </span>
           );

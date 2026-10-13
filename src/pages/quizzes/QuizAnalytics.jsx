@@ -1,3 +1,4 @@
+import ComparisonTableContainer from '../../components/common/ComparisonTableContainer';
 // /src/pages/quizzes/QuizAnalytics.jsx - ENHANCED VERSION
 
 import { useState, useEffect } from 'react';
@@ -51,6 +52,8 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 
 import quizService from '../../services/quizService';
 import useTableSort from '../../hooks/useTableSort';
+import PageHeader from '../../components/common/PageHeader';
+import InfoCard from '../../components/home/InfoCard';
 import FloatingChatWindow from '../../components/chatbot/FloatingChatWindow';
 
 /**
@@ -59,61 +62,37 @@ import FloatingChatWindow from '../../components/chatbot/FloatingChatWindow';
 const SessionSummaryCards = ({ analytics }) => {
   const stats = [
     {
-      title: 'Total Participants',
+      title: 'Participants',
       value: analytics.total_participants,
-      icon: <PeopleIcon fontSize="large" />,
-      color: 'primary.main'
+      icon: <PeopleIcon sx={{ fontSize: 24 }} />,
+      color: 'primary.light'
     },
     {
-      title: 'Average Score',
+      title: 'Average score',
       value: `${analytics.average_score.toFixed(1)} pts`,
-      icon: <ScoreIcon fontSize="large" />,
+      icon: <ScoreIcon sx={{ fontSize: 24 }} />,
       color: 'success.main'
     },
     {
-      title: 'Questions Completed',
+      title: 'Questions completed',
       value: `${analytics.questions_completed}/${analytics.total_questions}`,
-      icon: <QuizIcon fontSize="large" />,
+      icon: <QuizIcon sx={{ fontSize: 24 }} />,
       color: 'info.main'
     },
     {
       title: 'Duration',
       value: analytics.duration_minutes ? `${analytics.duration_minutes.toFixed(1)} min` : 'N/A',
-      icon: <TimerIcon fontSize="large" />,
+      icon: <TimerIcon sx={{ fontSize: 24 }} />,
       color: 'warning.main'
     }
   ];
 
   return (
-    <Grid container spacing={3} sx={{ mb: 4 }}>
-      {stats.map((stat, index) => (
-        <Grid item xs={12} sm={6} md={3} key={index}>
-          <Card sx={{ height: '100%' }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Box
-                  sx={{
-                    bgcolor: stat.color,
-                    color: 'white',
-                    p: 1,
-                    borderRadius: 1,
-                    mr: 2
-                  }}
-                >
-                  {stat.icon}
-                </Box>
-                <Typography variant="h4" component="div">
-                  {stat.value}
-                </Typography>
-              </Box>
-              <Typography color="text.secondary">
-                {stat.title}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
+    <div className="mst-grid mst-grid-4">
+      {stats.map((stat) => (
+        <InfoCard icon={stat.icon} key={stat.title} title={stat.title} value={stat.value} />
       ))}
-    </Grid>
+    </div>
   );
 };
 
@@ -161,7 +140,7 @@ const PrePostComparisonSection = ({ comparison }) => {
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           {comparison.pre_quiz_title || 'Pre Quiz'} vs {comparison.post_quiz_title || 'Post Quiz'}
         </Typography>
-        <TableContainer>
+        <ComparisonTableContainer>
           <Table>
             <TableHead>
               <TableRow>
@@ -192,7 +171,7 @@ const PrePostComparisonSection = ({ comparison }) => {
               ))}
             </TableBody>
           </Table>
-        </TableContainer>
+        </ComparisonTableContainer>
       </CardContent>
     </Card>
   );
@@ -232,7 +211,7 @@ const ClassStudentsTable = ({ students, sessionId, onDownloadReport }) => {
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           All students enrolled in the class for this quiz
         </Typography>
-        <TableContainer sx={{ overflowX: 'auto' }}>
+        <ComparisonTableContainer sx={{ overflowX: 'auto' }}>
           <Table>
             <TableHead>
               <TableRow>
@@ -325,7 +304,7 @@ const ClassStudentsTable = ({ students, sessionId, onDownloadReport }) => {
                   <TableCell align="right">
                     {student.score !== null ? (
                       <Box>
-                        <Typography variant="body1" fontWeight="bold">
+                        <Typography variant="body1" fontWeight={600}>
                           {student.score}
                         </Typography>
                         <Typography variant="caption" color="text.secondary" sx={{ display: { xs: 'block', sm: 'none' } }}>
@@ -374,7 +353,7 @@ const ClassStudentsTable = ({ students, sessionId, onDownloadReport }) => {
                         <IconButton
                           size="small"
                           onClick={() => onDownloadReport(sessionId, student.participant_id, student.name)}
-                          color="primary"
+                          sx={{ color: 'primary.light', '&:hover': { bgcolor: 'action.selected' }, '&:focus-visible': { outline: '3px solid', outlineColor: 'primary.light' } }}
                         >
                           <DownloadIcon />
                         </IconButton>
@@ -388,7 +367,7 @@ const ClassStudentsTable = ({ students, sessionId, onDownloadReport }) => {
               ))}
             </TableBody>
           </Table>
-        </TableContainer>
+        </ComparisonTableContainer>
       </CardContent>
     </Card>
   );
@@ -447,7 +426,7 @@ const OutsidersTable = ({ outsiders, sessionId, onDownloadReport }) => {
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Participants who joined but are not enrolled in the class
         </Typography>
-        <TableContainer sx={{ overflowX: 'auto' }}>
+        <ComparisonTableContainer sx={{ overflowX: 'auto' }}>
           <Table>
             <TableHead>
               <TableRow>
@@ -498,7 +477,7 @@ const OutsidersTable = ({ outsiders, sessionId, onDownloadReport }) => {
                   <TableCell align="right">
                     {outsider.score !== null ? (
                       <Box>
-                        <Typography variant="body1" fontWeight="bold">
+                        <Typography variant="body1" fontWeight={600}>
                           {outsider.score}
                         </Typography>
                         <Typography variant="caption" color="text.secondary" sx={{ display: { xs: 'block', sm: 'none' } }}>
@@ -587,7 +566,7 @@ const OutsidersTable = ({ outsiders, sessionId, onDownloadReport }) => {
                         <IconButton
                           size="small"
                           onClick={() => onDownloadReport(sessionId, outsider.participant_id, outsider.display_name)}
-                          color="primary"
+                          sx={{ color: 'primary.light', '&:hover': { bgcolor: 'action.selected' }, '&:focus-visible': { outline: '3px solid', outlineColor: 'primary.light' } }}
                         >
                           <DownloadIcon />
                         </IconButton>
@@ -598,7 +577,7 @@ const OutsidersTable = ({ outsiders, sessionId, onDownloadReport }) => {
               ))}
             </TableBody>
           </Table>
-        </TableContainer>
+        </ComparisonTableContainer>
       </CardContent>
     </Card>
   );
@@ -618,7 +597,7 @@ const QuestionBreakdown = ({ questions }) => {
         <Typography variant="h5" gutterBottom>
           Question Performance
         </Typography>
-        <TableContainer sx={{ overflowX: 'auto' }}>
+        <ComparisonTableContainer sx={{ overflowX: 'auto' }}>
           <Table>
             <TableHead>
               <TableRow>
@@ -659,7 +638,7 @@ const QuestionBreakdown = ({ questions }) => {
                               `;
                               document.body.appendChild(dialog.firstElementChild);
                             }}
-                            sx={{ color: 'primary.main' }}
+                            sx={{ color: 'primary.light' }}
                           >
                             <ImageIcon fontSize="small" />
                           </IconButton>
@@ -690,7 +669,7 @@ const QuestionBreakdown = ({ questions }) => {
               ))}
             </TableBody>
           </Table>
-        </TableContainer>
+        </ComparisonTableContainer>
       </CardContent>
     </Card>
   );
@@ -844,26 +823,20 @@ const QuizAnalytics = () => {
 
   if (loading) {
     return (
-      <Box sx={{ p: 3 }}>
-        <Skeleton variant="text" width={300} height={60} />
-        <Skeleton variant="rectangular" height={200} sx={{ mt: 2 }} />
-        <Skeleton variant="rectangular" height={400} sx={{ mt: 2 }} />
+      <Box>
+        <Skeleton variant="rounded" width={360} height={64} sx={{ mb: 3.5 }} />
+        <div className="mst-grid mst-grid-4">{[0, 1, 2, 3].map((i) => <Skeleton key={i} variant="rectangular" height={104} />)}</div>
+        <Skeleton variant="rectangular" height={320} sx={{ mt: 4 }} />
       </Box>
     );
   }
 
   if (error) {
     return (
-      <Box sx={{ p: 3 }}>
-        <Button
-          startIcon={<ArrowBackIcon />}
-          onClick={() => navigate('/quizzes')}
-          sx={{ mb: 2 }}
-        >
-          Back to Quizzes
-        </Button>
-        <Alert severity="error">
-          <AlertTitle>Error</AlertTitle>
+      <Box>
+        <PageHeader backLabel="Back to quizzes" backTo="/quizzes" breadcrumbs={[{ label: 'Quizzes', to: '/quizzes' }, { label: 'Analytics' }]} title="Quiz analytics" />
+        <Alert severity="info">
+          <AlertTitle>No analytics yet</AlertTitle>
           {error}
         </Alert>
       </Box>
@@ -880,75 +853,33 @@ const QuizAnalytics = () => {
   const totalGradedParticipants = gradedClassStudents + gradedOutsiders;
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 } }}>
-      {/* Header */}
-      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'flex-start' }, mb: 4, gap: 2 }}>
-        <Box sx={{ width: '100%' }}>
-          <Button
-            startIcon={<ArrowBackIcon />}
-            onClick={() => navigate('/quizzes')}
-            sx={{ mb: 1 }}
-          >
-            Back to Quizzes
-          </Button>
-          <Typography variant="h3" component="h1" sx={{ fontSize: { xs: '1.75rem', md: '3rem' } }}>
-            {enhancedData.analytics.quiz_title} - Analytics
-          </Typography>
-          <Typography color="text.secondary" sx={{ mt: 1, fontSize: { xs: '0.875rem', md: '1rem' } }}>
-            Room Code: {enhancedData.analytics.room_code} • Status: {enhancedData.analytics.status}
-          </Typography>
-          {enhancedData.analytics.started_at && (
-            <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}>
-              Started: {new Date(enhancedData.analytics.started_at).toLocaleString()}
-              {enhancedData.analytics.ended_at && ` • Ended: ${new Date(enhancedData.analytics.ended_at).toLocaleString()}`}
-            </Typography>
-          )}
-        </Box>
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, width: { xs: '100%', md: 'auto' }, alignItems: 'center' }}>
-          {totalGradedParticipants > 0 && (
-            <Button
-              variant="contained"
-              startIcon={<CloudDownloadIcon />}
-              onClick={handleDownloadAllReports}
-              sx={{
-                whiteSpace: 'nowrap',
-                bgcolor: 'primary.main',
-                '&:hover': {
-                  bgcolor: 'primary.dark'
-                }
-              }}
-            >
-              Download All ({totalGradedParticipants})
+    <Box>
+      <PageHeader
+        actions={
+          <>
+            {totalGradedParticipants > 0 && (
+              <Button variant="contained" startIcon={<CloudDownloadIcon />} onClick={handleDownloadAllReports}>
+                Download all ({totalGradedParticipants})
+              </Button>
+            )}
+            <Button className="mst-ai" variant="contained" startIcon={<AutoAwesomeIcon />} onClick={() => setChatOpen(true)}>
+              Analytics with AI
             </Button>
-          )}
-          <Button
-            startIcon={<AutoAwesomeIcon />}
-            onClick={() => setChatOpen(true)}
-            sx={{
-              background: 'linear-gradient(90deg, #20c5e8 0%, #4d47e0 100%)',
-              color: 'white',
-              boxShadow: '0 3px 5px 2px rgba(32, 197, 232, .3)',
-              fontWeight: 'bold',
-              whiteSpace: 'nowrap',
-              '&:hover': {
-                background: 'linear-gradient(90deg, #1ba5c8 0%, #3d37c0 100%)',
-                boxShadow: '0 4px 6px 2px rgba(32, 197, 232, .4)',
-              }
-            }}
-          >
-            Analytics with AI
-          </Button>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<DownloadIcon fontSize="small" />}
-            onClick={handleExportCSV}
-            sx={{ whiteSpace: 'nowrap' }}
-          >
-            Export CSV
-          </Button>
-        </Box>
-      </Box>
+            <Button variant="outlined" startIcon={<DownloadIcon fontSize="small" />} onClick={handleExportCSV}>
+              Export CSV
+            </Button>
+          </>
+        }
+        backLabel="Back to quizzes"
+        backTo="/quizzes"
+        breadcrumbs={[{ label: 'Quizzes', to: '/quizzes' }, { label: 'Analytics' }]}
+        subtitle={[
+          `Room ${enhancedData.analytics.room_code}`,
+          enhancedData.analytics.started_at ? new Date(enhancedData.analytics.started_at).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : null,
+        ].filter(Boolean).join(' · ')}
+        title={enhancedData.analytics.quiz_title || 'Quiz analytics'}
+        titleAdornment={<Chip color={enhancedData.analytics.status === 'completed' ? 'success' : 'primary'} label={String(enhancedData.analytics.status || '').replace(/^./, (c) => c.toUpperCase())} size="small" />}
+      />
 
       {/* Summary Cards */}
       <SessionSummaryCards analytics={enhancedData.analytics} />
@@ -959,9 +890,7 @@ const QuizAnalytics = () => {
       )}
 
       {/* PARTICIPANTS SECTION - FIRST PRIORITY */}
-      <Typography variant="h4" gutterBottom sx={{ mt: 4, mb: 3 }}>
-        Participant Results
-      </Typography>
+      <div className="mst-section-label">Participant results</div>
 
       {/* Class Students Table */}
       {enhancedData.session_info.class_id && (
@@ -988,11 +917,11 @@ const QuizAnalytics = () => {
       )}
 
       {/* Additional Stats */}
-      <Grid container spacing={3} sx={{ mb: 4, mt: 2 }}>
+      <Grid container spacing={2.5} sx={{ mb: 1, mt: 0 }}>
         <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom>Score Distribution</Typography>
+              <Typography variant="h6" component="h2" gutterBottom>Score spread</Typography>
               <Grid container spacing={2}>
                 <Grid item xs={4}>
                   <Typography variant="body2" color="text.secondary">Highest</Typography>
@@ -1013,14 +942,14 @@ const QuizAnalytics = () => {
         <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom>Overall Performance</Typography>
+              <Typography variant="h6" component="h2" gutterBottom>Overall performance</Typography>
               <Grid container spacing={2}>
                 <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">Average Accuracy</Typography>
+                  <Typography variant="body2" color="text.secondary">Average accuracy</Typography>
                   <Typography variant="h5">{(enhancedData.analytics.average_accuracy_rate * 100).toFixed(1)}%</Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">Active Participants</Typography>
+                  <Typography variant="body2" color="text.secondary">Active participants</Typography>
                   <Typography variant="h5">{enhancedData.analytics.active_participants}/{enhancedData.analytics.total_participants}</Typography>
                 </Grid>
               </Grid>
@@ -1030,9 +959,7 @@ const QuizAnalytics = () => {
       </Grid>
 
       {/* Question Breakdown - MOVED TO BOTTOM */}
-      <Typography variant="h4" gutterBottom sx={{ mt: 4, mb: 3 }}>
-        Question Performance
-      </Typography>
+      <div className="mst-section-label">Question performance</div>
       {enhancedData.analytics.question_analytics && enhancedData.analytics.question_analytics.length > 0 && (
         <QuestionBreakdown questions={enhancedData.analytics.question_analytics} />
       )}

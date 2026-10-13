@@ -1,50 +1,30 @@
 // /ata-frontend/src/components/chatbot/ThinkingIndicator.jsx
-
+// While the assistant works: its star, three soft dots and a short line that changes every 3 seconds.
 import React, { useEffect, useState } from 'react';
-import { Box, Stack, Typography, Avatar, CircularProgress } from '@mui/material';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
 
 const PHRASES = [
-  'Analyzing responses...',
-  'Summarizing trends...',
-  'Finding key insights...',
-  'Checking performance patterns...',
-  'Preparing the answer...'
+  'Reading your data…',
+  'Looking for trends…',
+  'Finding the key points…',
+  'Checking performance patterns…',
+  'Writing the answer…'
 ];
 
 const ThinkingIndicator = () => {
   const [index, setIndex] = useState(0);
-
   useEffect(() => {
-    const timer = setInterval(() => {
-      setIndex((prev) => (prev + 1) % PHRASES.length);
-    }, 3000);
+    const timer = setInterval(() => setIndex((prev) => (prev + 1) % PHRASES.length), 3000);
     return () => clearInterval(timer);
   }, []);
-
   return (
-    <Stack direction="row" spacing={1.5} alignItems="center">
-      <Avatar sx={{ width: 40, height: 40, bgcolor: 'secondary.light', color: 'primary.main' }}>
-        <AutoAwesome />
-      </Avatar>
-      <Box
-        sx={{
-          p: '10px 14px',
-          bgcolor: 'grey.100',
-          borderRadius: 4,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-          border: '1px solid',
-          borderColor: 'divider'
-        }}
-      >
-        <CircularProgress size={14} />
-        <Typography variant="body2" color="text.secondary">
-          {PHRASES[index]}
-        </Typography>
-      </Box>
-    </Stack>
+    <div className="mst-msg" data-role="bot" role="status">
+      <span aria-hidden="true" className="mst-msg-avatar"><AutoAwesome /></span>
+      <div className="mst-thinking">
+        <span aria-hidden="true" className="mst-thinking-dots"><span /><span /><span /></span>
+        <span>{PHRASES[index]}</span>
+      </div>
+    </div>
   );
 };
 

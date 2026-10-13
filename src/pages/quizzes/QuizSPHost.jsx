@@ -1,3 +1,4 @@
+import ComparisonTableContainer from '../../components/common/ComparisonTableContainer';
 // /src/pages/quizzes/QuizSPHost.jsx
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -142,7 +143,7 @@ const RosterPanel = ({ roster, session, isLoading }) => {
           />
         </Box>
 
-        <TableContainer>
+        <ComparisonTableContainer>
           <Table size="small">
             <TableHead>
               <TableRow>
@@ -156,7 +157,7 @@ const RosterPanel = ({ roster, session, isLoading }) => {
               {joinedStudents.map((entry) => (
                 <TableRow
                   key={entry.id}
-                  sx={{ backgroundColor: 'rgba(76, 175, 80, 0.1)' }}
+                  sx={{ backgroundColor: 'success.light' }}
                 >
                   <TableCell>
                     <Chip
@@ -177,7 +178,7 @@ const RosterPanel = ({ roster, session, isLoading }) => {
               {absentStudents.map((entry) => (
                 <TableRow
                   key={entry.id}
-                  sx={{ backgroundColor: 'rgba(0, 0, 0, 0.05)' }}
+                  sx={{ backgroundColor: 'action.hover' }}
                 >
                   <TableCell>
                     <Chip
@@ -194,7 +195,7 @@ const RosterPanel = ({ roster, session, isLoading }) => {
               ))}
             </TableBody>
           </Table>
-        </TableContainer>
+        </ComparisonTableContainer>
       </CardContent>
     </Card>
   );
@@ -276,7 +277,7 @@ const OutsiderPanel = ({ outsiders, sessionId, onOutsiderUpdate }) => {
             </ul>
           </Alert>
 
-          <TableContainer>
+          <ComparisonTableContainer>
             <Table size="small">
               <TableHead>
               <TableRow>
@@ -345,7 +346,7 @@ const OutsiderPanel = ({ outsiders, sessionId, onOutsiderUpdate }) => {
                 ))}
               </TableBody>
             </Table>
-          </TableContainer>
+          </ComparisonTableContainer>
         </CardContent>
       </Card>
     </>
@@ -482,17 +483,17 @@ const QuizSPHost = () => {
   const joinUrl = `${window.location.origin}/quiz/sp/join/${session.access_code}`;
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth="lg" disableGutters>
       {/* Header with Access Code and QR Code */}
       <Paper
         sx={{
           p: 4,
           mb: 3,
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white'
+
+          color: 'text.primary'
         }}
       >
-        <Typography variant="h3" sx={{ mb: 3, fontWeight: 700, textAlign: 'center' }}>
+        <Typography component="h1" variant="h1" sx={{ mb: 3, fontWeight: 600, textAlign: 'center' }}>
           {session.quiz_title}
         </Typography>
 
@@ -509,26 +510,29 @@ const QuizSPHost = () => {
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 1,
-                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                  backgroundColor: 'action.hover',
                   borderRadius: 2,
                   px: 3,
                   py: 1.5,
-                  border: '3px dashed rgba(255, 255, 255, 0.5)',
+                  border: '1px solid', borderColor: 'divider',
                   mb: 3
                 }}
               >
                 <Typography
                   variant="h2"
                   sx={{
-                    fontWeight: 900,
-                    letterSpacing: 8,
-                    fontFamily: 'monospace'
+                    fontWeight: 600,
+                    fontSize: { xs: 40, sm: 52 },
+                    lineHeight: 1.2,
+                    fontVariantNumeric: 'tabular-nums',
+                    letterSpacing: { xs: 2, sm: 6 },
+                    fontFamily: 'var(--font-mono)'
                   }}
                 >
                   {session.access_code}
                 </Typography>
                 <Tooltip title="Copy access code">
-                  <IconButton onClick={handleCopyCode} sx={{ color: 'white' }}>
+                  <IconButton onClick={handleCopyCode} sx={{ color: 'primary.light' }}>
                     <ContentCopyIcon />
                   </IconButton>
                 </Tooltip>
@@ -544,7 +548,7 @@ const QuizSPHost = () => {
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: 1,
-                    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                    backgroundColor: 'action.hover',
                     borderRadius: 1,
                     px: 2,
                     py: 1,
@@ -554,7 +558,7 @@ const QuizSPHost = () => {
                   <Typography
                     variant="body2"
                     sx={{
-                      fontFamily: 'monospace',
+                      fontFamily: 'var(--font-mono)',
                       fontSize: '0.9rem',
                       wordBreak: 'break-all'
                     }}
@@ -562,7 +566,7 @@ const QuizSPHost = () => {
                     {joinUrl}
                   </Typography>
                   <Tooltip title="Copy join link">
-                    <IconButton onClick={handleCopyJoinLink} size="small" sx={{ color: 'white' }}>
+                    <IconButton onClick={handleCopyJoinLink} size="small" sx={{ color: 'primary.light' }}>
                       <ContentCopyIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
@@ -624,7 +628,7 @@ const QuizSPHost = () => {
               <Typography color="text.secondary" gutterBottom>
                 Participants
               </Typography>
-              <Typography variant="h4" sx={{ fontWeight: 700 }}>
+              <Typography variant="h4" sx={{ fontWeight: 600 }}>
                 {session.participant_count}
               </Typography>
             </CardContent>
@@ -637,7 +641,7 @@ const QuizSPHost = () => {
               <Typography color="text.secondary" gutterBottom>
                 Submitted
               </Typography>
-              <Typography variant="h4" sx={{ fontWeight: 700 }}>
+              <Typography variant="h4" sx={{ fontWeight: 600 }}>
                 {session.submitted_count}
               </Typography>
             </CardContent>
@@ -731,7 +735,7 @@ const QuizSPHost = () => {
             </Typography>
           </Box>
         ) : (
-          <TableContainer>
+          <ComparisonTableContainer>
             <Table>
               <TableHead>
                 <TableRow>
@@ -795,7 +799,7 @@ const QuizSPHost = () => {
                 ))}
               </TableBody>
             </Table>
-          </TableContainer>
+          </ComparisonTableContainer>
         )}
       </Paper>
 

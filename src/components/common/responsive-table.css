@@ -1,0 +1,113 @@
+/* Opt-in record tables; keep all values/actions. Wide comparison tables stay scrollable. */
+.mst-responsive-table {
+  width: 100%;
+  table-layout: fixed;
+}
+.mst-responsive-table td,
+.mst-responsive-table th {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 640px) {
+  .mst-responsive-table,
+  .mst-responsive-table tbody {
+    display: block;
+  }
+  .mst-responsive-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .mst-responsive-table tbody > tr {
+    display: block;
+    margin-bottom: 16px;
+    border: 1px solid var(--mst-border);
+    border-radius: 12px;
+    background: var(--mst-surface);
+    overflow: hidden;
+  }
+  .mst-responsive-table tbody td,
+  .mst-responsive-table tbody th[scope="row"] {
+    display: block;
+    width: auto;
+    padding: 10px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--mst-border);
+  }
+  .mst-responsive-table tbody [data-label]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--mst-muted);
+  }
+  .mst-responsive-table tbody td:last-child {
+    border-bottom: 0;
+  }
+  .mst-sortable-table thead {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    display: block;
+    padding: 12px;
+  }
+  .mst-sortable-table thead::before {
+    content: "Sort by";
+    display: block;
+    font-size: 13px;
+    color: var(--mst-muted);
+    margin-bottom: 8px;
+  }
+  .mst-sortable-table thead tr {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .mst-sortable-table thead th {
+    display: block;
+    width: auto;
+    padding: 8px;
+  }
+  .mst-sortable-table thead th:last-child {
+    display: none;
+  }
+}
+
+/* Compact assessment result records only; category/colspan rows stay unchanged. */
+@media (max-width: 640px) {
+  .mst-result-records tbody > tr.mst-result-record {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    padding: 4px 0;
+  }
+  .mst-result-records .mst-result-record > [data-label="Student"] {
+    grid-column: 1 / -1;
+    padding-bottom: 2px;
+    border-bottom: 0;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .mst-result-records .mst-result-record > [data-label="Student"]::before,
+  .mst-result-records .mst-result-record > [data-label="Actions"]::before { display: none; }
+  .mst-result-records .mst-result-record > [data-label="Student ID"] {
+    grid-column: 1 / -1;
+    padding-top: 0;
+    padding-bottom: 8px;
+    border-bottom: 0;
+    color: var(--mst-muted);
+    font-size: 13px;
+  }
+  .mst-result-records .mst-result-record > [data-label="Student ID"]::before {
+    display: inline;
+    content: 'ID · ';
+    margin-right: 4px;
+  }
+  .mst-result-records .mst-result-record > [data-label="Status"],
+  .mst-result-records .mst-result-record > [data-label="Grade"] { border-bottom: 0; padding-top: 4px; padding-bottom: 8px; }
+  .mst-result-records .mst-result-record > [data-label="Grade"] { text-align: right; font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .mst-result-records .mst-result-record > [data-label="Actions"] { grid-column: 1 / -1; padding-top: 4px; padding-bottom: 8px; }
+  .mst-result-records .mst-result-record > [data-label="Actions"] button { min-height: 44px; }
+}

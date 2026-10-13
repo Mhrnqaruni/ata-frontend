@@ -1,8 +1,9 @@
 // /ata-frontend/src/components/chatbot/ChatWelcome.jsx
-
+// The empty conversation: the assistant's star, one line on what to ask, and a suggestion to start with.
 import React from 'react';
-import { Box, Button, Typography } from '@mui/material';
+import { Button } from '@mui/material';
 import InsightsIcon from '@mui/icons-material/Insights';
+import AutoAwesome from '@mui/icons-material/AutoAwesome';
 
 const ChatWelcome = ({ onSend, entityName }) => {
   const handleClick = () => {
@@ -11,46 +12,19 @@ const ChatWelcome = ({ onSend, entityName }) => {
       : 'Give me a comprehensive overview of my teaching data.';
     onSend(prompt);
   };
-
   return (
-    <Box
-      sx={{
-        px: 3,
-        py: 4,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        textAlign: 'center',
-        gap: 2
-      }}
-    >
-      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-        AI Analytics Ready
-      </Typography>
-      <Typography variant="body2" color="text.secondary">
-        {entityName
-          ? `Ask anything about ${entityName} or start with a full overview.`
-          : 'Ask me anything about your classes, students, or quizzes.'}
-      </Typography>
-      <Button
-        startIcon={<InsightsIcon />}
-        onClick={handleClick}
-        sx={{
-          background: 'linear-gradient(90deg, #20c5e8 0%, #4d47e0 100%)',
-          color: 'white',
-          boxShadow: '0 3px 5px 2px rgba(32, 197, 232, .3)',
-          fontWeight: 'bold',
-          py: 1.5,
-          px: 3,
-          '&:hover': {
-            background: 'linear-gradient(90deg, #1ba5c8 0%, #3d37c0 100%)',
-            boxShadow: '0 4px 6px 2px rgba(32, 197, 232, .4)',
-          }
-        }}
-      >
+    <div className="mst-chat-welcome">
+      <span aria-hidden="true" className="mst-chat-star"><AutoAwesome /></span>
+      <h2 className="mst-chat-welcome-title">
+        {entityName ? `Ask about ${entityName}` : 'Ask about your classes, students and quizzes'}
+      </h2>
+      <p className="mst-chat-welcome-text">
+        {entityName ? 'Or start with a full overview.' : 'Answers come from your own data in MySmartTeach.'}
+      </p>
+      <Button className="mst-ai" onClick={handleClick} startIcon={<InsightsIcon />} variant="contained">
         Give me a comprehensive overview
       </Button>
-    </Box>
+    </div>
   );
 };
 

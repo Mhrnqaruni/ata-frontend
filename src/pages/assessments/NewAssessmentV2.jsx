@@ -2,7 +2,15 @@
 
 import React, { useState, useReducer, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Stepper, Step, StepLabel, Button, Typography, Paper, Alert, CircularProgress, Grid, FormControl, FormLabel, RadioGroup, FormControlLabel, Radio, TextField, Stack, useMediaQuery, useTheme } from '@mui/material';
+import { Box, Stepper, Step, StepLabel, Button, Paper, Alert, CircularProgress, TextField, Skeleton, useMediaQuery, useTheme } from '@mui/material';
+import AutoAwesomeRounded from '@mui/icons-material/AutoAwesomeRounded';
+import DescriptionOutlined from '@mui/icons-material/DescriptionOutlined';
+import CalculateOutlined from '@mui/icons-material/CalculateOutlined';
+import FolderZipOutlined from '@mui/icons-material/FolderZipOutlined';
+import PersonOutlined from '@mui/icons-material/PersonOutlined';
+import PageHeader from '../../components/common/PageHeader';
+import ChoiceCards from '../../components/common/ChoiceCards';
+import usePageCounts from '../../hooks/usePageCounts';
 
 // Import our full suite of components
 import DocumentUploader from '../../components/assessments/uploader/DocumentUploader';
@@ -19,14 +27,15 @@ import { useSnackbar } from '../../hooks/useSnackbar';
 import useNumberInput from '../../hooks/useNumberInput';
 import { wizardReducerV2, initialStateV2 } from './NewAssessmentV2.state';
 
-const steps = ['Setup', 'Define Assessment', 'Upload Answers', 'Submit'];
+const steps = ['Set up', 'Define', 'Upload answers', 'Review & start'];
 
 const stepDescriptions = [
-  'Define the name of this assessment and select the class it belongs to.',
-  'Upload the question paper and an optional answer key for the AI to analyze.',
-  'Upload all student answer sheets for the AI to grade.',
-  'Review your configuration and begin the grading process.'
+  'Name the assessment and choose the class that sat it.',
+  'Add the question paper and its answer key. AI reads them and lays out every question for you to check.',
+  "Add your students' handwritten answer sheets.",
+  'Check the details, then start grading. AI marks each answer three times; anything it disagrees on comes to you.'
 ];
+const formatCountdown = (seconds) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 
 const NewAssessmentV2 = () => {
   const navigate = useNavigate();
@@ -34,11 +43,20 @@ const NewAssessmentV2 = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [state, dispatch] = useReducer(wizardReducerV2, initialStateV2);
-  const [activeStep, setActiveStep] = useState(0);
+  const [activeStep, setActiveStepRaw] = useState(0);
+  const [stepDir, setStepDir] = useState('fwd');
+  const setActiveStep = (next) => {
+    setActiveStepRaw((prev) => {
+      const value = typeof next === 'function' ? next(prev) : next;
+      setStepDir(value >= prev ? 'fwd' : 'back');
+      return value;
+    });
+  };
   const [classes, setClasses] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Number input hook for total marks
+  const docPages = usePageCounts([state.questionFile, state.answerKeyFile].filter(Boolean));
   const totalMarksInputProps = useNumberInput(
     state.totalMarks,
     (value) => dispatch({ type: 'UPDATE_FIELD', payload: { field: 'totalMarks', value } }),
@@ -186,68 +204,59 @@ const NewAssessmentV2 = () => {
       case 1:
         return (
           <Box>
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
-                <DocumentUploader
-                  title="Question Document"
-                  onFileSelect={(file) => dispatch({ type: 'SET_QUESTION_FILE', payload: file })}
-                  selectedFile={state.questionFile}
-                  disabled={isProcessing}
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <DocumentUploader
-                  title="Answer Key"
-                  onFileSelect={(file) => dispatch({ type: 'SET_ANSWER_KEY_FILE', payload: file })}
-                  selectedFile={state.answerKeyFile}
-                  disabled={isProcessing}
-                />
-              </Grid>
-            </Grid>
-
-            <FormControl component="fieldset" sx={{ mt: 3 }}>
-              <FormLabel component="legend">Marking Strategy</FormLabel>
-              <RadioGroup
-                row
-                aria-label="marking strategy"
-                name="marking-strategy-group"
+            <div className="mst-form-row">
+              <DocumentUploader
+                title="Question paper"
+                onFileSelect={(file) => dispatch({ type: 'SET_QUESTION_FILE', payload: file })}
+                selectedFile={state.questionFile}
+                disabled={isProcessing}
+                fileMeta={docPages}
+              />
+              <DocumentUploader
+                title="Answer key"
+                onFileSelect={(file) => dispatch({ type: 'SET_ANSWER_KEY_FILE', payload: file })}
+                selectedFile={state.answerKeyFile}
+                disabled={isProcessing}
+                fileMeta={docPages}
+              />
+            </div>
+            <Box sx={{ mt: 3 }}>
+              <ChoiceCards
+                disabled={isProcessing}
+                legend="Marks for each question"
+                name="marking-strategy"
+                onChange={(value) => dispatch({ type: 'UPDATE_FIELD', payload: { field: 'markingStrategy', value } })}
+                options={[
+                  { value: 'document', label: 'Read them from the paper', description: 'Use the marks printed in the documents.', icon: <DescriptionOutlined /> },
+                  { value: 'ai', label: 'Let AI share out the marks', description: 'Give the total; AI assigns marks per question.', icon: <CalculateOutlined />, ai: true },
+                ]}
                 value={state.markingStrategy}
-                onChange={(e) => dispatch({ type: 'UPDATE_FIELD', payload: { field: 'markingStrategy', value: e.target.value } })}
-              >
-                <FormControlLabel value="document" control={<Radio />} label="Find marks in document" />
-                <FormControlLabel value="ai" control={<Radio />} label="Use AI to assign marks" />
-              </RadioGroup>
+              />
               {state.markingStrategy === 'ai' && (
                 <TextField
-                  fullWidth
                   type="number"
-                  label="Maximum marks for this exam"
+                  label="Total marks for this exam"
                   {...totalMarksInputProps}
-                  sx={{ mt: 1, ml: 1, maxWidth: '280px' }}
-                  variant="outlined"
-                  size="small"
+                  sx={{ mt: 2, width: 240, maxWidth: '100%' }}
                 />
               )}
-            </FormControl>
-            
-            <Button variant="contained" onClick={handleStructure} disabled={!state.questionFile || !state.answerKeyFile || isProcessing} sx={{ mt: 2, display: 'block' }}>
-              {isProcessing ? (
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <CircularProgress size={24} color="inherit" />
-                  <Typography variant="body2">
-                    Analyzing Document... {state.countdownSeconds > 0 ? `(~${Math.floor(state.countdownSeconds / 60)}:${String(state.countdownSeconds % 60).padStart(2, '0')})` : ''}
-                  </Typography>
-                </Stack>
-              ) : (
-                'Structure Assessment'
-              )}
-            </Button>
-
+            </Box>
+            <div className="mst-structure-row">
+              <Button className="mst-ai" variant="contained" onClick={handleStructure} disabled={!state.questionFile || !state.answerKeyFile || isProcessing} startIcon={isProcessing ? <CircularProgress size={18} color="inherit" /> : <AutoAwesomeRounded />}>
+                {isProcessing ? 'Reading documents…' : state.config ? 'Read the documents again' : 'Structure assessment'}
+              </Button>
+              {!state.questionFile || !state.answerKeyFile ? <span className="mst-hint">Add both documents to continue.</span> : null}
+            </div>
+            {state.status === 'parsing' ? (
+              <div className="mst-ai-progress" role="status">
+                <div className="mst-ai-bar" />
+                <span>Reading documents{state.countdownSeconds > 0 ? ` · about ${formatCountdown(state.countdownSeconds)} left` : '…'}</span>
+              </div>
+            ) : null}
             {state.error && <Alert severity="error" sx={{ mt: 2 }}>{state.error}</Alert>}
-            
             {state.config && (
-              <Box mt={4}>
-                <Typography variant="h6" gutterBottom>Review & Configure</Typography>
+              <Box className="mst-reviewer" mt={4}>
+                <h3 className="mst-subhead">Check the questions</h3>
                 <StructureReviewer config={state.config} dispatch={dispatch} disabled={isProcessing} />
                 <GradingModeSelector config={state.config} dispatch={dispatch} disabled={isProcessing} />
               </Box>
@@ -257,18 +266,19 @@ const NewAssessmentV2 = () => {
       case 2:
         return (
           <Box>
-            <FormControl component="fieldset" sx={{ mb: 2 }}>
-              <FormLabel component="legend">Upload Method</FormLabel>
-              <RadioGroup
-                row
+            <Box sx={{ mb: 3 }}>
+              <ChoiceCards
+                disabled={isProcessing}
+                legend="How are the sheets arranged?"
+                name="upload-mode"
+                onChange={(value) => dispatch({ type: 'UPDATE_FIELD', payload: { field: 'uploadMode', value } })}
+                options={[
+                  { value: 'batch', label: 'All together', description: 'One or more files with every student inside.', icon: <FolderZipOutlined /> },
+                  { value: 'manual', label: 'One student at a time', description: "Add each student's pages next to their name.", icon: <PersonOutlined /> },
+                ]}
                 value={state.uploadMode}
-                onChange={(e) => dispatch({ type: 'UPDATE_FIELD', payload: { field: 'uploadMode', value: e.target.value } })}
-              >
-                <FormControlLabel value="batch" control={<Radio />} label="Batch Upload" />
-                <FormControlLabel value="manual" control={<Radio />} label="Manual Upload per Student" />
-              </RadioGroup>
-            </FormControl>
-
+              />
+            </Box>
             {state.uploadMode === 'batch' && (
               <Step3Upload state={state} dispatch={dispatch} disabled={isProcessing} />
             )}
@@ -284,37 +294,94 @@ const NewAssessmentV2 = () => {
             )}
           </Box>
         );
-      case 3:
-        // A simple review step for the end
-        return <Typography>Review your settings and click 'Start Grading' to begin.</Typography>;
+      case 3: {
+        const questions = (state.config?.sections || []).flatMap((section) => section.questions || []);
+        const totalMarks = questions.reduce((sum, q) => sum + (Number(q.maxScore) || 0), 0);
+        const manualCount = Object.values(state.manualStudentFiles).reduce((sum, list) => sum + list.length, 0);
+        const fileCount = state.uploadMode === 'batch' ? state.answerSheetFiles.length : manualCount;
+        const rows = [
+          ['Assessment', state.assessmentName],
+          ['Class', classes.find((c) => c.id === state.classId)?.name || '—'],
+          ['Questions', `${questions.length} ${questions.length === 1 ? 'question' : 'questions'} · ${totalMarks} marks`],
+          ['Answer sheets', `${fileCount} ${fileCount === 1 ? 'file' : 'files'}${state.uploadMode === 'manual' ? ', added per student' : ''}`],
+          ['Marks', state.markingStrategy === 'ai' ? 'Shared out by AI' : 'Read from the paper'],
+        ];
+        return (
+          <Box>
+            <dl className="mst-summary">
+              {rows.map(([k, v]) => (
+                <div className="mst-summary-row" key={k}>
+                  <dt>{k}</dt>
+                  <dd>{v}</dd>
+                </div>
+              ))}
+            </dl>
+            {state.status === 'submitting' ? (
+              <div className="mst-ai-progress" role="status">
+                <div className="mst-ai-bar" />
+                <span>Uploading answer sheets and starting the grading…</span>
+              </div>
+            ) : null}
+          </Box>
+        );
+      }
       default:
         return 'Unknown step';
     }
   };
 
-  if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>;
+  if (isLoading) {
+    return (
+      <Box>
+        <Skeleton height={64} sx={{ mb: 3.5, maxWidth: 360 }} variant="rounded" />
+        <Skeleton height={460} sx={{ maxWidth: 960, mx: 'auto' }} variant="rectangular" />
+      </Box>
+    );
+  }
+
+  const busy = state.status === 'parsing' || state.status === 'submitting';
+  const isLast = activeStep === steps.length - 1;
 
   return (
-    <Paper sx={{ p: { xs: 2, md: 4 }, mx: 'auto', maxWidth: '900px' }}>
-      <Typography variant="h2" sx={{ mb: 4 }}>New Assessment</Typography>
-      {state.error && <Alert severity="error" sx={{ mb: 2 }}>{state.error}</Alert>}
-      <Stepper
-        activeStep={activeStep}
-        sx={{ mb: 4 }}
-        orientation={isMobile ? 'vertical' : 'horizontal'}
-      >
-        {steps.map((label) => <Step key={label}><StepLabel>{label}</StepLabel></Step>)}
-      </Stepper>
-      <WizardStep title={steps[activeStep]} description={stepDescriptions[activeStep]}>
-        {getStepContent(activeStep)}
-      </WizardStep>
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 4 }}>
-        <Button disabled={activeStep === 0 || state.status === 'parsing' || state.status === 'submitting'} onClick={handleBack} sx={{ mr: 1 }}>Back</Button>
-        <Button variant="contained" onClick={handleNext} disabled={!isStepValid() || state.status === 'parsing' || state.status === 'submitting'}>
-          {activeStep === steps.length - 1 ? 'Start Grading' : 'Next'}
-        </Button>
-      </Box>
-    </Paper>
+    <Box>
+      <PageHeader
+        breadcrumbs={[{ label: 'Assessments', to: '/assessments' }, { label: 'New assessment' }]}
+        title="New assessment"
+      />
+      <Paper className="mst-rim mst-wizard" data-enter="">
+        {isMobile ? (
+          <div className="mst-stepper-compact" aria-live="polite">
+            <span>Step {activeStep + 1} of {steps.length} · {steps[activeStep]}</span>
+            <span aria-hidden="true" className="mst-stepper-bars">
+              {steps.map((label, i) => <span data-done={i <= activeStep ? 'true' : undefined} key={label} />)}
+            </span>
+          </div>
+        ) : (
+          <Stepper activeStep={activeStep} alternativeLabel>
+            {steps.map((label) => <Step key={label}><StepLabel>{label}</StepLabel></Step>)}
+          </Stepper>
+        )}
+        {state.error && activeStep !== 1 && <Alert severity="error" sx={{ mb: 2 }}>{state.error}</Alert>}
+        <div className="mst-step mst-wizard-body" data-dir={stepDir} key={activeStep}>
+          <WizardStep title={steps[activeStep]} description={stepDescriptions[activeStep]}>
+            {getStepContent(activeStep)}
+          </WizardStep>
+        </div>
+      </Paper>
+      <div className="mst-builder-foot mst-wizard-bar">
+          <Button disabled={activeStep === 0 || busy} onClick={handleBack} variant="text">Back</Button>
+          <Button
+            className={isLast ? 'mst-ai' : undefined}
+            disabled={!isStepValid() || busy}
+            onClick={handleNext}
+            size="large"
+            startIcon={isLast ? (state.status === 'submitting' ? <CircularProgress size={18} color="inherit" /> : <AutoAwesomeRounded />) : undefined}
+            variant="contained"
+          >
+            {isLast ? (state.status === 'submitting' ? 'Starting…' : 'Start grading') : 'Next'}
+          </Button>
+      </div>
+    </Box>
   );
 };
 

@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { Box, Typography, Button, Container, Paper } from '@mui/material';
+import { ThemeProvider, CssBaseline } from '@mui/material';
+import { getTheme } from '../../theme/theme';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 
 class ErrorBoundary extends React.Component {
@@ -33,7 +35,10 @@ class ErrorBoundary extends React.Component {
 
   render() {
     if (this.state.hasError) {
+      let mode = 'light';
+      try { mode = localStorage.getItem('themeMode') === 'dark' ? 'dark' : 'light'; } catch { /* Use the safe default when storage is unavailable. */ }
       return (
+        <ThemeProvider theme={getTheme(mode)}><CssBaseline />
         <Container maxWidth="md" sx={{ mt: 8 }}>
           <Paper
             elevation={3}
@@ -44,10 +49,10 @@ class ErrorBoundary extends React.Component {
               borderColor: 'error.main'
             }}
           >
-            <ErrorOutlineIcon sx={{ fontSize: 80, color: 'error.main', mb: 2 }} />
+            <ErrorOutlineIcon sx={{ fontSize: 40, color: 'error.main', mb: 2 }} />
 
-            <Typography variant="h4" gutterBottom fontWeight="bold">
-              Oops! Something went wrong
+            <Typography variant="h4" gutterBottom fontWeight={600}>
+              Something went wrong
             </Typography>
 
             <Typography variant="body1" color="text.secondary" paragraph>
@@ -77,13 +82,13 @@ class ErrorBoundary extends React.Component {
                 sx={{
                   mt: 4,
                   p: 2,
-                  bgcolor: 'grey.100',
+                  bgcolor: 'action.hover',
                   borderRadius: 1,
                   textAlign: 'left',
                   overflow: 'auto'
                 }}
               >
-                <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                <Typography variant="subtitle2" fontWeight={600} gutterBottom>
                   Error Details (Development Only):
                 </Typography>
                 <Typography variant="body2" component="pre" sx={{ whiteSpace: 'pre-wrap' }}>
@@ -97,7 +102,7 @@ class ErrorBoundary extends React.Component {
               </Box>
             )}
           </Paper>
-        </Container>
+        </Container></ThemeProvider>
       );
     }
 

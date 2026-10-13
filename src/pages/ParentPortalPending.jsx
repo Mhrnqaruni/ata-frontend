@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import parentLogo from '../assets/mst_logo_no_bg.png';
 import { Alert, Box, Button, CircularProgress, Paper, Stack, Typography } from '@mui/material';
 
 import { useAuth } from '../hooks/useAuth';
@@ -38,15 +39,12 @@ const ParentPortalPending = () => {
         alignItems: 'center',
         justifyContent: 'center',
         p: 3,
-        backgroundColor: (theme) =>
-          theme.palette.mode === 'light'
-            ? theme.palette.grey[100]
-            : theme.palette.background.default,
       }}
     >
-      <Paper sx={{ maxWidth: 560, width: '100%', p: 4 }}>
+      <Paper className="mst-rim" sx={{ maxWidth: 560, width: '100%', p: { xs: 3, sm: 4 }, borderRadius: '24px' }}>
         <Stack spacing={2}>
-          <Typography variant="h4">Welcome to your parent workspace</Typography>
+          <img alt="MySmartTeach" className="mst-join-logo" src={parentLogo} style={{ margin: '0 0 8px' }} />
+          <Typography component="h1" variant="h1">Welcome to your parent workspace</Typography>
           <Typography variant="body1" color="text.secondary">
             {`Signed in as ${displayName}.`}
           </Typography>
@@ -58,12 +56,12 @@ const ParentPortalPending = () => {
             We will securely continue your session in the parent portal and bring you into the right workspace.
           </Typography>
           {launchError ? <Alert severity="error">{launchError}</Alert> : null}
-          <Stack direction="row" spacing={2}>
+          <Stack direction="row" spacing={2} sx={{ flexWrap: 'wrap', gap: 1 }}>
             <Button variant="contained" onClick={handleLaunch} disabled={launching}>
-              {launching ? <CircularProgress size={20} color="inherit" /> : 'Open My Workspace'}
+              {launching ? <CircularProgress size={20} color="inherit" /> : 'Open my workspace'}
             </Button>
             <Button variant="outlined" onClick={logout} disabled={launching}>
-              Sign Out
+              Sign out
             </Button>
           </Stack>
         </Stack>

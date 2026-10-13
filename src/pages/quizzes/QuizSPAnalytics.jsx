@@ -1,3 +1,4 @@
+import ComparisonTableContainer from '../../components/common/ComparisonTableContainer';
 // /src/pages/quizzes/QuizSPAnalytics.jsx
 
 import React, { useState, useEffect } from 'react';
@@ -37,6 +38,7 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import quizSPService from '../../services/quizSPService';
 import { useSnackbar } from '../../hooks/useSnackbar';
 import useTableSort from '../../hooks/useTableSort';
+import PageHeader from '../../components/common/PageHeader';
 import FloatingChatWindow from '../../components/chatbot/FloatingChatWindow';
 
 const PrePostComparisonSection = ({ comparison }) => {
@@ -84,7 +86,7 @@ const PrePostComparisonSection = ({ comparison }) => {
           {comparison.pre_quiz_title || 'Pre Quiz'} vs {comparison.post_quiz_title || 'Post Quiz'}
         </Typography>
       </Box>
-      <TableContainer>
+      <ComparisonTableContainer>
         <Table>
           <TableHead>
             <TableRow>
@@ -115,7 +117,7 @@ const PrePostComparisonSection = ({ comparison }) => {
             ))}
           </TableBody>
         </Table>
-      </TableContainer>
+      </ComparisonTableContainer>
     </Paper>
   );
 };
@@ -286,43 +288,28 @@ const QuizSPAnalytics = () => {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      {/* Header */}
-      <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <Button
-          startIcon={<ArrowBackIcon />}
-          onClick={() => navigate(`/quizzes/sp-sessions/${sessionId}/host`)}
-        >
-          Back to Dashboard
-        </Button>
-        <Button
-          variant="contained"
-          startIcon={<CloudDownloadIcon />}
-          onClick={handleDownloadAllReports}
-          disabled={participants.filter((p) => p.status === 'submitted').length === 0}
-        >
-          Download All Reports ({participants.filter((p) => p.status === 'submitted').length})
-        </Button>
-        <Button
-          startIcon={<AutoAwesomeIcon />}
-          onClick={() => setChatOpen(true)}
-          sx={{
-            background: 'linear-gradient(90deg, #20c5e8 0%, #4d47e0 100%)',
-            color: 'white',
-            boxShadow: '0 3px 5px 2px rgba(32, 197, 232, .3)',
-            fontWeight: 'bold',
-            '&:hover': {
-              background: 'linear-gradient(90deg, #1ba5c8 0%, #3d37c0 100%)',
-              boxShadow: '0 4px 6px 2px rgba(32, 197, 232, .4)',
-            }
-          }}
-        >
-          Analytics with AI
-        </Button>
-        <Typography variant="h4" sx={{ fontWeight: 700, flex: 1 }}>
-          Quiz Analytics
-        </Typography>
-      </Box>
+    <Container maxWidth="lg" disableGutters>
+      <PageHeader
+        actions={
+          <>
+            <Button
+              variant="contained"
+              startIcon={<CloudDownloadIcon />}
+              onClick={handleDownloadAllReports}
+              disabled={participants.filter((p) => p.status === 'submitted').length === 0}
+            >
+              Download all reports ({participants.filter((p) => p.status === 'submitted').length})
+            </Button>
+            <Button className="mst-ai" variant="contained" startIcon={<AutoAwesomeIcon />} onClick={() => setChatOpen(true)}>
+              Analytics with AI
+            </Button>
+          </>
+        }
+        backLabel="Back to the session"
+        backTo={`/quizzes/sp-sessions/${sessionId}/host`}
+        breadcrumbs={[{ label: 'Quizzes', to: '/quizzes' }, { label: 'Self-paced analytics' }]}
+        title="Quiz analytics"
+      />
 
       {/* Session Summary */}
       <Paper sx={{ p: 3, mb: 3 }}>
@@ -360,7 +347,7 @@ const QuizSPAnalytics = () => {
                   Total Participants
                 </Typography>
               </Box>
-              <Typography variant="h3" sx={{ fontWeight: 700 }}>
+              <Typography variant="h3" sx={{ fontWeight: 600 }}>
                 {analytics.total_participants}
               </Typography>
             </CardContent>
@@ -376,7 +363,7 @@ const QuizSPAnalytics = () => {
                   Submitted
                 </Typography>
               </Box>
-              <Typography variant="h3" sx={{ fontWeight: 700 }}>
+              <Typography variant="h3" sx={{ fontWeight: 600 }}>
                 {analytics.submitted_count}
               </Typography>
             </CardContent>
@@ -393,7 +380,7 @@ const QuizSPAnalytics = () => {
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
-                <Typography variant="h3" sx={{ fontWeight: 700 }}>
+                <Typography variant="h3" sx={{ fontWeight: 600 }}>
                   {typeof analytics.average_score === 'number' ? analytics.average_score.toFixed(1) : '—'}
                 </Typography>
                 {typeof analytics.total_possible_points === 'number' && analytics.total_possible_points > 0 && (
@@ -415,7 +402,7 @@ const QuizSPAnalytics = () => {
                   Average %
                 </Typography>
               </Box>
-              <Typography variant="h3" sx={{ fontWeight: 700 }}>
+              <Typography variant="h3" sx={{ fontWeight: 600 }}>
                 {typeof analytics.average_percentage === 'number'
                   ? `${analytics.average_percentage.toFixed(1)}%`
                   : '—'}
@@ -433,7 +420,7 @@ const QuizSPAnalytics = () => {
                   Completion Rate
                 </Typography>
               </Box>
-              <Typography variant="h3" sx={{ fontWeight: 700 }}>
+              <Typography variant="h3" sx={{ fontWeight: 600 }}>
                 {analytics.completion_rate.toFixed(0)}%
               </Typography>
             </CardContent>
@@ -453,7 +440,7 @@ const QuizSPAnalytics = () => {
             Question Performance
           </Typography>
         </Box>
-        <TableContainer>
+        <ComparisonTableContainer>
           <Table>
             <TableHead>
               <TableRow>
@@ -520,7 +507,7 @@ const QuizSPAnalytics = () => {
                               `;
                               document.body.appendChild(dialog.firstElementChild);
                             }}
-                            sx={{ color: 'primary.main' }}
+                            sx={{ color: 'primary.light' }}
                           >
                             <ImageIcon fontSize="small" />
                           </IconButton>
@@ -562,7 +549,7 @@ const QuizSPAnalytics = () => {
               ))}
             </TableBody>
           </Table>
-        </TableContainer>
+        </ComparisonTableContainer>
       </Paper>
 
       {/* Class Students Table */}
@@ -573,7 +560,7 @@ const QuizSPAnalytics = () => {
               Class Students ({classStudents.length})
             </Typography>
           </Box>
-          <TableContainer>
+          <ComparisonTableContainer>
             <Table>
               <TableHead>
                 <TableRow>
@@ -628,7 +615,7 @@ const QuizSPAnalytics = () => {
                       </Typography>
                     </TableCell>
                     <TableCell align="right">
-                      <Typography variant="body1" fontWeight="bold">
+                      <Typography variant="body1" fontWeight={600}>
                         {student.score}
                       </Typography>
                     </TableCell>
@@ -654,7 +641,7 @@ const QuizSPAnalytics = () => {
                           <IconButton
                             size="small"
                             onClick={() => handleDownloadReport(student.student_id, student.student_name)}
-                            color="primary"
+                            sx={{ color: 'primary.light', '&:hover': { bgcolor: 'action.selected' }, '&:focus-visible': { outline: '3px solid', outlineColor: 'primary.light' } }}
                           >
                             <DownloadIcon />
                           </IconButton>
@@ -665,7 +652,7 @@ const QuizSPAnalytics = () => {
                 ))}
               </TableBody>
             </Table>
-          </TableContainer>
+          </ComparisonTableContainer>
         </Paper>
       )}
 
@@ -680,7 +667,7 @@ const QuizSPAnalytics = () => {
               Students who joined but are not in the class roster
             </Typography>
           </Box>
-          <TableContainer>
+          <ComparisonTableContainer>
             <Table>
               <TableHead>
                 <TableRow>
@@ -702,7 +689,7 @@ const QuizSPAnalytics = () => {
                       </Typography>
                     </TableCell>
                     <TableCell align="right">
-                      <Typography variant="body1" fontWeight="bold">
+                      <Typography variant="body1" fontWeight={600}>
                         {student.score}
                       </Typography>
                     </TableCell>
@@ -734,7 +721,7 @@ const QuizSPAnalytics = () => {
                 ))}
               </TableBody>
             </Table>
-          </TableContainer>
+          </ComparisonTableContainer>
         </Paper>
       )}
 
@@ -757,7 +744,7 @@ const QuizSPAnalytics = () => {
             </Typography>
           </Box>
         ) : (
-          <TableContainer>
+          <ComparisonTableContainer>
             <Table>
               <TableHead>
                 <TableRow>
@@ -803,7 +790,7 @@ const QuizSPAnalytics = () => {
                           <IconButton
                             size="small"
                             onClick={() => handleDownloadReport(student.student_id, student.student_name)}
-                            color="primary"
+                            sx={{ color: 'primary.light', '&:hover': { bgcolor: 'action.selected' }, '&:focus-visible': { outline: '3px solid', outlineColor: 'primary.light' } }}
                           >
                             <DownloadIcon />
                           </IconButton>
@@ -814,7 +801,7 @@ const QuizSPAnalytics = () => {
                 ))}
               </TableBody>
             </Table>
-          </TableContainer>
+          </ComparisonTableContainer>
         )}
       </Paper>
 

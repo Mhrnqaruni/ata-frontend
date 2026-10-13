@@ -36,11 +36,24 @@ import {
   CircularProgress,
   Checkbox,
   Radio,
-  RadioGroup
+  RadioGroup,
+  ToggleButton,
+  ToggleButtonGroup
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import ExpandMoreRounded from '@mui/icons-material/ExpandMoreRounded';
+import RadioButtonCheckedRounded from '@mui/icons-material/RadioButtonCheckedRounded';
+import ThumbsUpDownOutlined from '@mui/icons-material/ThumbsUpDownOutlined';
+import ShortTextRounded from '@mui/icons-material/ShortTextRounded';
+import PollOutlined from '@mui/icons-material/PollOutlined';
+import CheckRounded from '@mui/icons-material/CheckRounded';
+import BoltRounded from '@mui/icons-material/BoltRounded';
+import SelfImprovementRounded from '@mui/icons-material/SelfImprovementRounded';
+import UploadDropzone from '../../components/common/UploadDropzone';
+import ChoiceCards from '../../components/common/ChoiceCards';
+import PageHeader from '../../components/common/PageHeader';
+import useQuizLight from '../../hooks/useQuizLight';
 import SaveIcon from '@mui/icons-material/Save';
 import PublishIcon from '@mui/icons-material/Publish';
 import PreviewIcon from '@mui/icons-material/Preview';
@@ -64,16 +77,16 @@ import MathInputWithPreview from '../../components/common/MathInputWithPreview';
  * Question type options
  */
 const QUESTION_TYPES = [
-  { value: 'multiple_choice', label: 'Multiple Choice', icon: '☑️' },
-  { value: 'true_false', label: 'True/False', icon: '✓✗' },
-  { value: 'short_answer', label: 'Short Answer', icon: '✍️' },
-  { value: 'poll', label: 'Poll (No correct answer)', icon: '📊' }
+  { value: 'multiple_choice', label: 'Multiple choice', short: 'Multiple choice', Icon: RadioButtonCheckedRounded },
+  { value: 'true_false', label: 'True or false', short: 'True / false', Icon: ThumbsUpDownOutlined },
+  { value: 'short_answer', label: 'Short answer', short: 'Short answer', Icon: ShortTextRounded },
+  { value: 'poll', label: 'Poll (no correct answer)', short: 'Poll', Icon: PollOutlined }
 ];
 
 /**
  * Question Editor Component
  */
-const QuestionEditor = ({ question, index, onChange, onDelete, onDuplicate, handleImageUpload, handleImageDelete, uploadingImages }) => {
+const QuestionEditor = ({ question, index, onChange, onDelete, onDuplicate, handleImageUpload, handleImageDelete, uploadingImages, expanded, onToggle, isLive }) => {
   const [localQuestion, setLocalQuestion] = useState(question);
   const [shortAnswerText, setShortAnswerText] = useState('');
 
@@ -181,299 +194,202 @@ const QuestionEditor = ({ question, index, onChange, onDelete, onDuplicate, hand
     }
   };
 
+  const typeInfo = QUESTION_TYPES.find((t) => t.value === localQuestion.question_type) || QUESTION_TYPES[0];
+  const TypeIcon = typeInfo.Icon;
+  const preview = (localQuestion.question_text || '').trim();
+  const optionLetter = (i) => String.fromCharCode(65 + i);
+  const bodyId = `question-${index}-body`;
+
   return (
-    <Card sx={{ mb: 3, position: 'relative' }}>
-      <CardContent>
-        {/* Question Header */}
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <DragIndicatorIcon sx={{ color: 'text.secondary', cursor: 'grab', mr: 1 }} />
-          <Typography variant="h6" sx={{ flex: 1 }}>
-            Question {index + 1}
-          </Typography>
-          <Chip
-            label={QUESTION_TYPES.find(t => t.value === localQuestion.question_type)?.label || 'Unknown'}
-            size="small"
-            sx={{ mr: 1 }}
-          />
-          <Tooltip title="Duplicate question">
-            <IconButton size="small" onClick={() => onDuplicate(index)} sx={{ mr: 1 }}>
-              <ContentCopyIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Delete question">
-            <IconButton size="small" onClick={() => onDelete(index)} color="error">
-              <DeleteIcon />
-            </IconButton>
-          </Tooltip>
-        </Box>
+    <Card className="mst-rim mst-question" data-open={expanded ? 'true' : 'false'}>
+      <div className="mst-question-head">
+        <button aria-controls={bodyId} aria-expanded={expanded} className="mst-question-toggle" onClick={() => onToggle(index)} type="button">
+          <span aria-hidden="true" className="mst-question-num">{index + 1}</span>
+          <span className="mst-question-preview" data-empty={preview ? undefined : 'true'}>{preview || 'Untitled question'}</span>
+        </button>
+        <span className="mst-question-facts">
+          <Chip icon={<TypeIcon />} label={typeInfo.short} size="small" />
+          <span className="mst-question-fact">{localQuestion.points ?? 0} pts</span>
+          {isLive ? <span className="mst-question-fact">{localQuestion.time_limit_seconds || 30} s</span> : null}
+        </span>
+        <Tooltip title="Duplicate question">
+          <IconButton aria-label={`Duplicate question ${index + 1}`} onClick={() => onDuplicate(index)}>
+            <ContentCopyIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Delete question">
+          <IconButton aria-label={`Delete question ${index + 1}`} className="mst-danger-icon" onClick={() => onDelete(index)}>
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title={expanded ? 'Collapse' : 'Edit'}>
+          <IconButton aria-controls={bodyId} aria-expanded={expanded} aria-label={expanded ? `Collapse question ${index + 1}` : `Edit question ${index + 1}`} className="mst-question-chevron" onClick={() => onToggle(index)}>
+            <ExpandMoreRounded />
+          </IconButton>
+        </Tooltip>
+      </div>
 
-        <Grid container spacing={2}>
-          {/* Question Type */}
-          <Grid item xs={12} md={6}>
-            <FormControl fullWidth>
-              <InputLabel>Question Type</InputLabel>
-              <Select
-                value={localQuestion.question_type || 'multiple_choice'}
-                label="Question Type"
-                onChange={(e) => handleChange('question_type', e.target.value)}
-              >
-                {QUESTION_TYPES.map((type) => (
-                  <MenuItem key={type.value} value={type.value}>
-                    {type.icon} {type.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
+      {expanded ? (
+        <div className="mst-question-body" id={bodyId}>
+          <div className="mst-field-label-row">Question type</div>
+          <ToggleButtonGroup
+            aria-label="Question type"
+            className="mst-type-switch"
+            exclusive
+            onChange={(e, value) => value && handleChange('question_type', value)}
+            value={localQuestion.question_type || 'multiple_choice'}
+          >
+            {QUESTION_TYPES.map((type) => (
+              <ToggleButton key={type.value} value={type.value}>
+                <type.Icon fontSize="small" />
+                {type.short}
+              </ToggleButton>
+            ))}
+          </ToggleButtonGroup>
 
-          {/* Points */}
-          <Grid item xs={12} md={3}>
-            <TextField
-              fullWidth
-              type="number"
-              label="Points"
-              {...pointsInputProps}
-              InputProps={{ inputProps: { min: 0, max: 100 } }}
-              helperText={localQuestion.question_type === 'poll' ? "Polls typically have 0 points" : ""}
+          <div className="mst-question-grid">
+            <div className="mst-question-text">
+              <MathInputWithPreview
+                multiline
+                rows={2}
+                label="Question"
+                value={localQuestion.question_text || ''}
+                onChange={(e) => handleChange('question_text', e.target.value)}
+                placeholder="Type the question… (wrap maths in $ … $)"
+                helperText="Maths: $x^2 + 3$ inline, or $$\sqrt{x}$$ on its own line."
+              />
+            </div>
+            <div className="mst-question-numbers">
+              <TextField
+                type="number"
+                label="Points"
+                {...pointsInputProps}
+                InputProps={{ inputProps: { min: 0, max: 100 } }}
+                helperText={localQuestion.question_type === 'poll' ? 'Polls are usually 0' : ''}
+              />
+              <TextField
+                type="number"
+                label="Time (seconds)"
+                {...timeLimitInputProps}
+                InputProps={{ inputProps: { min: 5, max: 300 } }}
+              />
+            </div>
+          </div>
+
+          {localQuestion.media_url ? (
+            <div className="mst-question-image">
+              <img alt="" src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${localQuestion.media_url}`} />
+              <span className="mst-question-image-text">
+                <span>Question image</span>
+                <span className="mst-hint">Shown to students with the question.</span>
+              </span>
+              <Button component="label" disabled={uploadingImages[index]} size="small" variant="outlined">
+                {uploadingImages[index] ? 'Uploading…' : 'Replace'}
+                <input accept="image/png,image/jpeg,image/jpg,image/gif" hidden onChange={(e) => { const file = e.target.files?.[0]; if (file) handleImageUpload(index, file); e.target.value = ''; }} type="file" />
+              </Button>
+              <Tooltip title="Remove image">
+                <IconButton aria-label="Remove the question image" onClick={() => handleImageDelete(index)}>
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </div>
+          ) : (
+            <UploadDropzone
+              accept={{ 'image/png': ['.png'], 'image/jpeg': ['.jpg', '.jpeg'], 'image/gif': ['.gif'] }}
+              disabled={uploadingImages[index]}
+              hint="PNG, JPG or GIF · up to 5 MB"
+              onDrop={(files) => handleImageUpload(index, files[0])}
+              size="compact"
+              title={uploadingImages[index] ? 'Uploading…' : 'Add an image (optional)'}
             />
-          </Grid>
+          )}
 
-          {/* Time Limit */}
-          <Grid item xs={12} md={3}>
-            <TextField
-              fullWidth
-              type="number"
-              label="Time Limit (seconds)"
-              {...timeLimitInputProps}
-              InputProps={{ inputProps: { min: 5, max: 300 } }}
-            />
-          </Grid>
-
-          {/* Question Text with Image Upload */}
-          <Grid item xs={12}>
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
-              {/* Question Text Field */}
-              <Box sx={{ flex: 1 }}>
-                <MathInputWithPreview
-                  multiline
-                  rows={2}
-                  label="Question Text"
-                  value={localQuestion.question_text || ''}
-                  onChange={(e) => handleChange('question_text', e.target.value)}
-                  placeholder="Enter your question here... (For math formulas use $ and $$)"
-                  helperText="Tip: Wrap math in $ for inline (e.g., $x^2 + 3$) or $$ for display mode (e.g., $$sqrt(x)$$)"
-                />
-              </Box>
-
-              {/* Image Upload Button */}
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'center', mt: 1 }}>
-                <Button
-                  variant="outlined"
-                  component="label"
-                  startIcon={<ImageIcon />}
-                  size="small"
-                  disabled={uploadingImages[index]}
-                  sx={{ whiteSpace: 'nowrap', minWidth: 120 }}
-                >
-                  {uploadingImages[index] ? 'Uploading...' : (localQuestion.media_url ? 'Change' : 'Add Image')}
-                  <input
-                    type="file"
-                    hidden
-                    accept="image/png,image/jpeg,image/jpg,image/gif"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        handleImageUpload(index, file);
-                      }
-                      e.target.value = ''; // Reset input
-                    }}
-                  />
-                </Button>
-                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem', textAlign: 'center' }}>
-                  PNG, JPG, GIF
-                  <br />
-                  (max 5MB)
-                </Typography>
-              </Box>
-            </Box>
-
-            {/* Image Preview (if uploaded) */}
-            {localQuestion.media_url && (
-              <Box sx={{ mt: 2, p: 2, border: '1px solid #e0e0e0', borderRadius: 2, bgcolor: '#f9f9f9' }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                    Question Image Preview:
-                  </Typography>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleImageDelete(index)}
-                    color="error"
-                    sx={{ ml: 1 }}
-                  >
-                    <CloseIcon fontSize="small" />
-                  </IconButton>
-                </Box>
-                <Box sx={{ textAlign: 'center' }}>
-                  <img 
-                    src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${localQuestion.media_url}`}
-                    alt="Question visual"
-                    style={{ 
-                      maxWidth: '100%', 
-                      maxHeight: 200, 
-                      borderRadius: 8,
-                      display: 'inline-block',
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                    }}
-                  />
-                </Box>
-              </Box>
-            )}
-          </Grid>
-
-          {/* Multiple Choice Options */}
-          {localQuestion.question_type === 'multiple_choice' && (
-            <Grid item xs={12}>
-              <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                Answer Options (Select the correct answer)
-              </Typography>
-              {(localQuestion.options || ['', '', '', '']).map((option, optionIndex) => (
-                <Box key={optionIndex} sx={{ display: 'flex', gap: 1, mb: 1, alignItems: 'flex-start' }}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={localQuestion.correct_answer?.[0] === optionIndex}
-                        onChange={() => handleCorrectAnswerChange(optionIndex)}
-                        color="success"
+          {(localQuestion.question_type === 'multiple_choice' || localQuestion.question_type === 'poll') && (
+            <div className="mst-options">
+              <div className="mst-field-label-row">
+                {localQuestion.question_type === 'poll' ? 'Options (no correct answer)' : 'Answers · switch on the correct one'}
+              </div>
+              {(localQuestion.options || (localQuestion.question_type === 'poll' ? ['', ''] : ['', '', '', ''])).map((option, optionIndex) => {
+                const correct = localQuestion.question_type === 'multiple_choice' && localQuestion.correct_answer?.[0] === optionIndex;
+                return (
+                  <div className="mst-option" data-correct={correct ? 'true' : undefined} key={optionIndex}>
+                    {localQuestion.question_type === 'multiple_choice' ? (
+                      <Tooltip title={correct ? 'Correct answer' : 'Mark as correct'}>
+                        <Switch
+                          checked={correct}
+                          inputProps={{ 'aria-label': `Option ${optionLetter(optionIndex)} is the correct answer` }}
+                          onChange={() => handleCorrectAnswerChange(optionIndex)}
+                        />
+                      </Tooltip>
+                    ) : null}
+                    <span aria-hidden="true" className="mst-option-letter">{optionLetter(optionIndex)}</span>
+                    <div className="mst-option-field">
+                      <MathInputWithPreview
+                        size="small"
+                        label={`Option ${optionLetter(optionIndex)}`}
+                        value={option}
+                        onChange={(e) => handleOptionChange(optionIndex, e.target.value)}
                       />
-                    }
-                    label=""
-                    sx={{ mt: 1 }}
-                  />
-                  <Box sx={{ flex: 1 }}>
-                    <MathInputWithPreview
-                      size="small"
-                      label={`Option ${optionIndex + 1}`}
-                      value={option}
-                      onChange={(e) => handleOptionChange(optionIndex, e.target.value)}
-                    />
-                  </Box>
-                  {localQuestion.options.length > 2 && (
-                    <IconButton
-                      size="small"
-                      onClick={() => removeOption(optionIndex)}
-                      color="error"
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  )}
-                </Box>
-              ))}
+                    </div>
+                    {localQuestion.options.length > 2 && (
+                      <Tooltip title="Remove option">
+                        <IconButton aria-label={`Remove option ${optionLetter(optionIndex)}`} onClick={() => removeOption(optionIndex)}>
+                          <CloseIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                  </div>
+                );
+              })}
               {localQuestion.options.length < 6 && (
-                <Button
-                  size="small"
-                  startIcon={<AddIcon />}
-                  onClick={addOption}
-                  sx={{ mt: 1 }}
-                >
-                  Add Option
+                <Button onClick={addOption} size="small" startIcon={<AddIcon />} variant="text">
+                  Add option
                 </Button>
               )}
-            </Grid>
+            </div>
           )}
 
-          {/* True/False */}
           {localQuestion.question_type === 'true_false' && (
-            <Grid item xs={12}>
-              <FormControl fullWidth>
-                <InputLabel>Correct Answer</InputLabel>
-                <Select
-                  value={localQuestion.correct_answer?.[0] === true ? 'true' : 'false'}
-                  label="Correct Answer"
-                  onChange={(e) => handleCorrectAnswerChange(e.target.value)}
-                >
-                  <MenuItem value="true">✓ True</MenuItem>
-                  <MenuItem value="false">✗ False</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
+            <div className="mst-options">
+              <div className="mst-field-label-row">Correct answer</div>
+              <ToggleButtonGroup
+                aria-label="Correct answer"
+                exclusive
+                onChange={(e, value) => value && handleCorrectAnswerChange(value)}
+                value={localQuestion.correct_answer?.[0] === true ? 'true' : 'false'}
+              >
+                <ToggleButton value="true"><CheckRounded fontSize="small" /> True</ToggleButton>
+                <ToggleButton value="false"><CloseIcon fontSize="small" /> False</ToggleButton>
+              </ToggleButtonGroup>
+            </div>
           )}
 
-          {/* Short Answer */}
           {localQuestion.question_type === 'short_answer' && (
-            <Grid item xs={12}>
+            <div className="mst-options">
               <Alert severity="info" sx={{ mb: 2 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
-                  Grading Method: Keyword-Based Matching (Not AI-Powered)
-                </Typography>
-                <Typography variant="body2">
-                  Students must include <strong>all</strong> of the keywords listed below in their answer to receive full credit.
-                  The system checks if each keyword appears in the student's response (case-insensitive).
-                  This is manual keyword validation—enter the exact words, separate with comma or enter.
-                </Typography>
-                <Typography variant="body2" sx={{ mt: 1, fontWeight: 600 }}>
-                  Math Formulas: Students can type formulas using $ syntax (e.g., $x^2 + 3$)
-                </Typography>
+                <strong>Marked by keywords, not AI.</strong> A student gets full credit when their answer contains every keyword below (capital letters don't matter). Students can type maths with $ … $.
               </Alert>
               <TextField
                 fullWidth
                 multiline
                 rows={3}
-                label="Correct Answer Keywords"
+                label="Keywords the answer must contain"
                 value={shortAnswerText}
                 onChange={(e) => setShortAnswerText(e.target.value)}
                 onBlur={() => {
-                  // Only update when field loses focus
                   const keywords = shortAnswerText
                     .split(/[\n,]/)
                     .map(s => s.trim())
                     .filter(s => s.length > 0);
                   handleChange('correct_answer', keywords);
                 }}
-                placeholder="Enter keywords (one per line or comma-separated):&#10;Paris&#10;france&#10;European capital"
-                helperText="Enter keywords (one per line OR comma-separated). Spaces within keywords are allowed. Matching is case-insensitive."
+                placeholder={'One per line or separated by commas, e.g.\nParis\nFrance'}
+                helperText="Spaces inside a keyword are fine."
               />
-            </Grid>
+            </div>
           )}
-
-          {/* Poll (no correct answer) */}
-          {localQuestion.question_type === 'poll' && (
-            <Grid item xs={12}>
-              <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                Poll Options (No correct answer)
-              </Typography>
-              {(localQuestion.options || ['', '']).map((option, optionIndex) => (
-                <Box key={optionIndex} sx={{ display: 'flex', gap: 1, mb: 1 }}>
-                  <MathInputWithPreview
-                    size="small"
-                    label={`Option ${optionIndex + 1}`}
-                    value={option}
-                    onChange={(e) => handleOptionChange(optionIndex, e.target.value)}
-                  />
-                  {localQuestion.options.length > 2 && (
-                    <IconButton
-                      size="small"
-                      onClick={() => removeOption(optionIndex)}
-                      color="error"
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  )}
-                </Box>
-              ))}
-              {localQuestion.options.length < 6 && (
-                <Button
-                  size="small"
-                  startIcon={<AddIcon />}
-                  onClick={addOption}
-                  sx={{ mt: 1 }}
-                >
-                  Add Option
-                </Button>
-              )}
-            </Grid>
-          )}
-        </Grid>
-      </CardContent>
+        </div>
+      ) : null}
     </Card>
   );
 };
@@ -487,6 +403,15 @@ const QuizBuilder = () => {
   const isEditMode = Boolean(quizId);
 
   const [activeStep, setActiveStep] = useState(0);
+  const [stepDir, setStepDir] = useState('fwd');
+  const [openQuestion, setOpenQuestion] = useState(0);
+  const { run: lightRun, play: playLight } = useQuizLight();
+  const goStep = (next) => {
+    setStepDir(next >= activeStep ? 'fwd' : 'back');
+    setActiveStep(next);
+    playLight();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
   const [isLoading, setIsLoading] = useState(isEditMode);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -1272,24 +1197,14 @@ const QuizBuilder = () => {
   }
 
   return (
-    <Box>
-      {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-        <IconButton onClick={() => navigate('/quizzes')} sx={{ mr: 2 }}>
-          <ArrowBackIcon />
-        </IconButton>
-        <Typography variant="h2" sx={{ flex: 1 }}>
-          {isEditMode ? 'Edit Quiz' : 'Create New Quiz'}
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<PublishIcon />}
-          onClick={() => setPublishDialog(true)}
-          disabled={isSaving || activeStep !== 2}
-        >
-          Publish Quiz
-        </Button>
-      </Box>
+    <Box sx={{ maxWidth: 1120, mx: 'auto', minWidth: 0 }}>
+      <div aria-hidden="true" className="mst-quiz-light" data-run={lightRun || undefined} />
+      <PageHeader
+        backLabel="Back to quizzes"
+        backTo="/quizzes"
+        breadcrumbs={[{ label: 'Quizzes', to: '/quizzes' }, { label: isEditMode ? 'Edit quiz' : 'New quiz' }]}
+        title={isEditMode ? 'Edit quiz' : 'Create a quiz'}
+      />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
@@ -1297,245 +1212,188 @@ const QuizBuilder = () => {
         </Alert>
       )}
 
-      {/* Stepper */}
-      <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-        <Step>
-          <StepLabel>Quiz Details</StepLabel>
-        </Step>
-        <Step>
-          <StepLabel>Questions</StepLabel>
-        </Step>
-        <Step>
-          <StepLabel>Settings</StepLabel>
-        </Step>
-      </Stepper>
+      <Paper className="mst-rim mst-builder-stepper" data-enter="">
+        <Stepper activeStep={activeStep} alternativeLabel>
+          {['Details', 'Questions', 'Settings'].map((label, i) => (
+            <Step key={label} completed={activeStep > i}>
+              <StepLabel>{label}</StepLabel>
+            </Step>
+          ))}
+        </Stepper>
+      </Paper>
 
+      <div className="mst-step" data-dir={stepDir} key={activeStep}>
       {/* Step Content */}
       {activeStep === 0 && (
         <>
-          {/* Mode Selector - NEW */}
-          <Paper sx={{ p: 3, mb: 3 }}>
-            <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-              Quiz Mode
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Choose how students will take this quiz
-            </Typography>
-
-            <RadioGroup
+          <Paper className="mst-rim mst-builder-card">
+            <h2 className="mst-card-title">How will students take it?</h2>
+            <p className="mst-card-sub">You can change this until you publish.</p>
+            <ChoiceCards
+              disabled={quizPhase === 'post'}
+              name="quiz-mode"
+              onChange={(value) => { handleModeChange(value); playLight(); }}
+              options={[
+                { value: 'live', label: 'Live quiz', icon: <BoltRounded />, facts: ['Everyone answers together', 'A timer on each question', 'A live leaderboard'] },
+                { value: 'self_paced', label: 'Self-paced', icon: <SelfImprovementRounded />, facts: ['Students go at their own pace', 'No timer per question', 'An optional deadline'] },
+              ]}
+              size="lg"
               value={quizSettings?.mode || 'live'}
-              onChange={(e) => handleModeChange(e.target.value)}
-            >
-              <FormControlLabel
-                value="live"
-                control={<Radio />}
-                disabled={quizPhase === 'post'}
-                label={
-                  <Box>
-                    <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                      Live Quiz
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Real-time quiz with WebSocket, all students on same question, per-question timers
-                    </Typography>
-                  </Box>
-                }
-              />
-              <FormControlLabel
-                value="self_paced"
-                control={<Radio />}
-                disabled={quizPhase === 'post'}
-                label={
-                  <Box>
-                    <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                      Self-Paced Assessment
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Students complete at their own pace, navigate freely, no per-question timers
-                    </Typography>
-                  </Box>
-                }
-              />
-            </RadioGroup>
+            />
+            {quizPhase === 'post' ? <p className="mst-hint" style={{ marginTop: 12 }}>Mode and class follow the linked pre-quiz.</p> : null}
           </Paper>
 
-          <Paper sx={{ p: 3, mb: 3 }}>
-            <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-              Quiz Phase
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Set this quiz as a normal quiz, a pre-quiz, or a post-quiz linked to a completed pre-quiz.
-            </Typography>
-
-            <RadioGroup
+          <Paper className="mst-rim mst-builder-card">
+            <h2 className="mst-card-title">Quiz phase</h2>
+            <p className="mst-card-sub">A normal quiz, or one half of a pre-quiz / post-quiz pair that measures progress.</p>
+            <ToggleButtonGroup
+              aria-label="Quiz phase"
+              className="mst-phase-switch"
+              exclusive
+              onChange={(e, value) => value && handleQuizPhaseChange(value)}
               value={quizPhase}
-              onChange={(e) => handleQuizPhaseChange(e.target.value)}
             >
-              <FormControlLabel
-                value="normal"
-                control={<Radio />}
-                label="Normal quiz (no pre/post)"
-              />
-              <FormControlLabel
-                value="pre"
-                control={<Radio />}
-                label="Pre-quiz"
-              />
-              <FormControlLabel
-                value="post"
-                control={<Radio />}
-                label="Post-quiz (linked to a completed pre-quiz)"
-              />
-            </RadioGroup>
+              <ToggleButton value="normal">Normal</ToggleButton>
+              <ToggleButton value="pre">Pre-quiz</ToggleButton>
+              <ToggleButton value="post">Post-quiz</ToggleButton>
+            </ToggleButtonGroup>
+            <p className="mst-hint" style={{ marginTop: 10 }}>
+              {quizPhase === 'pre' ? 'Run it before teaching; a post-quiz can be linked to it later.' : quizPhase === 'post' ? 'Linked to a completed pre-quiz, so you can compare the two.' : 'A stand-alone quiz.'}
+            </p>
 
             {quizPhase === 'post' && (
               <Box sx={{ mt: 2 }}>
                 {linkedPreQuiz ? (
                   <Alert severity="info" sx={{ mb: 2 }}>
-                    Linked Pre Quiz: {linkedPreQuiz.display_title || linkedPreQuiz.title || 'Pre Quiz'}
+                    Linked pre-quiz: {linkedPreQuiz.display_title || linkedPreQuiz.title || 'Pre-quiz'}
                   </Alert>
                 ) : (
                   <Alert severity="warning" sx={{ mb: 2 }}>
-                    Select a completed pre-quiz to link this post quiz.
+                    Choose a completed pre-quiz to link this post-quiz to.
                   </Alert>
                 )}
                 <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
                   <Button variant="outlined" onClick={handleOpenPreQuizDialog}>
-                    {linkedPreQuiz ? 'Change Linked Pre Quiz' : 'Select Pre Quiz'}
+                    {linkedPreQuiz ? 'Change linked pre-quiz' : 'Choose a pre-quiz'}
                   </Button>
-                  <Typography variant="caption" color="text.secondary">
-                    Class and mode are locked while Post Quiz is selected.
-                  </Typography>
                 </Box>
               </Box>
             )}
           </Paper>
 
-          <Paper sx={{ p: 3, mb: 3 }}>
-            <Typography variant="h5" sx={{ mb: 3 }}>Quiz Information</Typography>
-            <TextField
-              fullWidth
-              label="Quiz Title"
-              value={quizTitle}
-              onChange={(e) => setQuizTitle(e.target.value)}
-              sx={{ mb: 3 }}
-              required
-            />
-          <TextField
-            fullWidth
-            multiline
-            rows={4}
-            label="Description (Optional)"
-            value={quizDescription}
-            onChange={(e) => setQuizDescription(e.target.value)}
-            placeholder="Describe what this quiz is about..."
-            sx={{ mb: 3 }}
-          />
+          <Paper className="mst-rim mst-builder-card">
+            <h2 className="mst-card-title">About the quiz</h2>
+            <div className="mst-builder-fields">
+              <TextField
+                fullWidth
+                label="Title"
+                value={quizTitle}
+                onChange={(e) => setQuizTitle(e.target.value)}
+                placeholder="e.g. Cells and tissues · check-in"
+                required
+              />
+              <TextField
+                fullWidth
+                multiline
+                rows={3}
+                label="Description (optional)"
+                value={quizDescription}
+                onChange={(e) => setQuizDescription(e.target.value)}
+                placeholder="What is this quiz about?"
+              />
+              <FormControl fullWidth>
+                <InputLabel id="quiz-class-label">Class (optional)</InputLabel>
+                <Select
+                  displayEmpty
+                  labelId="quiz-class-label"
+                  value={selectedClassId}
+                  onChange={(e) => handleClassChange(e.target.value)}
+                  disabled={classesLoading || quizPhase === 'post'}
+                  renderValue={(id) => (id ? classList.find((c) => c.id === id)?.name : 'No class · anyone with the code can join')}
+                >
+                  <MenuItem value="">
+                    No class · anyone with the code can join
+                  </MenuItem>
+                  {classList.map((cls) => (
+                    <MenuItem key={cls.id} value={cls.id}>
+                      {cls.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {selectedClassId && (
+                  <p className="mst-info-row">
+                    <InfoIcon fontSize="small" />
+                    The class roster is loaded when you start a session, and anyone not on it is flagged.
+                  </p>
+                )}
+              </FormControl>
+            </div>
+          </Paper>
 
-          {/* NEW: Class Selection for Roster Tracking */}
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Class (Optional - for student roster tracking)</InputLabel>
-            <Select
-              value={selectedClassId}
-              label="Class (Optional - for student roster tracking)"
-              onChange={(e) => handleClassChange(e.target.value)}
-              disabled={classesLoading || quizPhase === 'post'}
-            >
-              <MenuItem value="">
-                <em>No Class (All Students Can Join)</em>
-              </MenuItem>
-              {classList.map((cls) => (
-                <MenuItem key={cls.id} value={cls.id}>
-                  {cls.name}
-                </MenuItem>
-              ))}
-            </Select>
-            {selectedClassId && (
-              <Typography variant="caption" sx={{ mt: 1, color: 'text.secondary' }}>
-                ✓ Roster tracking enabled: Expected students will be pre-populated when you start a session.
-                Outsider students (not in this class) will be automatically detected and flagged.
-              </Typography>
-            )}
-          </FormControl>
-
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
-            <Button variant="contained" onClick={() => setActiveStep(1)}>
-              Next: Add Questions
+          <div className="mst-builder-foot">
+            <span />
+            <Button size="large" variant="contained" onClick={() => goStep(1)}>
+              Next: questions
             </Button>
-          </Box>
-        </Paper>
+          </div>
         </>
       )}
 
       {activeStep === 1 && (
         <Box>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-            <Typography variant="h5">Questions ({questions.length})</Typography>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button
-                variant="contained"
-                startIcon={<AutoAwesomeIcon />}
-                onClick={() => setShowAIDialog(true)}
-                sx={{
-                  background: 'linear-gradient(90deg, #20c5e8 0%, #4d47e0 100%)',
-                  color: 'white',
-                  boxShadow: '0 3px 5px 2px rgba(32, 197, 232, .3)',
-                  fontWeight: 'bold',
-                  '&:hover': {
-                    background: 'linear-gradient(90deg, #1ba5c8 0%, #3d37c0 100%)',
-                    boxShadow: '0 4px 6px 2px rgba(32, 197, 232, .4)',
-                  }
-                }}
-              >
+          <div className="mst-builder-toolbar">
+            <h2 className="mst-card-title">Questions <span className="mst-count">{questions.length}</span></h2>
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              <Button variant="text" startIcon={<DownloadIcon />} onClick={downloadQuestionsCSV} disabled={questions.length === 0}>
+                Download CSV
+              </Button>
+              <Button className="mst-ai" variant="contained" startIcon={<AutoAwesomeIcon />} onClick={() => setShowAIDialog(true)}>
                 Import with AI
               </Button>
-              <Button variant="outlined" startIcon={<AddIcon />} onClick={addQuestion}>
-                Add Manually
+              <Button variant="outlined" startIcon={<AddIcon />} onClick={() => { addQuestion(); setOpenQuestion(questions.length); }}>
+                Add question
               </Button>
             </Box>
-          </Box>
+          </div>
 
-          {questions.map((question, index) => (
-            <QuestionEditor
-              key={index}
-              question={question}
-              index={index}
-              onChange={handleQuestionChange}
-              onDelete={deleteQuestion}
-              onDuplicate={duplicateQuestion}
-              handleImageUpload={handleImageUpload}
-              handleImageDelete={handleImageDelete}
-              uploadingImages={uploadingImages}
-            />
-          ))}
+          <div className="mst-question-list">
+            {questions.map((question, index) => (
+              <QuestionEditor
+                key={index}
+                question={question}
+                index={index}
+                expanded={openQuestion === index}
+                isLive={(quizSettings?.mode || 'live') === 'live'}
+                onToggle={(i) => setOpenQuestion((cur) => (cur === i ? null : i))}
+                onChange={handleQuestionChange}
+                onDelete={(i) => { deleteQuestion(i); setOpenQuestion((cur) => (cur === i ? null : cur !== null && cur > i ? cur - 1 : cur)); }}
+                onDuplicate={(i) => { duplicateQuestion(i); setOpenQuestion(i + 1); }}
+                handleImageUpload={handleImageUpload}
+                handleImageDelete={handleImageDelete}
+                uploadingImages={uploadingImages}
+              />
+            ))}
+          </div>
 
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
-            <Button onClick={() => setActiveStep(0)}>
+          <div className="mst-builder-foot">
+            <Button onClick={() => goStep(0)} variant="text">
               Back
             </Button>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Button
-                variant="outlined"
-                startIcon={<DownloadIcon />}
-                onClick={downloadQuestionsCSV}
-                disabled={questions.length === 0}
-              >
-                Download Questions CSV
-              </Button>
-              <Button variant="contained" onClick={() => setActiveStep(2)}>
-                Next: Settings
-              </Button>
-            </Box>
-          </Box>
+            <Button size="large" variant="contained" onClick={() => goStep(2)}>
+              Next: settings
+            </Button>
+          </div>
         </Box>
       )}
 
       {activeStep === 2 && (
-        <Paper sx={{ p: 3 }}>
-          <Typography variant="h5" sx={{ mb: 3 }}>Quiz Settings</Typography>
+        <Paper className="mst-rim mst-builder-card">
+          <h2 className="mst-card-title">{quizSettings?.mode === 'self_paced' ? 'Self-paced settings' : 'Live quiz settings'}</h2>
+          <p className="mst-card-sub">What students see during and after the quiz.</p>
+          <div className="mst-settings">
 
           {quizSettings?.mode === 'live' && (
-            <Box sx={{ mb: 3, p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
+            <Box className="mst-setting">
               <FormControlLabel
                 control={
                   <Switch
@@ -1549,7 +1407,7 @@ const QuizBuilder = () => {
                 }
                 label={
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography>Show Answer Feedback During Cooldown</Typography>
+                    <Typography>Show right / wrong between questions</Typography>
                     <Tooltip
                       title="When enabled, students will see if their answer was correct or incorrect during the cooldown period between questions. Recommended for practice quizzes and formative assessments."
                       arrow
@@ -1558,9 +1416,10 @@ const QuizBuilder = () => {
                     </Tooltip>
                   </Box>
                 }
-                sx={{ display: 'block' }}
+                labelPlacement="start"
+                className="mst-setting-label"
               />
-              <Typography variant="caption" color="text.secondary" sx={{ ml: 4, display: 'block', mt: 1 }}>
+              <Typography className="mst-setting-help" variant="body2" color="text.secondary">
                 {quizSettings.show_correct_answer_during_cooldown ?? true
                   ? "Students will see immediate feedback (best for learning and practice)"
                   : "Feedback hidden until quiz ends (best for graded assessments)"}
@@ -1569,7 +1428,7 @@ const QuizBuilder = () => {
           )}
 
           {quizSettings?.mode === 'live' && (
-            <Box sx={{ mb: 3, p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
+            <Box className="mst-setting">
               <FormControlLabel
                 control={
                   <Switch
@@ -1589,7 +1448,7 @@ const QuizBuilder = () => {
                 }
                 label={
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography>Show Result Feedback to Students After Quiz</Typography>
+                    <Typography>Let students review their answers afterwards</Typography>
                     <Tooltip
                       title="When enabled, students can view detailed answer review showing their responses, correct answers, and explanations after the quiz ends. When disabled, students only see a completion message."
                       arrow
@@ -1598,9 +1457,10 @@ const QuizBuilder = () => {
                     </Tooltip>
                   </Box>
                 }
-                sx={{ display: 'block' }}
+                labelPlacement="start"
+                className="mst-setting-label"
               />
-              <Typography variant="caption" color="text.secondary" sx={{ ml: 4, display: 'block', mt: 1 }}>
+              <Typography className="mst-setting-help" variant="body2" color="text.secondary">
                 {quizSettings.show_result_feedback_to_students ?? true
                   ? "Students can review their answers and see explanations"
                   : "Students only see submission confirmation (no detailed feedback)"}
@@ -1609,7 +1469,7 @@ const QuizBuilder = () => {
           )}
 
           {quizSettings?.mode === 'live' && (
-            <Box sx={{ mb: 3, p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
+            <Box className="mst-setting">
               <FormControlLabel
                 control={
                   <Switch
@@ -1624,7 +1484,7 @@ const QuizBuilder = () => {
                 }
                 label={
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography>Show Leaderboard to Students After Quiz</Typography>
+                    <Typography>Show the leaderboard afterwards</Typography>
                     <Tooltip
                       title="When enabled, students see the leaderboard with rankings and scores. Requires result feedback to be enabled."
                       arrow
@@ -1633,9 +1493,10 @@ const QuizBuilder = () => {
                     </Tooltip>
                   </Box>
                 }
-                sx={{ display: 'block' }}
+                labelPlacement="start"
+                className="mst-setting-label"
               />
-              <Typography variant="caption" color="text.secondary" sx={{ ml: 4, display: 'block', mt: 1 }}>
+              <Typography className="mst-setting-help" variant="body2" color="text.secondary">
                 {!(quizSettings.show_result_feedback_to_students ?? true)
                   ? "Disabled (result feedback must be enabled first)"
                   : (quizSettings.show_leaderboard_to_students ?? true)
@@ -1646,7 +1507,7 @@ const QuizBuilder = () => {
           )}
 
           {quizSettings?.mode === 'self_paced' && (
-            <Box sx={{ mb: 3, p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
+            <Box className="mst-setting">
               <FormControlLabel
                 control={
                   <Switch
@@ -1660,7 +1521,7 @@ const QuizBuilder = () => {
                 }
                 label={
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography>Show Final Score to Students</Typography>
+                    <Typography>Show students their final score</Typography>
                     <Tooltip
                       title="When enabled, students will see their final score and percentage after submitting the quiz. When disabled, students only see a confirmation message without score details."
                       arrow
@@ -1669,9 +1530,10 @@ const QuizBuilder = () => {
                     </Tooltip>
                   </Box>
                 }
-                sx={{ display: 'block' }}
+                labelPlacement="start"
+                className="mst-setting-label"
               />
-              <Typography variant="caption" color="text.secondary" sx={{ ml: 4, display: 'block', mt: 1 }}>
+              <Typography className="mst-setting-help" variant="body2" color="text.secondary">
                 {quizSettings.show_final_score_to_students ?? true
                   ? "Students will see their score and percentage after submission"
                   : "Students will only see submission confirmation (score hidden)"}
@@ -1680,7 +1542,7 @@ const QuizBuilder = () => {
           )}
 
           {quizSettings?.mode === 'self_paced' && (
-            <Box sx={{ mb: 3, p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
+            <Box className="mst-setting">
               <FormControlLabel
                 control={
                   <Switch
@@ -1691,7 +1553,7 @@ const QuizBuilder = () => {
                 }
                 label={(
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography>Set Time Limit</Typography>
+                    <Typography>Set a time limit</Typography>
                     <Tooltip
                       title="When enabled, the quiz will automatically end and submit all student answers when the time limit is reached."
                       arrow
@@ -1700,14 +1562,15 @@ const QuizBuilder = () => {
                     </Tooltip>
                   </Box>
                 )}
-                sx={{ display: 'block', mb: deadlineEnabled ? 2 : 0 }}
+                labelPlacement="start"
+                className="mst-setting-label"
               />
 
               {deadlineEnabled && (
-                <Box sx={{ ml: 4, mt: 2 }}>
+                <Box sx={{ mt: 2 }}>
                   <TextField
                     type="number"
-                    label="Time Limit (Minutes)"
+                    label="Time limit (minutes)"
                     {...deadlineDurationInputProps}
                     InputProps={{
                       inputProps: { min: 1, max: 1440 }
@@ -1721,7 +1584,7 @@ const QuizBuilder = () => {
                 </Box>
               )}
 
-              <Typography variant="caption" color="text.secondary" sx={{ ml: 4, display: 'block', mt: 1 }}>
+              <Typography className="mst-setting-help" variant="body2" color="text.secondary">
                 {deadlineEnabled
                   ? 'Students will be automatically submitted when time expires.'
                   : 'No time limit enabled for this quiz.'}
@@ -1729,30 +1592,32 @@ const QuizBuilder = () => {
             </Box>
           )}
 
-          <Alert severity="info" sx={{ mb: 3 }}>
-            <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
-              Next Steps:
-            </Typography>
-            <Typography variant="body2">
-              After saving, publish your quiz to make it available. Once published, you can create a session
-              and start the quiz to allow students to join and participate in real-time.
-            </Typography>
+          </div>
+          <Alert severity="info" sx={{ mt: 3 }}>
+            Publish to make the quiz available, or save it as a draft for later. Once it's published you can start a session for students to join.
           </Alert>
-
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-            <Button onClick={() => setActiveStep(1)}>
-              Back
-            </Button>
-            <Button variant="contained" onClick={handleSave} disabled={isSaving}>
-              Save Quiz
-            </Button>
-          </Box>
         </Paper>
       )}
+      {activeStep === 2 && (
+          <div className="mst-builder-foot">
+            <Button onClick={() => goStep(1)} variant="text">
+              Back
+            </Button>
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <Button size="large" variant="outlined" onClick={handleSave} disabled={isSaving}>
+                Save as draft
+              </Button>
+              <Button size="large" variant="contained" startIcon={<PublishIcon />} onClick={() => setPublishDialog(true)} disabled={isSaving}>
+                Publish quiz
+              </Button>
+            </Box>
+          </div>
+      )}
+      </div>
 
       {/* Publish Confirmation Dialog */}
       <Dialog open={publishDialog} onClose={() => setPublishDialog(false)}>
-        <DialogTitle>Publish Quiz?</DialogTitle>
+        <DialogTitle>Publish this quiz?</DialogTitle>
         <DialogContent>
           <Typography>
             Once published, you can start live quiz sessions with your students.
@@ -1989,52 +1854,28 @@ const QuizBuilder = () => {
 
             {/* File Upload Area */}
             {!aiParsing ? (
-              <Box
-                sx={{
-                  border: '2px dashed',
-                  borderColor: uploadedFile ? 'success.main' : 'divider',
-                  borderRadius: 2,
-                  p: 4,
-                  textAlign: 'center',
-                  bgcolor: uploadedFile ? 'success.50' : 'background.paper',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s'
+              <UploadDropzone
+                accept={{
+                  'application/pdf': ['.pdf'],
+                  'image/jpeg': ['.jpg', '.jpeg'],
+                  'image/png': ['.png'],
+                  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+                  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+                  'text/csv': ['.csv'],
+                  'text/plain': ['.txt'],
                 }}
-                onClick={() => document.getElementById('ai-file-upload').click()}
-              >
-                <input
-                  id="ai-file-upload"
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx,.csv,.txt"
-                  style={{ display: 'none' }}
-                  onChange={(e) => setUploadedFile(e.target.files[0])}
-                />
-                <CloudUploadIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
-                <Typography variant="h6" gutterBottom>
-                  {uploadedFile ? uploadedFile.name : 'Click to upload document'}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Supported formats: PDF, JPG, PNG, DOCX, XLSX, CSV, TXT
-                </Typography>
-                {uploadedFile && (
-                  <Chip
-                    label="File selected"
-                    color="success"
-                    sx={{ mt: 2 }}
-                    onDelete={() => setUploadedFile(null)}
-                  />
-                )}
-              </Box>
+                files={uploadedFile ? [uploadedFile] : []}
+                hint="PDF, JPG, PNG, Word, Excel, CSV or text"
+                onDrop={(files) => setUploadedFile(files[0])}
+                onRemove={() => setUploadedFile(null)}
+                size="compact"
+                title={uploadedFile ? 'Drop a different file' : 'Drop the document here'}
+              />
             ) : (
-              <Box sx={{ textAlign: 'center', py: 4 }}>
-                <CircularProgress size={60} />
-                <Typography variant="h6" sx={{ mt: 2 }}>
-                  AI is analyzing your document...
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  This may take a moment. Please don't close this window.
-                </Typography>
-              </Box>
+              <div className="mst-ai-progress" role="status" style={{ padding: '24px 0' }}>
+                <div className="mst-ai-bar" />
+                <span>AI is reading your document… this can take a minute. Keep this window open.</span>
+              </div>
             )}
           </Box>
         </DialogContent>

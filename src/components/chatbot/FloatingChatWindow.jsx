@@ -380,18 +380,9 @@ const FloatingChatWindow = ({
 
   return (
     <Paper
+      className="mst-float-chat"
       elevation={10}
       sx={{ ...windowStyles, overflow: 'hidden' }}
-      ref={(el) => {
-        if (el) {
-          console.log('[FloatingChatWindow] Paper dimensions:', {
-            width: el.offsetWidth,
-            height: el.offsetHeight,
-            windowState,
-            messagesCount: messages.length
-          });
-        }
-      }}
     >
       {/* Header */}
       <Box
@@ -402,7 +393,6 @@ const FloatingChatWindow = ({
           p: 1.5,
           borderBottom: '1px solid',
           borderColor: 'divider',
-          bgcolor: 'background.paper',  // WHITE, not purple!
           cursor: windowState === 'minimized' ? 'pointer' : 'default'
         }}
         onClick={windowState === 'minimized' ? handleRestore : undefined}
@@ -416,7 +406,8 @@ const FloatingChatWindow = ({
               </IconButton>
             </Tooltip>
           )}
-          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+          <span aria-hidden="true" className="mst-msg-avatar" style={{ marginTop: 0 }}><ChatIcon /></span>
+          <Typography variant="subtitle1" component="h2" sx={{ fontWeight: 600 }}>
             Analytics with AI
           </Typography>
           {stage && windowState !== 'minimized' && (
@@ -437,7 +428,7 @@ const FloatingChatWindow = ({
                 disabled={!sessionId || isDownloading}
                 sx={{ mr: 0.5 }}
               >
-                {isDownloading ? 'Generating...' : 'Download as Report'}
+                {isDownloading ? 'Preparing…' : 'Download report'}
               </Button>
             ) : (
               <Tooltip title={!sessionId ? "Start a conversation first" : "Download Report"}>
@@ -446,11 +437,7 @@ const FloatingChatWindow = ({
                     size="small"
                     onClick={handleDownloadReport}
                     disabled={!sessionId || isDownloading}
-                    sx={{
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      borderRadius: '4px'
-                    }}
+                    aria-label="Download report"
                   >
                     {isDownloading ? <CircularProgress size={20} /> : <DownloadIcon />}
                   </IconButton>

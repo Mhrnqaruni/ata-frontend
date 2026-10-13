@@ -1,7 +1,12 @@
 import React from 'react';
-import { Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Box, Typography, useTheme } from '@mui/material';
+import { Button, Card, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip, Typography, useTheme } from '@mui/material';
+import DownloadRounded from '@mui/icons-material/DownloadRounded';
+import EmptyState from '../common/EmptyState';
+import { initialsOf } from '../classes/StudentTable';
+import AssignmentOutlined from '@mui/icons-material/AssignmentOutlined';
 import { useNavigate, useParams } from 'react-router-dom';
 import StatusChip from './StatusChip';
+import '../common/responsive-table.css';
 import reviewService from '../../services/reviewService';
 
 const ResultsTable = ({ rows }) => {
@@ -23,9 +28,9 @@ const ResultsTable = ({ rows }) => {
 
   if (!rows || rows.length === 0) {
     return (
-      <Paper sx={{ p: 3, textAlign: 'center' }}>
-        <Typography>No student results are available for this assessment yet.</Typography>
-      </Paper>
+      <EmptyState icon={<AssignmentOutlined />} title="No results yet">
+        Student results appear here as soon as grading finishes.
+      </EmptyState>
     );
   }
 
@@ -33,50 +38,64 @@ const ResultsTable = ({ rows }) => {
   const outsiderStudents = rows.filter(s => s.isOutsider);
 
   const renderStudentRow = (s) => {
-    let gradeText;
+    let grade;
     if (s.status === 'PENDING_REVIEW') {
-      gradeText = 'Pending';
+      grade = <span className="mst-cell-muted">Pending</span>;
     } else if (s.status === 'ABSENT') {
-      gradeText = 'N/A';
+      grade = <span className="mst-cell-muted">—</span>;
     } else if (s.totalScore != null && s.maxTotalScore != null && s.maxTotalScore > 0) {
-      gradeText = `${s.totalScore.toFixed(1)} / ${s.maxTotalScore.toFixed(1)}`;
+      const pct = (s.totalScore / s.maxTotalScore) * 100;
+      grade = (
+        <span className="mst-grade mst-grade-fraction" data-band={pct >= 85 ? 'high' : pct < 70 ? 'low' : 'mid'}>
+          <span className="mst-grade-value">{s.totalScore.toFixed(1)} / {s.maxTotalScore.toFixed(1)}</span>
+          <span aria-hidden="true" className="mst-grade-bar"><span style={{ transform: `scaleX(${Math.max(0, Math.min(100, pct)) / 100})` }} /></span>
+        </span>
+      );
     } else if (s.totalScore != null) {
-      gradeText = s.totalScore.toFixed(1);
+      grade = s.totalScore.toFixed(1);
     } else {
-      gradeText = 'N/A';
+      grade = <span className="mst-cell-muted">—</span>;
     }
-
     const canReview = s.status !== 'ABSENT';
     const canDownload = s.status !== 'ABSENT' && s.status !== 'PENDING_REVIEW';
-
     return (
-      <TableRow key={s.entityId}>
-        <TableCell component="th" scope="row">{s.studentName}</TableCell>
-        <TableCell>{s.studentId}</TableCell>
-        <TableCell><StatusChip status={s.status} /></TableCell>
-        <TableCell align="right">{gradeText}</TableCell>
-        <TableCell align="center">
-          <Button size="small" variant="outlined" onClick={() => handleReview(s.entityId)} disabled={!canReview} sx={{ mr: 1 }}>
+      <TableRow key={s.entityId} className="mst-result-record">
+        <TableCell component="th" scope="row" data-label="Student">
+          <span className="mst-person">
+            <span aria-hidden="true" className="mst-avatar">{initialsOf(s.studentName)}</span>
+            <span className="mst-person-name">{s.studentName}</span>
+          </span>
+        </TableCell>
+        <TableCell className="mst-cell-muted" data-label="Student ID">{s.studentId}</TableCell>
+        <TableCell data-label="Status"><StatusChip status={s.status} /></TableCell>
+        <TableCell data-label="Grade">{grade}</TableCell>
+        <TableCell align="right" className="mst-row-actions mst-row-actions-on" data-label="Actions">
+          <Button size="small" variant="outlined" onClick={() => handleReview(s.entityId)} disabled={!canReview} sx={{ mr: 0.5 }}>
             Review
           </Button>
-          <Button size="small" variant="outlined" onClick={() => handleDownload(s.entityId)} disabled={!canDownload}>
-            Download
-          </Button>
+          <Tooltip title={canDownload ? 'Download report' : 'No report yet'}>
+            <span>
+              <IconButton aria-label={`Download ${s.studentName}'s report`} onClick={() => handleDownload(s.entityId)} disabled={!canDownload}>
+                <DownloadRounded fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
         </TableCell>
       </TableRow>
     );
   };
 
   return (
-    <TableContainer component={Paper}>
-      <Table size="small" aria-label="student results table">
+    <Card className="mst-rim">
+    <TableContainer>
+      <Table className="mst-responsive-table mst-result-records mst-table" aria-label="Student results">
         <TableHead>
           <TableRow>
-            <TableCell>Name</TableCell>
+            <TableCell sx={{ width: '30%' }}>Student</TableCell>
             <TableCell>Student ID</TableCell>
             <TableCell>Status</TableCell>
-            <TableCell align="right">Grade</TableCell>
-            <TableCell align="center">Actions</TableCell>
+            <TableCell>Grade</TableCell>
+            <TableCell align="right" sx={{ width: 168 }}>Actions</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -86,13 +105,9 @@ const ResultsTable = ({ rows }) => {
             <TableRow>
               <TableCell
                 colSpan={5}
-                sx={{
-                  py: 1,
-                  backgroundColor: theme.palette.mode === 'dark' ? 'grey.800' : 'grey.100',
-                  fontWeight: 'bold'
-                }}
+                className="mst-table-group"
               >
-                <Typography variant="subtitle2" sx={{ pl: 2 }}>Students Not in Roster</Typography>
+                <Typography component="span" variant="overline">Not in the class roster</Typography>
               </TableCell>
             </TableRow>
           )}
@@ -101,6 +116,7 @@ const ResultsTable = ({ rows }) => {
         </TableBody>
       </Table>
     </TableContainer>
+    </Card>
   );
 };
 

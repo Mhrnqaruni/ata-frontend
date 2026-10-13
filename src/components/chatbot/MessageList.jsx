@@ -119,35 +119,13 @@ const MessageBubbleComponent = ({ message }) => {
   }, []);
 
   return (
-    <Stack
-      direction="row"
-      spacing={2}
-      sx={{
-        justifyContent: isBot ? 'flex-start' : 'flex-end',
-        width: '100%',
-      }}
-      ref={(el) => {
-        if (el) {
-          console.log(`[MessageBubble ${message.id.slice(-8)}] Stack height:`, el.offsetHeight);
-        }
-      }}
-    >
+    <div className="mst-msg" data-role={isBot ? 'bot' : 'user'} data-charts={hasCharts ? 'true' : undefined}>
       {isBot && (
-        <Avatar sx={{ width: 40, height: 40, bgcolor: 'secondary.light', color: 'primary.main' }}>
+        <span aria-hidden="true" className="mst-msg-avatar">
           <AutoAwesome />
-        </Avatar>
+        </span>
       )}
-      <Box
-        sx={{
-          p: '10px 14px',  // Reduced from 12px 16px
-          bgcolor: isBot ? 'background.paper' : 'primary.main',
-          color: isBot ? 'text.primary' : 'primary.contrastText',
-          borderRadius: 4,
-          border: isBot ? '1px solid' : 'none',
-          borderColor: 'divider',
-          maxWidth: hasCharts ? '90%' : '80%',
-        }}
-      >
+      <div className="mst-msg-bubble">
         <Box sx={{
           overflow: 'visible',  // CRITICAL: Prevent height calculation issues
           '& p': { margin: '0.25em 0' },
@@ -195,18 +173,18 @@ const MessageBubbleComponent = ({ message }) => {
 
                 // Otherwise, apply custom styling for regular code
                 return inline
-                  ? <code style={{backgroundColor: '#f5f5f5', padding: '2px 4px', borderRadius: '3px'}} {...props}>{children}</code>
-                  : <pre style={{backgroundColor: '#f5f5f5', padding: '12px', borderRadius: '4px', overflow: 'auto'}}><code {...props}>{children}</code></pre>;
+                  ? <code style={{backgroundColor: 'var(--mst-canvas)', color: 'var(--mst-ink)', padding: '2px 4px', borderRadius: '3px'}} {...props}>{children}</code>
+                  : <pre style={{backgroundColor: 'var(--mst-canvas)', color: 'var(--mst-ink)', padding: '12px', borderRadius: '4px', overflow: 'auto'}}><code {...props}>{children}</code></pre>;
               },
               // Style tables
               table: ({node, ...props}) => (
                 <table style={{borderCollapse: 'collapse', width: '100%', marginTop: '8px', marginBottom: '8px'}} {...props} />
               ),
               th: ({node, ...props}) => (
-                <th style={{border: '1px solid #ddd', padding: '8px', backgroundColor: '#f2f2f2'}} {...props} />
+                <th style={{border: '1px solid var(--mst-border)', padding: '8px', backgroundColor: 'var(--mst-canvas)', color: 'var(--mst-ink)'}} {...props} />
               ),
               td: ({node, ...props}) => (
-                <td style={{border: '1px solid #ddd', padding: '8px'}} {...props} />
+                <td style={{border: '1px solid var(--mst-border)', padding: '8px'}} {...props} />
               ),
             }}
           >
@@ -218,19 +196,14 @@ const MessageBubbleComponent = ({ message }) => {
           {message.isStreaming && <BlinkingCursor />}
         </Box>
         {hasCharts && (
-          <Box sx={{ mt: 0.5 }}>  {/* Reduced to 0.5 (4px) */}
+          <Box sx={{ mt: 0.5 }}>
             {message.charts.map((chart, idx) => (
               <ChartRenderer key={idx} data={chart} />
             ))}
           </Box>
         )}
-      </Box>
-      {!isBot && (
-        <Avatar sx={{ width: 40, height: 40, bgcolor: 'primary.main' }}>
-          {user?.name?.charAt(0) || 'U'}
-        </Avatar>
-      )}
-    </Stack>
+      </div>
+    </div>
   );
 };
 
@@ -277,14 +250,8 @@ const MessageList = ({ messages, isThinking, children }) => {
   }, [messages, isThinking]);
 
   return (
-    <Box
-      ref={containerRef}
-      sx={{
-        p: 1.5  // Reduced from 2 (16px) to 1.5 (12px)
-        // Removed flex and minHeight - let it be natural height
-      }}
-    >
-      <Stack spacing={1.5}>  {/* Reduced to 1.5 (12px) for tighter layout */}
+    <Box ref={containerRef} className="mst-msgs">
+      <Stack spacing={2}>
         {children}
         {messages.map((msg) => (
           <MessageErrorBoundary key={msg.id}>

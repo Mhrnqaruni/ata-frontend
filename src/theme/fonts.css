@@ -1,0 +1,22 @@
+/* Self-hosted reference faces; OFL licences accompany the original assets. */
+@font-face {
+  font-family: "Geist";
+  src: url("/fonts/geist-variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Bricolage";
+  src: url("/fonts/bricolage-variable.woff2") format("woff2");
+  font-weight: 200 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "GeistMono";
+  src: url("/fonts/geist-mono-variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}

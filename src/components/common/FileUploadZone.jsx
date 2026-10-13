@@ -27,7 +27,7 @@ const FileUploadZone = ({ onDrop, accept, disabled }) => {
       }}
     >
       <input {...getInputProps()} />
-      <FileUploadOutlined sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
+      <FileUploadOutlined sx={{ fontSize: 28, color: 'text.secondary', mb: 1 }} />
       <Typography>Drag & drop files here</Typography>
       <Typography color="text.secondary">or click to select files</Typography>
     </Box>

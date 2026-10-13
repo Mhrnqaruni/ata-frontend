@@ -2,6 +2,7 @@
 
 // --- Core React Imports ---
 import React, { useState, useEffect, useCallback } from 'react';
+import AddCard from '../components/common/AddCard';
 import { useNavigate } from 'react-router-dom';
 
 // --- MUI Component Imports ---
@@ -44,22 +45,20 @@ import quizService from '../services/quizService';
 import classService from '../services/classService';
 import quizSPService from '../services/quizSPService';
 import { useSnackbar } from '../hooks/useSnackbar';
+import PageHeader from '../components/common/PageHeader';
+import EmptyStateCard from '../components/common/EmptyState';
 
 /**
  * Empty state component for when no quizzes exist
  */
 const EmptyState = ({ onAddQuiz }) => (
-  <Box sx={{ textAlign: 'center', mt: 8 }}>
-    <QuizOutlined sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
-    <Typography variant="h3" gutterBottom>Create your first quiz</Typography>
-    <Typography color="text.secondary" sx={{ mb: 3 }}>
-      Get started by creating an interactive quiz for your students.
-      You can add multiple choice, true/false, short answer, and poll questions.
-    </Typography>
-    <Button variant="contained" startIcon={<AddOutlined />} onClick={onAddQuiz}>
-      Create New Quiz
-    </Button>
-  </Box>
+  <EmptyStateCard
+    action={<Button variant="contained" startIcon={<AddOutlined />} onClick={onAddQuiz}>Create quiz</Button>}
+    icon={<QuizOutlined />}
+    title="Create your first quiz"
+  >
+    Run it live with the whole class, or let students take it at their own pace.
+  </EmptyStateCard>
 );
 
 /**
@@ -80,11 +79,11 @@ const QuizCard = ({ quiz, displayTitle, onEdit, onDuplicate, onDelete, onStartSe
   const getStatusColor = (status) => {
     switch (status) {
       case 'published':
-        return 'success';
+        return 'primary';
       case 'completed':
-        return 'info';
+        return 'success';
       case 'draft':
-        return 'warning';
+        return 'default';
       case 'archived':
         return 'default';
       default:
@@ -96,71 +95,36 @@ const QuizCard = ({ quiz, displayTitle, onEdit, onDuplicate, onDelete, onStartSe
     return status.charAt(0).toUpperCase() + status.slice(1);
   };
 
+  const selfPaced = quiz.settings?.mode === 'self_paced';
+  const meta = [`${quiz.question_count || 0} ${quiz.question_count === 1 ? 'question' : 'questions'}`, quiz.class_name].filter(Boolean).join(' · ');
+
   return (
-    <Card
-      sx={{
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        transition: 'transform 0.2s, box-shadow 0.2s',
-        '&:hover': {
-          transform: 'translateY(-4px)',
-          boxShadow: 6
-        }
-      }}
-    >
+    <Card className="mst-rim mst-lift mst-quiz-card" data-enter="">
       <CardContent sx={{ flexGrow: 1 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-          <Typography variant="h5" component="div" sx={{ fontWeight: 600, flex: 1 }}>
-            {displayTitle}
-          </Typography>
-          <IconButton size="small" onClick={handleMenuOpen}>
+        <div className="mst-quiz-top">
+          <div className="mst-quiz-chips">
+            <Chip
+              className="mst-status"
+              color={selfPaced ? 'default' : 'primary'}
+              icon={!selfPaced && activeSession ? <span aria-hidden="true" className="mst-dot mst-chip-dot" data-pulse="true" /> : undefined}
+              label={selfPaced ? 'Self-paced' : activeSession ? 'Live now' : 'Live'}
+              size="small"
+            />
+            <Chip color={getStatusColor(quiz.status)} label={getStatusLabel(quiz.status)} size="small" />
+          </div>
+          <IconButton aria-label={`Options for ${displayTitle}`} onClick={handleMenuOpen} size="small">
             <MoreVertIcon />
           </IconButton>
-        </Box>
-
+        </div>
+        <h2 className="mst-quiz-title">{displayTitle}</h2>
+        <div className="mst-quiz-meta">{meta}</div>
         {quiz.description && (
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            {quiz.description.length > 100
-              ? `${quiz.description.substring(0, 100)}...`
-              : quiz.description}
-          </Typography>
+          <p className="mst-quiz-desc">{quiz.description}</p>
         )}
-
-        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
-          <Chip
-            label={getStatusLabel(quiz.status)}
-            color={getStatusColor(quiz.status)}
-            size="small"
-          />
-          <Chip
-            label={`${quiz.question_count || 0} Questions`}
-            size="small"
-            variant="outlined"
-          />
-          <Chip
-            label={quiz.settings?.mode === 'self_paced' ? 'Self-Paced' : 'Live'}
-            size="small"
-            variant="outlined"
-            color={quiz.settings?.mode === 'self_paced' ? 'info' : 'success'}
-          />
-          {/* NEW: Display class association if quiz is linked to a class */}
-          {quiz.class_name && (
-            <Chip
-              label={`📚 ${quiz.class_name}`}
-              size="small"
-              variant="outlined"
-              color="primary"
-            />
-          )}
-        </Box>
-
-        <Typography variant="caption" color="text.secondary">
-          Created: {new Date(quiz.created_at).toLocaleDateString()}
-        </Typography>
+        <div className="mst-quiz-date">Created {new Date(quiz.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</div>
       </CardContent>
 
-      <CardActions sx={{ p: 2, pt: 0 }}>
+      <CardActions className="mst-quiz-actions">
         {quiz.status === 'completed' ? (
           <Button
             fullWidth
@@ -169,7 +133,7 @@ const QuizCard = ({ quiz, displayTitle, onEdit, onDuplicate, onDelete, onStartSe
             startIcon={<AssessmentIcon />}
             onClick={() => onReview()}
           >
-            Review Analytics
+            View analytics
           </Button>
         ) : quiz.status === 'published' ? (
           quiz.settings?.mode === 'self_paced' ? (
@@ -178,11 +142,10 @@ const QuizCard = ({ quiz, displayTitle, onEdit, onDuplicate, onDelete, onStartSe
               <Button
                 fullWidth
                 variant="contained"
-                color="success"
-                startIcon={<PlayArrowIcon />}
+                startIcon={<span aria-hidden="true" className="mst-dot" data-pulse="true" />}
                 onClick={() => onResumeSPSession(activeSession.id)}
               >
-                Resume Session
+                Resume session
               </Button>
             ) : (
               // No active session - show "Start Session"
@@ -192,7 +155,7 @@ const QuizCard = ({ quiz, displayTitle, onEdit, onDuplicate, onDelete, onStartSe
                 startIcon={<PlayArrowIcon />}
                 onClick={() => onStartSPSession(quiz)}
               >
-                Start Session
+                Start session
               </Button>
             )
           ) : (
@@ -201,11 +164,10 @@ const QuizCard = ({ quiz, displayTitle, onEdit, onDuplicate, onDelete, onStartSe
               <Button
                 fullWidth
                 variant="contained"
-                color="success"
-                startIcon={<PlayArrowIcon />}
+                startIcon={<span aria-hidden="true" className="mst-dot" data-pulse="true" />}
                 onClick={() => navigate(`/quizzes/sessions/${activeSession.id}/host`)}
               >
-                Resume Session
+                Resume session
               </Button>
             ) : (
               <Button
@@ -214,7 +176,7 @@ const QuizCard = ({ quiz, displayTitle, onEdit, onDuplicate, onDelete, onStartSe
                 startIcon={<PlayArrowIcon />}
                 onClick={() => onStartSession(quiz.id)}
               >
-                Host Quiz
+                Host quiz
               </Button>
             )
           )
@@ -225,7 +187,7 @@ const QuizCard = ({ quiz, displayTitle, onEdit, onDuplicate, onDelete, onStartSe
             startIcon={<EditIcon />}
             onClick={() => onEdit(quiz.id)}
           >
-            Edit Quiz
+            Edit quiz
           </Button>
         )}
       </CardActions>
@@ -590,13 +552,11 @@ const Quizzes = () => {
   const renderContent = () => {
     if (isLoading) {
       return (
-        <Grid container spacing={3}>
+        <div className="mst-grid mst-grid-auto">
           {Array.from(new Array(3)).map((_, index) => (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
-              <Skeleton variant="rectangular" height={250} sx={{ borderRadius: 2 }} />
-            </Grid>
+            <Skeleton key={index} variant="rectangular" height={232} />
           ))}
-        </Grid>
+        </div>
       );
     }
 
@@ -622,10 +582,10 @@ const Quizzes = () => {
     }
 
     return (
-      <Grid container spacing={3}>
+      <div className="mst-grid mst-grid-auto">
         {filteredQuizzes.map((quiz) => (
-          <Grid item xs={12} sm={6} md={4} lg={3} key={quiz.id}>
             <QuizCard
+              key={quiz.id}
               quiz={quiz}
               displayTitle={formatTitle(quiz)}
               onEdit={handleEditQuiz}
@@ -638,43 +598,27 @@ const Quizzes = () => {
               onPublish={handlePublish}
               onReview={() => handleReviewAnalytics(quiz)}
             />
-          </Grid>
         ))}
-      </Grid>
+        <AddCard hint="Live in class or self-paced" label="Create a quiz" minHeight={232} onClick={handleCreateQuiz} />
+      </div>
     );
   };
 
   return (
     <>
       <Box>
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            mb: 4,
-            flexDirection: { xs: 'column', sm: 'row' },
-            alignItems: { xs: 'stretch', sm: 'center' }
-          }}
-        >
-          <Typography variant="h2" sx={{ mb: { xs: 2, sm: 0 } }}>
-            Your Quizzes
-          </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddOutlined />}
-            onClick={handleCreateQuiz}
-            sx={{ width: { xs: '100%', sm: 'auto' } }}
-          >
-            Create New Quiz
-          </Button>
-        </Box>
+        <PageHeader
+          actions={<Button variant="contained" startIcon={<AddOutlined />} onClick={handleCreateQuiz}>Create quiz</Button>}
+          subtitle="Live quizzes for the whole class, or self-paced ones they take on their own."
+          title="Quizzes"
+        />
 
         {/* NEW: Mode Filter Tabs */}
         <Box sx={{ mb: 3 }}>
-          <Tabs value={modeFilter} onChange={(e, newValue) => setModeFilter(newValue)}>
-            <Tab label="All Quizzes" value="all" />
-            <Tab label="Live Quizzes" value="live" />
-            <Tab label="Self-Paced" value="self_paced" />
+          <Tabs aria-label="Filter quizzes" value={modeFilter} onChange={(e, newValue) => setModeFilter(newValue)}>
+            <Tab label="All" value="all" />
+            <Tab label="Live" value="live" />
+            <Tab label="Self-paced" value="self_paced" />
           </Tabs>
         </Box>
 
@@ -683,7 +627,7 @@ const Quizzes = () => {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialog.open} onClose={handleCloseDeleteDialog}>
-        <DialogTitle>Delete Quiz?</DialogTitle>
+        <DialogTitle>Delete this quiz?</DialogTitle>
         <DialogContent>
           <DialogContentText>
             Are you sure you want to delete this quiz? This action cannot be undone.
@@ -699,7 +643,7 @@ const Quizzes = () => {
 
       {/* Duplicate Dialog */}
       <Dialog open={duplicateDialog.open} onClose={handleCloseDuplicateDialog}>
-        <DialogTitle>Duplicate Quiz</DialogTitle>
+        <DialogTitle>Duplicate quiz</DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ mb: 2 }}>
             Enter a title for the duplicated quiz:
@@ -707,7 +651,7 @@ const Quizzes = () => {
           <TextField
             autoFocus
             fullWidth
-            label="Quiz Title"
+            label="Title for the copy"
             value={duplicateDialog.newTitle}
             onChange={(e) =>
               setDuplicateDialog({ ...duplicateDialog, newTitle: e.target.value })

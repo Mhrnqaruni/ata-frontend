@@ -36,17 +36,7 @@ const ChatInput = ({ onSendMessage, disabled, isResponding, onStopGeneration }) 
   };
 
   return (
-    <Box
-      sx={{ p: 2, flexShrink: 0, bgcolor: 'background.paper', borderTop: 1, borderColor: 'divider' }}
-      ref={(el) => {
-        if (el) {
-          console.log('[ChatInput] Input Box dimensions:', {
-            height: el.offsetHeight,
-            clientHeight: el.clientHeight
-          });
-        }
-      }}
-    >
+    <Box className="mst-composer">
       <form onSubmit={handleSubmit} noValidate>
         <Stack spacing={1}>
           {/* Conditionally render the "Stop Generating" button */}
@@ -58,7 +48,7 @@ const ChatInput = ({ onSendMessage, disabled, isResponding, onStopGeneration }) 
               onClick={onStopGeneration}
               sx={{ alignSelf: 'center' }}
             >
-              Stop Generating
+              Stop
             </Button>
           )}
           <TextField
@@ -69,15 +59,16 @@ const ChatInput = ({ onSendMessage, disabled, isResponding, onStopGeneration }) 
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
             disabled={disabled}
-            placeholder={disabled ? "MST AI is thinking..." : "Ask a question..."}
+            placeholder={disabled ? "The assistant is thinking…" : "Ask about a class, a student or a quiz…"}
+            inputProps={{ 'aria-label': 'Message the assistant' }}
             InputProps={{
               endAdornment: (
-                <InputAdornment position="end" sx={{ alignSelf: 'flex-end', mb: 1 }}>
+                <InputAdornment position="end" sx={{ alignSelf: 'flex-end', mb: '2px' }}>
                   <IconButton
+                    className="mst-send"
                     type="submit"
                     disabled={!text.trim() || disabled}
-                    color="primary"
-                    aria-label="send message"
+                    aria-label="Send message"
                   >
                     <SendOutlined />
                   </IconButton>

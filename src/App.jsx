@@ -6,7 +6,7 @@ import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom
 
 // --- MUI & Theme Imports ---
 import { ThemeProvider } from '@mui/material/styles';
-import { CssBaseline } from '@mui/material';
+import { CssBaseline, Box, Typography } from '@mui/material';
 import { getTheme } from './theme/theme';
 
 // --- Context Provider Imports ---
@@ -25,6 +25,7 @@ import ProtectedRoute from './components/common/ProtectedRoute';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import Layout from './components/common/Layout';
 import Home from './pages/Home';
+import NotFound from './pages/NotFound';
 import Classes from './pages/Classes';
 import ClassDetails from './pages/ClassDetails';
 import AITools from './pages/AITools';
@@ -71,6 +72,8 @@ const ThemedApp = () => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      {/* the still brand ground (logo-colour blooms) behind every page */}
+      <div aria-hidden="true" className="mst-ground" />
       {/* The Routes component is where all URL-to-component mapping is defined. */}
       <Routes>
         {/* --- [CRITICAL MODIFICATION 2/4: DEFINE PUBLIC-ONLY ROUTES] --- */}
@@ -143,7 +146,7 @@ const ThemedApp = () => {
           <Route path="/chat/:sessionId?" element={<Chatbot />} />
 
           {/* A catch-all route for any other path, rendered within the protected layout. */}
-          <Route path="*" element={<h1>404 Not Found</h1>} />
+          <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
     </ThemeProvider>

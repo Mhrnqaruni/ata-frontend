@@ -49,7 +49,7 @@ const ProtectedRoute = ({ children, requiredRole, redirectTo }) => {
           height: '100vh', // Take up the full viewport height
         }}
       >
-        <CircularProgress />
+        <CircularProgress aria-label="Loading session" />
       </Box>
     );
   }

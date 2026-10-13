@@ -13,6 +13,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- === FONT LOADING END === -->
     
+    <!-- theme before the first paint: the sign-in page and every screen start in the chosen theme (no white flash) -->
+    <script>
+      (function () {
+        var mode = "light";
+        try { mode = localStorage.getItem("themeMode") === "dark" ? "dark" : "light"; } catch (e) {}
+        var root = document.documentElement;
+        root.setAttribute("data-theme-mode", mode);
+        root.style.colorScheme = mode;
+        root.style.background = mode === "dark" ? "#060a1a" : "#f4f6fc";
+      })();
+    </script>
     <title>MST - My Smart Teach</title>
   </head>
   <body>

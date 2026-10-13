@@ -58,7 +58,7 @@ const StudentModal = ({ open, onClose, onSubmit, mode, initialData, isLoading, e
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" disableEscapeKeyDown={isLoading}>
       <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        {mode === 'add' ? 'Add New Student' : 'Edit Student Details'}
+        {mode === 'add' ? 'Add a student' : 'Edit student'}
         <IconButton aria-label="close" onClick={onClose} disabled={isLoading}>
           <CloseOutlined />
         </IconButton>
@@ -76,7 +76,7 @@ const StudentModal = ({ open, onClose, onSubmit, mode, initialData, isLoading, e
               required
               id="name"
               name="name" // The 'name' must match the key in the formData state.
-              label="Student Full Name"
+              label="Full name"
               type="text"
               fullWidth
               value={formData.name}
@@ -87,7 +87,7 @@ const StudentModal = ({ open, onClose, onSubmit, mode, initialData, isLoading, e
               required
               id="studentId"
               name="studentId"
-              label="Student ID Number"
+              label="Student ID"
               type="text"
               fullWidth
               value={formData.studentId}
@@ -105,7 +105,7 @@ const StudentModal = ({ open, onClose, onSubmit, mode, initialData, isLoading, e
             startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
           >
             {/* The button text dynamically changes based on the mode. */}
-            {mode === 'add' ? 'Add Student' : 'Save Changes'}
+            {mode === 'add' ? 'Add student' : 'Save changes'}
           </Button>
         </DialogActions>
       </form>

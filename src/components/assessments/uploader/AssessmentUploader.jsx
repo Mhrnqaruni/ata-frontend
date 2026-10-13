@@ -58,7 +58,7 @@ const AssessmentUploader = ({ onParse, isParsing }) => {
         // Justification: This provides a large, clear, and intuitive target for the user to drag their file onto.
         <DropzoneContainer {...getRootProps({ isDragActive })}>
           <input {...getInputProps()} />
-          <UploadFileIcon sx={{ fontSize: 60, mb: 2 }} />
+          <UploadFileIcon sx={{ fontSize: 28, mb: 2 }} />
           <Typography variant="h6">Drag & drop your assessment file here</Typography>
           <Typography variant="body1" sx={{ mb: 1 }}>or click to select a file</Typography>
           <Typography variant="caption">(PDF, DOCX, JPG, PNG)</Typography>

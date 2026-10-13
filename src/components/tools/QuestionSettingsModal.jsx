@@ -67,16 +67,16 @@ const QuestionSettingsModal = ({ open, onClose, onSave, initialConfigs }) => {
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
       <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        Configure Question Settings
+        Question types
         <IconButton aria-label="close" onClick={onClose}><CloseOutlined /></IconButton>
       </DialogTitle>
       <DialogContent dividers>
         <Grid container spacing={4}>
           <Grid item xs={12} md={5}>
-            <Typography variant="h4" gutterBottom>Question Types</Typography>
+            <Typography variant="h4" gutterBottom>Types</Typography>
             <Typography color="text.secondary" sx={{mb: 2}}>Select 1 to 5 types.</Typography>
-            <List sx={{ width: '100%', bgcolor: 'background.paper', maxHeight: '60vh', overflowY: 'auto' }}>
-              {ALL_QUESTION_TYPES.map((type) => {
+            <List className="mst-type-list" sx={{ width: '100%', maxHeight: '52vh', overflowY: 'auto' }}>
+              {ALL_QUESTION_TYPES.filter((type) => type.enabled).map((type) => {
                 const isSelected = selectedConfigs.some(c => c.type === type.id);
                 return (
                   <ListItemButton 
@@ -95,15 +95,20 @@ const QuestionSettingsModal = ({ open, onClose, onSave, initialConfigs }) => {
                         disabled={!type.enabled || (!isSelected && selectedConfigs.length >= 5)}
                       />
                     </ListItemIcon>
-                    <ListItemText primary={type.label} secondary={!type.enabled ? 'Coming soon' : ''} />
+                    <ListItemText primary={type.label} />
                   </ListItemButton>
                 );
               })}
             </List>
+            {ALL_QUESTION_TYPES.some((type) => !type.enabled) ? (
+              <Typography color="text.secondary" sx={{ mt: 1.5, fontSize: 14 }}>
+                Coming soon: {ALL_QUESTION_TYPES.filter((type) => !type.enabled).map((type) => type.label.replace(/ questions?$/i, '')).join(', ')}.
+              </Typography>
+            ) : null}
           </Grid>
           
           <Grid item xs={12} md={7}>
-            <Typography variant="h4" gutterBottom>Your Selections</Typography>
+            <Typography variant="h4" gutterBottom>Count and difficulty</Typography>
             <Typography color="text.secondary" sx={{mb: 2}}>
                 Adjust the count and difficulty for each selected question type.
             </Typography>
@@ -114,7 +119,7 @@ const QuestionSettingsModal = ({ open, onClose, onSave, initialConfigs }) => {
                             <Typography variant="h5" gutterBottom>{config.label}</Typography>
                             <Stack direction="row" spacing={2} sx={{mt: 2}}>
                                 <TextField
-                                    label="Number of Questions"
+                                    label="How many"
                                     type="number"
                                     name="count"
                                     value={config.count}
@@ -157,7 +162,7 @@ const QuestionSettingsModal = ({ open, onClose, onSave, initialConfigs }) => {
             onClick={handleSave} 
             disabled={selectedConfigs.length === 0}
         >
-            Save Settings
+            Save
         </Button>
       </DialogActions>
     </Dialog>

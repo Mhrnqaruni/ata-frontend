@@ -56,23 +56,23 @@ const SourceInputBlock = ({
 
   return (
     <Box>
-      <Typography variant="overline" color="text.secondary">
+      <Typography className="mst-field-group" component="div" variant="overline">
         {label}
       </Typography>
       <Tabs
         value={activeTab}
         onChange={handleTabChange}
         variant="fullWidth"
-        sx={{ borderBottom: 1, borderColor: 'divider' }}
+        sx={{ width: '100%' }}
       >
-        <Tab label="Type Text" disabled={disabled} />
-        <Tab label="Upload File" disabled={disabled} />
-        <Tab label="From Library" disabled={disabled || libraryLoading} />
+        <Tab label="Text" disabled={disabled} />
+        <Tab label="File" disabled={disabled} />
+        <Tab label="Library" disabled={disabled || libraryLoading} />
       </Tabs>
       <Box sx={{ pt: 2, minHeight: 290 }}>
         {activeTab === 0 && (
           <TextField
-            label="Topic or Source Text"
+            label="Topic or source text"
             multiline
             rows={10}
             fullWidth
@@ -100,7 +100,7 @@ const SourceInputBlock = ({
                 getOptionLabel={(option) => option.name}
                 value={librarySelection.selected_level}
                 onChange={(e, val) => onLibraryChange('selected_level', val)}
-                renderInput={(params) => <TextField {...params} label="Select Level" />}
+                renderInput={(params) => <TextField {...params} label="Level" />}
                 disabled={disabled}
               />
               <Autocomplete
@@ -109,7 +109,7 @@ const SourceInputBlock = ({
                 value={librarySelection.selected_year}
                 onChange={(e, val) => onLibraryChange('selected_year', val)}
                 disabled={!librarySelection.selected_level || disabled}
-                renderInput={(params) => <TextField {...params} label="Select Year" />}
+                renderInput={(params) => <TextField {...params} label="Year" />}
               />
               <Autocomplete
                 options={subjectOptions}
@@ -117,7 +117,7 @@ const SourceInputBlock = ({
                 value={librarySelection.selected_subject}
                 onChange={(e, val) => onLibraryChange('selected_subject', val)}
                 disabled={!librarySelection.selected_year || disabled}
-                renderInput={(params) => <TextField {...params} label="Select Subject" />}
+                renderInput={(params) => <TextField {...params} label="Subject" />}
               />
               <Autocomplete
                 options={bookOptions}
@@ -125,7 +125,7 @@ const SourceInputBlock = ({
                 value={librarySelection.selected_book}
                 onChange={(e, val) => onLibraryChange('selected_book', val)}
                 disabled={!librarySelection.selected_subject || disabled}
-                renderInput={(params) => <TextField {...params} label="Select Book" />}
+                renderInput={(params) => <TextField {...params} label="Book" />}
               />
               <Autocomplete
                 multiple
@@ -134,7 +134,7 @@ const SourceInputBlock = ({
                 value={librarySelection.selected_chapters}
                 onChange={(e, val) => onLibraryChange('selected_chapters', val)}
                 disabled={!librarySelection.selected_book || disabled}
-                renderInput={(params) => <TextField {...params} label="Select Chapters (up to 5)" />}
+                renderInput={(params) => <TextField {...params} label="Chapters (up to 5)" />}
                 limitTags={3}
               />
             </Stack>
