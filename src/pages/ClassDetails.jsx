@@ -184,7 +184,7 @@ const ClassDetails = () => {
 
   const analyticsCards = [
       { id: 'count', title: 'Students', value: classData.analytics.studentCount, icon: <PeopleAltOutlined /> },
-      { id: 'avg', title: 'Class grade', value: `${classData.analytics.classAverage}%`, icon: <FunctionsOutlined /> },
+      { id: 'avg', title: 'Class grade', value: classData.analytics.classAverage == null ? 'Unavailable' : `${classData.analytics.classAverage}%`, icon: <FunctionsOutlined /> },
       { id: 'graded', title: 'Assessments graded', value: classData.analytics.assessmentsGraded, icon: <FactCheckOutlined />, tone: 'ok' },
   ];
   

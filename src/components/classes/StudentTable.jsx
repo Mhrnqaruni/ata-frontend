@@ -19,7 +19,7 @@ export const initialsOf = (name = '') =>
 
 export const GradeCell = ({ value }) =>
   value == null ? (
-    <span className="mst-grade-none">Not graded</span>
+    <span className="mst-grade-none">Not available</span>
   ) : (
     <span className="mst-grade" data-band={value >= 85 ? 'high' : value < 70 ? 'low' : 'mid'}>
       <span className="mst-grade-value">{value}%</span>
