@@ -102,7 +102,7 @@ const ResultsTable = ({ rows }) => {
           {rosteredStudents.map(renderStudentRow)}
 
           {outsiderStudents.length > 0 && (
-            <TableRow>
+            <TableRow className="mst-result-group">
               <TableCell
                 colSpan={5}
                 className="mst-table-group"

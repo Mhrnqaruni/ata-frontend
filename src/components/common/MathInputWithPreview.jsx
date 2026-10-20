@@ -19,7 +19,7 @@ const MathInputWithPreview = ({
   const showPreview = (value || '').includes('$');
 
   return (
-    <Box>
+    <Box sx={{ minWidth: 0, maxWidth: "100%" }}>
       <TextField
         fullWidth
         value={value}
@@ -32,6 +32,7 @@ const MathInputWithPreview = ({
       {showPreview && (
         <Box 
           sx={{ 
+            minWidth: 0, maxWidth: "100%", overflowX: "auto",
             mt: 1, 
             p: 2, 
             border: '1px solid', borderColor: 'divider',

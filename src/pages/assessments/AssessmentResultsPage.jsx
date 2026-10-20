@@ -67,11 +67,11 @@ const AssessmentResultsPage = () => {
         title={results?.assessmentName || 'Assessment results'}
         titleAdornment={results?.status ? <StatusChip status={results.status} /> : null}
       />
-      <div className="mst-grid mst-grid-3">
-        <InfoCard icon={<PeopleAltOutlined />} title="Students" value={sum.students} />
-        <InfoCard icon={<FunctionsOutlined />} title="Average" value={sum.average == null ? '—' : `${sum.average.toFixed(1)}%`} />
-        <InfoCard icon={<RateReviewOutlined />} title="Pending review" tone={sum.pending ? 'warn' : 'ok'} value={sum.pending} />
-      </div>
+      <dl className="mst-results-summary" aria-label="Assessment summary">
+        <div><dt>Students</dt><dd>{sum.students}</dd></div>
+        <div><dt>Average</dt><dd>{sum.average == null ? '—' : `${sum.average.toFixed(1)}%`}</dd></div>
+        <div><dt>Needs review</dt><dd>{sum.pending}</dd></div>
+      </dl>
       <div className="mst-section-label">Students</div>
       <ResultsTable rows={rows} />
     </Box>

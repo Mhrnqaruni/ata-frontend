@@ -14,17 +14,18 @@ const ThemeModeContext = createContext(null);
 export const ThemeModeProvider = ({ children }) => {
   // --- State Management ---
   // Initialize the state by trying to read the value from localStorage.
-  // If nothing is found, it defaults to 'light'. This makes the choice persistent.
-  const [mode, setMode] = useState(
-    () => localStorage.getItem('themeMode') || 'light'
-  );
+  // Default to dark while preserving an explicit saved choice.
+  const [mode, setMode] = useState(() => {
+    try { return localStorage.getItem('themeMode') === 'light' ? 'light' : 'dark'; }
+    catch { return 'dark'; }
+  });
 
   // --- Side Effect for Persistence ---
   // This useEffect hook runs every time the 'mode' state changes.
   // It saves the new mode to localStorage, so the choice is remembered
   // across browser refreshes and sessions.
   useEffect(() => {
-    localStorage.setItem('themeMode', mode);
+    try { localStorage.setItem('themeMode', mode); } catch { /* Keep the theme usable without storage. */ }
     // Keep the root in step with the choice (index.html sets it once before React loads): the app's
     // stylesheet keys its ground and glass tokens off this attribute.
     const root = document.documentElement;
