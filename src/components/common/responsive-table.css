@@ -81,7 +81,7 @@
   .mst-result-records tbody > tr.mst-result-record {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    padding: 4px 0;
+    padding: 12px 14px;
   }
   .mst-result-records .mst-result-record > [data-label="Student"] {
     grid-column: 1 / -1;

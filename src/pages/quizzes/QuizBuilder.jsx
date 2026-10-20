@@ -53,6 +53,7 @@ import SelfImprovementRounded from '@mui/icons-material/SelfImprovementRounded';
 import UploadDropzone from '../../components/common/UploadDropzone';
 import ChoiceCards from '../../components/common/ChoiceCards';
 import PageHeader from '../../components/common/PageHeader';
+import QuestionNavigator from '../../components/common/QuestionNavigator';
 import useQuizLight from '../../hooks/useQuizLight';
 import SaveIcon from '@mui/icons-material/Save';
 import PublishIcon from '@mui/icons-material/Publish';
@@ -203,10 +204,10 @@ const QuestionEditor = ({ question, index, onChange, onDelete, onDuplicate, hand
   return (
     <Card className="mst-rim mst-question" data-open={expanded ? 'true' : 'false'}>
       <div className="mst-question-head">
-        <button aria-controls={bodyId} aria-expanded={expanded} className="mst-question-toggle" onClick={() => onToggle(index)} type="button">
+        <h3 className="mst-question-toggle">
           <span aria-hidden="true" className="mst-question-num">{index + 1}</span>
           <span className="mst-question-preview" data-empty={preview ? undefined : 'true'}>{preview || 'Untitled question'}</span>
-        </button>
+        </h3>
         <span className="mst-question-facts">
           <Chip icon={<TypeIcon />} label={typeInfo.short} size="small" />
           <span className="mst-question-fact">{localQuestion.points ?? 0} pts</span>
@@ -222,11 +223,7 @@ const QuestionEditor = ({ question, index, onChange, onDelete, onDuplicate, hand
             <DeleteIcon fontSize="small" />
           </IconButton>
         </Tooltip>
-        <Tooltip title={expanded ? 'Collapse' : 'Edit'}>
-          <IconButton aria-controls={bodyId} aria-expanded={expanded} aria-label={expanded ? `Collapse question ${index + 1}` : `Edit question ${index + 1}`} className="mst-question-chevron" onClick={() => onToggle(index)}>
-            <ExpandMoreRounded />
-          </IconButton>
-        </Tooltip>
+
       </div>
 
       {expanded ? (
@@ -294,14 +291,17 @@ const QuestionEditor = ({ question, index, onChange, onDelete, onDuplicate, hand
               </Tooltip>
             </div>
           ) : (
-            <UploadDropzone
-              accept={{ 'image/png': ['.png'], 'image/jpeg': ['.jpg', '.jpeg'], 'image/gif': ['.gif'] }}
-              disabled={uploadingImages[index]}
-              hint="PNG, JPG or GIF · up to 5 MB"
-              onDrop={(files) => handleImageUpload(index, files[0])}
-              size="compact"
-              title={uploadingImages[index] ? 'Uploading…' : 'Add an image (optional)'}
-            />
+            <div className="mst-question-image-action">
+              <Button component="label" size="small" variant="text" startIcon={<ImageIcon />} disabled={uploadingImages[index]}>
+                {uploadingImages[index] ? 'Uploading…' : 'Add image'}
+                <input hidden type="file" accept="image/png,image/jpeg,image/jpg,image/gif" onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImageUpload(index, file);
+                  e.target.value = '';
+                }} />
+              </Button>
+              <span className="mst-hint">Optional · up to 5 MB</span>
+            </div>
           )}
 
           {(localQuestion.question_type === 'multiple_choice' || localQuestion.question_type === 'poll') && (
@@ -1344,9 +1344,11 @@ const QuizBuilder = () => {
           <div className="mst-builder-toolbar">
             <h2 className="mst-card-title">Questions <span className="mst-count">{questions.length}</span></h2>
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-              <Button variant="text" startIcon={<DownloadIcon />} onClick={downloadQuestionsCSV} disabled={questions.length === 0}>
-                Download CSV
-              </Button>
+              <Tooltip title="Download questions as CSV">
+                <IconButton aria-label="Download questions as CSV" onClick={downloadQuestionsCSV} disabled={questions.length === 0}>
+                  <DownloadIcon />
+                </IconButton>
+              </Tooltip>
               <Button className="mst-ai" variant="contained" startIcon={<AutoAwesomeIcon />} onClick={() => setShowAIDialog(true)}>
                 Import with AI
               </Button>
@@ -1356,29 +1358,39 @@ const QuizBuilder = () => {
             </Box>
           </div>
 
-          <div className="mst-question-list">
-            {questions.map((question, index) => (
-              <QuestionEditor
-                key={index}
-                question={question}
-                index={index}
-                expanded={openQuestion === index}
-                isLive={(quizSettings?.mode || 'live') === 'live'}
-                onToggle={(i) => setOpenQuestion((cur) => (cur === i ? null : i))}
-                onChange={handleQuestionChange}
-                onDelete={(i) => { deleteQuestion(i); setOpenQuestion((cur) => (cur === i ? null : cur !== null && cur > i ? cur - 1 : cur)); }}
-                onDuplicate={(i) => { duplicateQuestion(i); setOpenQuestion(i + 1); }}
-                handleImageUpload={handleImageUpload}
-                handleImageDelete={handleImageDelete}
-                uploadingImages={uploadingImages}
-              />
-            ))}
+          <div className="mst-question-workspace">
+            <QuestionNavigator label="Quiz questions"
+              items={questions.map((q, i) => ({ id: String(i), number: i + 1, title: q.question_text?.slice(0, 80) }))}
+              selected={questions.length ? String(Math.min(openQuestion ?? 0, questions.length - 1)) : ''}
+              onSelect={(id) => setOpenQuestion(Number(id))}>
+              <p className="mst-question-nav-hint">Your edits stay when you switch questions. Save draft to keep them.</p>
+            </QuestionNavigator>
+            <div className="mst-focused-question">
+              {questions.length === 0 && <Alert severity="info">Add your first question, or import questions with AI.</Alert>}
+              {questions.map((question, index) => index === Math.min(openQuestion ?? 0, questions.length - 1) ? (
+                <QuestionEditor
+                  key={index}
+                  question={question}
+                  index={index}
+                  expanded={true}
+                  isLive={(quizSettings?.mode || 'live') === 'live'}
+                  onToggle={() => {}}
+                  onChange={handleQuestionChange}
+                  onDelete={(i) => { deleteQuestion(i); setOpenQuestion(Math.max(0, Math.min(i, questions.length - 2))); }}
+                  onDuplicate={(i) => { duplicateQuestion(i); setOpenQuestion(i + 1); }}
+                  handleImageUpload={handleImageUpload}
+                  handleImageDelete={handleImageDelete}
+                  uploadingImages={uploadingImages}
+                />
+              ) : null)}
+            </div>
           </div>
 
-          <div className="mst-builder-foot">
+          <div className="mst-builder-foot mst-quiz-edit-footer">
             <Button onClick={() => goStep(0)} variant="text">
               Back
             </Button>
+            <Button variant="outlined" onClick={handleSave} disabled={isSaving}>Save draft</Button>
             <Button size="large" variant="contained" onClick={() => goStep(2)}>
               Next: settings
             </Button>
