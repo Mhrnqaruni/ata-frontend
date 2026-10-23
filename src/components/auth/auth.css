@@ -151,6 +151,9 @@
 }
 .mst-auth-logo {
   display: block;
+  align-self: center;
+  max-width: 100%;
+  object-fit: contain;
   height: 64px;
   width: auto;
   margin: 0 0 28px;

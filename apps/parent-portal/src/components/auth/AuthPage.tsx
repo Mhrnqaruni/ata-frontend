@@ -32,7 +32,7 @@ export const AuthPage: React.FC = () => {
             <img
               src={getAssetPath('/mst_logo_no_bg.png')}
               alt="MST logo"
-              className="mb-2 h-12 w-auto self-start object-contain"
+              className="mb-2 h-auto w-40 max-w-full self-center object-contain sm:w-44"
             />
             <CardTitle>Opening MST Parent Portal</CardTitle>
             <CardDescription>
@@ -58,7 +58,7 @@ export const AuthPage: React.FC = () => {
             <img
               src={getAssetPath('/mst_logo_no_bg.png')}
               alt="MST logo"
-              className="mb-2 h-12 w-auto self-start object-contain"
+              className="mb-2 h-auto w-40 max-w-full self-center object-contain sm:w-44"
             />
             <CardTitle className="flex items-center gap-2">
               <WarningCircle size={20} className="text-destructive" />
@@ -89,7 +89,7 @@ export const AuthPage: React.FC = () => {
           <img
             src={getAssetPath('/mst_logo_no_bg.png')}
             alt="MST logo"
-            className="mb-2 h-12 w-auto self-start object-contain"
+            className="mb-2 h-auto w-40 max-w-full self-center object-contain sm:w-44"
           />
           <CardTitle>Open the parent portal from MST</CardTitle>
           <CardDescription>

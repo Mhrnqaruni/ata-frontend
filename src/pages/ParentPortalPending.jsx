@@ -43,7 +43,9 @@ const ParentPortalPending = () => {
     >
       <Paper className="mst-rim" sx={{ maxWidth: 560, width: '100%', p: { xs: 3, sm: 4 }, borderRadius: '24px' }}>
         <Stack spacing={2}>
-          <img alt="MySmartTeach" className="mst-join-logo" src={parentLogo} style={{ margin: '0 0 8px' }} />
+          <Box component="img" alt="MySmartTeach" src={parentLogo}
+            sx={{ width: { xs: 160, sm: 180 }, maxWidth: '100%', height: 'auto',
+              alignSelf: 'center', objectFit: 'contain', mb: 1 }} />
           <Typography component="h1" variant="h1">Welcome to your parent workspace</Typography>
           <Typography variant="body1" color="text.secondary">
             {`Signed in as ${displayName}.`}
