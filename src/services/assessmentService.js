@@ -23,19 +23,31 @@ function triggerBrowserDownload(blob, defaultFilename, headers) {
 }
 
 const assessmentService = {
+  getRetryDraft: async (jobId) => {
+    try { return (await apiClient.get(`/api/assessments/${encodeURIComponent(jobId)}/retry`)).data; }
+    catch (error) { throw new Error(error.response?.data?.detail || 'Could not restore this assessment.'); }
+  },
+  startRetry: async (jobId, formData) => {
+    try { return (await apiClient.post(`/api/assessments/${encodeURIComponent(jobId)}/retry`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })).data; }
+    catch (error) { throw new Error(error.response?.data?.detail || 'Could not restart this assessment.'); }
+  },
+
   // --- [V2 WORKFLOW METHODS] ---
 
   parseDocument: async (questionFile, answerKeyFile, classId, assessmentName) => {
     const formData = new FormData();
-    formData.append('question_file', questionFile);
-    if (answerKeyFile) {
-      formData.append('answer_key_file', answerKeyFile);
-    }
+    // Repeated fields preserve group order and remain compatible with single-file callers.
+    const asFiles = value => Array.isArray(value) ? value : value ? [value] : [];
+    asFiles(questionFile).forEach(file => formData.append('question_file', file));
+    asFiles(answerKeyFile).forEach(file => formData.append('answer_key_file', file));
     formData.append('class_id', classId);
     formData.append('assessment_name', assessmentName);
     
     try {
       const response = await apiClient.post('/api/assessments/parse-document', formData, {
+        timeout: 630000, // The server bounds multi-reader analysis to ten minutes.
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       return response.data;

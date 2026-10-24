@@ -13,8 +13,8 @@ export const initialQuestionV2 = () => ({
 export const initialStateV2 = {
   assessmentName: '',
   classId: '',
-  questionFile: null,
-  answerKeyFile: null,
+  questionFiles: [],
+  answerKeyFiles: [],
   markingStrategy: 'document', // 'document' or 'ai'
   totalMarks: 100,
   uploadMode: 'batch', // 'batch' or 'manual'
@@ -24,18 +24,22 @@ export const initialStateV2 = {
   outsiders: [], // New state: { id: string, name: string }[]
   status: 'setup', // 'setup', 'parsing', 'reviewing', 'submitting'
   error: null,
-  estimatedSeconds: 0, // Estimated processing time
-  countdownSeconds: 0, // Current countdown value
 };
 
 // This reducer function manages all state transitions for the V2 wizard.
 export function wizardReducerV2(state, action) {
   switch (action.type) {
+    case 'RESTORE_RETRY':
+      return { ...initialStateV2, config: action.payload.config, status: 'reviewing',
+        assessmentName: action.payload.config.assessmentName, classId: action.payload.config.classId,
+        uploadMode: action.payload.uploadMode,
+        outsiders: action.payload.files.filter(file => file.entityKind === 'outsider').map(file => ({ id: file.entityId, name: file.name })) };
+
     // --- [NEW ACTIONS] ---
-    case 'SET_QUESTION_FILE':
-      return { ...state, questionFile: action.payload, config: null, error: null }; // Reset config on new file
-    case 'SET_ANSWER_KEY_FILE':
-      return { ...state, answerKeyFile: action.payload, config: null, error: null };
+    case 'SET_QUESTION_FILES':
+      return { ...state, questionFiles: typeof action.payload === 'function' ? action.payload(state.questionFiles) : action.payload, config: null, error: null }; // Reset config on new file
+    case 'SET_ANSWER_KEY_FILES':
+      return { ...state, answerKeyFiles: typeof action.payload === 'function' ? action.payload(state.answerKeyFiles) : action.payload, config: null, error: null };
     // --- [END NEW ACTIONS] ---
 
     case 'UPDATE_FIELD':
@@ -51,16 +55,12 @@ export function wizardReducerV2(state, action) {
       }
       return { ...state, [action.payload.field]: action.payload.value };
     case 'START_PARSING':
-      return { ...state, status: 'parsing', error: null, config: null, countdownSeconds: state.estimatedSeconds };
+      return { ...state, status: 'parsing', error: null, config: null };
     case 'PARSE_SUCCESS':
       // When parsing succeeds, we populate the config and move to the 'reviewing' state.
-      return { ...state, status: 'reviewing', config: action.payload, countdownSeconds: 0 };
+      return { ...state, status: 'reviewing', config: action.payload };
     case 'PARSE_FAILURE':
-      return { ...state, status: 'setup', error: action.payload, questionFile: null, answerKeyFile: null, countdownSeconds: 0 };
-    case 'SET_ESTIMATED_TIME':
-      return { ...state, estimatedSeconds: action.payload };
-    case 'UPDATE_COUNTDOWN':
-      return { ...state, countdownSeconds: Math.max(0, action.payload) };
+      return { ...state, status: 'setup', error: action.payload };
     case 'START_SUBMITTING':
       return { ...state, status: 'submitting', error: null };
     case 'SUBMIT_FAILURE':

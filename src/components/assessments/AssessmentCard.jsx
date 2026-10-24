@@ -30,6 +30,8 @@ export default function AssessmentCard({ job }) {
         {job.status === "Completed" ? <CompletedStats results={job.results} /> : null}
       </div>
       <div className="mst-asm-foot">
+        {job.status === 'Failed' && <Button size="small" variant="outlined"
+          onClick={() => navigate(`/assessments/new?retryJobId=${encodeURIComponent(job.id)}`)}>Retry</Button>}
         <Button disabled={!clickable} endIcon={<ArrowForwardRounded />} onClick={open} size="small" variant="text">
           View results
         </Button>
