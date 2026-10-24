@@ -9,6 +9,7 @@ function ReadingNote({ issue }) {
   return <Box sx={{ overflowWrap: 'anywhere' }}>
     <Typography variant="body2" fontWeight={600}>
       {fields[issue.field] || 'Source'} · {issue.document === 'questions' ? 'Question paper' : 'Answer key'}
+      {issue.fileIndex ? ` · file ${issue.fileIndex}` : ''}
       {issue.page ? ` · page ${issue.page}` : ''}
     </Typography>
     <Typography variant="body2">{issue.note}</Typography>
@@ -34,6 +35,7 @@ export function ExtractionSummary({ review }) {
         {review.answerKeyDocumentType ? ` · ${kinds[review.answerKeyDocumentType] || 'Uncertain'} answer key` : ''}.
         {review.reconciled ? ' Differences were checked automatically against the originals.' : ''}
         {' Check the extracted content before continuing.'}
+        {!review.answerKeyDocumentType && ' No answer key was supplied. Check or enter the expected answers and marking scheme, or choose a library source below.'}
       </Typography>
     </Alert>
     {general.map((issue, index) => <Alert key={index} severity="warning" sx={{ mt: 1 }}><ReadingNote issue={issue} /></Alert>)}

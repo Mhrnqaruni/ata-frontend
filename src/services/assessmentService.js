@@ -27,10 +27,10 @@ const assessmentService = {
 
   parseDocument: async (questionFile, answerKeyFile, classId, assessmentName) => {
     const formData = new FormData();
-    formData.append('question_file', questionFile);
-    if (answerKeyFile) {
-      formData.append('answer_key_file', answerKeyFile);
-    }
+    // Repeated fields preserve group order and remain compatible with single-file callers.
+    const asFiles = value => Array.isArray(value) ? value : value ? [value] : [];
+    asFiles(questionFile).forEach(file => formData.append('question_file', file));
+    asFiles(answerKeyFile).forEach(file => formData.append('answer_key_file', file));
     formData.append('class_id', classId);
     formData.append('assessment_name', assessmentName);
     

@@ -13,7 +13,7 @@ import ChoiceCards from '../../components/common/ChoiceCards';
 import usePageCounts from '../../hooks/usePageCounts';
 
 // Import our full suite of components
-import DocumentUploader from '../../components/assessments/uploader/DocumentUploader';
+import OrderedDocumentUploader from '../../components/assessments/uploader/OrderedDocumentUploader';
 import StructureReviewer from '../../components/assessments/uploader/StructureReviewer';
 import GradingModeSelector from '../../components/assessments/uploader/GradingModeSelector';
 import Step1Setup from '../../components/assessments/wizard/Step1Setup';
@@ -31,11 +31,10 @@ const steps = ['Set up', 'Define', 'Upload answers', 'Review & start'];
 
 const stepDescriptions = [
   'Name the assessment and choose the class that sat it.',
-  'Add the question paper and its answer key. AI reads them and lays out every question for you to check.',
+  'Add the question-paper files and an optional answer key. AI reads them and lays out every question for you to check.',
   "Add your students' handwritten answer sheets.",
   'Check the details, then start grading. AI marks each answer three times; anything it disagrees on comes to you.'
 ];
-const formatCountdown = (seconds) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 
 const NewAssessmentV2 = () => {
   const navigate = useNavigate();
@@ -56,7 +55,7 @@ const NewAssessmentV2 = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   // Number input hook for total marks
-  const docPages = usePageCounts([state.questionFile, state.answerKeyFile].filter(Boolean));
+  const docPages = usePageCounts([...state.questionFiles, ...state.answerKeyFiles]);
   const totalMarksInputProps = useNumberInput(
     state.totalMarks,
     (value) => dispatch({ type: 'UPDATE_FIELD', payload: { field: 'totalMarks', value } }),
@@ -75,46 +74,22 @@ const NewAssessmentV2 = () => {
       .finally(() => setIsLoading(false));
   }, [showSnackbar]);
 
-  // Count pages when question and answer key files are selected
-  useEffect(() => {
-    const countPages = async () => {
-      if (state.questionFile && state.answerKeyFile) {
-        try {
-          const files = [state.questionFile, state.answerKeyFile];
-          const result = await assessmentService.countPages(files);
-          dispatch({ type: 'SET_ESTIMATED_TIME', payload: result.estimated_seconds });
-        } catch (error) {
-          console.error('Failed to count pages:', error);
-          // Set a default estimate if page counting fails
-          dispatch({ type: 'SET_ESTIMATED_TIME', payload: 30 });
-        }
-      }
-    };
-    countPages();
-  }, [state.questionFile, state.answerKeyFile]);
-
-  // Countdown timer effect during parsing
-  useEffect(() => {
-    if (state.status === 'parsing' && state.countdownSeconds > 0) {
-      const timer = setInterval(() => {
-        dispatch({ type: 'UPDATE_COUNTDOWN', payload: state.countdownSeconds - 1 });
-      }, 1000);
-      return () => clearInterval(timer);
-    }
-  }, [state.status, state.countdownSeconds]);
-
   // NEW Handler for structuring documents
   const handleStructure = useCallback(async () => {
-    if (!state.questionFile || !state.answerKeyFile) {
-      showSnackbar('Please upload both the question paper and the answer key.', 'error');
+    if (!state.questionFiles.length) {
+      showSnackbar('Please add at least one question-paper file.', 'error');
+      return;
+    }
+    if ([...state.questionFiles, ...state.answerKeyFiles].reduce((sum, file) => sum + file.size, 0) > 20 * 1024 * 1024) {
+      showSnackbar('Question paper and answer key together must be 20 MB or smaller.', 'error');
       return;
     }
     dispatch({ type: 'START_PARSING' });
     try {
       // Step 1: Always parse the documents first to get the structure.
       let parsedConfig = await assessmentService.parseDocument(
-        state.questionFile,
-        state.answerKeyFile,
+        state.questionFiles,
+        state.answerKeyFiles,
         state.classId,
         state.assessmentName
       );
@@ -132,7 +107,7 @@ const NewAssessmentV2 = () => {
     } catch (error) {
       dispatch({ type: 'PARSE_FAILURE', payload: error.message || 'Failed to process documents.' });
     }
-  }, [state.questionFile, state.answerKeyFile, state.classId, state.assessmentName, state.markingStrategy, state.totalMarks, showSnackbar]);
+  }, [state.questionFiles, state.answerKeyFiles, state.classId, state.assessmentName, state.markingStrategy, state.totalMarks, showSnackbar]);
 
   // handleSubmit is now simpler, as the config is already in state (unchanged)
   const handleSubmit = async () => {
@@ -207,17 +182,17 @@ const NewAssessmentV2 = () => {
         return (
           <Box>
             <div className="mst-form-row">
-              <DocumentUploader
+              <OrderedDocumentUploader
                 title="Question paper"
-                onFileSelect={(file) => dispatch({ type: 'SET_QUESTION_FILE', payload: file })}
-                selectedFile={state.questionFile}
+                onChange={(files) => dispatch({ type: 'SET_QUESTION_FILES', payload: files })}
+                files={state.questionFiles}
                 disabled={isProcessing}
                 fileMeta={docPages}
               />
-              <DocumentUploader
-                title="Answer key"
-                onFileSelect={(file) => dispatch({ type: 'SET_ANSWER_KEY_FILE', payload: file })}
-                selectedFile={state.answerKeyFile}
+              <OrderedDocumentUploader
+                title="Answer key (optional)"
+                onChange={(files) => dispatch({ type: 'SET_ANSWER_KEY_FILES', payload: files })}
+                files={state.answerKeyFiles}
                 disabled={isProcessing}
                 fileMeta={docPages}
               />
@@ -244,10 +219,10 @@ const NewAssessmentV2 = () => {
               )}
             </Box>
             <div className="mst-structure-row">
-              <Button className="mst-ai" variant="contained" onClick={handleStructure} disabled={!state.questionFile || !state.answerKeyFile || isProcessing} startIcon={isProcessing ? <CircularProgress size={18} color="inherit" /> : <AutoAwesomeRounded />}>
+              <Button className="mst-ai" variant="contained" onClick={handleStructure} disabled={!state.questionFiles.length || isProcessing} startIcon={isProcessing ? <CircularProgress size={18} color="inherit" /> : <AutoAwesomeRounded />}>
                 {isProcessing ? 'Reading documents…' : state.config ? 'Read the documents again' : 'Structure assessment'}
               </Button>
-              {!state.questionFile || !state.answerKeyFile ? <span className="mst-hint">Add both documents to continue.</span> : null}
+              {!state.questionFiles.length ? <span className="mst-hint">Add question-paper files to continue.</span> : null}
             </div>
             {state.status === 'parsing' ? (
               <div className="mst-ai-progress" role="status">

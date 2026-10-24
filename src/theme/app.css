@@ -1485,3 +1485,17 @@ main.MuiBox-root > .mst-footer { margin-top: auto; padding-top: 48px; }
 
 .mst-structure-review .mst-sr-list, .mst-structure-review .mst-sr-q { grid-template-columns: minmax(0, 1fr); min-width: 0; }
 .mst-extracted-toggle { min-width: 0; max-width: 100%; }
+
+/* Ordered assessment inputs: controls stay reachable without widening the page. */
+.mst-ordered-upload { min-width: 0; }
+.mst-ordered-upload .mst-file { flex-wrap: wrap; }
+.mst-ordered-upload .mst-file-text { flex: 1 1 120px; min-width: 0; }
+.mst-ordered-upload .mst-file-state { display: none; }
+.mst-file-order { display: inline-flex; }
+.mst-file-order button { min-width: 36px; min-height: 44px; }
+.mst-extraction-workspace > div { min-width: 0; }
+.mst-extraction-workspace .mst-form-row { grid-template-columns: minmax(0, 1fr); }
+
+@media (max-width: 599px) {
+  .mst-ordered-upload .mst-file-icon { display: none; }
+}

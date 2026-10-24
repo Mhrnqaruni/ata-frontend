@@ -34,7 +34,7 @@ const GradingModeSelector = ({ config, dispatch, disabled }) => {
         name="grading-mode"
         onChange={(value) => handleUpdate('gradingMode', value)}
         options={[
-          { value: 'answer_key_provided', label: 'The answer key you uploaded', description: 'Marks follow your mark scheme.', icon: <FactCheckOutlined /> },
+          { value: 'answer_key_provided', label: 'Reviewed answers and marking scheme', description: 'Use the answers and mark scheme you checked above.', icon: <FactCheckOutlined /> },
           { value: 'library', label: 'A source from the library', description: 'Marks follow a textbook chapter.', icon: <MenuBookOutlined /> },
         ]}
         value={config.gradingMode || 'answer_key_provided'}

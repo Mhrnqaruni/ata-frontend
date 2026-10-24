@@ -24,13 +24,13 @@ const kindOf = (file) => {
   return { icon: <DescriptionOutlined />, label: "Document", tone: "doc" };
 };
 
-export function UploadFileRow({ file, onRemove, disabled, meta }) {
+export function UploadFileRow({ file, onRemove, disabled, meta, order, onMove, first, last }) {
   const kind = kindOf(file);
   return (
     <li className="mst-file" data-tone={kind.tone}>
       <span aria-hidden="true" className="mst-file-icon">{kind.icon}</span>
       <span className="mst-file-text">
-        <span className="mst-file-name" title={file.name}>{file.name}</span>
+        <span className="mst-file-name" title={file.name}>{order ? `${order}. ` : ""}{file.name}</span>
         <span className="mst-file-meta">
           {kind.label} · {formatBytes(file.size)}
           {meta ? ` · ${meta}` : ""}
@@ -40,6 +40,10 @@ export function UploadFileRow({ file, onRemove, disabled, meta }) {
         <CheckCircleRounded aria-hidden="true" />
         Ready
       </span>
+      {onMove && <span className="mst-file-order">
+        <IconButton size="small" disabled={disabled || first} aria-label={`Move ${file.name} up`} onClick={() => onMove(-1)}>↑</IconButton>
+        <IconButton size="small" disabled={disabled || last} aria-label={`Move ${file.name} down`} onClick={() => onMove(1)}>↓</IconButton>
+      </span>}
       {onRemove ? (
         <Tooltip title="Remove">
           <span>
@@ -66,12 +70,13 @@ export function UploadFileRow({ file, onRemove, disabled, meta }) {
  * @param {"large"|"compact"} [props.size]
  * @param {string} [props.label] - a short heading above the area (e.g. "Question paper")
  */
-export default function UploadDropzone({ title, hint, accept, multiple = false, onDrop, files = [], onRemove, disabled = false, size = "large", label, fileMeta, filesHeader }) {
+export default function UploadDropzone({ title, hint, accept, multiple = false, onDrop, files = [], onRemove, disabled = false, size = "large", label, fileMeta, filesHeader, onMove, onDropRejected }) {
   const { getRootProps, getInputProps, isDragActive, isDragReject, open } = useDropzone({
     accept,
     disabled,
     multiple,
     noClick: true,
+    onDropRejected,
     onDrop: (accepted) => accepted.length && onDrop(accepted),
   });
   const hasFiles = files.length > 0;
@@ -110,8 +115,9 @@ export default function UploadDropzone({ title, hint, accept, multiple = false, 
         <div className="mst-files">
           {filesHeader ? <div className="mst-files-head">{filesHeader}</div> : null}
           <ul aria-label="Selected files" className="mst-files-list">
-            {files.map((file) => (
-              <UploadFileRow disabled={disabled} file={file} key={`${file.name}-${file.size}`} meta={fileMeta?.(file)} onRemove={onRemove} />
+            {files.map((file, index) => (
+              <UploadFileRow disabled={disabled} file={file} key={`${file.name}-${file.size}-${file.lastModified}`} meta={fileMeta?.(file)} onRemove={onRemove} order={onMove ? index + 1 : undefined}
+                onMove={onMove ? direction => onMove(index, direction) : undefined} first={index === 0} last={index === files.length - 1} />
             ))}
           </ul>
         </div>

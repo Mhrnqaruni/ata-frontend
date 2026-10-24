@@ -15,7 +15,7 @@ export default function QuestionNavigator({ items, selected, onSelect, label = '
       <div className="mst-question-nav-mobile">
         <label htmlFor={id}>Jump to question</label>
         <select id={id} value={current?.id ?? ''} onChange={event => onSelect(event.target.value)} disabled={!items.length}>
-          {!items.length && <option value="">No questions</option>}
+          {!current && <option value="" disabled>{items.length ? "Choose a question" : "No questions"}</option>}
           {items.map(item => <option value={item.id} key={item.id}>
             {item.number}. {item.title || 'Untitled question'}{item.state ? ` · ${item.state}` : ''}
           </option>)}
@@ -39,7 +39,7 @@ export default function QuestionNavigator({ items, selected, onSelect, label = '
           aria-label="Next question" onClick={() => onSelect(items[position + 1].id)}>Next</Button>
       </div>
       <p className="mst-question-nav-hint" aria-live="polite">
-        {current ? `${items.some(item => item.number > items.length) ? 'Selection' : 'Question'} ${position + 1} of ${items.length}` : 'No questions in this view'}
+        {current ? `${items.some(item => item.number > items.length) ? 'Selection' : 'Question'} ${position + 1} of ${items.length}` : items.length ? 'Select a question for focused review' : 'No questions in this view'}
       </p>
     </aside>
   );
