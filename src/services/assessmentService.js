@@ -23,6 +23,17 @@ function triggerBrowserDownload(blob, defaultFilename, headers) {
 }
 
 const assessmentService = {
+  getRetryDraft: async (jobId) => {
+    try { return (await apiClient.get(`/api/assessments/${encodeURIComponent(jobId)}/retry`)).data; }
+    catch (error) { throw new Error(error.response?.data?.detail || 'Could not restore this assessment.'); }
+  },
+  startRetry: async (jobId, formData) => {
+    try { return (await apiClient.post(`/api/assessments/${encodeURIComponent(jobId)}/retry`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })).data; }
+    catch (error) { throw new Error(error.response?.data?.detail || 'Could not restart this assessment.'); }
+  },
+
   // --- [V2 WORKFLOW METHODS] ---
 
   parseDocument: async (questionFile, answerKeyFile, classId, assessmentName) => {

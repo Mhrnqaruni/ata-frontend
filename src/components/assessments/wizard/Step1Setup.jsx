@@ -2,7 +2,7 @@ import React from 'react';
 import { TextField, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 
 // Step 1: what the assessment is called and which class sat it (side by side on wide screens).
-const Step1Setup = ({ state, handleUpdateField, classes, disabled }) => (
+const Step1Setup = ({ state, handleUpdateField, classes, disabled, lockClass = false }) => (
     <div className="mst-form-row">
         <TextField
             autoFocus
@@ -14,7 +14,7 @@ const Step1Setup = ({ state, handleUpdateField, classes, disabled }) => (
             required
             value={state.assessmentName}
         />
-        <FormControl fullWidth required disabled={disabled}>
+        <FormControl fullWidth required disabled={disabled || lockClass}>
             <InputLabel id="assessment-class-label">Class</InputLabel>
             <Select
                 displayEmpty

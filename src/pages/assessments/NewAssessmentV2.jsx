@@ -1,7 +1,7 @@
 // /src/pages/assessments/NewAssessmentV2.jsx (FINAL, DUAL-UPLOAD VERSION)
 
 import React, { useState, useReducer, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Box, Stepper, Step, StepLabel, Button, Paper, Alert, CircularProgress, TextField, Skeleton, useMediaQuery, useTheme } from '@mui/material';
 import AutoAwesomeRounded from '@mui/icons-material/AutoAwesomeRounded';
 import DescriptionOutlined from '@mui/icons-material/DescriptionOutlined';
@@ -38,6 +38,12 @@ const stepDescriptions = [
 
 const NewAssessmentV2 = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const retryJobId = new URLSearchParams(location.search).get('retryJobId');
+  const [retryDraft, setRetryDraft] = useState(null);
+  const [retainedIds, setRetainedIds] = useState([]);
+  const [retryLoading, setRetryLoading] = useState(Boolean(retryJobId));
+  const [retryError, setRetryError] = useState(null);
   const { showSnackbar } = useSnackbar();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -53,6 +59,25 @@ const NewAssessmentV2 = () => {
   };
   const [classes, setClasses] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!retryJobId) return;
+    let alive = true;
+    setRetryLoading(true);
+    assessmentService.getRetryDraft(retryJobId).then(draft => {
+      if (!alive) return;
+      setRetryDraft(draft); setRetainedIds(draft.files.map(file => file.id));
+      dispatch({ type: 'RESTORE_RETRY', payload: draft });
+      setActiveStepRaw(3);
+    }).catch(error => { if (alive) setRetryError(error.message); })
+      .finally(() => { if (alive) setRetryLoading(false); });
+    return () => { alive = false; };
+  }, [retryJobId]);
+  const retainedFiles = (retryDraft?.files || []).filter(file => retainedIds.includes(file.id));
+  const missingRetained = retainedFiles.some(file => !file.available);
+  const stagedCount = state.uploadMode === 'batch' ? state.answerSheetFiles.length : Object.values(state.manualStudentFiles).flat().length;
+  const retryReady = Boolean(retryDraft && !missingRetained && retainedFiles.length + stagedCount > 0 &&
+    state.assessmentName.trim() && state.config?.sections.every(section => section.questions.every(q => q.text.trim() && q.maxScore > 0)));
 
   // Number input hook for total marks
   const docPages = usePageCounts([...state.questionFiles, ...state.answerKeyFiles]);
@@ -114,8 +139,23 @@ const NewAssessmentV2 = () => {
     dispatch({ type: 'START_SUBMITTING' });
 
     try {
-      // The service call is now chosen based on the upload mode.
-      if (state.uploadMode === 'manual') {
+      // Retry is an explicit same-ID command, never the new-assessment endpoints.
+      if (retryJobId) {
+        const form = new FormData();
+        form.append('config', JSON.stringify({ ...state.config, assessmentName: state.assessmentName, classId: state.classId }));
+        form.append('draft_version', retryDraft.draftVersion);
+        form.append('request_id', retryDraft.requestId);
+        form.append('upload_mode', state.uploadMode);
+        form.append('keep_file_ids', JSON.stringify(retainedIds));
+        form.append('outsider_names', JSON.stringify(state.outsiders));
+        if (state.uploadMode === 'batch') state.answerSheetFiles.forEach(file => form.append('answer_sheets', file));
+        else {
+          const outsiders = new Set(state.outsiders.map(item => item.id));
+          Object.entries(state.manualStudentFiles).forEach(([id, files]) => files.forEach(file =>
+            form.append(`${outsiders.has(id) ? 'outsider' : 'student'}_${id}_files`, file)));
+        }
+        await assessmentService.startRetry(retryJobId, form);
+      } else if (state.uploadMode === 'manual') {
         await assessmentService.createAssessmentJobWithManualUploads({
           config: state.config,
           manualStudentFiles: state.manualStudentFiles,
@@ -128,7 +168,7 @@ const NewAssessmentV2 = () => {
         await assessmentService.createAssessmentJobV2(formData);
       }
       
-      showSnackbar('Assessment job created! Grading has begun.', 'success');
+      showSnackbar(retryJobId ? 'The same assessment has been queued again.' : 'Assessment job created! Grading has begun.', 'success');
       navigate('/assessments');
 
     } catch (error) {
@@ -146,6 +186,7 @@ const NewAssessmentV2 = () => {
         // Rubric is optional, so only check that text exists and maxScore > 0
         return !!state.config && state.config.sections.every(s => s.questions.every(q => q.text.trim() && q.maxScore > 0));
       case 2:
+        if (retryJobId) return retryReady;
         if (state.uploadMode === 'batch') {
           return state.answerSheetFiles.length > 0;
         }
@@ -155,11 +196,11 @@ const NewAssessmentV2 = () => {
         }
         return false; // Should not happen
       case 3:
-        return true;
+        return retryJobId ? retryReady : true;
       default:
         return true;
     }
-  }, [activeStep, state]);
+  }, [activeStep, state, retryJobId, retryReady]);
 
   const handleNext = () => {
     if (activeStep === steps.length - 1) {
@@ -177,10 +218,11 @@ const NewAssessmentV2 = () => {
     const isProcessing = state.status === 'parsing' || state.status === 'submitting';
     switch (step) {
       case 0:
-        return <Step1Setup state={state} handleUpdateField={(field, value) => dispatch({ type: 'UPDATE_FIELD', payload: { field, value } })} classes={classes} disabled={isProcessing} />;
+        return <Step1Setup state={state} handleUpdateField={(field, value) => dispatch({ type: 'UPDATE_FIELD', payload: { field, value } })} classes={classes} disabled={isProcessing} lockClass={Boolean(retryJobId)} />;
       case 1:
         return (
           <Box>
+            {retryDraft && <Alert severity="info" sx={{ mb: 2 }}>{retryDraft.message}</Alert>}
             <div className="mst-form-row">
               <OrderedDocumentUploader
                 title="Question paper"
@@ -222,7 +264,7 @@ const NewAssessmentV2 = () => {
               <Button className="mst-ai" variant="contained" onClick={handleStructure} disabled={!state.questionFiles.length || isProcessing} startIcon={isProcessing ? <CircularProgress size={18} color="inherit" /> : <AutoAwesomeRounded />}>
                 {isProcessing ? 'Reading documents…' : state.config ? 'Read the documents again' : 'Structure assessment'}
               </Button>
-              {!state.questionFiles.length ? <span className="mst-hint">Add question-paper files to continue.</span> : null}
+              {!state.questionFiles.length && !state.config ? <span className="mst-hint">Add question-paper files to continue.</span> : null}
             </div>
             {state.status === 'parsing' ? (
               <div className="mst-ai-progress" role="status">
@@ -243,12 +285,21 @@ const NewAssessmentV2 = () => {
       case 2:
         return (
           <Box>
+            {retryDraft && <Box sx={{ mb: 2 }}>
+              <h3>Saved student answers</h3>
+              {retainedFiles.length === 0 && <p>No saved files selected. Add replacement files below.</p>}
+              {retainedFiles.map(file => <Alert key={file.id} severity={file.available ? 'info' : 'warning'} sx={{ mb: 1 }}
+                action={<Button disabled={isProcessing} onClick={() => setRetainedIds(ids => ids.filter(id => id !== file.id))}>Remove</Button>}>
+                {file.name} — {file.available ? 'Saved file ready to reuse' : 'File unavailable here. Remove and upload a replacement.'}
+              </Alert>)}
+              <p>Adding pages for a saved student appends them. To replace the saved submission, remove it above first.</p>
+            </Box>}
             <Box sx={{ mb: 3 }}>
               <ChoiceCards
                 disabled={isProcessing}
                 legend="How are the sheets arranged?"
                 name="upload-mode"
-                onChange={(value) => dispatch({ type: 'UPDATE_FIELD', payload: { field: 'uploadMode', value } })}
+                onChange={(value) => { if (value !== state.uploadMode) setRetainedIds([]); dispatch({ type: 'UPDATE_FIELD', payload: { field: 'uploadMode', value } }); }}
                 options={[
                   { value: 'batch', label: 'All together', description: 'One or more files with every student inside.', icon: <FolderZipOutlined /> },
                   { value: 'manual', label: 'One student at a time', description: "Add each student's pages next to their name.", icon: <PersonOutlined /> },
@@ -275,7 +326,7 @@ const NewAssessmentV2 = () => {
         const questions = (state.config?.sections || []).flatMap((section) => section.questions || []);
         const totalMarks = questions.reduce((sum, q) => sum + (Number(q.maxScore) || 0), 0);
         const manualCount = Object.values(state.manualStudentFiles).reduce((sum, list) => sum + list.length, 0);
-        const fileCount = state.uploadMode === 'batch' ? state.answerSheetFiles.length : manualCount;
+        const fileCount = retainedFiles.length + (state.uploadMode === 'batch' ? state.answerSheetFiles.length : manualCount);
         const rows = [
           ['Assessment', state.assessmentName],
           ['Class', classes.find((c) => c.id === state.classId)?.name || '—'],
@@ -285,6 +336,10 @@ const NewAssessmentV2 = () => {
         ];
         return (
           <Box>
+            {retryDraft && <Alert severity={missingRetained ? 'warning' : 'info'} sx={{ mb: 2 }}>
+              This restarts the same assessment card. Previous attempt history is kept. Use Back to review or change questions and student files.
+              {missingRetained && ' Some saved student files are unavailable. Go Back to remove and replace them before starting.'}
+            </Alert>}
             <dl className="mst-summary">
               {rows.map(([k, v]) => (
                 <div className="mst-summary-row" key={k}>
@@ -307,7 +362,8 @@ const NewAssessmentV2 = () => {
     }
   };
 
-  if (isLoading) {
+  if (retryError) return <Alert severity="error">{retryError}<Button onClick={() => navigate('/assessments')}>Back to assessments</Button></Alert>;
+  if (isLoading || retryLoading) {
     return (
       <Box>
         <Skeleton height={64} sx={{ mb: 3.5, maxWidth: 360 }} variant="rounded" />
@@ -322,8 +378,8 @@ const NewAssessmentV2 = () => {
   return (
     <Box>
       <PageHeader
-        breadcrumbs={[{ label: 'Assessments', to: '/assessments' }, { label: 'New assessment' }]}
-        title="New assessment"
+        breadcrumbs={[{ label: 'Assessments', to: '/assessments' }, { label: retryJobId ? 'Retry assessment' : 'New assessment' }]}
+        title={retryJobId ? "Retry assessment" : "New assessment"}
       />
       <Paper className="mst-rim mst-wizard" data-enter="">
         {isMobile ? (
@@ -355,7 +411,7 @@ const NewAssessmentV2 = () => {
             startIcon={isLast ? (state.status === 'submitting' ? <CircularProgress size={18} color="inherit" /> : <AutoAwesomeRounded />) : undefined}
             variant="contained"
           >
-            {isLast ? (state.status === 'submitting' ? 'Starting…' : 'Start grading') : 'Next'}
+            {isLast ? (state.status === 'submitting' ? 'Starting…' : (retryJobId ? 'Start again' : 'Start grading')) : 'Next'}
           </Button>
       </div>
     </Box>
