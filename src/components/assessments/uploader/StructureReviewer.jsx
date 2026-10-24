@@ -3,6 +3,7 @@ import { TextField, Button, IconButton } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import useNumberInput from '../../../hooks/useNumberInput';
+import { ExtractionSummary, QuestionReadingNotes } from './ExtractionReviewNotes';
 
 const MaxScoreField = ({ value, onChange, disabled }) => {
   const props = useNumberInput(value || 0, onChange, { defaultValue: 0, min: 1, max: 1000 });
@@ -12,6 +13,11 @@ const MaxScoreField = ({ value, onChange, disabled }) => {
 
 export default function StructureReviewer({ config, dispatch, disabled }) {
   const questions = config.sections.flatMap(section => section.questions);
+  const questionIds = new Set(questions.map(question => question.id));
+  const readingReview = config.extractionReview ? {
+    ...config.extractionReview,
+    issues: (config.extractionReview.issues || []).filter(issue => !issue.questionId || questionIds.has(issue.questionId)),
+  } : null;
   const [expanded, setExpanded] = useState([]);
   const known = useRef(new Set(questions.map(q => q.id)));
   useEffect(() => {
@@ -25,6 +31,7 @@ export default function StructureReviewer({ config, dispatch, disabled }) {
   const toggle = id => setExpanded(previous => previous.includes(id) ? previous.filter(value => value !== id) : [...previous, id]);
   return (
     <div className="mst-structure-review">
+      <ExtractionSummary review={readingReview} />
       <div className="mst-structure-toolbar">
         <p>Check the extracted questions and answers before you continue.</p>
         <div>
@@ -38,17 +45,19 @@ export default function StructureReviewer({ config, dispatch, disabled }) {
           <div className="mst-sr-list">
             {section.questions.map((q, index) => {
               const open = expanded.includes(q.id);
+              const readingIssues = (readingReview?.issues || []).filter(issue => issue.questionId === q.id);
               const number = questions.findIndex(item => item.id === q.id) + 1;
               return (
                 <div className="mst-sr-q" key={q.id}>
                   <button type="button" className="mst-extracted-toggle" onClick={() => toggle(q.id)}
                     aria-expanded={open} aria-controls={`extracted-${q.id}`} aria-label={`Question ${number}: ${q.text || 'Untitled'}`}>
                     <span className="mst-question-num" aria-hidden="true">{number}</span>
-                    <span className="mst-extracted-preview">{q.text || `Question ${number} · add question text`}</span>
+                    <span className="mst-extracted-preview">{q.text || `Question ${number} · add question text`}{readingIssues.length > 0 ? ' · Check source' : ''}</span>
                     <span className="mst-hint">{q.maxScore ?? 0} marks</span>
                     <span aria-hidden="true">{open ? '−' : '+'}</span>
                   </button>
                   {open && <div id={`extracted-${q.id}`} className="mst-extracted-body">
+                    <QuestionReadingNotes issues={readingIssues} />
                     <div className="mst-extracted-actions">
                       <MaxScoreField value={q.maxScore} onChange={value => update(section.id, q.id, 'maxScore', value)} disabled={disabled} />
                       <IconButton aria-label={`Remove question ${number}`} disabled={disabled}

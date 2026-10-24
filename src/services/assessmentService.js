@@ -36,6 +36,7 @@ const assessmentService = {
     
     try {
       const response = await apiClient.post('/api/assessments/parse-document', formData, {
+        timeout: 630000, // The server bounds multi-reader analysis to ten minutes.
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       return response.data;

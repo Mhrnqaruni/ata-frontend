@@ -56,7 +56,7 @@ export function wizardReducerV2(state, action) {
       // When parsing succeeds, we populate the config and move to the 'reviewing' state.
       return { ...state, status: 'reviewing', config: action.payload, countdownSeconds: 0 };
     case 'PARSE_FAILURE':
-      return { ...state, status: 'setup', error: action.payload, questionFile: null, answerKeyFile: null, countdownSeconds: 0 };
+      return { ...state, status: 'setup', error: action.payload, countdownSeconds: 0 };
     case 'SET_ESTIMATED_TIME':
       return { ...state, estimatedSeconds: action.payload };
     case 'UPDATE_COUNTDOWN':

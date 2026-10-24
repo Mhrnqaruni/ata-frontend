@@ -122,7 +122,9 @@ const NewAssessmentV2 = () => {
       // Step 2: If AI marking is selected, make a second call to distribute scores.
       if (state.markingStrategy === 'ai') {
         showSnackbar('Documents analyzed. Now, asking AI to assign marks...', 'info');
+        const extractionReview = parsedConfig.extractionReview;
         parsedConfig = await assessmentService.distributeScoresWithAI(parsedConfig, state.totalMarks);
+        if (extractionReview) parsedConfig = { ...parsedConfig, extractionReview };
       }
 
       dispatch({ type: 'PARSE_SUCCESS', payload: parsedConfig });
@@ -250,7 +252,7 @@ const NewAssessmentV2 = () => {
             {state.status === 'parsing' ? (
               <div className="mst-ai-progress" role="status">
                 <div className="mst-ai-bar" />
-                <span>Reading documents{state.countdownSeconds > 0 ? ` · about ${formatCountdown(state.countdownSeconds)} left` : '…'}</span>
+                <span>Reading your documents. Any handwriting is checked with three independent readings.</span>
               </div>
             ) : null}
             {state.error && <Alert severity="error" sx={{ mt: 2 }}>{state.error}</Alert>}
