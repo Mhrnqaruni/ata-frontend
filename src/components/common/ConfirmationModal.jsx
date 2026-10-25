@@ -13,11 +13,11 @@ import { Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, B
  * @param {string} props.title - The title to display in the modal header.
  * @param {string} props.description - The descriptive text/question for the modal body.
  */
-const ConfirmationModal = ({ open, onClose, onConfirm, title, description }) => {
+const ConfirmationModal = ({ open, onClose, onConfirm, title, description, busy = false, confirmLabel = "Confirm" }) => {
   return (
     <Dialog
       open={open}
-      onClose={onClose}
+      onClose={busy ? undefined : onClose}
       aria-labelledby="confirmation-dialog-title"
       aria-describedby="confirmation-dialog-description"
     >
@@ -30,11 +30,11 @@ const ConfirmationModal = ({ open, onClose, onConfirm, title, description }) => 
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} variant="outlined">
+        <Button disabled={busy} onClick={onClose} variant="outlined">
           Cancel
         </Button>
-        <Button onClick={onConfirm} color="error" variant="contained" autoFocus>
-          Confirm
+        <Button disabled={busy} onClick={onConfirm} color="error" variant="contained">
+          {busy ? "Deleting…" : confirmLabel}
         </Button>
       </DialogActions>
     </Dialog>

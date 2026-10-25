@@ -43,6 +43,7 @@ const Assessments = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [jobToDelete, setJobToDelete] = useState(null);
+  const [deleting,setDeleting]=useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   // --- [MISSING PART 3: ADDED BACK] ---
@@ -82,7 +83,8 @@ const Assessments = () => {
   };
 
   const handleConfirmDelete = async () => {
-    if (!jobToDelete) return;
+    if (!jobToDelete || deleting) return;
+    setDeleting(true);
     try {
       await assessmentService.deleteAssessment(jobToDelete.id);
       showSnackbar('Assessment deleted successfully.', 'success');
@@ -90,6 +92,7 @@ const Assessments = () => {
     } catch (err) {
       showSnackbar(err.message || 'Failed to delete assessment.', 'error');
     } finally {
+      setDeleting(false);
       handleCloseConfirm();
     }
   };
@@ -130,8 +133,10 @@ const Assessments = () => {
         open={isConfirmOpen}
         onClose={handleCloseConfirm}
         onConfirm={handleConfirmDelete}
+        busy={deleting}
+        confirmLabel="Delete"
         title="Delete this assessment?"
-        description={`Are you sure you want to permanently delete the assessment "${jobToDelete?.assessmentName}"? This action cannot be undone.`}
+        description={`Delete "${jobToDelete?.assessmentName}"? It will be removed from your assessments and its grades will no longer count in student, class or tag statistics. Internal history is retained.`}
       />
     </Box>
   );

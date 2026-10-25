@@ -262,6 +262,7 @@ const Quizzes = () => {
 
   // Delete confirmation dialog
   const [deleteDialog, setDeleteDialog] = useState({ open: false, quizId: null });
+  const [deleting,setDeleting]=useState(false);
 
   // Duplicate dialog
   const [duplicateDialog, setDuplicateDialog] = useState({
@@ -426,6 +427,8 @@ const Quizzes = () => {
   };
 
   const handleConfirmDelete = async () => {
+    if(deleting)return;
+    setDeleting(true);
     try {
       await quizService.deleteQuiz(deleteDialog.quizId);
       handleCloseDeleteDialog();
@@ -435,6 +438,7 @@ const Quizzes = () => {
       setError(err.message || "Failed to delete quiz.");
       handleCloseDeleteDialog();
     }
+    finally { setDeleting(false); }
   };
 
   const handleOpenDuplicateDialog = (quizId) => {
@@ -626,17 +630,17 @@ const Quizzes = () => {
       </Box>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialog.open} onClose={handleCloseDeleteDialog}>
+      <Dialog open={deleteDialog.open} onClose={deleting ? undefined : handleCloseDeleteDialog}>
         <DialogTitle>Delete this quiz?</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete this quiz? This action cannot be undone.
+            Delete this quiz and remove its sessions from normal use? Its grades will no longer count in student, class or tag statistics. Internal history is retained. Open sessions must be ended first.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDeleteDialog}>Cancel</Button>
-          <Button onClick={handleConfirmDelete} color="error" variant="contained">
-            Delete
+          <Button disabled={deleting} onClick={handleCloseDeleteDialog}>Cancel</Button>
+          <Button disabled={deleting} onClick={handleConfirmDelete} color="error" variant="contained">
+            {deleting ? "Deleting…" : "Delete"}
           </Button>
         </DialogActions>
       </Dialog>
