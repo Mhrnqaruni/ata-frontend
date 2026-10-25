@@ -12,12 +12,13 @@ export default function QuestionNavigator({ items, selected, onSelect, label = '
         <strong>{label}</strong><span className="mst-count">{items.length}</span>
       </div>
       {children}
+      {/* Native selects cannot typeset equations; the focused question shows its full content. */}
       <div className="mst-question-nav-mobile">
         <label htmlFor={id}>Jump to question</label>
         <select id={id} value={current?.id ?? ''} onChange={event => onSelect(event.target.value)} disabled={!items.length}>
           {!current && <option value="" disabled>{items.length ? "Choose a question" : "No questions"}</option>}
           {items.map(item => <option value={item.id} key={item.id}>
-            {item.number}. {item.title || 'Untitled question'}{item.state ? ` · ${item.state}` : ''}
+            Question {item.number}{item.state ? ` · ${item.state}` : ''}
           </option>)}
         </select>
       </div>
@@ -25,8 +26,8 @@ export default function QuestionNavigator({ items, selected, onSelect, label = '
         {items.map(item => (
           <button type="button" key={item.id} onClick={() => onSelect(item.id)}
             aria-current={selected === item.id ? 'step' : undefined}
-            aria-label={`Question ${item.number}${item.title ? `: ${item.title}` : ''}${item.state ? ` (${item.state})` : ''}`}
-            title={`${item.title || 'Untitled question'}${item.state ? ` · ${item.state}` : ''}`}
+            aria-label={`Question ${item.number}${item.state ? ` (${item.state})` : ''}`}
+            title={`Question ${item.number}${item.state ? ` · ${item.state}` : ''}`}
             data-state={item.state || undefined}>
             {item.number}<span aria-hidden="true" />
           </button>
