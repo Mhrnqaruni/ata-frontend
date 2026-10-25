@@ -31,6 +31,9 @@ export const initialStateV2 = {
 // This reducer function manages all state transitions for the V2 wizard.
 export function wizardReducerV2(state, action) {
   switch (action.type) {
+    case 'RESTORE_ANALYSIS':
+      return {...state, ...action.payload, status:'parsing', error:null};
+
     case 'RESTORE_RETRY':
       return { ...initialStateV2, config: action.payload.config, status: 'reviewing',
         assessmentName: action.payload.config.assessmentName, classId: action.payload.config.classId,

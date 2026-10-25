@@ -1,3 +1,4 @@
+import ElapsedTime from '../common/ElapsedTime';
 import DeleteOutline from '@mui/icons-material/DeleteOutline';
 // /src/components/assessments/AssessmentCard.jsx
 // One assessment as a glass card: title + status, "class · date", the AI bar while it's being graded, two
@@ -26,6 +27,10 @@ export default function AssessmentCard({ job, onDelete }) {
         </div>
         <div className="mst-asm-meta">{[job.className, date].filter(Boolean).join(" · ") || "Date unavailable"}</div>
         {job.status === "Completed" ? <CompletedStats results={job.results} /> : null}
+        <div style={{display:'grid',gap:4,marginTop:8}}>
+          <ElapsedTime clock={job.clock}/>
+          {working && job.update && <span className="mst-hint" role="status">{job.update}{job.ai_completed ? ` ${job.ai_completed} AI responses received.` : ''}</span>}
+        </div>
       </div>
       <div className="mst-asm-foot">
         <Tooltip title={working ? "Wait for this assessment to finish" : "Delete assessment"}>

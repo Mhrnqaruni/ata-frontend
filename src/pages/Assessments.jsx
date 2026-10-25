@@ -42,6 +42,7 @@ const Assessments = () => {
   const [assessments, setAssessments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [syncError,setSyncError]=useState(false);
   const [jobToDelete, setJobToDelete] = useState(null);
   const [deleting,setDeleting]=useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -52,8 +53,11 @@ const Assessments = () => {
     try {
       const data = await assessmentService.getAssessments();
       setAssessments(data || []);
+      setSyncError(false);
       if (isInitialLoad) setError(null);
+      return data || [];
     } catch (err) {
+      setSyncError(true);
       console.error("Failed to fetch assessments:", err);
       if (isInitialLoad) {
         setError("Could not load your assessments. Please try refreshing the page.");
@@ -66,9 +70,18 @@ const Assessments = () => {
 
   // --- [MISSING PART 4: ADDED BACK] ---
   useEffect(() => {
-    fetchAssessments(true); // Initial fetch
-    const intervalId = setInterval(() => fetchAssessments(false), 10000);
-    return () => clearInterval(intervalId);
+    let stopped=false, timer, running=false;
+    const poll=async(initial=false)=>{
+      if(stopped || running)return;
+      running=true;
+      const data=await fetchAssessments(initial);
+      running=false;
+      if(!stopped && !document.hidden)timer=setTimeout(()=>poll(),data?.some(job=>['Queued','Processing','Summarizing'].includes(job.status))?5000:15000);
+    };
+    const visible=()=>{clearTimeout(timer);if(!document.hidden)poll();};
+    poll(true);
+    document.addEventListener('visibilitychange',visible);
+    return ()=>{stopped=true;clearTimeout(timer);document.removeEventListener('visibilitychange',visible);};
   }, [fetchAssessments]);
   // --- [END OF MISSING PART 4] ---
 
@@ -127,6 +140,7 @@ const Assessments = () => {
         subtitle="Handwritten answers, marked three times by AI and checked by you."
         title="Assessments"
       />
+      {syncError && <Alert severity="warning" sx={{mb:2}}>Reconnecting for status updates. Showing the last known progress.</Alert>}
       {renderContent()}
       
       <ConfirmationModal

@@ -1,7 +1,10 @@
+import analysisService from '../../services/analysisService';
+import tagService from '../../services/tagService';
+import ElapsedTime from '../../components/common/ElapsedTime';
 import AudienceSelector from '../../components/tags/AudienceSelector';
 // /src/pages/assessments/NewAssessmentV2.jsx (FINAL, DUAL-UPLOAD VERSION)
 
-import React, { useState, useReducer, useCallback, useEffect } from 'react';
+import React, { useState, useReducer, useCallback, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Box, Stepper, Step, StepLabel, Button, Paper, Alert, CircularProgress, TextField, Skeleton, useMediaQuery, useTheme } from '@mui/material';
 import AutoAwesomeRounded from '@mui/icons-material/AutoAwesomeRounded';
@@ -41,6 +44,11 @@ const NewAssessmentV2 = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const retryJobId = new URLSearchParams(location.search).get('retryJobId');
+  const analysisId = new URLSearchParams(location.search).get('analysisId');
+  const [analysis,setAnalysis]=useState(null);
+  const [analysisError,setAnalysisError]=useState('');
+  const [uploadingAnalysis,setUploadingAnalysis]=useState(false);
+  const restoredAnalysis=useRef(null), appliedAnalysis=useRef(null), analysisPosting=useRef(false);
   const [retryDraft, setRetryDraft] = useState(null);
   const [retainedIds, setRetainedIds] = useState([]);
   const [retryLoading, setRetryLoading] = useState(Boolean(retryJobId));
@@ -100,40 +108,73 @@ const NewAssessmentV2 = () => {
       .finally(() => setIsLoading(false));
   }, [showSnackbar]);
 
-  // NEW Handler for structuring documents
-  const handleStructure = useCallback(async () => {
-    if (!state.questionFiles.length) {
-      showSnackbar('Please add at least one question-paper file.', 'error');
-      return;
-    }
-    if ([...state.questionFiles, ...state.answerKeyFiles].reduce((sum, file) => sum + file.size, 0) > 20 * 1024 * 1024) {
-      showSnackbar('Question paper and answer key together must be 20 MB or smaller.', 'error');
-      return;
-    }
-    dispatch({ type: 'START_PARSING' });
-    try {
-      // Step 1: Always parse the documents first to get the structure.
-      let parsedConfig = await assessmentService.parseDocument(
-        state.questionFiles,
-        state.answerKeyFiles,
-        state.classId,
-        state.assessmentName
-      );
-
-      // Step 2: If AI marking is selected, make a second call to distribute scores.
-      if (state.markingStrategy === 'ai') {
-        showSnackbar('Documents analyzed. Now, asking AI to assign marks...', 'info');
-        const extractionReview = parsedConfig.extractionReview;
-        parsedConfig = await assessmentService.distributeScoresWithAI(parsedConfig, state.totalMarks);
-        if (extractionReview) parsedConfig = { ...parsedConfig, extractionReview };
+  // A refresh follows this same saved operation; it never posts another AI job.
+  useEffect(() => {
+    if (!analysisId || (retryJobId && retryLoading)) return;
+    let stopped=false, busy=false, done=false, timer, missing=0;
+    setActiveStepRaw(1);
+    dispatch({type:'START_PARSING'});
+    const poll=async()=>{
+      if(stopped || busy || done)return;
+      busy=true;
+      try {
+        const data=await analysisService.get(analysisId);
+        if(stopped)return;
+        setAnalysis(data);setAnalysisError('');missing=0;
+        if(restoredAnalysis.current!==analysisId){
+          restoredAnalysis.current=analysisId;
+          const {retryJobId: ignoredRetry,...draft}=data.draft;
+          dispatch({type:'RESTORE_ANALYSIS',payload:draft});
+          if(!retryJobId && draft.audience){
+            tagService.preview(draft.audience).then(preview=>{
+              if(!stopped)dispatch({type:'UPDATE_FIELD',payload:{field:'audienceStudents',value:preview.students}});
+            }).catch(()=>{if(!stopped)setAnalysisError('The audience changed. Review your class/tag selection before starting grading.');});
+          }
+        }
+        if(data.status==='completed'){
+          done=true;
+          if(appliedAnalysis.current!==analysisId){appliedAnalysis.current=analysisId;dispatch({type:'PARSE_SUCCESS',payload:data.result});}
+        }else if(['failed','interrupted'].includes(data.status)){
+          done=true;dispatch({type:'PARSE_FAILURE',payload:data.error||data.message});
+        }
+      }catch(error){
+        if(stopped)return;
+        if(error.response?.status===404 && !analysisPosting.current && ++missing>=6){
+          done=true;dispatch({type:'PARSE_FAILURE',payload:'No accepted analysis was found. Please upload the documents again.'});
+        }else if([401,403].includes(error.response?.status)){
+          done=true;dispatch({type:'PARSE_FAILURE',payload:'This analysis is no longer available to this account.'});
+        }else if(!analysisPosting.current)setAnalysisError('Reconnecting. Showing the last confirmed analysis status.');
+      }finally{
+        busy=false;
+        if(!stopped && !done && !document.hidden)timer=setTimeout(poll,5000);
       }
+    };
+    const visible=()=>{clearTimeout(timer);if(!document.hidden)poll();};
+    poll();document.addEventListener('visibilitychange',visible);
+    return ()=>{stopped=true;clearTimeout(timer);document.removeEventListener('visibilitychange',visible);};
+  },[analysisId,retryJobId,retryLoading]);
 
-      dispatch({ type: 'PARSE_SUCCESS', payload: parsedConfig });
-      showSnackbar('Assessment structure is ready for review!', 'success');
-    } catch (error) {
-      dispatch({ type: 'PARSE_FAILURE', payload: error.message || 'Failed to process documents.' });
+  const handleStructure = useCallback(async () => {
+    if(analysisPosting.current || !state.questionFiles.length)return;
+    if([...state.questionFiles,...state.answerKeyFiles].reduce((sum,file)=>sum+file.size,0)>20*1024*1024){
+      showSnackbar('Question paper and answer key together must be 20 MB or smaller.','error');return;
     }
-  }, [state.questionFiles, state.answerKeyFiles, state.classId, state.assessmentName, state.markingStrategy, state.totalMarks, showSnackbar]);
+    analysisPosting.current=true;setUploadingAnalysis(true);setAnalysis(null);setAnalysisError('');
+    dispatch({type:'START_PARSING'});
+    const id=crypto.randomUUID();
+    const params=new URLSearchParams(location.search);params.set('analysisId',id);
+    navigate({pathname:location.pathname,search:params.toString()},{replace:true});
+    try{
+      await analysisService.start(id,{assessmentName:state.assessmentName,classId:state.classId,
+        markingStrategy:state.markingStrategy,totalMarks:state.totalMarks,audience:state.audience,retryJobId},
+        state.questionFiles,state.answerKeyFiles);
+    }catch(error){
+      if(error.response){
+        params.delete('analysisId');navigate({pathname:location.pathname,search:params.toString()},{replace:true});
+        dispatch({type:'PARSE_FAILURE',payload:typeof error.response.data?.detail === 'string' ? error.response.data.detail : 'Documents were not accepted. Check the files and try again.'});
+      }else setAnalysisError('Upload confirmation was interrupted. Checking whether your analysis was accepted.');
+    }finally{analysisPosting.current=false;setUploadingAnalysis(false);}
+  },[state.questionFiles,state.answerKeyFiles,state.classId,state.assessmentName,state.markingStrategy,state.totalMarks,state.audience,retryJobId,location.pathname,location.search,navigate,showSnackbar]);
 
   // handleSubmit is now simpler, as the config is already in state (unchanged)
   const handleSubmit = async () => {
@@ -276,9 +317,15 @@ const NewAssessmentV2 = () => {
             {state.status === 'parsing' ? (
               <div className="mst-ai-progress" role="status">
                 <div className="mst-ai-bar" />
-                <span>Reading your documents. Any handwriting is checked with three independent readings.</span>
+                <span>{uploadingAnalysis ? 'Uploading documents…' : analysis?.message || 'Checking saved analysis status…'}</span>
+                <ElapsedTime clock={analysis?.clock}/>
+                {analysis?.completed_reads>0 && <span>{analysis.completed_reads} independent {analysis.completed_reads===1?'reading':'readings'} completed.</span>}
+                {analysis?.status==='running' && analysis.heartbeat_at && Date.parse(analysis.clock.server_now)-Date.parse(analysis.heartbeat_at)>30000 && <Alert severity="warning">No recent worker update. Showing the last confirmed stage.</Alert>}
               </div>
             ) : null}
+            {analysisError && <Alert severity="warning" sx={{mt:2}}>{analysisError}</Alert>}
+            {analysis?.status==='completed' && <Box sx={{my:1}}><ElapsedTime clock={analysis.clock}/></Box>}
+            {analysisId && !state.questionFiles.length && <Alert severity="info" sx={{mt:1}}>Recovered your saved analysis. Upload documents again only to replace the parsed structure.</Alert>}
             {state.error && <Alert severity="error" sx={{ mt: 2 }}>{state.error}</Alert>}
             {state.config && (
               <Box className="mst-reviewer" mt={4}>
