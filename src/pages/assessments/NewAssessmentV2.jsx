@@ -182,7 +182,7 @@ const NewAssessmentV2 = () => {
   const isStepValid = useCallback(() => {
     switch (activeStep) {
       case 0:
-        return !!state.assessmentName.trim() && (retryJobId ? !!state.classId : !!state.audienceStudents?.length);
+        return !!state.assessmentName.trim() && (retryJobId ? (!!state.classId || !!retryDraft?.audience) : !!state.audienceStudents?.length);
       case 1:
         // Rubric is optional, so only check that text exists and maxScore > 0
         return !!state.config && state.config.sections.every(s => s.questions.every(q => q.text.trim() && q.maxScore > 0));

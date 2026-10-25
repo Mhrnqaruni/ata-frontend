@@ -4,7 +4,7 @@ import TagsPanel from '../components/tags/TagsPanel';
 // --- Core React Imports ---
 import React, { useState, useEffect, useCallback } from 'react';
 import AddCard from '../components/common/AddCard';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 // --- MUI Component Imports ---
 import { Box, Button, Skeleton, Alert, AlertTitle, Tabs, Tab } from '@mui/material';
@@ -27,7 +27,8 @@ import EmptyState from '../components/common/EmptyState';
  */
 const Classes = () => {
   const navigate = useNavigate();
-  const [section,setSection]=useState(0);
+  const [searchParams,setSearchParams]=useSearchParams();
+  const section=searchParams.get('view')==='tags'?1:0;
   const [classes, setClasses] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -119,7 +120,7 @@ const Classes = () => {
           subtitle="Your rosters, grades and each student's progress."
           title="Classes"
         />
-        <Tabs value={section} onChange={(_,v)=>setSection(v)} aria-label="Classes and tags" sx={{mb:2}}><Tab label="Classes"/><Tab label="Tags"/></Tabs>
+        <Tabs value={section} onChange={(_,v)=>setSearchParams(v?{view:'tags'}:{})} aria-label="Classes and tags" sx={{mb:2}}><Tab label="Classes"/><Tab label="Tags"/></Tabs>
         {section===0?renderContent():<TagsPanel/>}
       </Box>
 
