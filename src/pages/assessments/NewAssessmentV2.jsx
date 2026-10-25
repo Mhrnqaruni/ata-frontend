@@ -1,3 +1,4 @@
+import AudienceSelector from '../../components/tags/AudienceSelector';
 // /src/pages/assessments/NewAssessmentV2.jsx (FINAL, DUAL-UPLOAD VERSION)
 
 import React, { useState, useReducer, useCallback, useEffect } from 'react';
@@ -30,7 +31,7 @@ import { wizardReducerV2, initialStateV2 } from './NewAssessmentV2.state';
 const steps = ['Set up', 'Define', 'Upload answers', 'Review & start'];
 
 const stepDescriptions = [
-  'Name the assessment and choose the class that sat it.',
+  'Name the assessment and choose the students using classes or tags.',
   'Add the question-paper files and an optional answer key. AI reads them and lays out every question for you to check.',
   "Add your students' handwritten answer sheets.",
   'Check the details, then start grading. AI marks each answer three times; anything it disagrees on comes to you.'
@@ -157,13 +158,13 @@ const NewAssessmentV2 = () => {
         await assessmentService.startRetry(retryJobId, form);
       } else if (state.uploadMode === 'manual') {
         await assessmentService.createAssessmentJobWithManualUploads({
-          config: state.config,
+          config: {...state.config, audience: state.audience},
           manualStudentFiles: state.manualStudentFiles,
           outsiders: state.outsiders,
         });
       } else {
         const formData = new FormData();
-        formData.append('config', JSON.stringify(state.config));
+        formData.append('config', JSON.stringify({...state.config, audience: state.audience}));
         state.answerSheetFiles.forEach(file => formData.append('answer_sheets', file));
         await assessmentService.createAssessmentJobV2(formData);
       }
@@ -181,7 +182,7 @@ const NewAssessmentV2 = () => {
   const isStepValid = useCallback(() => {
     switch (activeStep) {
       case 0:
-        return !!state.assessmentName.trim() && !!state.classId;
+        return !!state.assessmentName.trim() && (retryJobId ? !!state.classId : !!state.audienceStudents?.length);
       case 1:
         // Rubric is optional, so only check that text exists and maxScore > 0
         return !!state.config && state.config.sections.every(s => s.questions.every(q => q.text.trim() && q.maxScore > 0));
@@ -218,7 +219,13 @@ const NewAssessmentV2 = () => {
     const isProcessing = state.status === 'parsing' || state.status === 'submitting';
     switch (step) {
       case 0:
-        return <Step1Setup state={state} handleUpdateField={(field, value) => dispatch({ type: 'UPDATE_FIELD', payload: { field, value } })} classes={classes} disabled={isProcessing} lockClass={Boolean(retryJobId)} />;
+        return <Box sx={{display:'grid',gap:2}}>
+          <TextField label="Assessment name" value={state.assessmentName} onChange={e=>dispatch({type:'UPDATE_FIELD',payload:{field:'assessmentName',value:e.target.value}})} disabled={isProcessing}/>
+          {retryJobId ? <Alert severity="info">Retry keeps the original students and audience.</Alert> :
+            <AudienceSelector value={state.audience} disabled={isProcessing}
+              onChange={spec=>dispatch({type:'UPDATE_FIELD',payload:{field:'audience',value:spec}})}
+              onPreview={data=>{dispatch({type:'UPDATE_FIELD',payload:{field:'audienceStudents',value:data?.students||null}});dispatch({type:'UPDATE_FIELD',payload:{field:'classId',value:data?.students?.[0]?.classes?.[0]?.id||''}});}} />}
+        </Box>;
       case 1:
         return (
           <Box>
@@ -313,6 +320,7 @@ const NewAssessmentV2 = () => {
             {state.uploadMode === 'manual' && (
               <ManualUploader
                 classId={state.classId}
+                audienceStudents={state.audienceStudents}
                 stagedFiles={state.manualStudentFiles}
                 outsiders={state.outsiders}
                 onFilesStaged={(payload) => dispatch({ type: 'STAGE_MANUAL_FILES', payload })}
@@ -329,7 +337,7 @@ const NewAssessmentV2 = () => {
         const fileCount = retainedFiles.length + (state.uploadMode === 'batch' ? state.answerSheetFiles.length : manualCount);
         const rows = [
           ['Assessment', state.assessmentName],
-          ['Class', classes.find((c) => c.id === state.classId)?.name || '—'],
+          ['Audience', state.audienceStudents ? `${state.audienceStudents.length} selected students` : classes.find((c) => c.id === state.classId)?.name || '—'],
           ['Questions', `${questions.length} ${questions.length === 1 ? 'question' : 'questions'} · ${totalMarks} marks`],
           ['Answer sheets', `${fileCount} ${fileCount === 1 ? 'file' : 'files'}${state.uploadMode === 'manual' ? ', added per student' : ''}`],
           ['Marks', state.markingStrategy === 'ai' ? 'Shared out by AI' : 'Read from the paper'],

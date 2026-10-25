@@ -60,7 +60,7 @@ import { QRCodeSVG } from 'qrcode.react';
 /* NEW: Roster Panel Component - Shows expected students with join/absent status */
 const RosterPanel = ({ roster, session, isLoading }) => {
   // Don't show panel if no class association
-  if (!session?.class_id) {
+  if (!(session?.class_id || session?.has_roster)) {
     return null;
   }
 
@@ -70,7 +70,7 @@ const RosterPanel = ({ roster, session, isLoading }) => {
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
           <PeopleIcon sx={{ mr: 1, fontSize: 28, color: 'primary.light' }} />
           <Typography variant="h6" sx={{ fontWeight: 600, flex: 1 }}>
-            Class Roster Attendance
+            Expected student attendance
           </Typography>
           {!isLoading && roster && (
             <Chip
@@ -572,7 +572,7 @@ const QuizHost = () => {
       setLeaderboard(leaderboardData.entries || []);
 
       // NEW: Load roster if session has class_id
-      if (sessionData.class_id) {
+      if ((sessionData.class_id || sessionData.has_roster)) {
         console.log('[QuizHost] Session has class_id, loading roster...');
         await loadRosterData(sessionId);
       }
@@ -679,7 +679,7 @@ const QuizHost = () => {
           }));
         }
         // Reload roster if class-based quiz
-        if (session?.class_id) {
+        if ((session?.class_id || session?.has_roster)) {
           loadRosterData(sessionId);
         }
         break;
@@ -694,7 +694,7 @@ const QuizHost = () => {
           }));
         }
         // Reload roster if class-based quiz
-        if (session?.class_id) {
+        if ((session?.class_id || session?.has_roster)) {
           loadRosterData(sessionId);
         }
         break;
@@ -726,7 +726,7 @@ const QuizHost = () => {
       case 'roster_updated':
         // Real-time roster update when student joins
         console.log('[QuizHost] Roster updated:', message.roster);
-        if (session?.class_id) {
+        if ((session?.class_id || session?.has_roster)) {
           loadRosterData(sessionId); // Refresh roster data
         }
         break;
@@ -734,7 +734,7 @@ const QuizHost = () => {
       case 'outsider_detected':
         // Real-time outsider alert
         console.log('[QuizHost] Outsider detected:', message.outsider);
-        if (session?.class_id) {
+        if ((session?.class_id || session?.has_roster)) {
           loadRosterData(sessionId); // Refresh to get updated outsiders list
         }
         break;
@@ -1432,13 +1432,13 @@ const QuizHost = () => {
             </CardContent>
           </Card>
 
-          {/* 3. Class Roster Attendance (THIRD - Show if quiz is linked to a class) */}
-          {session?.class_id && (
+          {/* 3. Expected student attendance (THIRD - Show if quiz is linked to a class) */}
+          {(session?.class_id || session?.has_roster) && (
             <RosterPanel roster={roster} session={session} isLoading={isLoadingRoster} />
           )}
 
           {/* 4. Outsider Panel (FOURTH - Show if there are outsider students) */}
-          {session?.class_id && outsiders && outsiders.length > 0 && (
+          {(session?.class_id || session?.has_roster) && outsiders && outsiders.length > 0 && (
             <OutsiderPanel
               outsiders={outsiders}
               sessionId={sessionId}

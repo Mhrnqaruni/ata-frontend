@@ -96,7 +96,7 @@ const QuizCard = ({ quiz, displayTitle, onEdit, onDuplicate, onDelete, onStartSe
   };
 
   const selfPaced = quiz.settings?.mode === 'self_paced';
-  const meta = [`${quiz.question_count || 0} ${quiz.question_count === 1 ? 'question' : 'questions'}`, quiz.class_name].filter(Boolean).join(' · ');
+  const meta = [`${quiz.question_count || 0} ${quiz.question_count === 1 ? 'question' : 'questions'}`, (quiz.audience ? `${quiz.audience.class_ids.length} classes · ${quiz.audience.tag_ids.length} tags${quiz.audience.mode==='filter'?' · filtered':''}` : quiz.class_name)].filter(Boolean).join(' · ');
 
   return (
     <Card className="mst-rim mst-lift mst-quiz-card" data-enter="">

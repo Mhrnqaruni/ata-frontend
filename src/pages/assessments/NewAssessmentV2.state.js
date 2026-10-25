@@ -13,6 +13,8 @@ export const initialQuestionV2 = () => ({
 export const initialStateV2 = {
   assessmentName: '',
   classId: '',
+  audience: null,
+  audienceStudents: null,
   questionFiles: [],
   answerKeyFiles: [],
   markingStrategy: 'document', // 'document' or 'ai'
@@ -32,6 +34,7 @@ export function wizardReducerV2(state, action) {
     case 'RESTORE_RETRY':
       return { ...initialStateV2, config: action.payload.config, status: 'reviewing',
         assessmentName: action.payload.config.assessmentName, classId: action.payload.config.classId,
+        audienceStudents: action.payload.audience?.students || null,
         uploadMode: action.payload.uploadMode,
         outsiders: action.payload.files.filter(file => file.entityKind === 'outsider').map(file => ({ id: file.entityId, name: file.name })) };
 

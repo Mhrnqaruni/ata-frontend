@@ -20,7 +20,7 @@ import UploadFileIcon from '@mui/icons-material/UploadFile';
 
 import classService from '../../../services/classService';
 
-const ManualUploader = ({ classId, onFilesStaged, onAddOutsider, stagedFiles = {}, outsiders = [], disabled = false }) => {
+const ManualUploader = ({ classId, audienceStudents, onFilesStaged, onAddOutsider, stagedFiles = {}, outsiders = [], disabled = false }) => {
   const [students, setStudents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -29,6 +29,7 @@ const ManualUploader = ({ classId, onFilesStaged, onAddOutsider, stagedFiles = {
   const currentUploadTarget = useRef(null); // { type: 'student' | 'outsider', id: string }
 
   useEffect(() => {
+    if (audienceStudents) {setStudents(audienceStudents);setIsLoading(false);setError(null);return;}
     if (!classId) {
       setError('No class selected. Please go back to the setup step.');
       setIsLoading(false);
@@ -48,7 +49,7 @@ const ManualUploader = ({ classId, onFilesStaged, onAddOutsider, stagedFiles = {
       }
     };
     fetchStudents();
-  }, [classId]);
+  }, [classId, audienceStudents]);
 
   const handleUploadClick = (type, id) => {
     currentUploadTarget.current = { type, id };

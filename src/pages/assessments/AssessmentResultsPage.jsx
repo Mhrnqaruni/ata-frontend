@@ -1,3 +1,4 @@
+import TagAnalytics from '../../components/tags/TagAnalytics';
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Box, Alert, Skeleton } from '@mui/material';
@@ -73,6 +74,7 @@ const AssessmentResultsPage = () => {
         <div><dt>Needs review</dt><dd>{sum.pending}</dd></div>
       </dl>
       <div className="mst-section-label">Students</div>
+      <TagAnalytics activityId={job_id}/>
       <ResultsTable rows={rows} />
     </Box>
   );

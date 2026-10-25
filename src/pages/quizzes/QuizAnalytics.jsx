@@ -1,3 +1,4 @@
+import TagAnalytics from '../../components/tags/TagAnalytics';
 import ComparisonTableContainer from '../../components/common/ComparisonTableContainer';
 // /src/pages/quizzes/QuizAnalytics.jsx - ENHANCED VERSION
 
@@ -178,7 +179,7 @@ const PrePostComparisonSection = ({ comparison }) => {
 };
 
 /**
- * Class Students Table - Shows all rostered students with ABSENT status for non-participants
+ * Expected students Table - Shows all rostered students with ABSENT status for non-participants
  */
 const ClassStudentsTable = ({ students, sessionId, onDownloadReport }) => {
   // Configure sortable columns
@@ -206,10 +207,10 @@ const ClassStudentsTable = ({ students, sessionId, onDownloadReport }) => {
     <Card sx={{ mb: 4 }}>
       <CardContent>
         <Typography variant="h5" gutterBottom>
-          Class Students
+          Expected students
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          All students enrolled in the class for this quiz
+          Students on the recorded roster for this quiz
         </Typography>
         <ComparisonTableContainer sx={{ overflowX: 'auto' }}>
           <Table>
@@ -892,8 +893,8 @@ const QuizAnalytics = () => {
       {/* PARTICIPANTS SECTION - FIRST PRIORITY */}
       <div className="mst-section-label">Participant results</div>
 
-      {/* Class Students Table */}
-      {enhancedData.session_info.class_id && (
+      {/* Expected students Table */}
+      {(enhancedData.session_info.class_id || enhancedData.session_info.has_roster) && (
         <ClassStudentsTable
           students={enhancedData.class_students}
           sessionId={enhancedData.sessionId}
@@ -964,6 +965,7 @@ const QuizAnalytics = () => {
         <QuestionBreakdown questions={enhancedData.analytics.question_analytics} />
       )}
 
+      <TagAnalytics activityId={enhancedData.sessionId}/>
       {/* Floating Chat Window */}
       <FloatingChatWindow
         open={chatOpen}

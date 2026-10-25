@@ -1,3 +1,4 @@
+import TagsPanel from '../components/tags/TagsPanel';
 // /src/pages/Classes.jsx (FINAL, ROBUST VERSION)
 
 // --- Core React Imports ---
@@ -6,7 +7,7 @@ import AddCard from '../components/common/AddCard';
 import { useNavigate } from 'react-router-dom';
 
 // --- MUI Component Imports ---
-import { Box, Button, Skeleton, Alert, AlertTitle } from '@mui/material';
+import { Box, Button, Skeleton, Alert, AlertTitle, Tabs, Tab } from '@mui/material';
 import SchoolOutlined from '@mui/icons-material/SchoolOutlined';
 import AddOutlined from '@mui/icons-material/AddOutlined';
 
@@ -26,6 +27,7 @@ import EmptyState from '../components/common/EmptyState';
  */
 const Classes = () => {
   const navigate = useNavigate();
+  const [section,setSection]=useState(0);
   const [classes, setClasses] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -117,7 +119,8 @@ const Classes = () => {
           subtitle="Your rosters, grades and each student's progress."
           title="Classes"
         />
-        {renderContent()}
+        <Tabs value={section} onChange={(_,v)=>setSection(v)} aria-label="Classes and tags" sx={{mb:2}}><Tab label="Classes"/><Tab label="Tags"/></Tabs>
+        {section===0?renderContent():<TagsPanel/>}
       </Box>
 
       <AddClassModal

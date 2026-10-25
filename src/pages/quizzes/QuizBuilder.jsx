@@ -1,3 +1,5 @@
+import tagService from '../../services/tagService';
+import AudienceSelector from '../../components/tags/AudienceSelector';
 // /src/pages/quizzes/QuizBuilder.jsx
 
 // --- Core React Imports ---
@@ -435,6 +437,8 @@ const QuizBuilder = () => {
 
   // Class selection for roster tracking
   const [selectedClassId, setSelectedClassId] = useState('');
+  const [audience,setAudience]=useState(null);
+  const [audiencePreview,setAudiencePreview]=useState(null);
   const [classList, setClassList] = useState([]);
   const [classesLoading, setClassesLoading] = useState(true);
 
@@ -548,6 +552,7 @@ const QuizBuilder = () => {
         setDeadlineEnabled(false);
         setDeadlineDuration(60);
       }
+      setAudience(quiz.audience || (quiz.class_id ? {class_ids:[quiz.class_id],tag_ids:[],mode:'union'} : null));
       setSelectedClassId(quiz.class_id || ''); // NEW: Load class_id
       setQuizPhase(quiz.quiz_phase || 'normal');
       setLinkedPreQuizId(quiz.linked_quiz_id || null);
@@ -657,6 +662,7 @@ const QuizBuilder = () => {
   const handleSelectPreQuiz = (quiz) => {
     setLinkedPreQuizId(quiz.id);
     setLinkedPreQuiz(quiz);
+    setAudience(quiz.audience || (quiz.class_id ? {class_ids:[quiz.class_id],tag_ids:[],mode:'union'} : null));
     if ((quiz.class_id || '') !== selectedClassId) {
       setSelectedClassId(quiz.class_id || '');
     }
@@ -880,6 +886,7 @@ const QuizBuilder = () => {
       setIsSaving(true);
       setError(null);
 
+      if (audience && !(await tagService.preview(audience)).count) throw new Error('The selected audience is empty. Choose enrolled students before saving.');
       const quizData = {
         title: quizTitle,
         description: quizDescription,
@@ -890,6 +897,7 @@ const QuizBuilder = () => {
           deadline_enabled: quizSettings?.mode === 'self_paced' ? deadlineEnabled : false,
           deadline_minutes: quizSettings?.mode === 'self_paced' && deadlineEnabled ? deadlineDuration : null
         },
+        audience,
         class_id: selectedClassId || null, // NEW: Include class_id for roster tracking
         questions: questions.map((q, index) => ({
           ...q,
@@ -1303,32 +1311,9 @@ const QuizBuilder = () => {
                 onChange={(e) => setQuizDescription(e.target.value)}
                 placeholder="What is this quiz about?"
               />
-              <FormControl fullWidth>
-                <InputLabel id="quiz-class-label">Class (optional)</InputLabel>
-                <Select
-                  displayEmpty
-                  labelId="quiz-class-label"
-                  value={selectedClassId}
-                  onChange={(e) => handleClassChange(e.target.value)}
-                  disabled={classesLoading || quizPhase === 'post'}
-                  renderValue={(id) => (id ? classList.find((c) => c.id === id)?.name : 'No class · anyone with the code can join')}
-                >
-                  <MenuItem value="">
-                    No class · anyone with the code can join
-                  </MenuItem>
-                  {classList.map((cls) => (
-                    <MenuItem key={cls.id} value={cls.id}>
-                      {cls.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-                {selectedClassId && (
-                  <p className="mst-info-row">
-                    <InfoIcon fontSize="small" />
-                    The class roster is loaded when you start a session, and anyone not on it is flagged.
-                  </p>
-                )}
-              </FormControl>
+              <AudienceSelector value={audience} allowOpen disabled={classesLoading || quizPhase==='post'}
+                onPreview={setAudiencePreview} onChange={spec=>{setAudience(spec.class_ids.length||spec.tag_ids.length?spec:null);handleClassChange(spec.class_ids[0]||'');}} />
+
             </div>
           </Paper>
 
