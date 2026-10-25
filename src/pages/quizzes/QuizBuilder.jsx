@@ -406,6 +406,7 @@ const QuizBuilder = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [stepDir, setStepDir] = useState('fwd');
   const [openQuestion, setOpenQuestion] = useState(0);
+  const [showAllQuestions, setShowAllQuestions] = useState(false);
   const { run: lightRun, play: playLight } = useQuizLight();
   const goStep = (next) => {
     setStepDir(next >= activeStep ? 'fwd' : 'back');
@@ -1198,7 +1199,7 @@ const QuizBuilder = () => {
   }
 
   return (
-    <Box sx={{ maxWidth: 1120, mx: 'auto', minWidth: 0 }}>
+    <Box className="mst-quiz-editor" sx={{ maxWidth: 1120, mx: 'auto', minWidth: 0 }}>
       <div aria-hidden="true" className="mst-quiz-light" data-run={lightRun || undefined} />
       <PageHeader
         backLabel="Back to quizzes"
@@ -1362,13 +1363,14 @@ const QuizBuilder = () => {
           <div className="mst-question-workspace">
             <QuestionNavigator label="Quiz questions"
               items={questions.map((q, i) => ({ id: String(i), number: i + 1, title: q.question_text?.slice(0, 80) }))}
-              selected={questions.length ? String(Math.min(openQuestion ?? 0, questions.length - 1)) : ''}
-              onSelect={(id) => setOpenQuestion(Number(id))}>
+              selected={showAllQuestions ? null : questions.length ? String(Math.min(openQuestion ?? 0, questions.length - 1)) : ''}
+              onSelect={(id) => { setShowAllQuestions(false); setOpenQuestion(Number(id)); }}>
+              <Button fullWidth variant={showAllQuestions ? "contained" : "outlined"} aria-pressed={showAllQuestions} onClick={() => setShowAllQuestions(!showAllQuestions)}>{showAllQuestions ? "Show one question" : "Show all questions"}</Button>
               <p className="mst-question-nav-hint">Your edits stay when you switch questions. Save draft to keep them.</p>
             </QuestionNavigator>
             <div className="mst-focused-question">
               {questions.length === 0 && <Alert severity="info">Add your first question, or import questions with AI.</Alert>}
-              {questions.map((question, index) => index === Math.min(openQuestion ?? 0, questions.length - 1) ? (
+              {questions.map((question, index) => (showAllQuestions || index === Math.min(openQuestion ?? 0, questions.length - 1)) ? (
                 <QuestionEditor
                   key={index}
                   question={question}
@@ -1713,158 +1715,20 @@ const QuizBuilder = () => {
         </DialogActions>
       </Dialog>
 
-      {/* AI Question Import Dialog */}
-      <Dialog open={showAIDialog} onClose={handleCloseAIDialog} maxWidth="md" fullWidth>
-        <DialogTitle>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <AutoAwesomeIcon color="secondary" />
-            <Typography variant="h6">Import Questions with AI</Typography>
-          </Box>
-        </DialogTitle>
+      {/* Keep the existing import contract; only the presentation changes. */}
+      <Dialog open={showAIDialog} onClose={handleCloseAIDialog} maxWidth="sm" fullWidth PaperProps={{ className: 'mst-quiz-import' }}>
+        <DialogTitle>Import with AI</DialogTitle>
         <DialogContent>
-          <Box sx={{ mt: 2 }}>
-            {/* Document Type Selector */}
-            <FormControl fullWidth sx={{ mb: 3 }}>
-              <InputLabel>What type of document are you uploading?</InputLabel>
-              <Select
-                value={documentType}
-                label="What type of document are you uploading?"
-                onChange={(e) => setDocumentType(e.target.value)}
-                disabled={aiParsing}
-              >
-                <MenuItem value="questions_only">
-                  <Box>
-                    <Typography variant="body1">Questions Only</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Extract questions without answers (you'll add answers later)
-                    </Typography>
-                  </Box>
-                </MenuItem>
-                <MenuItem value="questions_and_answers">
-                  <Box>
-                    <Typography variant="body1">Questions with Answer Key</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Extract both questions and correct answers
-                    </Typography>
-                  </Box>
-                </MenuItem>
-                <MenuItem value="lecture_material">
-                  <Box>
-                    <Typography variant="body1">Lecture Notes / Study Material</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      AI will generate questions from educational content
-                    </Typography>
-                  </Box>
-                </MenuItem>
+          <Box className="mst-import-grid">
+            <FormControl size="small" fullWidth className="mst-import-wide">
+              <InputLabel id="import-source-label">Start from</InputLabel>
+              <Select labelId="import-source-label" label="Start from" value={documentType} onChange={(e) => setDocumentType(e.target.value)} disabled={aiParsing}>
+                <MenuItem value="questions_only">Questions only · add answers yourself</MenuItem>
+                <MenuItem value="questions_and_answers">Questions with answers</MenuItem>
+                <MenuItem value="lecture_material">Study material · generate questions</MenuItem>
               </Select>
             </FormControl>
-
-            {/* Optional: Grade Level */}
-            <TextField
-              fullWidth
-              label="Grade Level (Optional)"
-              value={gradeLevel}
-              onChange={(e) => setGradeLevel(e.target.value)}
-              placeholder="e.g., Grade 9, High School, University"
-              sx={{ mb: 3 }}
-              disabled={aiParsing}
-              helperText="Helps AI adjust question difficulty"
-            />
-
-            {/* Number of Questions (for lecture_material only) */}
-            {documentType === 'lecture_material' && (
-              <>
-                <TextField
-                  fullWidth
-                  type="number"
-                  label="Number of Questions to Generate"
-                  {...numQuestionsInputProps}
-                  sx={{ mb: 3 }}
-                  disabled={aiParsing}
-                  InputProps={{ inputProps: { min: 1, max: 50 } }}
-                />
-
-                {/* Question Type Selector */}
-                <FormControl fullWidth sx={{ mb: 3 }}>
-                  <InputLabel>Question Types to Generate</InputLabel>
-                  <Select
-                    multiple
-                    value={questionTypes}
-                    label="Question Types to Generate"
-                    onChange={(e) => setQuestionTypes(e.target.value)}
-                    disabled={aiParsing}
-                    renderValue={(selected) => selected.map(type =>
-                      type === 'multiple_choice' ? 'Multiple Choice' :
-                      type === 'true_false' ? 'True/False' :
-                      type === 'short_answer' ? 'Short Answer' : type
-                    ).join(', ')}
-                  >
-                    <MenuItem value="multiple_choice">
-                      <Checkbox checked={questionTypes.indexOf('multiple_choice') > -1} />
-                      <Typography>Multiple Choice</Typography>
-                    </MenuItem>
-                    <MenuItem value="true_false">
-                      <Checkbox checked={questionTypes.indexOf('true_false') > -1} />
-                      <Typography>True/False</Typography>
-                    </MenuItem>
-                    <MenuItem value="short_answer">
-                      <Checkbox checked={questionTypes.indexOf('short_answer') > -1} />
-                      <Typography>Short Answer</Typography>
-                    </MenuItem>
-                  </Select>
-                </FormControl>
-
-                {/* Difficulty Level Selector */}
-                <FormControl fullWidth sx={{ mb: 3 }}>
-                  <InputLabel>Question Difficulty</InputLabel>
-                  <Select
-                    value={difficulty}
-                    label="Question Difficulty"
-                    onChange={(e) => setDifficulty(e.target.value)}
-                    disabled={aiParsing}
-                  >
-                    <MenuItem value="easy">
-                      <Box>
-                        <Typography variant="body1">Easy</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Simple recall and basic understanding
-                        </Typography>
-                      </Box>
-                    </MenuItem>
-                    <MenuItem value="medium">
-                      <Box>
-                        <Typography variant="body1">Medium</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Application and analysis
-                        </Typography>
-                      </Box>
-                    </MenuItem>
-                    <MenuItem value="hard">
-                      <Box>
-                        <Typography variant="body1">Hard</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Critical thinking and synthesis
-                        </Typography>
-                      </Box>
-                    </MenuItem>
-                  </Select>
-                </FormControl>
-              </>
-            )}
-
-            <TextField
-              fullWidth
-              multiline
-              rows={3}
-              label="Additional Instructions (Optional)"
-              value={customInstructions}
-              onChange={(e) => setCustomInstructions(e.target.value)}
-              placeholder="Provide extra guidance for question generation (e.g., paste quiz material or add guidance for your file)"
-              sx={{ mb: 3 }}
-              disabled={aiParsing}
-              helperText="You can paste the quiz material here or add guidance for your file"
-            />
-
+            <div className="mst-import-wide">
             {/* File Upload Area */}
             {!aiParsing ? (
               <UploadDropzone
@@ -1890,20 +1754,33 @@ const QuizBuilder = () => {
                 <span>AI is reading your document… this can take a minute. Keep this window open.</span>
               </div>
             )}
+            </div>
+            <TextField size="small" label="Grade level (optional)" value={gradeLevel} onChange={(e) => setGradeLevel(e.target.value)} placeholder="e.g. Grade 9" disabled={aiParsing} />
+            {documentType === 'lecture_material' && <>
+              <TextField size="small" type="number" label="Questions" {...numQuestionsInputProps} disabled={aiParsing} inputProps={{ min: 1, max: 50 }} />
+              <FormControl size="small" fullWidth>
+                <InputLabel id="import-types-label">Question types</InputLabel>
+                <Select labelId="import-types-label" multiple value={questionTypes} label="Question types" onChange={(e) => setQuestionTypes(e.target.value)} disabled={aiParsing}
+                  renderValue={(values) => values.map(value => QUESTION_TYPES.find(type => type.value === value)?.short).join(', ')}>
+                  {QUESTION_TYPES.filter(type => type.value !== 'poll').map(type => <MenuItem key={type.value} value={type.value}><Checkbox checked={questionTypes.includes(type.value)} size="small" />{type.short}</MenuItem>)}
+                </Select>
+              </FormControl>
+              <FormControl size="small" fullWidth>
+                <InputLabel id="import-difficulty-label">Difficulty</InputLabel>
+                <Select labelId="import-difficulty-label" label="Difficulty" value={difficulty} onChange={(e) => setDifficulty(e.target.value)} disabled={aiParsing}>
+                  <MenuItem value="easy">Easy</MenuItem><MenuItem value="medium">Medium</MenuItem><MenuItem value="hard">Hard</MenuItem>
+                </Select>
+              </FormControl>
+            </>}
+            <TextField className="mst-import-wide" size="small" fullWidth multiline minRows={2} maxRows={4} label="Instructions or pasted material (optional)"
+              value={customInstructions} onChange={(e) => setCustomInstructions(e.target.value)} disabled={aiParsing}
+              placeholder="Paste material here, or tell AI what to focus on." />
+            <Typography className="mst-import-wide" variant="caption" color="text.secondary">Review the imported questions and answers before saving.</Typography>
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseAIDialog} disabled={aiParsing}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleAIParse}
-            variant="contained"
-            disabled={(!uploadedFile && !customInstructions.trim()) || aiParsing}
-            startIcon={<AutoAwesomeIcon />}
-          >
-            Import Questions
-          </Button>
+          <Button onClick={handleCloseAIDialog} disabled={aiParsing}>Cancel</Button>
+          <Button onClick={handleAIParse} variant="contained" disabled={(!uploadedFile && !customInstructions.trim()) || aiParsing || (documentType === 'lecture_material' && !questionTypes.length)} startIcon={<AutoAwesomeIcon />}>Import questions</Button>
         </DialogActions>
       </Dialog>
     </Box>

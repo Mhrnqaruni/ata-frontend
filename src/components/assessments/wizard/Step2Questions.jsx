@@ -1,3 +1,4 @@
+import NumberField from '../../common/NumberField';
 // ata-frontend/src/components/assessments/wizard/Step2Questions.jsx
 
 import React from 'react';
@@ -32,7 +33,7 @@ const Step2Questions = ({ state, handleUpdateField, disabled }) => (
       </Box>
       <Box>
          <Typography variant="h4" gutterBottom>Grading Options</Typography>
-         <TextField type="number" label="Max Score per Question" value={state.maxScore} onChange={e => handleUpdateField('maxScore', e.target.value)} sx={{mr: 2, width: '200px'}} disabled={disabled} />
+         <NumberField type="number" label="Max Score per Question" value={state.maxScore} onChange={e => handleUpdateField('maxScore', e.target.value)} sx={{mr: 2, width: '200px'}} disabled={disabled} />
          <FormControlLabel control={<Checkbox checked={state.includeImprovementTips} onChange={e => handleUpdateField('includeImprovementTips', e.target.checked)} disabled={disabled} />} label="Include Improvement Tips" />
       </Box>
     </Stack>

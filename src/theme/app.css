@@ -1499,3 +1499,25 @@ main.MuiBox-root > .mst-footer { margin-top: auto; padding-top: 48px; }
 @media (max-width: 599px) {
   .mst-ordered-upload .mst-file-icon { display: none; }
 }
+
+/* Phase 1.9: quiet reading surfaces, scoped to quiz editing. */
+.mst-quiz-editor .mst-rim, .mst-quiz-import.MuiPaper-root {
+  background: #fff; background-image: none; backdrop-filter: none;
+  box-shadow: 0 2px 8px rgb(0 0 0 / .06);
+}
+:root[data-theme-mode="dark"] .mst-quiz-editor .mst-rim,
+:root[data-theme-mode="dark"] .mst-quiz-import.MuiPaper-root { background: #172033; }
+.mst-quiz-editor .mst-rim::before, .mst-quiz-editor .mst-rim::after,
+.mst-quiz-editor .mst-quiz-light { display: none; }
+.mst-quiz-editor .mst-focused-question { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.mst-import-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(100px, .65fr); gap: 16px 12px; padding-top: 8px; }
+.mst-import-wide { grid-column: 1 / -1; min-width: 0; }
+.mst-quiz-import .mst-upload[data-size="compact"] .mst-drop { min-height: 90px; padding: 12px; gap: 4px; }
+.mst-quiz-import .mst-drop-orb { display: none; }
+.mst-quiz-import .MuiDialogActions-root { padding: 12px 24px 16px; }
+.mst-quiz-import .MuiSelect-select { white-space: normal; }
+@media (max-width: 600px) {
+  .mst-quiz-import.MuiPaper-root { margin: 12px; width: calc(100% - 24px); max-height: calc(100% - 24px); }
+  .mst-quiz-import .MuiDialogContent-root { padding: 8px 16px; }
+  .mst-quiz-import .MuiDialogTitle-root { padding: 16px; }
+}

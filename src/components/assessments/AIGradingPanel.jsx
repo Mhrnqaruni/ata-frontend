@@ -1,3 +1,4 @@
+import NumberField from '../common/NumberField';
 // /src/components/assessments/AIGradingPanel.jsx
 import React from 'react';
 import { Card, CardHeader, CardContent, TextField, Typography, Box } from '@mui/material';
@@ -23,7 +24,7 @@ const AIGradingPanel = ({
           <Typography variant="overline" color="text.secondary">
             Grade (out of {maxScore || 10})
           </Typography>
-          <TextField
+          <NumberField
             fullWidth variant="outlined" type="number"
             value={displayGrade}
             onChange={(e) => onGradeChange(e.target.value)}

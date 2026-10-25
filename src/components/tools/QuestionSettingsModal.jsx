@@ -1,3 +1,4 @@
+import NumberField from '../common/NumberField';
 // /src/components/tools/QuestionSettingsModal.jsx
 
 import React, { useState, useEffect } from 'react';
@@ -118,7 +119,7 @@ const QuestionSettingsModal = ({ open, onClose, onSave, initialConfigs }) => {
                         <Paper key={config.type} variant="outlined" sx={{ p: 2 }}>
                             <Typography variant="h5" gutterBottom>{config.label}</Typography>
                             <Stack direction="row" spacing={2} sx={{mt: 2}}>
-                                <TextField
+                                <NumberField
                                     label="How many"
                                     type="number"
                                     name="count"

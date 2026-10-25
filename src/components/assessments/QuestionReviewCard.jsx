@@ -1,3 +1,4 @@
+import NumberField from '../common/NumberField';
 // /src/components/assessments/QuestionReviewCard.jsx
 
 import React from 'react';
@@ -58,7 +59,7 @@ const QuestionReviewCard = ({
           <Grid item xs={12} md={6}>
             <Typography variant="overline" color="text.secondary">Your Evaluation</Typography>
             <Stack spacing={2} mt={1}>
-              <TextField
+              <NumberField
                 label={`Your Grade (out of ${questionData.maxScore})`}
                 type="number"
                 fullWidth

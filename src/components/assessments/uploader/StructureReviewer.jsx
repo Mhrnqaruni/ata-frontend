@@ -9,7 +9,7 @@ import QuestionNavigator from '../../common/QuestionNavigator';
 import { ExtractionSummary, QuestionReadingNotes } from './ExtractionReviewNotes';
 
 const MaxScoreField = ({ value, onChange, disabled }) => {
-  const props = useNumberInput(value || 0, onChange, { defaultValue: 0, min: 1, max: 1000 });
+  const props = useNumberInput(value || 0, onChange, { defaultValue: 0, min: 1, max: 1000, integer: false });
   return <TextField type="number" label="Marks" {...props} disabled={disabled}
     inputProps={{ min: 1 }} sx={{ maxWidth: 150 }} />;
 };

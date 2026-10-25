@@ -1,3 +1,4 @@
+import NumberField from '../../components/common/NumberField';
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { Box, Alert, TextField, Button, Card, Skeleton } from '@mui/material';
@@ -132,7 +133,7 @@ const AssessmentReviewPage = () => {
                 <span className="mst-review-answer-text"><MathTextDisplay text={current.studentAnswer || 'No answer was read from the sheet.'} /></span>
               </div>
               <div className="mst-review-fields">
-                <TextField label={`Mark (out of ${current.maxScore})`} type="number"
+                <NumberField label={`Mark (out of ${current.maxScore})`} type="number"
                   value={current.grade ?? ''} disabled={saving === current.questionId}
                   onChange={event => change(current.questionId, 'grade', event.target.value)}
                   inputProps={{ min: 0, max: current.maxScore }} />

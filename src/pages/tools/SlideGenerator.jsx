@@ -1,3 +1,4 @@
+import NumberField from '../../components/common/NumberField';
 // /src/pages/tools/SlideGenerator.jsx
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -113,7 +114,7 @@ const SettingsPanel = ({
                             </Select>
                         </FormControl>
                         
-                        <TextField
+                        <NumberField
                             name="num_slides"
                             type="number"
                             label="Number of slides (3–20)"
