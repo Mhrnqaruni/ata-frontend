@@ -50,11 +50,11 @@ const reviewService = {
     }
   },
 
-  async downloadReport(jobId, studentId) {
+  async downloadReport(jobId, studentId, format = 'docx') {
     try {
       const response = await apiClient.get(
         `/api/assessments/${jobId}/students/${studentId}/report.docx`,
-        { responseType: 'blob' } // Important: request the data as a blob
+        { responseType: 'blob', params: { format } } // Keep the existing DOCX URL compatible.
       );
 
       // Create a URL for the blob
@@ -66,7 +66,7 @@ const reviewService = {
 
       // Extract filename from Content-Disposition header if available
       // Note: Axios normalizes headers to lowercase
-      let filename = `report_${studentId}.docx`; // fallback
+      let filename = `report_${studentId}.${format}`; // fallback
       const contentDisposition = response.headers['content-disposition'] || response.headers['Content-Disposition'];
       if (contentDisposition) {
         // Match filename with or without quotes, handles: filename="name.docx" or filename=name.docx

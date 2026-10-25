@@ -1,5 +1,6 @@
-import React from 'react';
-import { Button, Card, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip, Typography, useTheme } from '@mui/material';
+import React, { useState } from 'react';
+import { useSnackbar } from '../../hooks/useSnackbar';
+import { Button, Card, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip, Typography, useTheme, Menu, MenuItem } from '@mui/material';
 import DownloadRounded from '@mui/icons-material/DownloadRounded';
 import EmptyState from '../common/EmptyState';
 import { initialsOf } from '../classes/StudentTable';
@@ -14,12 +15,15 @@ const ResultsTable = ({ rows }) => {
   const { job_id } = useParams();
   const theme = useTheme();
 
-  const handleDownload = (entityId) => {
-    reviewService.downloadReport(job_id, entityId)
-      .catch(err => {
-        // Optionally show an error to the user
-        console.error(err.message);
-      });
+  const { showSnackbar } = useSnackbar();
+  const [downloadMenu, setDownloadMenu] = useState(null);
+  const [downloading, setDownloading] = useState(null);
+  const handleDownload = async (format) => {
+    const entityId = downloadMenu.entityId;
+    setDownloadMenu(null); setDownloading(entityId);
+    try { await reviewService.downloadReport(job_id, entityId, format); }
+    catch (error) { showSnackbar(error.message || 'Report download failed.', 'error'); }
+    finally { setDownloading(null); }
   };
 
   const handleReview = (entityId) => {
@@ -75,7 +79,7 @@ const ResultsTable = ({ rows }) => {
           </Button>
           <Tooltip title={canDownload ? 'Download report' : 'No report yet'}>
             <span>
-              <IconButton aria-label={`Download ${s.studentName}'s report`} onClick={() => handleDownload(s.entityId)} disabled={!canDownload}>
+              <IconButton aria-label={`Download ${s.studentName}'s report`} onClick={event => setDownloadMenu({ anchor: event.currentTarget, entityId: s.entityId })} disabled={!canDownload || downloading === s.entityId}>
                 <DownloadRounded fontSize="small" />
               </IconButton>
             </span>
@@ -87,6 +91,10 @@ const ResultsTable = ({ rows }) => {
 
   return (
     <Card className="mst-rim">
+    <Menu anchorEl={downloadMenu?.anchor} open={Boolean(downloadMenu)} onClose={() => setDownloadMenu(null)}>
+      <MenuItem onClick={() => handleDownload('docx')}>Download Word (.docx)</MenuItem>
+      <MenuItem onClick={() => handleDownload('pdf')}>Download PDF (.pdf)</MenuItem>
+    </Menu>
     <TableContainer>
       <Table className="mst-responsive-table mst-result-records mst-table" aria-label="Student results">
         <TableHead>

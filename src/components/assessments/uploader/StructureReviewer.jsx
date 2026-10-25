@@ -3,6 +3,8 @@ import { TextField, Button, IconButton } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import useNumberInput from '../../../hooks/useNumberInput';
+import MathInputWithPreview from '../../common/MathInputWithPreview';
+import MathTextDisplay from '../../common/MathTextDisplay';
 import QuestionNavigator from '../../common/QuestionNavigator';
 import { ExtractionSummary, QuestionReadingNotes } from './ExtractionReviewNotes';
 
@@ -72,7 +74,7 @@ export default function StructureReviewer({ config, dispatch, disabled }) {
                   <button type="button" className="mst-extracted-toggle" onClick={() => toggle(q.id)}
                     aria-expanded={open} aria-controls={`extracted-${q.id}`} aria-label={`Question ${number}: ${q.text || 'Untitled'}`}>
                     <span className="mst-question-num" aria-hidden="true">{number}</span>
-                    <span className="mst-extracted-preview">{q.text || `Question ${number} · add question text`}{readingIssues.length > 0 ? ' · Check source' : ''}</span>
+                    <span className="mst-extracted-preview"><MathTextDisplay text={q.text || `Question ${number} · add question text`} />{readingIssues.length > 0 ? ' · Check source' : ''}</span>
                     <span className="mst-hint">{q.maxScore ?? 0} marks</span>
                     <span aria-hidden="true">{open ? '−' : '+'}</span>
                   </button>
@@ -85,12 +87,12 @@ export default function StructureReviewer({ config, dispatch, disabled }) {
                         <DeleteIcon fontSize="small" />
                       </IconButton>
                     </div>
-                    <TextField fullWidth multiline minRows={2} label="Question" value={q.text || ''}
+                    <MathInputWithPreview fullWidth multiline minRows={2} label="Question" value={q.text || ''}
                       onChange={event => update(section.id, q.id, 'text', event.target.value)} disabled={disabled} />
                     <div className="mst-form-row">
-                      <TextField fullWidth multiline minRows={2} label="Model answer" helperText="Review or enter the expected answer" value={q.answer || ''}
+                      <MathInputWithPreview fullWidth multiline minRows={2} label="Model answer" helperText="Review or enter the expected answer" value={q.answer || ''}
                         onChange={event => update(section.id, q.id, 'answer', event.target.value)} disabled={disabled} />
-                      <TextField fullWidth multiline minRows={2} label="Marking scheme" helperText="What earns the marks" value={q.rubric || ''}
+                      <MathInputWithPreview fullWidth multiline minRows={2} label="Marking scheme" helperText="What earns the marks" value={q.rubric || ''}
                         onChange={event => update(section.id, q.id, 'rubric', event.target.value)} disabled={disabled} />
                     </div>
                   </div>}

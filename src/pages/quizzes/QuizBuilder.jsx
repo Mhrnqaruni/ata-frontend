@@ -73,6 +73,7 @@ import classService from '../../services/classService';
 import { useSnackbar } from '../../hooks/useSnackbar';
 import useNumberInput from '../../hooks/useNumberInput';
 import MathInputWithPreview from '../../components/common/MathInputWithPreview';
+import MathTextDisplay from '../../components/common/MathTextDisplay';
 
 /**
  * Question type options
@@ -206,7 +207,7 @@ const QuestionEditor = ({ question, index, onChange, onDelete, onDuplicate, hand
       <div className="mst-question-head">
         <h3 className="mst-question-toggle">
           <span aria-hidden="true" className="mst-question-num">{index + 1}</span>
-          <span className="mst-question-preview" data-empty={preview ? undefined : 'true'}>{preview || 'Untitled question'}</span>
+          <span className="mst-question-preview" data-empty={preview ? undefined : 'true'}><MathTextDisplay text={preview || 'Untitled question'} /></span>
         </h3>
         <span className="mst-question-facts">
           <Chip icon={<TypeIcon />} label={typeInfo.short} size="small" />

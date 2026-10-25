@@ -758,10 +758,10 @@ const AnswerReviewDisplaySP = ({ sessionId, studentToken, onBack }) => {
                     ) : (
                       <Box sx={{ mb: 2 }}>
                         <Typography variant="body2" sx={{ mb: 1 }}>
-                          Your Answer: {studentAnswerText || 'No answer'}
+                          Your Answer: <MathTextDisplay text={studentAnswerText || 'No answer'} />
                         </Typography>
                         <Typography variant="body2" sx={{ mb: 1 }}>
-                          Correct Answer: {correctAnswerText || 'N/A'}
+                          Correct Answer: <MathTextDisplay text={correctAnswerText || 'N/A'} />
                         </Typography>
                       </Box>
                     )}
@@ -769,7 +769,7 @@ const AnswerReviewDisplaySP = ({ sessionId, studentToken, onBack }) => {
                     {review.explanation && (
                       <Alert severity="info" sx={{ mt: 2 }}>
                         <Typography variant="body2">
-                          Explanation: {review.explanation}
+                          Explanation: <MathTextDisplay text={review.explanation} />
                         </Typography>
                       </Alert>
                     )}
@@ -1238,14 +1238,14 @@ const QuizSPParticipant = () => {
           {feedback.ai_feedback && (
             <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
               <Typography variant="body2">
-                <strong>AI Feedback:</strong> {feedback.ai_feedback}
+                <strong>AI Feedback:</strong> <MathTextDisplay text={feedback.ai_feedback} />
               </Typography>
             </Box>
           )}
 
           {!feedback.ai_feedback && feedback.explanation && (
             <Typography variant="body2" sx={{ mt: 1 }}>
-              {feedback.explanation}
+              <MathTextDisplay text={feedback.explanation} />
             </Typography>
           )}
         </Alert>

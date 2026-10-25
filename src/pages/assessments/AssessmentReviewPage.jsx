@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { Box, Alert, TextField, Button, Card, Skeleton } from '@mui/material';
+import MathInputWithPreview from '../../components/common/MathInputWithPreview';
+import MathTextDisplay from '../../components/common/MathTextDisplay';
 import reviewService from '../../services/reviewService';
 import { useSnackbar } from '../../hooks/useSnackbar';
 import StatusChip from '../../components/assessments/StatusChip';
@@ -124,17 +126,17 @@ const AssessmentReviewPage = () => {
                 <h2 className="mst-review-q-title">Question {number} <span className="mst-hint">of {questions.length}</span></h2>
                 <StatusChip status={current.status} />
               </div>
-              <p className="mst-review-q-text">{current.questionText}</p>
+              <p className="mst-review-q-text"><MathTextDisplay text={current.questionText} /></p>
               <div className="mst-review-answer">
                 <span className="mst-review-answer-label">Student's answer</span>
-                <span className="mst-review-answer-text">{current.studentAnswer || 'No answer was read from the sheet.'}</span>
+                <span className="mst-review-answer-text"><MathTextDisplay text={current.studentAnswer || 'No answer was read from the sheet.'} /></span>
               </div>
               <div className="mst-review-fields">
                 <TextField label={`Mark (out of ${current.maxScore})`} type="number"
                   value={current.grade ?? ''} disabled={saving === current.questionId}
                   onChange={event => change(current.questionId, 'grade', event.target.value)}
                   inputProps={{ min: 0, max: current.maxScore }} />
-                <TextField fullWidth label="Feedback for the student" multiline minRows={3}
+                <MathInputWithPreview fullWidth label="Feedback for the student" multiline minRows={3}
                   value={current.feedback ?? ''} disabled={saving === current.questionId}
                   onChange={event => change(current.questionId, 'feedback', event.target.value)} />
               </div>
