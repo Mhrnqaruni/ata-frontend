@@ -65,7 +65,7 @@ const AssessmentResultsPage = () => {
   const sum = summarise(rows);
 
   return (
-    <Box>
+    <Box className={activeTab === "analytics" ? "mst-analytics-page" : undefined}>
       <PageHeader
         breadcrumbs={[{ label: 'Assessments', to: '/assessments' }, { label: results?.assessmentName || 'Results' }]}
         title={results?.assessmentName || 'Assessment results'}

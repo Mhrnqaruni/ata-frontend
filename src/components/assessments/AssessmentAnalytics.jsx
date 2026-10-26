@@ -1,38 +1,17 @@
 import React, { useEffect, useState } from "react";
-import {
-  Alert,
-  Box,
-  Button,
-  Typography,
-  Stack,
-  Paper,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  LinearProgress,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Skeleton,
-} from "@mui/material";
-import ExpandMore from "@mui/icons-material/ExpandMore";
+import { Alert, Box, Button, Skeleton } from "@mui/material";
+import EmojiEventsOutlined from "@mui/icons-material/EmojiEventsOutlined";
+import RefreshRounded from "@mui/icons-material/RefreshRounded";
+import DownloadRounded from "@mui/icons-material/DownloadRounded";
 import { Link } from "react-router-dom";
 import MathTextDisplay from "../common/MathTextDisplay";
 import {
   getAssessmentAnalytics,
   downloadAssessmentAnalytics,
 } from "../../services/assessmentAnalyticsService";
+import "./assessment-analytics.css";
 const percent = (value) => (value == null ? "—" : `${value.toFixed(1)}%`);
 const marks = (value) => (value == null ? "—" : Number(value.toFixed(1)));
-const panel = {
-  p: { xs: 2, md: 3 },
-  border: "1px solid",
-  borderColor: "divider",
-  backgroundImage: "none",
-  borderRadius: 3,
-  minWidth: 0,
-};
 
 export default function AssessmentAnalytics({ jobId }) {
   const [data, setData] = useState(null),
@@ -41,8 +20,9 @@ export default function AssessmentAnalytics({ jobId }) {
   const [revision, setRevision] = useState(0),
     [exporting, setExporting] = useState(""),
     [exportError, setExportError] = useState("");
-  const [sort, setSort] = useState("name"),
-    [showAll, setShowAll] = useState(false);
+  const [showAll, setShowAll] = useState(false);
+  const [showQuestions, setShowQuestions] = useState(false);
+  const [selectedKey, setSelectedKey] = useState(null);
   useEffect(() => {
     let alive = true;
     setLoading(true);
@@ -100,323 +80,340 @@ export default function AssessmentAnalytics({ jobId }) {
     );
   if (!data) return null;
   const s = data.summary;
-  const scoredQuestions = data.questions.filter(
-    (q) => q.percentage != null && q.current,
+  const ranked = s.comparable
+    ? [...data.students]
+        .filter((student) => student.percentage != null)
+        .sort(
+          (a, b) => b.percentage - a.percentage || a.name.localeCompare(b.name),
+        )
+    : [];
+  const others = data.students
+    .filter((student) => !ranked.includes(student))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const students = showAll
+    ? [...ranked, ...others]
+    : (ranked.length ? ranked : others).slice(0, 5);
+  const selected = data.questions.find(
+    (question) => question.key === selectedKey,
   );
-  const weakest = scoredQuestions.length
-    ? scoredQuestions.reduce((a, b) => (a.percentage <= b.percentage ? a : b))
+  const scored = data.questions.filter(
+    (q) => q.current && q.percentage != null,
+  );
+  const weakest = scored.length
+    ? scored.reduce((a, b) => (a.percentage <= b.percentage ? a : b))
     : null;
-  const students = [...data.students].sort((a, b) =>
-    sort === "score" && s.comparable
-      ? (b.percentage ?? -1) - (a.percentage ?? -1) ||
-        a.name.localeCompare(b.name)
-      : a.name.localeCompare(b.name),
-  );
   return (
-    <Stack spacing={3} sx={{ minWidth: 0 }}>
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        spacing={1}
-        justifyContent="space-between"
-        alignItems={{ sm: "center" }}
-      >
-        <Typography variant="body2" color="text.secondary">
-          Updated {new Date(data.generated_at).toLocaleString()}
-        </Typography>
-        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+    <div className="mst-assessment-analytics">
+      <div className="aa-toolbar">
+        <p>
+          Updated{" "}
+          {new Date(data.generated_at).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </p>
+        <div className="aa-actions">
           <Button
+            size="small"
+            startIcon={<RefreshRounded />}
             onClick={() => setRevision((v) => v + 1)}
             disabled={Boolean(exporting)}
           >
             Refresh
           </Button>
           <Button
+            size="small"
+            startIcon={<DownloadRounded />}
             variant="contained"
             onClick={() => download("pdf")}
             disabled={Boolean(exporting)}
           >
-            {exporting === "pdf" ? "Preparing PDF…" : "Download PDF"}
+            {exporting === "pdf" ? "Preparing…" : "PDF report"}
           </Button>
           <Button
+            size="small"
             variant="outlined"
             onClick={() => download("docx")}
             disabled={Boolean(exporting)}
           >
-            {exporting === "docx" ? "Preparing Word…" : "Word"}
+            {exporting === "docx" ? "Preparing…" : "Word"}
           </Button>
-        </Stack>
-      </Stack>
+        </div>
+      </div>
       {exportError && <Alert severity="error">{exportError}</Alert>}
-      {data.warnings.map((message) => (
-        <Alert severity="info" key={message}>
-          {message}
+      {!s.comparable && (
+        <Alert severity="warning">
+          Different marking versions are present. Scores remain visible, but
+          students are not ranked against each other.
         </Alert>
-      ))}
-      <Paper variant="outlined" sx={panel}>
-        <Typography component="h2" variant="h6" gutterBottom>
-          At a glance
-        </Typography>
-        <Box
-          component="dl"
-          sx={{
-            display: "grid",
-            gridTemplateColumns: {
-              xs: "repeat(2,minmax(0,1fr))",
-              md: "repeat(4,minmax(0,1fr))",
-            },
-            gap: 2,
-            m: 0,
-          }}
-        >
+      )}
+      <section
+        className="aa-surface aa-overview"
+        aria-labelledby="aa-overview-title"
+      >
+        <div className="aa-section-heading">
+          <h2 id="aa-overview-title">At a glance</h2>
+          <span>{s.graded < 5 ? "Small sample" : "Finalized results"}</span>
+        </div>
+        <dl className="aa-metrics">
           {[
-            ["Graded submissions", `${s.graded} / ${s.submitted}`],
             ["Average score", percent(s.average)],
-            ["Median score", percent(s.median)],
+            ["Graded", `${s.graded} / ${s.submitted}`],
+            ["Median", percent(s.median)],
             ["Highest score", percent(s.highest)],
           ].map(([label, value]) => (
-            <Box key={label}>
-              <Typography component="dt" variant="body2" color="text.secondary">
-                {label}
-              </Typography>
-              <Typography
-                component="dd"
-                variant="h5"
-                sx={{ m: 0, mt: 0.5, fontWeight: 600 }}
-              >
-                {value}
-              </Typography>
-            </Box>
+            <div key={label}>
+              <dt>{label}</dt>
+              <dd>{value}</dd>
+            </div>
           ))}
-        </Box>
-        <Typography variant="body2" sx={{ mt: 2 }}>
-          {s.expected == null
-            ? "Historical expected attendance is unavailable."
-            : `${s.expected} expected roster students · ${s.no_submission} without a submission.`}{" "}
-          {s.outsiders} outsider submissions · {s.incomplete} unfinished or
-          unavailable.
-        </Typography>
-        {s.highest_students.length > 0 && (
-          <Typography variant="body2" sx={{ mt: 1 }}>
-            Highest score: {s.highest_students.map((p) => p.name).join(", ")}
-            {s.highest_students.length > 1 ? " (tied)" : ""}.
-          </Typography>
-        )}
-        {weakest && (
-          <Typography variant="body2" sx={{ mt: 1 }}>
-            {weakest.percentage < 100
-              ? `A place to start your review: ${weakest.label}, averaging ${percent(weakest.percentage)} of its available marks.`
-              : "All finalized question averages are at full marks."}
-          </Typography>
-        )}
-        {!s.graded && (
-          <Typography sx={{ mt: 1 }}>
-            No complete finalized submissions yet. Question-level marks may
-            still be available below.
-          </Typography>
-        )}
-      </Paper>
-      <Paper variant="outlined" sx={panel}>
-        <Typography component="h2" variant="h6">
-          Question performance
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Average percentage of possible marks. Open a question to see its text
-          and breakdown. Zero marks do not necessarily mean a blank answer.
-        </Typography>
-        {data.questions.map((q) => (
-          <Accordion
-            key={q.key}
-            disableGutters
-            elevation={0}
-            sx={{
-              backgroundImage: "none",
-              "&:before": { display: "none" },
-              borderTop: "1px solid",
-              borderColor: "divider",
-            }}
+        </dl>
+        <div className="aa-summary-line">
+          <span>
+            {s.expected == null
+              ? "Expected attendance unavailable"
+              : `${s.expected} expected · ${s.no_submission} without a submission`}{" "}
+            · {s.outsiders} {s.outsiders === 1 ? 'outsider' : 'outsiders'} · {s.incomplete} unfinished
+          </span>
+          {weakest && weakest.percentage < 100 && (
+            <button
+              type="button"
+              className="aa-review-hint"
+              onClick={() => setSelectedKey(weakest.key)}
+            >
+              Review next: {weakest.label} · {percent(weakest.percentage)}{" "}
+              <span aria-hidden="true">↗</span>
+            </button>
+          )}
+        </div>
+      </section>
+      <div className="aa-main-grid">
+        <section className="aa-surface" aria-labelledby="aa-questions-title">
+          <div className="aa-section-heading">
+            <h2 id="aa-questions-title">Question performance</h2>
+            <span>{data.questions.length} questions</span>
+          </div>
+          <p className="aa-description">
+            Average marks earned. Select a question for details.
+          </p>
+          <div className="aa-question-grid">
+            {(showQuestions ? data.questions : data.questions.slice(0, 6)).map(
+              (q) => (
+                <button
+                  type="button"
+                  className="aa-question-tile"
+                  key={q.key}
+                  aria-pressed={selectedKey === q.key}
+                  aria-controls="aa-question-detail"
+                  onClick={() =>
+                    setSelectedKey(selectedKey === q.key ? null : q.key)
+                  }
+                >
+                  <span className="aa-tile-label">{q.label}</span>
+                  <strong>{percent(q.percentage)}</strong>
+                  <span className="aa-mini-track" aria-hidden="true">
+                    <span style={{ width: `${q.percentage ?? 0}%` }} />
+                  </span>
+                  <span className="aa-tile-caption">
+                    {q.graded} graded
+                    {q.unresolved ? ` · ${q.unresolved} pending` : ""}
+                  </span>
+                </button>
+              ),
+            )}
+          </div>
+          {data.questions.length > 6 && (
+            <Button
+              size="small"
+              onClick={() => setShowQuestions((v) => !v)}
+              sx={{ mt: 1 }}
+            >
+              {showQuestions
+                ? "Show fewer"
+                : `Show all ${data.questions.length} questions`}
+            </Button>
+          )}
+          <div
+            id="aa-question-detail"
+            className={
+              selected ? "aa-question-detail" : "aa-detail-placeholder"
+            }
           >
-            <AccordionSummary
-              expandIcon={<ExpandMore />}
-              aria-controls={`question-${q.key}`}
-              id={`question-heading-${q.key}`}
-            >
-              <Box sx={{ width: "100%", minWidth: 0, pr: 1 }}>
-                <Stack direction="row" justifyContent="space-between" gap={1}>
-                  <Typography fontWeight={600}>{q.label}</Typography>
-                  <Typography>{percent(q.percentage)}</Typography>
-                </Stack>
-                <LinearProgress
-                  variant="determinate"
-                  value={q.percentage ?? 0}
-                  aria-label={`${q.label} average marks`}
-                  sx={{ height: 5, my: 1, borderRadius: 2 }}
-                />
-                <Typography variant="caption" color="text.secondary">
-                  {q.graded} finalized · {q.unresolved} unresolved ·{" "}
-                  {marks(q.average)} / {q.maximum} marks
-                </Typography>
-              </Box>
-            </AccordionSummary>
-            <AccordionDetails sx={{ overflowWrap: "anywhere" }}>
-              <MathTextDisplay text={q.text} component="div" />
-              <Stack
-                direction="row"
-                spacing={2}
-                flexWrap="wrap"
-                useFlexGap
-                sx={{ mt: 2 }}
-              >
-                <Typography>Full marks: {q.full}</Typography>
-                <Typography>Partial marks: {q.partial}</Typography>
-                <Typography>Zero marks: {q.zero}</Typography>
-              </Stack>
-            </AccordionDetails>
-          </Accordion>
-        ))}
-      </Paper>
-      {s.comparable && s.graded > 0 && (
-        <Accordion elevation={0} sx={{ ...panel, p: 0 }}>
-          <AccordionSummary expandIcon={<ExpandMore />}>
-            <Typography component="h2" variant="h6">
-              Score distribution
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            {data.distribution.map((bin) => (
-              <Stack
-                direction="row"
-                gap={2}
-                alignItems="center"
-                key={bin.label}
-                sx={{ mb: 1 }}
-              >
-                <Typography sx={{ width: 95 }}>{bin.label}</Typography>
-                <LinearProgress
-                  aria-label={bin.label}
-                  variant="determinate"
-                  value={(bin.count / s.graded) * 100}
-                  sx={{ flex: 1, height: 8, borderRadius: 2 }}
-                />
-                <Typography sx={{ minWidth: 25 }}>{bin.count}</Typography>
-              </Stack>
-            ))}
-          </AccordionDetails>
-        </Accordion>
-      )}
-      {data.class_comparison_available && data.classes.length > 1 && (
-        <Paper variant="outlined" sx={panel}>
-          <Typography component="h2" variant="h6">
-            Classes in this assessment
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Membership recorded when this assessment started.{" "}
-            {data.overlapping_classes
-              ? "Some students belong to more than one class; overall totals count them once."
-              : ""}
-          </Typography>
-          {data.classes.map((c) => (
-            <Stack
-              direction="row"
-              justifyContent="space-between"
-              gap={2}
-              key={c.id}
-              sx={{ py: 1, borderBottom: "1px solid", borderColor: "divider" }}
-            >
-              <Box>
-                <Typography>{c.name}</Typography>
-                <Typography variant="caption">
-                  {c.graded} graded / {c.expected} expected
-                </Typography>
-              </Box>
-              <Typography>{percent(c.average)}</Typography>
-            </Stack>
-          ))}
-        </Paper>
-      )}
-      <Paper variant="outlined" sx={panel}>
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          justifyContent="space-between"
-          gap={2}
-          sx={{ mb: 2 }}
+            {selected ? (
+              <>
+                <div className="aa-section-heading">
+                  <h3>{selected.label}</h3>
+                  <span>
+                    {marks(selected.average)} / {selected.maximum} average marks
+                  </span>
+                </div>
+                <MathTextDisplay text={selected.text} component="div" />
+                <div className="aa-mark-counts">
+                  <span>
+                    <b>{selected.full}</b> Full marks
+                  </span>
+                  <span>
+                    <b>{selected.partial}</b> Partial
+                  </span>
+                  <span>
+                    <b>{selected.zero}</b> Zero marks
+                  </span>
+                </div>
+                <p className="aa-footnote">
+                  {selected.unresolved} unresolved. Zero marks do not
+                  necessarily mean a blank answer.
+                </p>
+              </>
+            ) : (
+              <p>
+                Select a question above to see the paper and mark breakdown.
+              </p>
+            )}
+          </div>
+        </section>
+        <section
+          className="aa-surface aa-leaderboard"
+          aria-labelledby="aa-leaderboard-title"
         >
-          <Box>
-            <Typography component="h2" variant="h6">
-              Student comparison
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Finalized scores only. Open Review for the answers and feedback.
-            </Typography>
-          </Box>
-          <FormControl size="small" sx={{ minWidth: 170 }}>
-            <InputLabel id="student-sort-label">Sort students</InputLabel>
-            <Select
-              labelId="student-sort-label"
-              label="Sort students"
-              value={sort}
-              onChange={(event) => setSort(event.target.value)}
+          <div className="aa-section-heading">
+            <h2 id="aa-leaderboard-title">
+              <EmojiEventsOutlined aria-hidden="true" /> Student leaderboard
+            </h2>
+            <span>{ranked.length} ranked</span>
+          </div>
+          <p className="aa-description">
+            Finalized scores. Equal scores share a rank.
+          </p>
+          <ol className="aa-student-list">
+            {students.map((student) => {
+              // Competition ranks keep ties equal, independent of name ordering.
+              const rank =
+                s.comparable && student.percentage != null
+                  ? ranked.findIndex(
+                      (p) => Math.abs(p.percentage - student.percentage) < 1e-8,
+                    ) + 1
+                  : null;
+              return (
+                <li
+                  key={`${student.kind}-${student.id}`}
+                  className={rank === 1 ? "aa-first-place" : ""}
+                >
+                  <span
+                    className="aa-rank"
+                    aria-label={rank ? `Rank ${rank}` : "Not ranked"}
+                  >
+                    {rank ?? "—"}
+                  </span>
+                  <div className="aa-student-name">
+                    <strong>{student.name}</strong>
+                    <span>
+                      {student.percentage == null
+                        ? student.status
+                        : `${marks(student.total)} / ${marks(student.maximum)} marks`}
+                      {student.kind === "outsider" ? " · Outsider" : ""}
+                    </span>
+                  </div>
+                  <div className="aa-student-score">
+                    <strong>{percent(student.percentage)}</strong>
+                    {student.submitted && (
+                      <Link
+                        to={`/assessments/${jobId}/review/${student.id}`}
+                        aria-label={`Review ${student.name}`}
+                      >
+                        Review
+                      </Link>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+          {!students.length && (
+            <p className="aa-description">No recorded submissions yet.</p>
+          )}
+          {(showAll || data.students.length > students.length) && (
+            <Button
+              fullWidth
+              size="small"
+              onClick={() => setShowAll((v) => !v)}
+              sx={{ mt: 1 }}
             >
-              <MenuItem value="name">Name</MenuItem>
-              <MenuItem value="score" disabled={!s.comparable}>
-                Highest score
-              </MenuItem>
-            </Select>
-          </FormControl>
-        </Stack>
-        <Box component="ul" sx={{ listStyle: "none", p: 0, m: 0 }}>
-          {(showAll ? students : students.slice(0, 10)).map((student) => (
-            <Box
-              component="li"
-              key={`${student.kind}-${student.id}`}
-              sx={{
-                display: "grid",
-                gridTemplateColumns: {
-                  xs: "1fr auto",
-                  sm: "minmax(0,1fr) 120px 100px auto",
-                },
-                gap: 1,
-                alignItems: "center",
-                py: 1.5,
-                borderTop: "1px solid",
-                borderColor: "divider",
-              }}
-            >
-              <Box sx={{ minWidth: 0, overflowWrap: "anywhere" }}>
-                <Typography fontWeight={600}>{student.name}</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {student.status}
-                  {student.kind === "outsider" ? " · Outsider" : ""}
-                </Typography>
-              </Box>
-              <Typography>
-                {marks(student.total)} / {marks(student.maximum)}
-              </Typography>
-              <Typography>{percent(student.percentage)}</Typography>
-              <Button
-                component={student.submitted ? Link : "button"}
-                to={student.submitted ? `/assessments/${jobId}/review/${student.id}` : undefined}
-                disabled={!student.submitted}
-                size="small"
-              >
-                Review
-              </Button>
-            </Box>
-          ))}
-        </Box>
-        {students.length > 10 && (
-          <Button onClick={() => setShowAll((v) => !v)} sx={{ mt: 1 }}>
-            {showAll
-              ? "Show fewer students"
-              : `Show all ${students.length} students`}
-          </Button>
+              {showAll
+                ? "Show top students"
+                : `View all ${data.students.length} students`}
+            </Button>
+          )}
+          {s.incomplete > 0 && (
+            <p className="aa-footnote">
+              {s.incomplete} unfinished submissions are not ranked.
+            </p>
+          )}
+        </section>
+      </div>
+      <div className="aa-secondary-grid">
+        {s.comparable && s.graded > 0 && (
+          <details className="aa-surface aa-details">
+            <summary>
+              Score distribution <span>{s.graded} graded {s.graded === 1 ? 'student' : 'students'}</span>
+            </summary>
+            <div className="aa-distribution">
+              {data.distribution.map((bin) => (
+                <div key={bin.label}>
+                  <span>{bin.label}</span>
+                  <span className="aa-mini-track" aria-hidden="true">
+                    <span
+                      style={{ width: `${(bin.count / s.graded) * 100}%` }}
+                    />
+                  </span>
+                  <b>{bin.count}</b>
+                </div>
+              ))}
+            </div>
+          </details>
         )}
-        {!students.length && (
-          <Typography>No recorded submissions are available.</Typography>
+        {data.class_comparison_available && data.classes.length > 1 && (
+          <details className="aa-surface aa-details">
+            <summary>
+              Compare classes <span>{data.classes.length} classes</span>
+            </summary>
+            <div className="aa-class-list">
+              {data.classes.map((c) => (
+                <div key={c.id}>
+                  <span>
+                    {c.name}
+                    <small>
+                      {c.graded} graded / {c.expected} expected
+                    </small>
+                  </span>
+                  <b>{percent(c.average)}</b>
+                </div>
+              ))}
+            </div>
+            {data.overlapping_classes && (
+              <p className="aa-footnote">
+                Class membership overlaps. Overall totals count each student
+                once.
+              </p>
+            )}
+          </details>
         )}
-      </Paper>
-      <Typography variant="caption" color="text.secondary">
-        {data.method}
-      </Typography>
-    </Stack>
+        <details className="aa-surface aa-details">
+          <summary>
+            About these results{" "}
+            <span>
+              {data.warnings.length
+                ? `${data.warnings.length} ${data.warnings.length === 1 ? 'note' : 'notes'}`
+                : "How scores are calculated"}
+            </span>
+          </summary>
+          <div className="aa-notes">
+            {data.warnings.map((note) => (
+              <p key={note}>{note}</p>
+            ))}
+            <p>{data.method}</p>
+          </div>
+        </details>
+      </div>
+    </div>
   );
 }
