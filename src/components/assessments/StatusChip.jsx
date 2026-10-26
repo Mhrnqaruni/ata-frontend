@@ -22,6 +22,7 @@ const statusConfig = {
     AI_GRADED: { label: "AI graded", color: "primary", icon: <AutoAwesomeRounded className="mst-ai-glyph" /> },
     PENDING_REVIEW: { label: "Pending review", color: "warning", icon: <RateReviewOutlined /> },
     TEACHER_GRADED: { label: "Teacher graded", color: "success", icon: <HowToRegOutlined /> },
+    INCOMPLETE: { label: "Incomplete", color: "warning", icon: <ErrorOutlineOutlined /> },
     ABSENT: { label: "Absent", color: "default" },
 };
 

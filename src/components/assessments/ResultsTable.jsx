@@ -61,7 +61,7 @@ const ResultsTable = ({ rows }) => {
       grade = <span className="mst-cell-muted">—</span>;
     }
     const canReview = s.status !== 'ABSENT';
-    const canDownload = s.status !== 'ABSENT' && s.status !== 'PENDING_REVIEW';
+    const canDownload = s.totalScore != null && ['AI_GRADED','TEACHER_GRADED'].includes(s.status);
     return (
       <TableRow key={s.entityId} className="mst-result-record">
         <TableCell component="th" scope="row" data-label="Student">
