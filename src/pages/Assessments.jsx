@@ -9,6 +9,7 @@ import EmptyStateCard from '../components/common/EmptyState';
 import AddOutlined from '@mui/icons-material/AddOutlined';
 import AssignmentTurnedInOutlined from '@mui/icons-material/AssignmentTurnedInOutlined';
 
+import RenameActivityDialog from '../components/common/RenameActivityDialog';
 import AssessmentCard from '../components/assessments/AssessmentCard';
 import ConfirmationModal from '../components/common/ConfirmationModal';
 import assessmentService from '../services/assessmentService';
@@ -43,6 +44,7 @@ const Assessments = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [syncError,setSyncError]=useState(false);
+  const [renameItem, setRenameItem] = useState(null);
   const [jobToDelete, setJobToDelete] = useState(null);
   const [deleting,setDeleting]=useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -125,6 +127,7 @@ const Assessments = () => {
           <AssessmentCard 
             key={job.id} 
             job={job}
+            onRename={() => setRenameItem({kind:"assessment",id:job.id,name:job.assessmentName})}
             onDelete={() => handleOpenConfirm(job)} 
           />
         ))}
@@ -143,6 +146,7 @@ const Assessments = () => {
       {syncError && <Alert severity="warning" sx={{mb:2}}>Reconnecting for status updates. Showing the last known progress.</Alert>}
       {renderContent()}
       
+      <RenameActivityDialog item={renameItem} onClose={()=>setRenameItem(null)} onSaved={()=>fetchAssessments()}/>
       <ConfirmationModal
         open={isConfirmOpen}
         onClose={handleCloseConfirm}

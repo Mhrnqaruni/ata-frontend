@@ -1,3 +1,4 @@
+import RenameActivityDialog from '../components/common/RenameActivityDialog';
 // /src/pages/Quizzes.jsx
 
 // --- Core React Imports ---
@@ -64,7 +65,7 @@ const EmptyState = ({ onAddQuiz }) => (
 /**
  * Quiz card component displaying a single quiz
  */
-const QuizCard = ({ quiz, displayTitle, onEdit, onDuplicate, onDelete, onStartSession, onStartSPSession, onResumeSPSession, activeSession, onPublish, onReview }) => {
+const QuizCard = ({ quiz, displayTitle, onEdit, onDuplicate, onDelete, onRename, onStartSession, onStartSPSession, onResumeSPSession, activeSession, onPublish, onReview }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useNavigate();
 
@@ -112,7 +113,7 @@ const QuizCard = ({ quiz, displayTitle, onEdit, onDuplicate, onDelete, onStartSe
             />
             <Chip color={getStatusColor(quiz.status)} label={getStatusLabel(quiz.status)} size="small" />
           </div>
-          <IconButton aria-label={`Options for ${displayTitle}`} onClick={handleMenuOpen} size="small">
+          <IconButton aria-label={`Options for ${displayTitle}`} onClick={handleMenuOpen} aria-haspopup="menu" aria-expanded={Boolean(anchorEl)} sx={{width:44,height:44}}>
             <MoreVertIcon />
           </IconButton>
         </div>
@@ -193,6 +194,7 @@ const QuizCard = ({ quiz, displayTitle, onEdit, onDuplicate, onDelete, onStartSe
       </CardActions>
 
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+        <MenuItem onClick={()=>{handleMenuClose();onRename(quiz);}}><EditIcon fontSize="small" sx={{mr:1}}/>Rename</MenuItem>
         {quiz.status !== 'completed' && (
           <MenuItem
             onClick={() => {
@@ -259,6 +261,8 @@ const Quizzes = () => {
   // NEW: Track active sessions for each quiz
   const [activeSessions, setActiveSessions] = useState({});
   const [sessionsLoading, setSessionsLoading] = useState(false);
+
+  const [renameItem,setRenameItem] = useState(null);
 
   // Delete confirmation dialog
   const [deleteDialog, setDeleteDialog] = useState({ open: false, quizId: null });
@@ -594,6 +598,7 @@ const Quizzes = () => {
               displayTitle={formatTitle(quiz)}
               onEdit={handleEditQuiz}
               onDuplicate={handleOpenDuplicateDialog}
+              onRename={quiz=>setRenameItem({kind:"quiz",id:quiz.id,name:quiz.title})}
               onDelete={handleOpenDeleteDialog}
               onStartSession={handleStartSession}
               onStartSPSession={handleCreateSPSession}
@@ -629,6 +634,7 @@ const Quizzes = () => {
         {renderContent()}
       </Box>
 
+      <RenameActivityDialog item={renameItem} onClose={()=>setRenameItem(null)} onSaved={fetchQuizzes}/>
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialog.open} onClose={deleting ? undefined : handleCloseDeleteDialog}>
         <DialogTitle>Delete this quiz?</DialogTitle>
