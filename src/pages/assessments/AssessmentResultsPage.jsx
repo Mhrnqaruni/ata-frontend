@@ -67,7 +67,7 @@ const AssessmentResultsPage = () => {
   return (
     <Box className={activeTab === "analytics" ? "mst-analytics-page" : undefined}>
       <PageHeader
-        breadcrumbs={[{ label: 'Assessments', to: '/assessments' }, { label: results?.assessmentName || 'Results' }]}
+        breadcrumbs={[{ label: 'Assessments', to: '/assessments' }, { label: activeTab === 'analytics' ? 'Analytics' : (results?.assessmentName || 'Results') }]}
         title={results?.assessmentName || 'Assessment results'}
         titleAdornment={results?.status ? <StatusChip status={results.status} /> : null}
       />
@@ -77,8 +77,8 @@ const AssessmentResultsPage = () => {
       </Tabs>
       {activeTab==='analytics'?<Box role="tabpanel" id="analytics-panel" aria-labelledby="analytics-tab"><AssessmentAnalytics jobId={job_id}/></Box>:<Box role="tabpanel" id="students-panel" aria-labelledby="students-tab">
       <dl className="mst-results-summary" aria-label="Assessment summary">
-        <div><dt>Students</dt><dd>{sum.students}</dd></div>
-        <div><dt>Average</dt><dd>{sum.average == null ? '—' : `${sum.average.toFixed(1)}%`}</dd></div>
+        <div><dt>Students shown</dt><dd>{sum.students}</dd></div>
+        <div><dt>Average of graded submissions</dt><dd>{sum.average == null ? '—' : `${sum.average.toFixed(1)}%`}</dd></div>
         <div><dt>Needs review</dt><dd>{sum.pending}</dd></div>
       </dl>
       <div className="mst-section-label">Students</div>

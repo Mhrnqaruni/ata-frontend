@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { Alert, Box, Button, Skeleton } from "@mui/material";
+import { Alert, Box, Button, Skeleton, Menu, MenuItem } from "@mui/material";
 import EmojiEventsOutlined from "@mui/icons-material/EmojiEventsOutlined";
 import RefreshRounded from "@mui/icons-material/RefreshRounded";
 import DownloadRounded from "@mui/icons-material/DownloadRounded";
+import ArrowDropDownRounded from "@mui/icons-material/ArrowDropDownRounded";
 import { Link } from "react-router-dom";
 import MathTextDisplay from "../common/MathTextDisplay";
 import {
@@ -23,6 +24,7 @@ export default function AssessmentAnalytics({ jobId }) {
   const [showAll, setShowAll] = useState(false);
   const [showQuestions, setShowQuestions] = useState(false);
   const [selectedKey, setSelectedKey] = useState(null);
+  const [downloadAnchor, setDownloadAnchor] = useState(null);
   useEffect(() => {
     let alive = true;
     setLoading(true);
@@ -96,12 +98,6 @@ export default function AssessmentAnalytics({ jobId }) {
   const selected = data.questions.find(
     (question) => question.key === selectedKey,
   );
-  const scored = data.questions.filter(
-    (q) => q.current && q.percentage != null,
-  );
-  const weakest = scored.length
-    ? scored.reduce((a, b) => (a.percentage <= b.percentage ? a : b))
-    : null;
   return (
     <div className="mst-assessment-analytics">
       <div className="aa-toolbar">
@@ -124,20 +120,43 @@ export default function AssessmentAnalytics({ jobId }) {
           <Button
             size="small"
             startIcon={<DownloadRounded />}
+            endIcon={<ArrowDropDownRounded />}
             variant="contained"
-            onClick={() => download("pdf")}
+            aria-haspopup="menu"
+            aria-controls={
+              downloadAnchor ? "assessment-download-menu" : undefined
+            }
+            aria-expanded={Boolean(downloadAnchor)}
+            onClick={(event) => setDownloadAnchor(event.currentTarget)}
             disabled={Boolean(exporting)}
           >
-            {exporting === "pdf" ? "Preparing…" : "PDF report"}
+            {exporting
+              ? `Preparing ${exporting === "pdf" ? "PDF" : "Word"}…`
+              : "Download"}
           </Button>
-          <Button
-            size="small"
-            variant="outlined"
-            onClick={() => download("docx")}
-            disabled={Boolean(exporting)}
+          <Menu
+            id="assessment-download-menu"
+            anchorEl={downloadAnchor}
+            open={Boolean(downloadAnchor)}
+            onClose={() => setDownloadAnchor(null)}
           >
-            {exporting === "docx" ? "Preparing…" : "Word"}
-          </Button>
+            <MenuItem
+              onClick={() => {
+                setDownloadAnchor(null);
+                download("pdf");
+              }}
+            >
+              PDF (.pdf)
+            </MenuItem>
+            <MenuItem
+              onClick={() => {
+                setDownloadAnchor(null);
+                download("docx");
+              }}
+            >
+              Word (.docx)
+            </MenuItem>
+          </Menu>
         </div>
       </div>
       {exportError && <Alert severity="error">{exportError}</Alert>}
@@ -156,45 +175,59 @@ export default function AssessmentAnalytics({ jobId }) {
           <span>{s.graded < 5 ? "Small sample" : "Finalized results"}</span>
         </div>
         <dl className="aa-metrics">
-          {[
-            ["Average score", percent(s.average)],
-            ["Graded", `${s.graded} / ${s.submitted}`],
-            ["Median", percent(s.median)],
-            ["Highest score", percent(s.highest)],
-          ].map(([label, value]) => (
-            <div key={label}>
-              <dt>{label}</dt>
-              <dd>{value}</dd>
-            </div>
-          ))}
+          <div>
+            <dt>Average score</dt>
+            <dd>{percent(s.average)}</dd>
+            <small>
+              Based on {s.graded} graded{" "}
+              {s.graded === 1 ? "submission" : "submissions"}
+            </small>
+          </div>
+          <div>
+            <dt>Graded submissions</dt>
+            <dd className="aa-count-value">
+              {s.graded} of {s.submitted}
+            </dd>
+            <small>
+              received submissions graded · {s.incomplete} unfinished
+            </small>
+          </div>
         </dl>
         <div className="aa-summary-line">
           <span>
             {s.expected == null
-              ? "Expected attendance unavailable"
-              : `${s.expected} expected · ${s.no_submission} without a submission`}{" "}
-            · {s.outsiders} {s.outsiders === 1 ? 'outsider' : 'outsiders'} · {s.incomplete} unfinished
+              ? "Assigned group unavailable."
+              : `${s.no_submission} of ${s.expected} assigned students have no submission.`}{" "}
+            {s.outsiders}{" "}
+            {s.outsiders === 1 ? "submission is" : "submissions are"} outside
+            the assigned group.
           </span>
-          {weakest && weakest.percentage < 100 && (
-            <button
-              type="button"
-              className="aa-review-hint"
-              onClick={() => setSelectedKey(weakest.key)}
-            >
-              Review next: {weakest.label} · {percent(weakest.percentage)}{" "}
-              <span aria-hidden="true">↗</span>
-            </button>
-          )}
         </div>
+        <details className="aa-more-stats">
+          <summary>More statistics</summary>
+          <dl>
+            <div>
+              <dt>Median score</dt>
+              <dd>{percent(s.median)}</dd>
+            </div>
+            <div>
+              <dt>Highest score</dt>
+              <dd>{percent(s.highest)}</dd>
+            </div>
+          </dl>
+        </details>
       </section>
       <div className="aa-main-grid">
-        <section className="aa-surface" aria-labelledby="aa-questions-title">
+        <section
+          className="aa-surface aa-questions"
+          aria-labelledby="aa-questions-title"
+        >
           <div className="aa-section-heading">
-            <h2 id="aa-questions-title">Question performance</h2>
+            <h2 id="aa-questions-title">Average marks by question</h2>
             <span>{data.questions.length} questions</span>
           </div>
           <p className="aa-description">
-            Average marks earned. Select a question for details.
+            Percentage of possible marks. Select a question for details.
           </p>
           <div className="aa-question-grid">
             {(showQuestions ? data.questions : data.questions.slice(0, 6)).map(
@@ -308,7 +341,7 @@ export default function AssessmentAnalytics({ jobId }) {
                     <strong>{student.name}</strong>
                     <span>
                       {student.percentage == null
-                        ? student.status
+                        ? `Not ranked · ${student.status}`
                         : `${marks(student.total)} / ${marks(student.maximum)} marks`}
                       {student.kind === "outsider" ? " · Outsider" : ""}
                     </span>
@@ -354,7 +387,10 @@ export default function AssessmentAnalytics({ jobId }) {
         {s.comparable && s.graded > 0 && (
           <details className="aa-surface aa-details">
             <summary>
-              Score distribution <span>{s.graded} graded {s.graded === 1 ? 'student' : 'students'}</span>
+              Score distribution{" "}
+              <span>
+                {s.graded} graded {s.graded === 1 ? "student" : "students"}
+              </span>
             </summary>
             <div className="aa-distribution">
               {data.distribution.map((bin) => (
@@ -402,7 +438,7 @@ export default function AssessmentAnalytics({ jobId }) {
             About these results{" "}
             <span>
               {data.warnings.length
-                ? `${data.warnings.length} ${data.warnings.length === 1 ? 'note' : 'notes'}`
+                ? `${data.warnings.length} ${data.warnings.length === 1 ? "note" : "notes"}`
                 : "How scores are calculated"}
             </span>
           </summary>

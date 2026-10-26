@@ -20,11 +20,12 @@ export default function TagAnalytics({ activityId, quizId }) {
   const [data, setData] = useState(null),
     [selected, setSelected] = useState([]),
     [error, setError] = useState(""),
-    [open, setOpen] = useState(false);
+    [open, setOpen] = useState(false),
+    [updating,setUpdating] = useState(false);
   useEffect(() => {
     if (!open) return;
     let active = true;
-    setError("");
+    setError("");setUpdating(true);
     tagService
       .analytics({
         activity_id: activityId,
@@ -32,7 +33,8 @@ export default function TagAnalytics({ activityId, quizId }) {
         tag_ids: selected.map((t) => t.id).join(","),
       })
       .then((d) => active && setData(d))
-      .catch((e) => active && setError(e.response?.data?.detail || e.message));
+      .catch((e) => active && setError(e.response?.data?.detail || e.message))
+      .finally(()=>active && setUpdating(false));
     return () => {
       active = false;
     };
@@ -63,6 +65,7 @@ export default function TagAnalytics({ activityId, quizId }) {
                 <TextField {...params} label="Filter tags (any selected)" />
               )}
             />
+            {updating ? <Typography role="status" sx={{my:2}}>Updating results…</Typography> : !error && <>
             <Typography sx={{ my: 2 }}>
               {data.distinct_students} students · {data.participated}/
               {data.expected} participations · {data.scored} scored attempts ·
@@ -112,6 +115,7 @@ export default function TagAnalytics({ activityId, quizId }) {
             {!data.rows.length && (
               <Alert severity="info">No recorded tag results yet.</Alert>
             )}
+            </>}
           </>
         )}
       </AccordionDetails>

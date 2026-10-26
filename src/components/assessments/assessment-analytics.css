@@ -357,7 +357,68 @@
   }
 }
 
-@media(max-width:599px) {
-  .mst-analytics-page .mst-page-head-title { font-size:22px; line-height:1.25; }
-  .mst-analytics-page .mst-page-head { margin-bottom:16px; }
+@media (max-width: 599px) {
+  .mst-analytics-page .mst-page-head-title {
+    font-size: 22px;
+    line-height: 1.25;
+  }
+  .mst-analytics-page .mst-page-head {
+    margin-bottom: 16px;
+  }
+}
+
+/* Designer D01-D04: explain the population and prioritize student results. */
+.aa-metrics {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.aa-metrics small {
+  display: block;
+  margin-top: 5px;
+  color: var(--aa-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.aa-metrics .aa-count-value {
+  font-size: 22px;
+}
+.aa-more-stats {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--aa-muted);
+}
+.aa-more-stats summary {
+  cursor: pointer;
+  min-height: 32px;
+  display: list-item;
+  align-content: center;
+}
+.aa-more-stats dl {
+  display: flex;
+  gap: 32px;
+  margin: 10px 0 0;
+}
+.aa-more-stats dd {
+  margin: 4px 0 0;
+  color: var(--aa-text);
+  font-size: 18px;
+  font-weight: 600;
+}
+.aa-more-stats summary:focus-visible {
+  outline: 2px solid var(--aa-accent);
+  outline-offset: 3px;
+}
+@media (max-width: 599px) {
+  .aa-main-grid .aa-leaderboard {
+    order: -1;
+  }
+  .mst-analytics-page .mst-page-head-title {
+    font-size: 24px;
+    line-height: 30px;
+  }
+  .aa-metrics dt {
+    font-size: 14px;
+  }
+  .aa-question-grid {
+    gap: 16px;
+  }
 }

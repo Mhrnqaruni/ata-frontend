@@ -122,7 +122,8 @@ export default function AudienceSelector({
       {loading && (
         <Typography variant="body2">Checking selected students…</Typography>
       )}
-      {preview && (
+      {preview && preview.count===0 && <Alert severity="warning">No students match. Change the selected classes or tags before starting.</Alert>}
+      {preview && preview.count > 0 && (
         <Accordion disableGutters>
           <AccordionSummary expandIcon={<ExpandMore />}>
             {preview.count} unique{" "}

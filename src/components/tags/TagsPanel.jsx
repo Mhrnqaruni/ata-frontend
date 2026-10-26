@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Box,
   Button,
@@ -7,45 +7,76 @@ import {
   Typography,
   Chip,
   Checkbox,
-  FormControlLabel,
-  Paper,
   Autocomplete,
+  Menu,
+  MenuItem,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
+import MoreVert from "@mui/icons-material/MoreVert";
 import tagService from "../../services/tagService";
 import TagAnalytics from "./TagAnalytics";
-export default function TagsPanel() {
+
+export default function TagsPanel({ newRequest = 0 }) {
+  // A parent request opens the dialog once; returning to Tags must not reopen it.
+  const lastNewRequest=useRef(newRequest);
   const [data, setData] = useState({ tags: [], students: [] }),
     [selected, setSelected] = useState(null),
-    [members, setMembers] = useState([]);
-  const [name, setName] = useState(""),
-    [search, setSearch] = useState(""),
+    [members, setMembers] = useState([]),
+    [savedMembers, setSavedMembers] = useState([]);
+  const [search, setSearch] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
-    [message, setMessage] = useState("");
+    [message, setMessage] = useState(""),
+    [loading, setLoading] = useState(true);
+  const [menu, setMenu] = useState(null),
+    [nameDialog, setNameDialog] = useState(null),
+    [name, setName] = useState("");
+  const dirty =
+    [...members].sort().join("|") !== [...savedMembers].sort().join("|");
   const load = () =>
-    tagService
-      .list()
-      .then((result) => {
-        setData(result);
-        setSelected((previous) =>
-          previous
-            ? result.tags.find((t) => t.id === previous.id) || null
-            : null,
-        );
-      });
+    tagService.list().then((result) => {
+      setData(result);
+      setSelected((previous) =>
+        previous
+          ? result.tags.find((tag) => tag.id === previous.id) || null
+          : null,
+      );
+      return result;
+    });
   useEffect(() => {
-    load().catch((e) => setError(e.response?.data?.detail || e.message));
+    load()
+      .catch((e) => setError(e.response?.data?.detail || e.message))
+      .finally(() => setLoading(false));
   }, []);
-  const choose = (tag) => {
-    setSelected(tag);
-    setName(tag?.name || "");
-    setMembers(
-      data.students
-        .filter((s) => s.tags.some((t) => t.id === tag?.id))
-        .map((s) => s.id),
+  // Membership changes are local until Save; changing the tag must not silently discard them.
+  const canLeave = () =>
+    !dirty ||
+    window.confirm(
+      "Discard unsaved membership changes? Your saved tag members will stay unchanged.",
     );
+  const choose = (tag) => {
+    if (busy || !canLeave()) return;
+    const ids = data.students
+      .filter((s) => s.tags.some((t) => t.id === tag?.id))
+      .map((s) => s.id);
+    setSelected(tag);
+    setMembers(ids);
+    setSavedMembers(ids);
     setMessage("");
   };
+  const openName = (mode) => {
+    if (busy || (mode === "create" && !canLeave())) return;
+    setName(mode === "rename" ? selected.name : "");
+    setNameDialog(mode);
+    setError("");
+  };
+  useEffect(() => {
+    if (newRequest !== lastNewRequest.current) { lastNewRequest.current=newRequest; openName("create"); }
+  }, [newRequest]);
   const act = async (action) => {
     setBusy(true);
     setError("");
@@ -54,8 +85,11 @@ export default function TagsPanel() {
       await action();
       await load();
       setMessage("Saved.");
+      return true;
     } catch (e) {
-      setError(e.response?.data?.detail || e.message);
+      const detail = e.response?.data?.detail;
+      setError(typeof detail === "string" ? detail : e.message);
+      return false;
     } finally {
       setBusy(false);
     }
@@ -65,160 +99,248 @@ export default function TagsPanel() {
       .toLowerCase()
       .includes(search.toLowerCase()),
   );
+  const saveName = async (event) => {
+    event.preventDefault();
+    if (busy || !name.trim()) return;
+    const ok = await act(async () => {
+      if (nameDialog === "rename") {
+        await tagService.update(selected.id, { name: name.trim() });
+        setSelected({ ...selected, name: name.trim() });
+      } else {
+        const tag = await tagService.create(name.trim());
+        setSelected(tag);
+        setMembers([]);
+        setSavedMembers([]);
+      }
+    });
+    if (ok) setNameDialog(null);
+  };
   return (
-    <Box sx={{ display: "grid", gap: 2 }}>
-      <Typography>
-        Private labels for students across your classes. Tags never change AI
-        grading.
-      </Typography>
+    <Box className="mst-tags-panel" sx={{ display: "grid", gap: 2 }}>
       {error && <Alert severity="error">{error}</Alert>}
       {message && <Alert severity="success">{message}</Alert>}
-      <Box
-        sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}
-      >
+      <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
         <Autocomplete
-          sx={{ minWidth: 240, flex: 1 }}
+          sx={{ flex: "1 1 0", width: "100%", maxWidth: 420, minWidth: 0 }}
           options={data.tags}
           value={selected}
-          disabled={busy}
+          disabled={busy || loading}
           isOptionEqualToValue={(a, b) => a.id === b.id}
-          getOptionLabel={(t) => `${t.name} (${t.count ?? 0})`}
+          getOptionLabel={(tag) => `${tag.name} (${tag.count ?? 0})`}
           onChange={(_, tag) => choose(tag)}
           renderInput={(params) => (
-            <TextField {...params} label="Choose a tag" />
+            <TextField {...params} size="small" label="Choose a tag" />
           )}
         />
-        <Button onClick={() => choose(null)}>New tag</Button>
-      </Box>
-      <Box
-        sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}
-      >
-        <TextField
-          label={selected ? "Tag name" : "New tag name"}
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          inputProps={{ maxLength: 80 }}
-          disabled={busy}
-        />
-        <Button
-          variant="contained"
-          disabled={busy || !name.trim()}
-          onClick={() =>
-            act(async () => {
-              if (selected) {
-                await tagService.update(selected.id, { name });
-                setSelected({ ...selected, name });
-              } else {
-                const tag = await tagService.create(name);
-                setSelected(tag);
-                setMembers([]);
-              }
-            })
-          }
-        >
-          {selected ? "Rename" : "Create tag"}
-        </Button>
         {selected && (
-          <Button
+          <IconButton
+            aria-label={`Options for tag ${selected.name}`}
+            aria-haspopup="menu"
+            onClick={(event) => setMenu(event.currentTarget)}
             disabled={busy}
-            onClick={() =>
+          >
+            <MoreVert />
+          </IconButton>
+        )}
+        <Menu
+          anchorEl={menu}
+          open={Boolean(menu)}
+          onClose={() => setMenu(null)}
+        >
+          <MenuItem
+            onClick={() => {
+              setMenu(null);
+              openName("rename");
+            }}
+          >
+            Rename
+          </MenuItem>
+          <MenuItem
+            onClick={() => {
+              setMenu(null);
+              if (!canLeave()) return;
               act(async () => {
                 await tagService.update(selected.id, {
                   name: selected.name,
                   archived: true,
                 });
-                choose(null);
-              })
-            }
+                setSelected(null);
+                setMembers([]);
+                setSavedMembers([]);
+              });
+            }}
           >
             Archive tag
-          </Button>
-        )}
+          </MenuItem>
+        </Menu>
       </Box>
       <TextField
+        size="small"
         label="Find students by name, ID or class"
         value={search}
-        onChange={(e) => setSearch(e.target.value)}
+        onChange={(event) => setSearch(event.target.value)}
       />
-      {selected && (
+      {selected ? (
         <Box
           sx={{
             display: "flex",
-            alignItems: "center",
             gap: 1,
+            alignItems: "center",
             flexWrap: "wrap",
           }}
         >
+          <Typography variant="body2" sx={{ mr: "auto" }}>
+            {members.length} selected total · {visible.length} shown
+            {dirty ? " · Unsaved changes" : ""}
+          </Typography>
           <Button
-            disabled={busy}
+            size="small"
+            disabled={busy || !visible.length}
             onClick={() =>
               setMembers([
                 ...new Set([...members, ...visible.map((s) => s.id)]),
               ])
             }
           >
-            Select shown students
+            Select shown
           </Button>
           <Button
-            disabled={busy}
+            size="small"
+            disabled={busy || !visible.length}
             onClick={() =>
               setMembers(
                 members.filter((id) => !visible.some((s) => s.id === id)),
               )
             }
           >
-            Clear shown students
+            Clear shown
           </Button>
           <Button
+            size="small"
             variant="contained"
-            disabled={busy}
-            onClick={() => act(() => tagService.members(selected.id, members))}
+            disabled={busy || !dirty}
+            onClick={() =>
+              act(async () => {
+                await tagService.members(selected.id, members);
+                setSavedMembers([...members]);
+              })
+            }
           >
-            Save members ({members.length})
+            {busy ? "Saving…" : "Save changes"}
           </Button>
         </Box>
+      ) : (
+        <Typography variant="body2" color="text.secondary">
+          Choose a tag to manage its members, or use New tag to create one.
+        </Typography>
       )}
-      {visible.map((s) => (
-        <Paper key={s.id} variant="outlined" sx={{ p: 1.5 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            {selected && (
-              <Checkbox
-                disabled={busy}
-                checked={members.includes(s.id)}
-                inputProps={{
-                  "aria-label": `Include ${s.name} (${s.studentId})`,
-                }}
-                onChange={(e) =>
-                  setMembers(
-                    e.target.checked
-                      ? [...members, s.id]
-                      : members.filter((id) => id !== s.id),
-                  )
-                }
-              />
-            )}
-            <Box>
-              <Typography>
-                {s.name} · {s.studentId}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {s.classes.map((c) => c.name).join(" · ")}
-              </Typography>
+      {loading ? (
+        <Typography>Loading students…</Typography>
+      ) : (
+        <Box className="mst-tag-member-list">
+          {visible.map((s) => (
+            <Box className="mst-tag-member-row" key={s.id}>
+              {selected && (
+                <Checkbox
+                  disabled={busy}
+                  checked={members.includes(s.id)}
+                  inputProps={{
+                    "aria-label": `Include ${s.name} (${s.studentId})`,
+                  }}
+                  onChange={(event) =>
+                    setMembers(
+                      event.target.checked
+                        ? [...new Set([...members, s.id])]
+                        : members.filter((id) => id !== s.id),
+                    )
+                  }
+                />
+              )}
+              <Box sx={{ minWidth: 0 }}>
+                <Typography variant="body2" fontWeight={600}>
+                  {s.name} <span className="mst-hint">· {s.studentId}</span>
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {s.classes.map((c) => c.name).join(" · ")}
+                </Typography>
+                {!selected && s.tags.length > 0 && (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      gap: 0.5,
+                      flexWrap: "wrap",
+                      mt: 0.5,
+                    }}
+                  >
+                    {s.tags.map((tag) => (
+                      <Chip key={tag.id} size="small" label={tag.name} />
+                    ))}
+                  </Box>
+                )}
+              </Box>
             </Box>
-          </Box>
-          <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap", mt: 1 }}>
-            {s.tags.map((t) => (
-              <Chip key={t.id} size="small" label={t.name} />
-            ))}
-          </Box>
-        </Paper>
-      ))}
-      {!visible.length && (
-        <Alert severity="info">
-          No enrolled students found. Add students to a class first.
+          ))}
+        </Box>
+      )}
+      {!loading && !visible.length && (
+        <Alert
+          severity="info"
+          action={
+            data.students.length ? (
+              <Button onClick={() => setSearch("")}>Clear search</Button>
+            ) : undefined
+          }
+        >
+          {data.students.length
+            ? "No students match this search."
+            : "No enrolled students found. Add students to a class first."}
         </Alert>
       )}
       <TagAnalytics />
+      <Dialog
+        open={Boolean(nameDialog)}
+        onClose={busy ? undefined : () => setNameDialog(null)}
+        fullWidth
+        maxWidth="xs"
+        PaperProps={{ component: "form", onSubmit: saveName }}
+      >
+        <DialogTitle>
+          {nameDialog === "rename" ? "Rename tag" : "New tag"}
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            Private label for students across your classes. Tags do not change
+            AI grading.
+          </Typography>
+          {error && <Alert severity="error">{error}</Alert>}
+          <TextField
+            autoFocus
+            fullWidth
+            label="Tag name"
+            margin="dense"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            inputProps={{ maxLength: 80 }}
+            disabled={busy}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button disabled={busy} onClick={() => setNameDialog(null)}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={busy || !name.trim()}
+          >
+            {busy
+              ? "Saving…"
+              : nameDialog === "rename"
+                ? "Save name"
+                : "Create tag"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

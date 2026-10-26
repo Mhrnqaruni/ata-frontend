@@ -271,6 +271,13 @@ const NewAssessmentV2 = () => {
         return (
           <Box>
             {retryDraft && <Alert severity="info" sx={{ mb: 2 }}>{retryDraft.message}</Alert>}
+            {state.config && !isProcessing && <Alert severity="info" sx={{mb:2}}>
+              {analysisId && !state.questionFiles.length ? 'Analysis restored' : 'Questions ready'} · {state.config.sections.reduce((count,section)=>count+section.questions.length,0)} questions.
+              {analysis?.status==='completed' && <Box><ElapsedTime clock={analysis.clock}/></Box>}
+              <Box>Your extracted questions are saved. Unsaved edits are not automatically saved. Replace source files only if you want to analyse new documents.</Box>
+            </Alert>}
+            <Box component={state.config && !isProcessing ? 'details' : 'div'} className="mst-replace-sources">
+              {state.config && !isProcessing && <summary>Replace source files</summary>}
             <div className="mst-form-row">
               <OrderedDocumentUploader
                 title="Question paper"
@@ -314,6 +321,7 @@ const NewAssessmentV2 = () => {
               </Button>
               {!state.questionFiles.length && !state.config ? <span className="mst-hint">Add question-paper files to continue.</span> : null}
             </div>
+            </Box>
             {state.status === 'parsing' ? (
               <div className="mst-ai-progress" role="status">
                 <div className="mst-ai-bar" />
@@ -324,8 +332,6 @@ const NewAssessmentV2 = () => {
               </div>
             ) : null}
             {analysisError && <Alert severity="warning" sx={{mt:2}}>{analysisError}</Alert>}
-            {analysis?.status==='completed' && <Box sx={{my:1}}><ElapsedTime clock={analysis.clock}/></Box>}
-            {analysisId && !state.questionFiles.length && <Alert severity="info" sx={{mt:1}}>Recovered your saved analysis. Upload documents again only to replace the parsed structure.</Alert>}
             {state.error && <Alert severity="error" sx={{ mt: 2 }}>{state.error}</Alert>}
             {state.config && (
               <Box className="mst-reviewer" mt={4}>
@@ -451,7 +457,7 @@ const NewAssessmentV2 = () => {
         )}
         {state.error && activeStep !== 1 && <Alert severity="error" sx={{ mb: 2 }}>{state.error}</Alert>}
         <div className="mst-step mst-wizard-body" data-dir={stepDir} key={activeStep}>
-          <WizardStep title={steps[activeStep]} description={stepDescriptions[activeStep]}>
+          <WizardStep title={steps[activeStep]} description={activeStep === 1 && state.config && !isProcessing ? "Review your saved questions, answers and marks before continuing." : stepDescriptions[activeStep]}>
             {getStepContent(activeStep)}
           </WizardStep>
         </div>
@@ -466,7 +472,7 @@ const NewAssessmentV2 = () => {
             startIcon={isLast ? (state.status === 'submitting' ? <CircularProgress size={18} color="inherit" /> : <AutoAwesomeRounded />) : undefined}
             variant="contained"
           >
-            {isLast ? (state.status === 'submitting' ? 'Starting…' : (retryJobId ? 'Start again' : 'Start grading')) : 'Next'}
+            {isLast ? (state.status === 'submitting' ? 'Starting…' : (retryJobId ? 'Start grading again' : 'Start grading')) : ['Next: Define questions','Next: Student answers','Review assessment'][activeStep]}
           </Button>
       </div>
     </Box>

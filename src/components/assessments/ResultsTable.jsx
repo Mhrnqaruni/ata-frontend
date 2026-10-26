@@ -74,6 +74,7 @@ const ResultsTable = ({ rows }) => {
         <TableCell data-label="Status"><StatusChip status={s.status} /></TableCell>
         <TableCell data-label="Grade">{grade}</TableCell>
         <TableCell align="right" className="mst-row-actions mst-row-actions-on" data-label="Actions">
+          {s.status==='ABSENT'?<span className="mst-cell-muted">No submission</span>:<>
           <Button size="small" variant="outlined" onClick={() => handleReview(s.entityId)} disabled={!canReview} sx={{ mr: 0.5 }}>
             Review
           </Button>
@@ -84,16 +85,17 @@ const ResultsTable = ({ rows }) => {
               </IconButton>
             </span>
           </Tooltip>
+          </>}
         </TableCell>
       </TableRow>
     );
   };
 
   return (
-    <Card className="mst-rim">
+    <Card className="mst-rim mst-assessment-students">
     <Menu anchorEl={downloadMenu?.anchor} open={Boolean(downloadMenu)} onClose={() => setDownloadMenu(null)}>
-      <MenuItem onClick={() => handleDownload('docx')}>Download Word (.docx)</MenuItem>
-      <MenuItem onClick={() => handleDownload('pdf')}>Download PDF (.pdf)</MenuItem>
+      <MenuItem onClick={() => handleDownload('pdf')}>PDF (.pdf)</MenuItem>
+      <MenuItem onClick={() => handleDownload('docx')}>Word (.docx)</MenuItem>
     </Menu>
     <TableContainer>
       <Table className="mst-responsive-table mst-result-records mst-table" aria-label="Student results">

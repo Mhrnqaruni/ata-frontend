@@ -29,6 +29,7 @@ const Classes = () => {
   const navigate = useNavigate();
   const [searchParams,setSearchParams]=useSearchParams();
   const section=searchParams.get('view')==='tags'?1:0;
+  const [newTagRequest,setNewTagRequest]=useState(0);
   const [classes, setClasses] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -116,12 +117,12 @@ const Classes = () => {
     <>
       <Box>
         <PageHeader
-          actions={<Button onClick={handleOpenModal} startIcon={<AddOutlined />} variant="contained">Add class</Button>}
-          subtitle="Your rosters, grades and each student's progress."
-          title="Classes"
+          actions={<Button onClick={section===1?()=>setNewTagRequest(value=>value+1):handleOpenModal} startIcon={<AddOutlined />} variant="contained">{section===1?"New tag":"Add class"}</Button>}
+          subtitle={section===1?"Private labels for students across your classes. Tags do not change AI grading.":"Your rosters, grades and each student's progress."}
+          title={section===1?"Student tags":"Classes"}
         />
         <Tabs value={section} onChange={(_,v)=>setSearchParams(v?{view:'tags'}:{})} aria-label="Classes and tags" sx={{mb:2}}><Tab label="Classes"/><Tab label="Tags"/></Tabs>
-        {section===0?renderContent():<TagsPanel/>}
+        {section===0?renderContent():<TagsPanel newRequest={newTagRequest}/>}
       </Box>
 
       <AddClassModal

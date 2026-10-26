@@ -1,7 +1,7 @@
 import '../components/common/responsive-table.css';
 import React, { useState, useEffect } from 'react';
 import { useParams, Link as RouterLink } from 'react-router-dom';
-import { Box, Typography, Paper, CircularProgress, Alert, Button, Chip, Card, CardContent, Skeleton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel, useTheme, Dialog, DialogTitle, DialogContent, DialogActions, Grid, Divider, Snackbar, Tooltip, IconButton } from '@mui/material';
+import { Box, Typography, Paper, CircularProgress, Alert, Button, Chip, Card, CardContent, Skeleton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel, useTheme, Dialog, DialogTitle, DialogContent, DialogActions, Grid, Divider, Snackbar, Tooltip, IconButton, Menu, MenuItem } from '@mui/material';
 import { useAuth } from '../hooks/useAuth';
 import studentService from '../services/studentService';
 import reviewService from '../services/reviewService';
@@ -18,7 +18,7 @@ import { initialsOf } from '../components/classes/StudentTable';
  * AssessmentsTable component with sorting capability
  * Extracted to allow use of hooks (can't use hooks in map)
  */
-const AssessmentsTable = ({ assessments, theme, renderTypeChip, renderMarkCell, handleDownloadReport, handleDownloadQuizReport }) => {
+const AssessmentsTable = ({ assessments, theme, renderTypeChip, renderMarkCell, handleDownloadReport, handleDownloadQuizReport, reportBusy }) => {
     // Configure sortable columns
     const columnConfig = {
         assessmentName: { type: 'string' },
@@ -101,7 +101,9 @@ const AssessmentsTable = ({ assessments, theme, renderTypeChip, renderMarkCell, 
                                         size="small"
                                         startIcon={<DownloadRounded />}
                                         variant="outlined"
-                                        onClick={() => handleDownloadReport(assessment.jobId)}
+                                        onClick={event => handleDownloadReport(event,assessment.jobId)}
+                                        disabled={reportBusy}
+                                        aria-haspopup="menu"
                                     >
                                         Download report
                                     </Button>
@@ -153,6 +155,8 @@ const StudentProfile = () => {
 
     // Snackbar state for download notification
     const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [reportMenu,setReportMenu]=useState(null);
+    const [reportBusy,setReportBusy]=useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
 
     // Chat state
@@ -177,12 +181,14 @@ const StudentProfile = () => {
         fetchStudentData();
     }, [student_id, user]);
 
-    const handleDownloadReport = async (jobId) => {
-        try {
-            await reviewService.downloadReport(jobId, student_id);
-        } catch (downloadError) {
-            console.error('Failed to download report', downloadError);
-        }
+    const handleDownloadReport = (event,jobId) => {if(!reportBusy)setReportMenu({anchor:event.currentTarget,jobId});};
+    const downloadAssessmentReport = async format => {
+        if(reportBusy||!reportMenu)return;
+        const jobId=reportMenu.jobId;setReportMenu(null);setReportBusy(true);
+        setSnackbarMessage(`Preparing ${format==='pdf'?'PDF':'Word'} report…`);setSnackbarOpen(true);
+        try {await reviewService.downloadReport(jobId,student_id,format);setSnackbarMessage('Report downloaded.');}
+        catch {setSnackbarMessage('Report download failed. Please try again or choose another format.');}
+        finally {setReportBusy(false);setSnackbarOpen(true);}
     };
 
     const handleDownloadQuizReport = async (assessment) => {
@@ -393,6 +399,7 @@ const StudentProfile = () => {
                             theme={theme}
                             renderTypeChip={renderTypeChip}
                             renderMarkCell={renderMarkCell}
+                            reportBusy={reportBusy}
                             handleDownloadReport={handleDownloadReport}
                             handleDownloadQuizReport={handleDownloadQuizReport}
                         />
@@ -400,6 +407,10 @@ const StudentProfile = () => {
                 ))
             )}
 
+            <Menu anchorEl={reportMenu?.anchor} open={Boolean(reportMenu)} onClose={()=>setReportMenu(null)}>
+                <MenuItem onClick={()=>downloadAssessmentReport('pdf')}>PDF (.pdf)</MenuItem>
+                <MenuItem onClick={()=>downloadAssessmentReport('docx')}>Word (.docx)</MenuItem>
+            </Menu>
             {/* Floating Chat Window */}
             <FloatingChatWindow
                 open={chatOpen}

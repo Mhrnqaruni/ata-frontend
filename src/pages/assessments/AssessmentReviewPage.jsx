@@ -10,6 +10,10 @@ import StatusChip from '../../components/assessments/StatusChip';
 import PageHeader from '../../components/common/PageHeader';
 import QuestionNavigator from '../../components/common/QuestionNavigator';
 
+// Tab-memory drafts survive SPA Back/Forward. Never persist or auto-save grades.
+const reviewDrafts = new Map();
+const questionBasis = q => JSON.stringify([q.questionText,q.maxScore,q.grade,q.feedback,q.status]);
+
 const AssessmentReviewPage = () => {
   const { job_id, entity_id } = useParams();
   const { showSnackbar } = useSnackbar();
@@ -23,6 +27,9 @@ const AssessmentReviewPage = () => {
   const [saveError, setSaveError] = useState({});
   const [saved, setSaved] = useState({});
   const requestVersion = useRef(0);
+  const draftBasis = useRef({});
+  const [draftNotice,setDraftNotice] = useState("");
+  const draftKey = `${job_id}:${entity_id}`;
 
   useEffect(() => {
     let active = true;
@@ -30,7 +37,19 @@ const AssessmentReviewPage = () => {
     setLoading(true); setError(null); setDirty({}); setSaved({}); setSaveError({}); setSaving(null);
     reviewService.getStudentReview(job_id, entity_id).then(value => {
       if (!active) return;
-      setData(value);
+      // Restore only after authorization succeeds, and never over newer grading evidence.
+      const cached=reviewDrafts.get(draftKey)||{};
+      const retained={};
+      draftBasis.current=Object.fromEntries((value.perQuestion||[]).map(q=>[q.questionId,questionBasis(q)]));
+      const restored=(value.perQuestion||[]).map(q=>{
+        const draft=cached[q.questionId];
+        if(draft && draft.base===questionBasis(q)) { retained[q.questionId]=draft; return {...q,grade:draft.grade,feedback:draft.feedback}; }
+        return q;
+      });
+      if(Object.keys(retained).length)reviewDrafts.set(draftKey,retained);else reviewDrafts.delete(draftKey);
+      setDirty(Object.fromEntries(Object.keys(retained).map(id=>[id,true])));
+      setDraftNotice(Object.keys(retained).length?'Unsaved draft restored in this tab. Saved grades have not changed.':Object.keys(cached).length?'Previous drafts no longer match the current grading records and were not restored.':'');
+      setData({...value,perQuestion:restored});
       const firstPending = value.perQuestion?.find(q => q.status === 'PENDING_REVIEW');
       setSelected((firstPending || value.perQuestion?.[0])?.questionId ?? null);
       setFilter(firstPending ? 'pending' : 'all');
@@ -48,7 +67,7 @@ const AssessmentReviewPage = () => {
       const anchor = event.target.closest?.('a[href]');
       const back = event.target.closest?.('button[aria-label="Back to results"]');
       if ((anchor && anchor.origin === window.location.origin && anchor.pathname !== window.location.pathname) || back) {
-        if (!window.confirm('Leave this review? Unsaved marks and feedback will be lost.')) {
+        if (!window.confirm('Leave this review? Unsaved drafts stay in this tab until you reload or close it.')) {
           event.preventDefault(); event.stopPropagation();
         }
       }
@@ -62,6 +81,10 @@ const AssessmentReviewPage = () => {
   }, [hasDrafts]);
 
   const change = (id, field, value) => {
+    const question=data.perQuestion.find(q=>q.questionId===id);
+    reviewDrafts.set(draftKey,{...(reviewDrafts.get(draftKey)||{}),[id]:{
+      base:draftBasis.current[id],grade:field==='grade'?value:question.grade,feedback:field==='feedback'?value:question.feedback,
+    }});
     setData(previous => ({ ...previous, perQuestion: previous.perQuestion.map(q => q.questionId === id ? { ...q, [field]: value } : q) }));
     setDirty(previous => ({ ...previous, [id]: true }));
     setSaved(previous => ({ ...previous, [id]: false }));
@@ -82,6 +105,9 @@ const AssessmentReviewPage = () => {
       if (version !== requestVersion.current) return;
       setData(previous => ({ ...previous, perQuestion: previous.perQuestion.map(item =>
         item.questionId === q.questionId ? { ...item, status: 'TEACHER_GRADED' } : item) }));
+      const cached={...(reviewDrafts.get(draftKey)||{})};delete cached[q.questionId];
+      if(Object.keys(cached).length)reviewDrafts.set(draftKey,cached);else {reviewDrafts.delete(draftKey);setDraftNotice('');}
+      draftBasis.current[q.questionId]=questionBasis({...q,grade,status:'TEACHER_GRADED'});
       setDirty(previous => ({ ...previous, [q.questionId]: false }));
       setSaved(previous => ({ ...previous, [q.questionId]: true }));
       showSnackbar('Question saved.', 'success');
@@ -105,12 +131,13 @@ const AssessmentReviewPage = () => {
   return (
     <Box className="mst-review-workspace" sx={{ maxWidth: 1240, mx: 'auto', minWidth: 0 }}>
       <PageHeader backLabel="Back to results" backTo={`/assessments/${job_id}/results`}
-        breadcrumbs={[{ label: 'Assessments', to: '/assessments' }, { label: data.assessmentName || 'Results', to: `/assessments/${job_id}/results` }, { label: data.studentName || 'Review' }]}
+        breadcrumbs={[{ label: 'Assessments', to: '/assessments' }, { label: 'Results', to: `/assessments/${job_id}/results` }, { label: 'Review' }]}
         title={data.studentName || 'Review'}
         subtitle={`${data.assessmentName} · ${questions.length} questions · ${pending.length} need review`} />
+      {draftNotice && <Alert severity="info" sx={{mb:1}}>{draftNotice}</Alert>}
       <div className="mst-review-overview">
         <p>Check the answer, adjust the mark or feedback, then save this question.</p>
-        <span aria-live="polite">{Object.values(dirty).filter(Boolean).length ? `${Object.values(dirty).filter(Boolean).length} unsaved` : 'No unsaved changes'}</span>
+        {Object.values(dirty).some(Boolean) && <span aria-live="polite">{Object.values(dirty).filter(Boolean).length} unsaved drafts. Switching questions keeps them here; refresh does not.</span>}
       </div>
       <div className="mst-question-workspace">
         <QuestionNavigator items={items} selected={current?.questionId} onSelect={setSelected} label="Review questions">
@@ -145,12 +172,10 @@ const AssessmentReviewPage = () => {
               <div className="mst-review-q-foot">
                 <span role="status">{saving === current.questionId ? 'Saving…' : dirty[current.questionId] ? 'Unsaved changes' : saved[current.questionId] ? 'Saved' : 'Mark and feedback shown above'}</span>
                 <div className="mst-review-save-actions">
-                  <Button variant="contained" disabled={saving !== null} onClick={() => save(current)}>
-                    {saving === current.questionId ? 'Saving…' : 'Save question'}
+                  <Button variant="contained" disabled={saving !== null || (!dirty[current.questionId] && current.status !== 'PENDING_REVIEW')} onClick={() => save(current)}>
+                    {saving === current.questionId ? 'Saving…' : current.status === 'PENDING_REVIEW' && !dirty[current.questionId] ? 'Confirm mark' : 'Save changes'}
                   </Button>
-                  <Button variant="outlined" aria-label="Next review question"
-                    disabled={saving !== null || Boolean(dirty[current.questionId]) || visible.indexOf(current) >= visible.length - 1}
-                    onClick={() => setSelected(visible[visible.indexOf(current) + 1].questionId)}>Next question</Button>
+
                 </div>
               </div>
             </Card>

@@ -255,9 +255,10 @@ const QuestionEditor = ({ question, index, onChange, onDelete, onDuplicate, hand
                 label="Question"
                 value={localQuestion.question_text || ''}
                 onChange={(e) => handleChange('question_text', e.target.value)}
-                placeholder="Type the question… (wrap maths in $ … $)"
-                helperText="Maths: $x^2 + 3$ inline, or $$\sqrt{x}$$ on its own line."
+                placeholder="Write your question"
+
               />
+              <details className="mst-math-help"><summary>Formatting maths</summary><p>Use $x^2 + 3$ for inline maths or $$x^2 + 3$$ on its own line. Check the preview before saving.</p></details>
             </div>
             <div className="mst-question-numbers">
               <TextField
@@ -1222,6 +1223,7 @@ const QuizBuilder = () => {
         </Alert>
       )}
 
+      <p className="mst-mobile-step-label">Step {activeStep+1} of 3 · {["Details","Questions","Settings"][activeStep]}</p>
       <Paper className="mst-rim mst-builder-stepper" data-enter="">
         <Stepper activeStep={activeStep} alternativeLabel>
           {['Details', 'Questions', 'Settings'].map((label, i) => (
@@ -1237,6 +1239,32 @@ const QuizBuilder = () => {
       {activeStep === 0 && (
         <>
           <Paper className="mst-rim mst-builder-card">
+            <h2 className="mst-card-title">About the quiz</h2>
+            <div className="mst-builder-fields">
+              <TextField
+                fullWidth
+                label="Title"
+                value={quizTitle}
+                onChange={(e) => setQuizTitle(e.target.value)}
+                placeholder="e.g. Cells and tissues · check-in"
+                required
+              />
+              <TextField
+                fullWidth
+                multiline
+                rows={3}
+                label="Description (optional)"
+                value={quizDescription}
+                onChange={(e) => setQuizDescription(e.target.value)}
+                placeholder="What is this quiz about?"
+              />
+              <AudienceSelector value={audience} allowOpen disabled={classesLoading || quizPhase==='post'}
+                onPreview={setAudiencePreview} onChange={spec=>{setAudience(spec.class_ids.length||spec.tag_ids.length?spec:null);handleClassChange(spec.class_ids[0]||'');}} />
+
+            </div>
+          </Paper>
+
+          <Paper className="mst-rim mst-builder-card">
             <h2 className="mst-card-title">How will students take it?</h2>
             <p className="mst-card-sub">You can change this until you publish.</p>
             <ChoiceCards
@@ -1247,14 +1275,15 @@ const QuizBuilder = () => {
                 { value: 'live', label: 'Live quiz', icon: <BoltRounded />, facts: ['Everyone answers together', 'A timer on each question', 'A live leaderboard'] },
                 { value: 'self_paced', label: 'Self-paced', icon: <SelfImprovementRounded />, facts: ['Students go at their own pace', 'No timer per question', 'An optional deadline'] },
               ]}
-              size="lg"
+              size="sm"
               value={quizSettings?.mode || 'live'}
             />
             {quizPhase === 'post' ? <p className="mst-hint" style={{ marginTop: 12 }}>Mode and class follow the linked pre-quiz.</p> : null}
           </Paper>
 
           <Paper className="mst-rim mst-builder-card">
-            <h2 className="mst-card-title">Quiz phase</h2>
+            <details className="mst-optional-quiz-phase" open={quizPhase !== "normal" || undefined}>
+            <summary>Pre-quiz / post-quiz options</summary>
             <p className="mst-card-sub">A normal quiz, or one half of a pre-quiz / post-quiz pair that measures progress.</p>
             <ToggleButtonGroup
               aria-label="Quiz phase"
@@ -1289,33 +1318,10 @@ const QuizBuilder = () => {
                 </Box>
               </Box>
             )}
+            </details>
           </Paper>
 
-          <Paper className="mst-rim mst-builder-card">
-            <h2 className="mst-card-title">About the quiz</h2>
-            <div className="mst-builder-fields">
-              <TextField
-                fullWidth
-                label="Title"
-                value={quizTitle}
-                onChange={(e) => setQuizTitle(e.target.value)}
-                placeholder="e.g. Cells and tissues · check-in"
-                required
-              />
-              <TextField
-                fullWidth
-                multiline
-                rows={3}
-                label="Description (optional)"
-                value={quizDescription}
-                onChange={(e) => setQuizDescription(e.target.value)}
-                placeholder="What is this quiz about?"
-              />
-              <AudienceSelector value={audience} allowOpen disabled={classesLoading || quizPhase==='post'}
-                onPreview={setAudiencePreview} onChange={spec=>{setAudience(spec.class_ids.length||spec.tag_ids.length?spec:null);handleClassChange(spec.class_ids[0]||'');}} />
 
-            </div>
-          </Paper>
 
           <div className="mst-builder-foot">
             <span />
@@ -1331,15 +1337,11 @@ const QuizBuilder = () => {
           <div className="mst-builder-toolbar">
             <h2 className="mst-card-title">Questions <span className="mst-count">{questions.length}</span></h2>
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-              <Tooltip title="Download questions as CSV">
-                <IconButton aria-label="Download questions as CSV" onClick={downloadQuestionsCSV} disabled={questions.length === 0}>
-                  <DownloadIcon />
-                </IconButton>
-              </Tooltip>
-              <Button className="mst-ai" variant="contained" startIcon={<AutoAwesomeIcon />} onClick={() => setShowAIDialog(true)}>
+              <Button startIcon={<DownloadIcon />} aria-label="Download questions as CSV" onClick={downloadQuestionsCSV} disabled={questions.length === 0}>Export CSV</Button>
+              <Button className="mst-ai" variant="outlined" startIcon={<AutoAwesomeIcon />} onClick={() => setShowAIDialog(true)}>
                 Import with AI
               </Button>
-              <Button variant="outlined" startIcon={<AddIcon />} onClick={() => { addQuestion(); setOpenQuestion(questions.length); }}>
+              <Button variant="contained" startIcon={<AddIcon />} onClick={() => { addQuestion(); setOpenQuestion(questions.length); }}>
                 Add question
               </Button>
             </Box>
@@ -1350,7 +1352,7 @@ const QuizBuilder = () => {
               items={questions.map((q, i) => ({ id: String(i), number: i + 1, title: q.question_text?.slice(0, 80) }))}
               selected={showAllQuestions ? null : questions.length ? String(Math.min(openQuestion ?? 0, questions.length - 1)) : ''}
               onSelect={(id) => { setShowAllQuestions(false); setOpenQuestion(Number(id)); }}>
-              <Button fullWidth variant={showAllQuestions ? "contained" : "outlined"} aria-pressed={showAllQuestions} onClick={() => setShowAllQuestions(!showAllQuestions)}>{showAllQuestions ? "Show one question" : "Show all questions"}</Button>
+              {questions.length > 1 && <Button fullWidth variant={showAllQuestions ? "contained" : "outlined"} aria-pressed={showAllQuestions} onClick={() => setShowAllQuestions(!showAllQuestions)}>{showAllQuestions ? "Show one question" : "Show all questions"}</Button>}
               <p className="mst-question-nav-hint">Your edits stay when you switch questions. Save draft to keep them.</p>
             </QuestionNavigator>
             <div className="mst-focused-question">
@@ -1731,7 +1733,7 @@ const QuizBuilder = () => {
                 onDrop={(files) => setUploadedFile(files[0])}
                 onRemove={() => setUploadedFile(null)}
                 size="compact"
-                title={uploadedFile ? 'Drop a different file' : 'Drop the document here'}
+                title={uploadedFile ? 'Choose a different file' : 'Choose file'}
               />
             ) : (
               <div className="mst-ai-progress" role="status" style={{ padding: '24px 0' }}>
@@ -1760,7 +1762,7 @@ const QuizBuilder = () => {
             <TextField className="mst-import-wide" size="small" fullWidth multiline minRows={2} maxRows={4} label="Instructions or pasted material (optional)"
               value={customInstructions} onChange={(e) => setCustomInstructions(e.target.value)} disabled={aiParsing}
               placeholder="Paste material here, or tell AI what to focus on." />
-            <Typography className="mst-import-wide" variant="caption" color="text.secondary">Review the imported questions and answers before saving.</Typography>
+            <Typography className="mst-import-wide" variant="caption" color="text.secondary">Upload a file or paste material, then review the imported questions and answers before saving.</Typography>
           </Box>
         </DialogContent>
         <DialogActions>

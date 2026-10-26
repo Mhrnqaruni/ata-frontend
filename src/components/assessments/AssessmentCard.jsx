@@ -44,7 +44,7 @@ export default function AssessmentCard({ job, onDelete, onRename }) {
           {working && <MenuItem disabled>Available after processing finishes</MenuItem>}
         </Menu>
         {job.status === 'Failed' && <Button size="small" variant="outlined"
-          onClick={() => navigate(`/assessments/new?retryJobId=${encodeURIComponent(job.id)}`)}>Retry</Button>}
+          onClick={() => navigate(`/assessments/new?retryJobId=${encodeURIComponent(job.id)}`)}>Review retry</Button>}
         <Button disabled={!clickable} endIcon={<ArrowForwardRounded />} onClick={open} size="small" variant="text">
           View results
         </Button>
