@@ -507,7 +507,9 @@ export default function QuickAssessment() {
                   label={
                     config
                       ? "I checked the questions, answers and marks."
-                      : "I checked the page groups and supplied any missing information. Retrying may make new AI calls."
+                      : record.status === "needs_input"
+                        ? "I checked the page groups and supplied any missing information."
+                        : "Retry unfinished preparation. Additional AI calls may be charged."
                   }
                 />
                 <Button
@@ -524,7 +526,9 @@ export default function QuickAssessment() {
                     ? "Saving…"
                     : config
                       ? "Start grading with this scheme"
-                      : "Continue preparation"}
+                      : record.status === "needs_input"
+                        ? "Save corrections and continue"
+                        : "Retry preparation"}
                 </Button>
               </>
             )
