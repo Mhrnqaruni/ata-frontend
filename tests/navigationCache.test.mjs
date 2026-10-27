@@ -19,7 +19,8 @@ globalThis.BroadcastChannel = undefined;
 const dir = await mkdtemp(path.join(process.cwd(), '.navigation-test-'));
 const output = path.join(dir, 'runtime.mjs');
 await build({ stdin: { contents: `export {default as api} from './src/services/api.js';
-export * from './src/services/queryCache.js'; export * from './src/hooks/useAuth.jsx';`,
+export * from './src/services/queryCache.js'; export * from './src/hooks/useAuth.jsx';
+export { teacherOptions, quizSessionOptions } from './src/hooks/useTeacherData.js';`,
   resolveDir: process.cwd(), loader: 'jsx' }, bundle: true, packages: 'external', platform: 'node',
   format: 'esm', outfile: output, define: { 'import.meta.env.VITE_API_BASE_URL': '"http://offline.invalid"' } });
 const runtime = await import(pathToFileURL(output));
@@ -107,4 +108,19 @@ test('current401 on login clears auth loading and cached data', async () => {
   api.defaults.adapter=config=>Promise.reject({config,response:{status:401}});
   const tree=await mountAuth();assert.equal(auth.user,null);assert.equal(auth.isAuthLoading,false);assert.equal(client.getQueryCache().getAll().length,0);
   await act(async()=>tree.unmount());
+});
+
+test('polling is bounded by activity and historical quiz cards never request sessions', () => {
+  const {teacherOptions,quizSessionOptions}=runtime;
+  for(const status of ['completed','draft','archived']) assert.equal(quizSessionOptions('A',{id:'q',status}).enabled,false);
+  const options=quizSessionOptions('A',{id:'q',status:'published'});
+  assert.equal(options.enabled,true);
+  assert.equal(options.refetchInterval({state:{data:null}}),60000);
+  assert.equal(options.refetchInterval({state:{data:{status:'active'}}}),15000);
+  assert.equal(options.refetchIntervalInBackground,false);
+  const quick=teacherOptions('A','quick'), assessments=teacherOptions('A','assessments');
+  assert.equal(quick.refetchInterval({state:{data:[{status:'running'}]}}),5000);
+  assert.equal(quick.refetchInterval({state:{data:[]}}),15000);
+  assert.equal(assessments.refetchInterval({state:{data:[{status:'Processing'}]}}),5000);
+  assert.equal(quick.refetchOnWindowFocus,'always');
 });

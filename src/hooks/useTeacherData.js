@@ -45,7 +45,11 @@ export function useTeacherData(family, id) {
 export function quizSessionOptions(userId, quiz) {
   const prefix = quiz.settings?.mode === 'self_paced' ? 'quiz-sp-sessions' : 'quiz-sessions';
   return { queryKey: ['teacher', sessionGeneration(), userId, 'quizSession', prefix, quiz.id],
-    staleTime: 15000, refetchInterval: 15000, refetchIntervalInBackground: false,
+    enabled: Boolean(userId) && quiz.status === 'published',
+    staleTime: 15000,
+    // Completed/draft cards have no session action; do not poll historical quizzes.
+    refetchInterval: query => ['active', 'draft', 'waiting'].includes(query.state.data?.status) ? 15000 : 60000,
+    refetchIntervalInBackground: false,
     queryFn: async ({ signal }) => {
       try { return (await api.get(`/api/${prefix}/quiz/${quiz.id}/latest`, { signal })).data; }
       catch (error) { if (error.response?.status === 404) return null; throw error; }
@@ -53,7 +57,7 @@ export function quizSessionOptions(userId, quiz) {
 }
 export function useQuizSessions(quizzes) {
   const { user } = useAuth();
-  return useQueries({ queries: quizzes.map(quiz => ({ ...quizSessionOptions(user?.id, quiz), enabled: Boolean(user?.id) })) });
+  return useQueries({ queries: quizzes.map(quiz => quizSessionOptions(user?.id, quiz)) });
 }
 export function useNavigationPrefetch() {
   const { user } = useAuth();
