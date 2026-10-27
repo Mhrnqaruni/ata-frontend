@@ -1,3 +1,4 @@
+import { invalidateAfter, cacheFamilies } from './queryCache';
 import api from "./api";
 const base = "/api/quick-assessments";
 const options = {
@@ -6,7 +7,7 @@ const options = {
 };
 const append = (body, key, files) =>
   files.forEach((file) => body.append(key, file));
-export default {
+const quickAssessmentService = {
   list: async () => (await api.get(base)).data.preparations,
   get: async (id) => (await api.get(`${base}/${id}`, { timeout: 15000 })).data,
   start: async (id, settings, files) => {
@@ -35,3 +36,5 @@ export default {
       })
     ).data,
 };
+
+export default invalidateAfter(quickAssessmentService, ['start', 'resume', 'remove'], cacheFamilies.assessment);

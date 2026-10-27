@@ -3,6 +3,7 @@
 
 // --- Core Imports ---
 import axios from 'axios';
+import { sessionGeneration, resetTeacherSession } from './queryCache.js';
 
 // --- Configuration ---
 // 1. Get the base URL for our backend API from the environment variables.
@@ -31,6 +32,7 @@ apiClient.interceptors.request.use(
     
     // 1. Retrieve the authentication token from localStorage.
     // localStorage is synchronous, so this is a fast operation.
+    config.mstSessionGeneration = sessionGeneration();
     const token = localStorage.getItem('authToken');
     
     // 2. If a token exists, attach it to the Authorization header.
@@ -56,7 +58,10 @@ apiClient.interceptors.request.use(
 // BEFORE it is passed to the `catch` block of the original API call.
 apiClient.interceptors.response.use(
   // The first argument is a pass-through for successful responses (status 2xx).
-  (response) => response,
+  (response) => {
+    if (response.config.mstSessionGeneration !== sessionGeneration()) throw new axios.CanceledError('Session changed');
+    return response;
+  },
   
   // The second argument is the crucial error handler.
   (error) => {
@@ -64,7 +69,12 @@ apiClient.interceptors.response.use(
 
     // 1. Check if the error is due to an authentication failure (401 Unauthorized).
     // The optional chaining `?.` prevents errors if the `response` object doesn't exist.
-    if (error.response?.status === 401) {
+    if (error.config?.mstSessionGeneration !== undefined && error.config.mstSessionGeneration !== sessionGeneration()) {
+      return Promise.reject(new axios.CanceledError('Session changed'));
+    }
+    if (error.response?.status === 401 && localStorage.getItem('authToken') &&
+        error.config?.headers?.Authorization === `Bearer ${localStorage.getItem('authToken')}`) {
+      resetTeacherSession();
       
       // 2. An authentication error means our stored token is invalid or expired.
       // We must perform a "hard logout" to clean up the invalid session.
@@ -72,6 +82,7 @@ apiClient.interceptors.response.use(
       
       // Remove the bad token from storage.
       localStorage.removeItem('authToken');
+      window.dispatchEvent(new Event('mst-session-expired'));
       
       // 3. Force a redirect to the login page.
       // We use `window.location.href` instead of React Router's `navigate` because

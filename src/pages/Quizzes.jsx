@@ -1,8 +1,13 @@
+import { useQuizSessions, quizSessionOptions } from '../hooks/useTeacherData';
+import { queryClient } from '../services/queryCache';
+import { useAuth } from '../hooks/useAuth';
+import { useTeacherData } from '../hooks/useTeacherData';
+import QueryNotice from '../components/common/QueryNotice';
 import RenameActivityDialog from '../components/common/RenameActivityDialog';
 // /src/pages/Quizzes.jsx
 
 // --- Core React Imports ---
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import AddCard from '../components/common/AddCard';
 import { useNavigate } from 'react-router-dom';
 
@@ -65,7 +70,7 @@ const EmptyState = ({ onAddQuiz }) => (
 /**
  * Quiz card component displaying a single quiz
  */
-const QuizCard = ({ quiz, displayTitle, onEdit, onDuplicate, onDelete, onRename, onStartSession, onStartSPSession, onResumeSPSession, activeSession, onPublish, onReview }) => {
+const QuizCard = ({ quiz, displayTitle, onEdit, onDuplicate, onDelete, onRename, onStartSession, onStartSPSession, onResumeSPSession, activeSession, sessionBusy, onPublish, onReview }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useNavigate();
 
@@ -154,6 +159,7 @@ const QuizCard = ({ quiz, displayTitle, onEdit, onDuplicate, onDelete, onRename,
                 fullWidth
                 variant="contained"
                 startIcon={<PlayArrowIcon />}
+                disabled={sessionBusy}
                 onClick={() => onStartSPSession(quiz)}
               >
                 Start session
@@ -175,6 +181,7 @@ const QuizCard = ({ quiz, displayTitle, onEdit, onDuplicate, onDelete, onRename,
                 fullWidth
                 variant="contained"
                 startIcon={<PlayArrowIcon />}
+                disabled={sessionBusy}
                 onClick={() => onStartSession(quiz.id)}
               >
                 Host quiz
@@ -247,20 +254,20 @@ const QuizCard = ({ quiz, displayTitle, onEdit, onDuplicate, onDelete, onRename,
 const Quizzes = () => {
   const navigate = useNavigate();
   const { showSnackbar } = useSnackbar();
-  const [quizzes, setQuizzes] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
+  const quizzesQuery = useTeacherData('quizzes');
+  const classesQuery = useTeacherData('classes');
+  const classes = classesQuery.data || [];
+  const classMap = Object.fromEntries(classes.map(item => [item.id, item.name]));
+  const quizzes = (quizzesQuery.data || []).map(quiz => ({ ...quiz, class_name: classMap[quiz.class_id] ?? quiz.class_name }));
+  const sessions = useQuizSessions(quizzes);
+  const activeSessions = Object.fromEntries(quizzes.map((quiz, index) => [quiz.id,
+    ['active', 'draft', 'waiting'].includes(sessions[index]?.data?.status) ? sessions[index].data : null]));
+  const isLoading = quizzesQuery.isPending;
   const [error, setError] = useState(null);
-
-  // NEW: Classes for mapping class_id to class_name
-  const [classes, setClasses] = useState([]);
-  const [classMap, setClassMap] = useState({});
-
-  // NEW: Mode filter state for tabs
   const [modeFilter, setModeFilter] = useState('all');
-
-  // NEW: Track active sessions for each quiz
-  const [activeSessions, setActiveSessions] = useState({});
-  const [sessionsLoading, setSessionsLoading] = useState(false);
+  const sessionAction = useRef(false);
+  const [sessionBusy, setSessionBusy] = useState(false);
 
   const [renameItem,setRenameItem] = useState(null);
 
@@ -282,118 +289,6 @@ const Quizzes = () => {
     return quiz.title;
   };
 
-  // NEW: Fetch classes for mapping class_id to class_name
-  useEffect(() => {
-    const loadClasses = async () => {
-      try {
-        const fetchedClasses = await classService.getAllClasses();
-        setClasses(fetchedClasses || []);
-
-        // Create a map for quick lookup: class_id -> class_name
-        const map = {};
-        (fetchedClasses || []).forEach(cls => {
-          map[cls.id] = cls.name;
-        });
-        setClassMap(map);
-        console.log('[Quizzes] Loaded classes:', fetchedClasses.length);
-      } catch (err) {
-        console.error('[Quizzes] Failed to load classes:', err);
-        // Don't show error - class display is non-critical
-        setClasses([]);
-        setClassMap({});
-      }
-    };
-    loadClasses();
-  }, []);
-
-  // NEW: Fetch latest session for all quizzes (both self-paced and regular)
-  const fetchLatestSessions = useCallback(async (quizzesList) => {
-    try {
-      setSessionsLoading(true);
-
-      // Filter self-paced quizzes
-      const spQuizzes = quizzesList.filter(q => q.settings?.mode === 'self_paced');
-
-      // Filter regular (live) quizzes
-      const regularQuizzes = quizzesList.filter(q => !q.settings?.mode || q.settings?.mode === 'live');
-
-      // Fetch latest session for each SP quiz
-      const spSessionPromises = spQuizzes.map(async (quiz) => {
-        try {
-          const session = await quizSPService.getLatestSPSession(quiz.id);
-          return { quizId: quiz.id, session };
-        } catch (error) {
-          if (error.message.includes('No sessions found')) {
-            return { quizId: quiz.id, session: null };
-          }
-          return { quizId: quiz.id, session: null };
-        }
-      });
-
-      // Fetch latest session for each regular quiz
-      const regularSessionPromises = regularQuizzes.map(async (quiz) => {
-        try {
-          const session = await quizService.getLatestSession(quiz.id);
-          return { quizId: quiz.id, session };
-        } catch (error) {
-          // getLatestSession returns null for 404, so session will be null
-          return { quizId: quiz.id, session: null };
-        }
-      });
-
-      // Wait for all session fetches to complete
-      const allPromises = [...spSessionPromises, ...regularSessionPromises];
-      const results = await Promise.all(allPromises);
-
-      // Build activeSessions map
-      const sessionsMap = {};
-      results.forEach(({ quizId, session }) => {
-        if (session && (session.status === 'active' || session.status === 'draft' || session.status === 'waiting')) {
-          sessionsMap[quizId] = session;
-        }
-      });
-
-      setActiveSessions(sessionsMap);
-      console.log('[Quizzes] Loaded active sessions:', Object.keys(sessionsMap).length);
-    } catch (error) {
-      console.error('[Quizzes] Failed to fetch sessions:', error);
-      // Don't show error - session tracking is non-critical for page load
-    } finally {
-      setSessionsLoading(false);
-    }
-  }, []);
-
-  const fetchQuizzes = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const data = await quizService.getAllQuizzes();
-
-      // NEW: Enrich quiz data with class names
-      const enrichedQuizzes = data.map(quiz => ({
-        ...quiz,
-        class_name: quiz.class_id ? classMap[quiz.class_id] : null
-      }));
-
-      setQuizzes(enrichedQuizzes);
-      setError(null);
-
-      // NEW: Fetch latest sessions after quizzes are loaded
-      await fetchLatestSessions(enrichedQuizzes);
-    } catch (err) {
-      console.error("Failed to fetch quizzes:", err);
-      setError(err.message || "Could not load your quizzes.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [classMap, fetchLatestSessions]);
-
-  useEffect(() => {
-    // Only fetch quizzes after classMap is populated (or empty)
-    if (Object.keys(classMap).length >= 0) {
-      fetchQuizzes();
-    }
-  }, [classMap, fetchQuizzes]);
-
   const handleCreateQuiz = () => {
     navigate('/quizzes/new');
   };
@@ -403,19 +298,31 @@ const Quizzes = () => {
   };
 
   const handleStartSession = async (quizId) => {
+    if (sessionAction.current) return;
+    sessionAction.current = true;
+    setSessionBusy(true);
     try {
+      const quiz = quizzes.find(item => item.id === quizId);
+      const latest = await queryClient.fetchQuery({ ...quizSessionOptions(user.id, quiz), staleTime: 0 });
+      if (['active', 'draft', 'waiting'].includes(latest?.status)) {
+        navigate(`/quizzes/sessions/${latest.id}/host`);
+        return;
+      }
       const session = await quizService.createSession(quizId);
       navigate(`/quizzes/sessions/${session.id}/host`);
     } catch (err) {
       console.error("Failed to start session:", err);
       setError(err.message || "Failed to start quiz session.");
+    } finally {
+      sessionAction.current = false;
+      setSessionBusy(false);
     }
   };
 
   const handlePublish = async (quizId) => {
     try {
       await quizService.publishQuiz(quizId);
-      await fetchQuizzes(); // Refresh list
+
     } catch (err) {
       console.error("Failed to publish quiz:", err);
       setError(err.message || "Failed to publish quiz.");
@@ -436,7 +343,7 @@ const Quizzes = () => {
     try {
       await quizService.deleteQuiz(deleteDialog.quizId);
       handleCloseDeleteDialog();
-      await fetchQuizzes(); // Refresh list
+
     } catch (err) {
       console.error("Failed to delete quiz:", err);
       setError(err.message || "Failed to delete quiz.");
@@ -462,7 +369,7 @@ const Quizzes = () => {
     try {
       await quizService.duplicateQuiz(duplicateDialog.quizId, duplicateDialog.newTitle);
       handleCloseDuplicateDialog();
-      await fetchQuizzes(); // Refresh list
+
     } catch (err) {
       console.error("Failed to duplicate quiz:", err);
       setError(err.message || "Failed to duplicate quiz.");
@@ -490,9 +397,14 @@ const Quizzes = () => {
   // NEW: Modified to check for existing session first
   const handleCreateSPSession = async (quiz) => {
     const quizId = quiz.id;
+    if (sessionAction.current) return;
+    sessionAction.current = true;
+    setSessionBusy(true);
     try {
       // Check if active session already exists
-      const existingSession = activeSessions[quizId];
+      // Cached badges are informational; verify current server state before replacement.
+      const latest = await queryClient.fetchQuery({ ...quizSessionOptions(user.id, quiz), staleTime: 0 });
+      const existingSession = ['active', 'draft', 'waiting'].includes(latest?.status) ? latest : null;
 
       if (existingSession) {
         // Session exists - confirm before creating new one
@@ -533,16 +445,13 @@ const Quizzes = () => {
 
       showSnackbar('Session created!', 'success');
 
-      // Update activeSessions state
-      setActiveSessions(prev => ({
-        ...prev,
-        [quizId]: session
-      }));
-
       navigate(`/quizzes/sp-sessions/${session.id}/host`);
     } catch (error) {
       console.error('Error creating session:', error);
       showSnackbar(error.message, 'error');
+    } finally {
+      sessionAction.current = false;
+      setSessionBusy(false);
     }
   };
 
@@ -604,6 +513,7 @@ const Quizzes = () => {
               onStartSPSession={handleCreateSPSession}
               onResumeSPSession={handleResumeSPSession}
               activeSession={activeSessions[quiz.id]}
+              sessionBusy={sessionBusy}
               onPublish={handlePublish}
               onReview={() => handleReviewAnalytics(quiz)}
             />
@@ -631,10 +541,13 @@ const Quizzes = () => {
           </Tabs>
         </Box>
 
-        {renderContent()}
+        <QueryNotice query={quizzesQuery} label="quizzes" />
+        <QueryNotice query={classesQuery} label="class names" />
+        {sessions.some(result => result.isError) && <Alert severity="warning" sx={{mb:2}}>Some session statuses are unavailable. Starting a session will check again first.</Alert>}
+        {quizzesQuery.data === undefined && quizzesQuery.error ? null : renderContent()}
       </Box>
 
-      <RenameActivityDialog item={renameItem} onClose={()=>setRenameItem(null)} onSaved={fetchQuizzes}/>
+      <RenameActivityDialog item={renameItem} onClose={()=>setRenameItem(null)}/>
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialog.open} onClose={deleting ? undefined : handleCloseDeleteDialog}>
         <DialogTitle>Delete this quiz?</DialogTitle>

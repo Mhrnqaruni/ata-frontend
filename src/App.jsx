@@ -1,7 +1,7 @@
 // /src/App.jsx (FINAL, SECURE, SUPERVISOR-APPROVED VERSION)
 
 // --- Core React & Router Imports ---
-import React, { useMemo } from 'react';
+import React, { useMemo, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
 
 // --- MUI & Theme Imports ---
@@ -27,30 +27,30 @@ import Layout from './components/common/Layout';
 import Home from './pages/Home';
 import NotFound from './pages/NotFound';
 import Classes from './pages/Classes';
-import ClassDetails from './pages/ClassDetails';
+const ClassDetails = lazy(() => import('./pages/ClassDetails'));
 import AITools from './pages/AITools';
-import QuestionGenerator from './pages/tools/QuestionGenerator';
-import SlideGenerator from './pages/tools/SlideGenerator';
-import RubricGenerator from './pages/tools/RubricGenerator';
+const QuestionGenerator = lazy(() => import('./pages/tools/QuestionGenerator'));
+const SlideGenerator = lazy(() => import('./pages/tools/SlideGenerator'));
+const RubricGenerator = lazy(() => import('./pages/tools/RubricGenerator'));
 import Assessments from './pages/Assessments';
-import NewAssessmentV2 from './pages/assessments/NewAssessmentV2';
-import QuickAssessment from './pages/assessments/QuickAssessment';
-import AssessmentResultsPage from './pages/assessments/AssessmentResultsPage';
-import AssessmentReviewPage from './pages/assessments/AssessmentReviewPage';
-import RedirectReviewToFirstStudent from './pages/assessments/RedirectReviewToFirstStudent';
-import PublicReportView from './pages/public/ReportView';
-import Chatbot from './pages/Chatbot';
-import StudentProfile from './pages/StudentProfile';
-import AdminDashboard from './pages/AdminDashboard';
+const NewAssessmentV2 = lazy(() => import('./pages/assessments/NewAssessmentV2'));
+const QuickAssessment = lazy(() => import('./pages/assessments/QuickAssessment'));
+const AssessmentResultsPage = lazy(() => import('./pages/assessments/AssessmentResultsPage'));
+const AssessmentReviewPage = lazy(() => import('./pages/assessments/AssessmentReviewPage'));
+const RedirectReviewToFirstStudent = lazy(() => import('./pages/assessments/RedirectReviewToFirstStudent'));
+const PublicReportView = lazy(() => import('./pages/public/ReportView'));
+const Chatbot = lazy(() => import('./pages/Chatbot'));
+const StudentProfile = lazy(() => import('./pages/StudentProfile'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 import ParentPortalPending from './pages/ParentPortalPending';
 import Quizzes from './pages/Quizzes';
-import QuizBuilder from './pages/quizzes/QuizBuilder';
-import QuizHost from './pages/quizzes/QuizHost';
-import QuizParticipant from './pages/quizzes/QuizParticipant';
-import QuizAnalytics from './pages/quizzes/QuizAnalytics';
-import QuizSPParticipant from './pages/quizzes/QuizSPParticipant';
-import QuizSPHost from './pages/quizzes/QuizSPHost';
-import QuizSPAnalytics from './pages/quizzes/QuizSPAnalytics';
+const QuizBuilder = lazy(() => import('./pages/quizzes/QuizBuilder'));
+const QuizHost = lazy(() => import('./pages/quizzes/QuizHost'));
+const QuizParticipant = lazy(() => import('./pages/quizzes/QuizParticipant'));
+const QuizAnalytics = lazy(() => import('./pages/quizzes/QuizAnalytics'));
+const QuizSPParticipant = lazy(() => import('./pages/quizzes/QuizSPParticipant'));
+const QuizSPHost = lazy(() => import('./pages/quizzes/QuizSPHost'));
+const QuizSPAnalytics = lazy(() => import('./pages/quizzes/QuizSPAnalytics'));
 
 /**
  * A layout component that wraps all protected pages.
@@ -58,7 +58,7 @@ import QuizSPAnalytics from './pages/quizzes/QuizSPAnalytics';
  */
 const AppLayout = () => (
   <Layout>
-    <Outlet />
+    <Suspense fallback={<Box role="status" sx={{py:3}}>Loading page…</Box>}><Outlet /></Suspense>
   </Layout>
 );
 
@@ -76,7 +76,7 @@ const ThemedApp = () => {
       {/* the still brand ground (logo-colour blooms) behind every page */}
       <div aria-hidden="true" className="mst-ground" />
       {/* The Routes component is where all URL-to-component mapping is defined. */}
-      <Routes>
+      <Suspense fallback={<Box role="status" sx={{p:3}}>Loading page…</Box>}><Routes>
         {/* --- [CRITICAL MODIFICATION 2/4: DEFINE PUBLIC-ONLY ROUTES] --- */}
         {/* These routes are for unauthenticated users. */}
         <Route path="/login" element={<Login />} />
@@ -150,7 +150,7 @@ const ThemedApp = () => {
           {/* A catch-all route for any other path, rendered within the protected layout. */}
           <Route path="*" element={<NotFound />} />
         </Route>
-      </Routes>
+      </Routes></Suspense>
     </ThemeProvider>
   );
 }

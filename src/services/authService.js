@@ -40,6 +40,7 @@ const authService = {
       // Return the data from the successful response.
       return response.data;
     } catch (error) {
+      if (error.code === 'ERR_CANCELED') throw error;
       // Log the technical error for developer debugging.
       console.error("Error during registration:", error);
       // Extract a user-friendly message from the backend's structured error
@@ -77,6 +78,7 @@ const authService = {
       // On success, return the data, which will be the token object.
       return response.data;
     } catch (error) {
+      if (error.code === 'ERR_CANCELED') throw error;
       console.error("Error during login:", error);
       const errorMessage = error.response?.data?.detail || "Login failed. Please check your credentials.";
       throw new Error(errorMessage);
@@ -101,6 +103,7 @@ const authService = {
       // Return the user profile data.
       return response.data;
     } catch (error) {
+      if (error.code === 'ERR_CANCELED') throw error;
       // This error will be triggered if the token is invalid, expired, or missing.
       // The `useAuth` hook will handle this to log the user out.
       console.error("Error fetching current user profile (/me):", error);

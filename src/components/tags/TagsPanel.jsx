@@ -1,3 +1,5 @@
+import { useTeacherData } from '../../hooks/useTeacherData';
+import QueryNotice from '../common/QueryNotice';
 import React, { useEffect, useState, useRef } from "react";
 import {
   Box,
@@ -23,35 +25,32 @@ import TagAnalytics from "./TagAnalytics";
 export default function TagsPanel({ newRequest = 0 }) {
   // A parent request opens the dialog once; returning to Tags must not reopen it.
   const lastNewRequest=useRef(newRequest);
-  const [data, setData] = useState({ tags: [], students: [] }),
-    [selected, setSelected] = useState(null),
+  const tagsQuery = useTeacherData('tags');
+  const data = tagsQuery.data || { tags: [], students: [] };
+  const loading = tagsQuery.isPending;
+  const [selected, setSelected] = useState(null),
     [members, setMembers] = useState([]),
     [savedMembers, setSavedMembers] = useState([]);
   const [search, setSearch] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
-    [message, setMessage] = useState(""),
-    [loading, setLoading] = useState(true);
+    [message, setMessage] = useState("");
   const [menu, setMenu] = useState(null),
     [nameDialog, setNameDialog] = useState(null),
     [name, setName] = useState("");
   const dirty =
     [...members].sort().join("|") !== [...savedMembers].sort().join("|");
-  const load = () =>
-    tagService.list().then((result) => {
-      setData(result);
-      setSelected((previous) =>
-        previous
-          ? result.tags.find((tag) => tag.id === previous.id) || null
-          : null,
-      );
-      return result;
-    });
   useEffect(() => {
-    load()
-      .catch((e) => setError(e.response?.data?.detail || e.message))
-      .finally(() => setLoading(false));
-  }, []);
+    if (tagsQuery.data) {
+      setSelected(previous => previous ? tagsQuery.data.tags.find(tag => tag.id === previous.id) || null : null);
+      if (selected && !dirty) {
+        const ids = tagsQuery.data.students.filter(student => student.tags.some(tag => tag.id === selected.id)).map(student => student.id);
+        setMembers(ids);
+        setSavedMembers(ids);
+      }
+    }
+    // Keep unsaved membership selections local; a background refresh is not a Save.
+  }, [tagsQuery.data]);
   // Membership changes are local until Save; changing the tag must not silently discard them.
   const canLeave = () =>
     !dirty ||
@@ -83,7 +82,7 @@ export default function TagsPanel({ newRequest = 0 }) {
     setMessage("");
     try {
       await action();
-      await load();
+
       setMessage("Saved.");
       return true;
     } catch (e) {
@@ -117,6 +116,7 @@ export default function TagsPanel({ newRequest = 0 }) {
   };
   return (
     <Box className="mst-tags-panel" sx={{ display: "grid", gap: 2 }}>
+      <QueryNotice query={tagsQuery} label="tags" />
       {error && <Alert severity="error">{error}</Alert>}
       {message && <Alert severity="success">{message}</Alert>}
       <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
@@ -312,7 +312,8 @@ export default function TagsPanel({ newRequest = 0 }) {
             Private label for students across your classes. Tags do not change
             AI grading.
           </Typography>
-          {error && <Alert severity="error">{error}</Alert>}
+          <QueryNotice query={tagsQuery} label="tags" />
+      {error && <Alert severity="error">{error}</Alert>}
           <TextField
             autoFocus
             fullWidth

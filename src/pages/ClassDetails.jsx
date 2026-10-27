@@ -1,3 +1,5 @@
+import { useTeacherData } from '../hooks/useTeacherData';
+import QueryNotice from '../components/common/QueryNotice';
 // /src/pages/ClassDetails.jsx (FINAL ENHANCED VERSION)
 
 // --- Core React & Router Imports ---
@@ -41,9 +43,10 @@ const ClassDetails = () => {
   const { showSnackbar } = useSnackbar();
 
   // --- State Management ---
-  const [classData, setClassData] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const classQuery = useTeacherData('class', class_id);
+  const classData = classQuery.data;
+  const isLoading = classQuery.isPending;
+  const error = classData === undefined && classQuery.error;
 
   // State organized by feature for clarity
   const [studentModal, setStudentModal] = useState({ open: false, mode: 'add', data: null, state: { isLoading: false, error: null } });
@@ -54,23 +57,6 @@ const ClassDetails = () => {
   // Chat state
   const [chatOpen, setChatOpen] = useState(false);
   const [autoSendMessage, setAutoSendMessage] = useState(null);
-
-  // --- Data Fetching ---
-  const fetchClassDetails = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const data = await classService.getClassById(class_id);
-      setClassData(data);
-      setError(null);
-    } catch (err) {
-      console.error(`Error fetching class details:`, err);
-      setError(err.message || "Could not load class details.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [class_id]);
-
-  useEffect(() => { fetchClassDetails(); }, [fetchClassDetails]);
 
   // --- Event Handlers ---
   const handleOpenAddStudentModal = () => setStudentModal({ open: true, mode: 'add', data: null, state: { isLoading: false, error: null } });
@@ -88,7 +74,7 @@ const ClassDetails = () => {
         showSnackbar('Student updated successfully!', 'success');
       }
       handleStudentModalClose();
-      await fetchClassDetails();
+
     } catch (err) {
       setStudentModal(prev => ({ ...prev, state: { isLoading: false, error: err.message } }));
     }
@@ -100,7 +86,7 @@ const ClassDetails = () => {
       await classService.removeStudent(class_id, deleteConfirmation.data.id);
       showSnackbar('Student removed successfully.', 'success');
       setDeleteConfirmation({ open: false, type: null, data: null });
-      await fetchClassDetails();
+
     } catch (err)
 {
       showSnackbar(err.message, 'error');
@@ -110,7 +96,7 @@ const ClassDetails = () => {
 
   const handleMenuOpen = (event) => setMenuAnchorEl(event.currentTarget);
   const handleMenuClose = () => setMenuAnchorEl(null);
-  const handleOpenClassEditModal = () => { setClassEditModal({ open: true, state: { isLoading: false, error: null } }); handleMenuClose(); };
+  const handleOpenClassEditModal = () => { setClassEditModal({ open: true, data: classData, state: { isLoading: false, error: null } }); handleMenuClose(); };
   const handleClassEditModalClose = () => setClassEditModal(prev => ({ ...prev, open: false }));
 
   const handleClassEditModalSubmit = async (formData) => {
@@ -119,7 +105,7 @@ const ClassDetails = () => {
       await classService.updateClass(class_id, formData);
       showSnackbar('Class details updated successfully!', 'success');
       handleClassEditModalClose();
-      await fetchClassDetails();
+
     } catch (err) {
       setClassEditModal(prev => ({ ...prev, state: { isLoading: false, error: err.message } }));
     }
@@ -175,7 +161,7 @@ const ClassDetails = () => {
       </Box>
     );
   }
-  if (error) return <Alert severity="error"><AlertTitle>Couldn't load this class</AlertTitle>{error}</Alert>;
+  if (error) return <QueryNotice query={classQuery} label="this class" />;
   if (!classData) return <Alert severity="warning">Could not find class data.</Alert>;
 
   const confirmationDescription = deleteConfirmation.type === 'student'
@@ -190,6 +176,7 @@ const ClassDetails = () => {
   
   return (
     <Box>
+      <QueryNotice query={classQuery} label="this class" />
       <PageHeader
         actions={
           <>
@@ -237,7 +224,7 @@ const ClassDetails = () => {
       </Menu>
 
       <StudentModal open={studentModal.open} onClose={handleStudentModalClose} onSubmit={handleStudentModalSubmit} mode={studentModal.mode} initialData={studentModal.data} isLoading={studentModal.state.isLoading} error={studentModal.state.error}/>
-      <ClassEditModal open={classEditModal.open} onClose={handleClassEditModalClose} onSubmit={handleClassEditModalSubmit} initialData={classData} isLoading={classEditModal.state.isLoading} error={classEditModal.state.error}/>
+      <ClassEditModal open={classEditModal.open} onClose={handleClassEditModalClose} onSubmit={handleClassEditModalSubmit} initialData={classEditModal.data} isLoading={classEditModal.state.isLoading} error={classEditModal.state.error}/>
       <ConfirmationModal open={deleteConfirmation.open} onClose={handleCloseConfirmDelete} onConfirm={deleteConfirmation.type === 'student' ? handleDeleteStudent : handleDeleteClass} title={`Delete ${deleteConfirmation.type === 'student' ? 'Student' : 'Class'}`} description={confirmationDescription}/>
     </Box>
   );
