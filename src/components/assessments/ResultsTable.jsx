@@ -10,7 +10,7 @@ import StatusChip from './StatusChip';
 import '../common/responsive-table.css';
 import reviewService from '../../services/reviewService';
 
-const ResultsTable = ({ rows }) => {
+const ResultsTable = ({ rows, assessmentOnly = false }) => {
   const navigate = useNavigate();
   const { job_id } = useParams();
   const theme = useTheme();
@@ -70,7 +70,7 @@ const ResultsTable = ({ rows }) => {
             <span className="mst-person-name">{s.studentName}</span>
           </span>
         </TableCell>
-        <TableCell className="mst-cell-muted" data-label="Student ID">{s.studentId}</TableCell>
+        <TableCell className="mst-cell-muted" data-label="Student ID">{assessmentOnly && s.isOutsider ? "—" : s.studentId}</TableCell>
         <TableCell data-label="Status"><StatusChip status={s.status} /></TableCell>
         <TableCell data-label="Grade">{grade}</TableCell>
         <TableCell align="right" className="mst-row-actions mst-row-actions-on" data-label="Actions">
@@ -117,7 +117,7 @@ const ResultsTable = ({ rows }) => {
                 colSpan={5}
                 className="mst-table-group"
               >
-                <Typography component="span" variant="overline">Not in the class roster</Typography>
+                <Typography component="span" variant="overline">{assessmentOnly ? "Students in this assessment" : "Not in the class roster"}</Typography>
               </TableCell>
             </TableRow>
           )}

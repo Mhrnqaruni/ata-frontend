@@ -13,6 +13,7 @@ import RenameActivityDialog from '../components/common/RenameActivityDialog';
 import AssessmentCard from '../components/assessments/AssessmentCard';
 import ConfirmationModal from '../components/common/ConfirmationModal';
 import assessmentService from '../services/assessmentService';
+import quickService from '../services/quickAssessmentService';
 import { useSnackbar } from '../hooks/useSnackbar';
 
 // --- [MISSING PART 1: ADDED BACK] ---
@@ -41,6 +42,7 @@ const Assessments = () => {
   const navigate = useNavigate();
   const { showSnackbar } = useSnackbar();
   const [assessments, setAssessments] = useState([]);
+  const [quickPreparations, setQuickPreparations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [syncError,setSyncError]=useState(false);
@@ -53,7 +55,8 @@ const Assessments = () => {
   const fetchAssessments = useCallback(async (isInitialLoad = false) => {
     if (isInitialLoad) setIsLoading(true);
     try {
-      const data = await assessmentService.getAssessments();
+      const [data, preparations] = await Promise.all([assessmentService.getAssessments(), quickService.list()]);
+      setQuickPreparations(preparations);
       setAssessments(data || []);
       setSyncError(false);
       if (isInitialLoad) setError(null);
@@ -139,12 +142,15 @@ const Assessments = () => {
   return (
     <Box>
       <PageHeader
-        actions={<Button variant="contained" startIcon={<AddOutlined />} onClick={handleNavigateToNew}>Grade new assessment</Button>}
+        actions={<Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}><Button variant="outlined" onClick={() => navigate("/assessments/quick")}>Quick assessment</Button><Button variant="contained" startIcon={<AddOutlined />} onClick={handleNavigateToNew}>Grade new assessment</Button></Box>}
         subtitle="Handwritten answers, marked three times by AI and checked by you."
         title="Assessments"
       />
       {syncError && <Alert severity="warning" sx={{mb:2}}>Reconnecting for status updates. Showing the last known progress.</Alert>}
-      {renderContent()}
+      {quickPreparations.map(p => <Alert key={p.id} severity={['failed','interrupted','needs_input'].includes(p.status) ? 'warning' : 'info'} sx={{ mb: 2 }} action={<Button onClick={() => navigate(`/assessments/quick?id=${p.id}`)}>Open</Button>}>
+        {p.settings.assessmentName} · {p.stage.replaceAll('_', ' ')}
+      </Alert>)}
+      {quickPreparations.length && !assessments.length ? null : renderContent()}
       
       <RenameActivityDialog item={renameItem} onClose={()=>setRenameItem(null)} onSaved={()=>fetchAssessments()}/>
       <ConfirmationModal

@@ -75,7 +75,7 @@ const AssessmentResultsPage = () => {
         <Tab value="students" label="Students" id="students-tab" aria-controls="students-panel"/>
         <Tab value="analytics" label="Analytics" id="analytics-tab" aria-controls="analytics-panel"/>
       </Tabs>
-      {activeTab==='analytics'?<Box role="tabpanel" id="analytics-panel" aria-labelledby="analytics-tab"><AssessmentAnalytics jobId={job_id}/></Box>:<Box role="tabpanel" id="students-panel" aria-labelledby="students-tab">
+      {activeTab==='analytics'?<Box role="tabpanel" id="analytics-panel" aria-labelledby="analytics-tab"><AssessmentAnalytics jobId={job_id} assessmentOnly={results?.assessmentOnly}/></Box>:<Box role="tabpanel" id="students-panel" aria-labelledby="students-tab">
       <dl className="mst-results-summary" aria-label="Assessment summary">
         <div><dt>Students shown</dt><dd>{sum.students}</dd></div>
         <div><dt>Average of graded submissions</dt><dd>{sum.average == null ? '—' : `${sum.average.toFixed(1)}%`}</dd></div>
@@ -83,7 +83,7 @@ const AssessmentResultsPage = () => {
       </dl>
       <div className="mst-section-label">Students</div>
       <TagAnalytics activityId={job_id}/>
-      <ResultsTable rows={rows} />
+      <ResultsTable rows={rows} assessmentOnly={results?.assessmentOnly} />
       </Box>}
     </Box>
   );

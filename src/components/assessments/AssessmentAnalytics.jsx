@@ -14,7 +14,7 @@ import "./assessment-analytics.css";
 const percent = (value) => (value == null ? "—" : `${value.toFixed(1)}%`);
 const marks = (value) => (value == null ? "—" : Number(value.toFixed(1)));
 
-export default function AssessmentAnalytics({ jobId }) {
+export default function AssessmentAnalytics({ jobId, assessmentOnly = false }) {
   const [data, setData] = useState(null),
     [error, setError] = useState(""),
     [loading, setLoading] = useState(true);
@@ -195,12 +195,10 @@ export default function AssessmentAnalytics({ jobId }) {
         </dl>
         <div className="aa-summary-line">
           <span>
-            {s.expected == null
-              ? "Assigned group unavailable."
-              : `${s.no_submission} of ${s.expected} assigned students have no submission.`}{" "}
-            {s.outsiders}{" "}
-            {s.outsiders === 1 ? "submission is" : "submissions are"} outside
-            the assigned group.
+            {assessmentOnly ? "Students in this assessment; no class is assigned." : <>
+              {s.expected == null ? "Assigned group unavailable." : `${s.no_submission} of ${s.expected} assigned students have no submission.`}{" "}
+              {s.outsiders} {s.outsiders === 1 ? "submission is" : "submissions are"} outside the assigned group.
+            </>}
           </span>
         </div>
         <details className="aa-more-stats">
@@ -343,7 +341,7 @@ export default function AssessmentAnalytics({ jobId }) {
                       {student.percentage == null
                         ? `Not ranked · ${student.status}`
                         : `${marks(student.total)} / ${marks(student.maximum)} marks`}
-                      {student.kind === "outsider" ? " · Outsider" : ""}
+                      {student.kind === "outsider" && !assessmentOnly ? " · Outsider" : ""}
                     </span>
                   </div>
                   <div className="aa-student-score">
