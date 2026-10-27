@@ -1,3 +1,4 @@
+import { invalidateAfter, cacheFamilies } from './queryCache';
 // /src/services/classService.js (FINAL, COMPLETE VERSION)
 
 import apiClient from './api';
@@ -126,4 +127,4 @@ const classService = {
     }
   },
 };
-export default classService;
+export default invalidateAfter(classService, ['createClass', 'createClassWithUpload', 'updateClass', 'deleteClass', 'addStudentToClass', 'updateStudent', 'removeStudent'], cacheFamilies.roster);

@@ -1,3 +1,4 @@
+import { invalidateAfter, cacheFamilies } from './queryCache';
 import api from "./api";
 const tagService = {
   list: () => api.get("/api/tags").then((r) => r.data),
@@ -10,4 +11,4 @@ const tagService = {
   analytics: (params) =>
     api.get("/api/tags/analytics", { params }).then((r) => r.data),
 };
-export default tagService;
+export default invalidateAfter(tagService, ['create', 'update', 'members'], cacheFamilies.tags);

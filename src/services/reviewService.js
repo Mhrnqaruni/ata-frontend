@@ -1,3 +1,4 @@
+import { invalidateAfter, cacheFamilies } from './queryCache';
 import apiClient from './api';
 
 const reviewService = {
@@ -93,4 +94,4 @@ const reviewService = {
   },
 };
 
-export default reviewService;
+export default invalidateAfter(reviewService, ['saveQuestion'], cacheFamilies.assessment);

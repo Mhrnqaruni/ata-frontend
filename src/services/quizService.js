@@ -1,3 +1,4 @@
+import { invalidateAfter, cacheFamilies } from './queryCache';
 // /src/services/quizService.js
 
 import apiClient from './api';
@@ -859,4 +860,4 @@ const quizService = {
   }
 };
 
-export default quizService;
+export default invalidateAfter(quizService, ['createQuiz', 'updateQuiz', 'deleteQuiz', 'duplicateQuiz', 'publishQuiz', 'addQuestion', 'updateQuestion', 'deleteQuestion', 'reorderQuestions', 'createSession', 'startSession', 'endSession', 'cancelSession', 'flagOutsiderStudent', 'assignOutsiderToStudent', 'syncSessionRoster', 'uploadQuestionImage', 'deleteQuestionImage'], cacheFamilies.quiz);

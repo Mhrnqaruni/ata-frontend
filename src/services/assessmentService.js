@@ -1,3 +1,4 @@
+import { invalidateAfter, cacheFamilies } from './queryCache';
 // /src/services/assessmentService.js (FINAL, WITH CORRECTED V2 API PATH)
 
 import apiClient from './api';
@@ -258,4 +259,4 @@ const assessmentService = {
   },
 };
 
-export default assessmentService;
+export default invalidateAfter(assessmentService, ['startRetry', 'createAssessmentJobV2', 'createAssessmentJobWithManualUploads', 'uploadManualSubmission', 'manualMatchSubmissions', 'createAssessmentJob', 'deleteAssessment', 'saveOverrides'], cacheFamilies.assessment);

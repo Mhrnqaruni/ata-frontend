@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Skeleton } from '@mui/material';
+import { Alert, Button, Skeleton } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import SpeedOutlined from '@mui/icons-material/SpeedOutlined';
 import ShowChartOutlined from '@mui/icons-material/ShowChartOutlined';
@@ -20,6 +20,7 @@ export default function PerformancePanel({ assessments, loadError }) {
         <button type="button" aria-pressed={view === 'trend'} onClick={() => setView('trend')}><ShowChartOutlined /><span>Trend</span></button>
       </div>
     </div>
+    {state.refreshError && <Alert severity="warning" action={<Button onClick={() => state.retry()}>Retry</Button>}>Could not refresh grades. Showing the last loaded values.</Alert>}
     <div className="home-performance-body">
       {failed ? <div className="home-performance-message" role="status">Unable to load grades. Refresh to try again.</div>
         : state.loading ? <Skeleton variant="rounded" height={166} aria-label="Loading grades" />

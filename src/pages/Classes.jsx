@@ -1,3 +1,5 @@
+import { useTeacherData } from '../hooks/useTeacherData';
+import QueryNotice from '../components/common/QueryNotice';
 import TagsPanel from '../components/tags/TagsPanel';
 // /src/pages/Classes.jsx (FINAL, ROBUST VERSION)
 
@@ -30,29 +32,12 @@ const Classes = () => {
   const [searchParams,setSearchParams]=useSearchParams();
   const section=searchParams.get('view')==='tags'?1:0;
   const [newTagRequest,setNewTagRequest]=useState(0);
-  const [classes, setClasses] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const classesQuery = useTeacherData('classes');
+  const classes = classesQuery.data || [];
+  const isLoading = classesQuery.isPending;
+  const error = classesQuery.data === undefined && classesQuery.error;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalState, setModalState] = useState({ isLoading: false, error: null });
-
-  const fetchClasses = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const data = await classService.getAllClasses();
-      setClasses(data);
-      setError(null);
-    } catch (err) {
-      console.error("Failed to fetch classes:", err);
-      setError(err.message || "Could not load your classes.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchClasses();
-  }, [fetchClasses]);
 
   const handleOpenModal = () => {
     setModalState({ isLoading: false, error: null });
@@ -69,7 +54,7 @@ const Classes = () => {
         await classService.createClass(classData);
       }
       handleCloseModal();
-      await fetchClasses();
+
     } catch (err) {
       console.error("Failed to create class:", err);
       setModalState({ isLoading: false, error: err.message || "Failed to create class." });
@@ -87,7 +72,7 @@ const Classes = () => {
       );
     }
     if (error) {
-      return <Alert severity="error"><AlertTitle>Couldn't load your classes</AlertTitle>{error}</Alert>;
+      return null;
     }
     if (!Array.isArray(classes)) {
       return <Alert severity="warning">Could not display class data due to an unexpected format.</Alert>;
@@ -122,6 +107,7 @@ const Classes = () => {
           title={section===1?"Student tags":"Classes"}
         />
         <Tabs value={section} onChange={(_,v)=>setSearchParams(v?{view:'tags'}:{})} aria-label="Classes and tags" sx={{mb:2}}><Tab label="Classes"/><Tab label="Tags"/></Tabs>
+        <QueryNotice query={classesQuery} label="classes" />
         {section===0?renderContent():<TagsPanel newRequest={newTagRequest}/>}
       </Box>
 

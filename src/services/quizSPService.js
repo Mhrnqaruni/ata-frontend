@@ -1,3 +1,4 @@
+import { invalidateAfter, cacheFamilies } from './queryCache';
 // /src/services/quizSPService.js
 
 import apiClient from './api';
@@ -526,4 +527,4 @@ const quizSPService = {
   }
 };
 
-export default quizSPService;
+export default invalidateAfter(quizSPService, ['createSPSession', 'startSPSession', 'endSPSession', 'flagSPOutsiderStudent', 'syncSPSessionRoster', 'assignOutsiderToStudent'], cacheFamilies.quiz);

@@ -1,3 +1,5 @@
+import { useTeacherData } from '../hooks/useTeacherData';
+import QueryNotice from '../components/common/QueryNotice';
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Alert, Button, Skeleton } from '@mui/material';
@@ -26,18 +28,14 @@ function RecentPanel({ title, note, to, loading, error, empty, children }) {
 
 // Real teacher data only. All actions keep the existing routes and API contracts.
 export default function Home() {
-  const [summary, setSummary] = useState(null);
-  const [assessments, setAssessments] = useState(null);
-  const [quizzes, setQuizzes] = useState(null);
-  const [errors, setErrors] = useState({});
-  useEffect(() => {
-    let active = true;
-    const load = (key, request, setter) => request().then(data => { if (active) setter(data); }).catch(() => { if (active) setErrors(previous => ({ ...previous, [key]: true })); });
-    load('summary', dashboardService.getSummary, setSummary);
-    load('assessments', assessmentService.getAssessments, setAssessments);
-    load('quizzes', quizService.getAllQuizzes, setQuizzes);
-    return () => { active = false; };
-  }, []);
+  const summaryQuery = useTeacherData('summary');
+  const assessmentQuery = useTeacherData('assessments');
+  const quizQuery = useTeacherData('quizzes');
+  const summary = summaryQuery.data;
+  const assessments = assessmentQuery.data ?? null;
+  const quizzes = quizQuery.data ?? null;
+  const errors = { summary: !summary && summaryQuery.error,
+    assessments: !assessments && assessmentQuery.error, quizzes: !quizzes && quizQuery.error };
   const recent = (assessments || []).filter(job => job.status !== 'Completed').sort(newest);
   const activeQuizzes = (quizzes || []).filter(quiz => quiz.status !== 'completed').sort(newest);
   const pending = recent.filter(job => job.status === 'Pending Review').length;
@@ -45,7 +43,7 @@ export default function Home() {
   const stats = [['Classes', summary?.classCount, SchoolOutlined], ['Students', summary?.studentCount, PeopleAltOutlined], ['Assessments', assessments?.length, GradingOutlined], ['Quizzes', quizzes?.length, QuizOutlined]];
   return <div className="home-home">
     <GreetingBanner />
-    {errors.summary && <Alert severity="warning" sx={{ mb: 2 }}>Class and student counts are unavailable. Refresh to try again.</Alert>}
+    <QueryNotice query={summaryQuery} label="summary" /><QueryNotice query={assessmentQuery} label="assessments" /><QueryNotice query={quizQuery} label="quizzes" />
     <section className="mst-g1 mst-rim home-summary" aria-label="Teaching summary">
       {stats.map(([label, value, Icon]) => <div className="home-summary-item" key={label}><span className="home-summary-icon"><Icon aria-hidden="true" /></span><strong>{value ?? '—'}</strong><span>{label}</span></div>)}
     </section>

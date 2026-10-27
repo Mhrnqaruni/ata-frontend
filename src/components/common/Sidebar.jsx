@@ -21,6 +21,8 @@ import logo from "../../assets/mst_logo_no_bg.png";
 import { useThemeMode } from "../../hooks/useThemeMode";
 import { useAuth } from "../../hooks/useAuth";
 
+import { useNavigationPrefetch } from '../../hooks/useTeacherData';
+
 export const NAV_GROUPS = [
   { label: null, items: [{ text: "Home", icon: HomeOutlined, path: "/" }] },
   {
@@ -56,6 +58,7 @@ function SidebarPanel({ collapsed, onToggleCollapse, onNavigate, showCollapse })
   const navigate = useNavigate();
   const { mode, toggleThemeMode } = useThemeMode();
   const { user, logout } = useAuth();
+  const prefetch = useNavigationPrefetch();
   const [menuAnchor, setMenuAnchor] = useState(null);
   const listRef = useRef(null);
   const [indicator, setIndicator] = useState(null);
@@ -103,6 +106,8 @@ function SidebarPanel({ collapsed, onToggleCollapse, onNavigate, showCollapse })
                   aria-label={collapsed ? item.text : undefined}
                   className="mst-side-item"
                   href={item.path}
+                  onPointerEnter={() => prefetch(item.path)}
+                  onFocus={() => prefetch(item.path)}
                   key={item.path}
                   onClick={(event) => {
                     if (event.metaKey || event.ctrlKey || event.shiftKey || event.button === 1) return;

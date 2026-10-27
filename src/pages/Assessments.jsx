@@ -1,3 +1,5 @@
+import { useTeacherData } from '../hooks/useTeacherData';
+import QueryNotice from '../components/common/QueryNotice';
 // /src/pages/Assessments.jsx (COMPLETE MERGED CODE)
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -41,54 +43,16 @@ const LoadingSkeletons = () => (
 const Assessments = () => {
   const navigate = useNavigate();
   const { showSnackbar } = useSnackbar();
-  const [assessments, setAssessments] = useState([]);
-  const [quickPreparations, setQuickPreparations] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [syncError,setSyncError]=useState(false);
+  const assessmentQuery = useTeacherData('assessments');
+  const quickQuery = useTeacherData('quick');
+  const assessments = assessmentQuery.data || [];
+  const quickPreparations = quickQuery.data || [];
+  const isLoading = assessmentQuery.isPending;
+  const error = assessmentQuery.data === undefined && assessmentQuery.error;
   const [renameItem, setRenameItem] = useState(null);
   const [jobToDelete, setJobToDelete] = useState(null);
   const [deleting,setDeleting]=useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-
-  // --- [MISSING PART 3: ADDED BACK] ---
-  const fetchAssessments = useCallback(async (isInitialLoad = false) => {
-    if (isInitialLoad) setIsLoading(true);
-    try {
-      const [data, preparations] = await Promise.all([assessmentService.getAssessments(), quickService.list()]);
-      setQuickPreparations(preparations);
-      setAssessments(data || []);
-      setSyncError(false);
-      if (isInitialLoad) setError(null);
-      return data || [];
-    } catch (err) {
-      setSyncError(true);
-      console.error("Failed to fetch assessments:", err);
-      if (isInitialLoad) {
-        setError("Could not load your assessments. Please try refreshing the page.");
-      }
-    } finally {
-      if (isInitialLoad) setIsLoading(false);
-    }
-  }, []);
-  // --- [END OF MISSING PART 3] ---
-
-  // --- [MISSING PART 4: ADDED BACK] ---
-  useEffect(() => {
-    let stopped=false, timer, running=false;
-    const poll=async(initial=false)=>{
-      if(stopped || running)return;
-      running=true;
-      const data=await fetchAssessments(initial);
-      running=false;
-      if(!stopped && !document.hidden)timer=setTimeout(()=>poll(),data?.some(job=>['Queued','Processing','Summarizing'].includes(job.status))?5000:15000);
-    };
-    const visible=()=>{clearTimeout(timer);if(!document.hidden)poll();};
-    poll(true);
-    document.addEventListener('visibilitychange',visible);
-    return ()=>{stopped=true;clearTimeout(timer);document.removeEventListener('visibilitychange',visible);};
-  }, [fetchAssessments]);
-  // --- [END OF MISSING PART 4] ---
 
   const handleOpenConfirm = (job) => {
     setJobToDelete(job);
@@ -106,7 +70,7 @@ const Assessments = () => {
     try {
       await assessmentService.deleteAssessment(jobToDelete.id);
       showSnackbar('Assessment deleted successfully.', 'success');
-      fetchAssessments(true);
+
     } catch (err) {
       showSnackbar(err.message || 'Failed to delete assessment.', 'error');
     } finally {
@@ -121,7 +85,7 @@ const Assessments = () => {
 
   const renderContent = () => {
     if (isLoading) return <LoadingSkeletons />;
-    if (error) return <Alert severity="error"><AlertTitle>Couldn't load your assessments</AlertTitle>{error}</Alert>;
+    if (error) return null;
     if (assessments.length === 0) return <EmptyState onGradeNew={handleNavigateToNew} />;
     
     return (
@@ -146,13 +110,13 @@ const Assessments = () => {
         subtitle="Handwritten answers, marked three times by AI and checked by you."
         title="Assessments"
       />
-      {syncError && <Alert severity="warning" sx={{mb:2}}>Reconnecting for status updates. Showing the last known progress.</Alert>}
+      <QueryNotice query={assessmentQuery} label="assessments" /><QueryNotice query={quickQuery} label="Quick preparations" />
       {quickPreparations.map(p => <Alert key={p.id} severity={['failed','interrupted','needs_input'].includes(p.status) ? 'warning' : 'info'} sx={{ mb: 2 }} action={<Button onClick={() => navigate(`/assessments/quick?id=${p.id}`)}>Open</Button>}>
         {p.settings.assessmentName} · {p.stage.replaceAll('_', ' ')}
       </Alert>)}
       {quickPreparations.length && !assessments.length ? null : renderContent()}
       
-      <RenameActivityDialog item={renameItem} onClose={()=>setRenameItem(null)} onSaved={()=>fetchAssessments()}/>
+      <RenameActivityDialog item={renameItem} onClose={()=>setRenameItem(null)}/>
       <ConfirmationModal
         open={isConfirmOpen}
         onClose={handleCloseConfirm}
