@@ -100,6 +100,7 @@ export default function UploadDropzone({ title, hint, accept, multiple = false, 
           role: "button",
           tabIndex: disabled ? -1 : 0,
           "aria-label": `${title}. ${hint}`,
+          "aria-disabled": disabled,
         })}
       >
         <input {...getInputProps()} />
@@ -116,7 +117,7 @@ export default function UploadDropzone({ title, hint, accept, multiple = false, 
           {filesHeader ? <div className="mst-files-head">{filesHeader}</div> : null}
           <ul aria-label="Selected files" className="mst-files-list">
             {files.map((file, index) => (
-              <UploadFileRow disabled={disabled} file={file} key={`${file.name}-${file.size}-${file.lastModified}`} meta={fileMeta?.(file)} onRemove={onRemove} order={onMove ? index + 1 : undefined}
+              <UploadFileRow disabled={disabled} file={file} key={`${file.name}-${file.size}-${file.lastModified}-${index}`} meta={fileMeta?.(file)} onRemove={onRemove} order={onMove ? index + 1 : undefined}
                 onMove={onMove ? direction => onMove(index, direction) : undefined} first={index === 0} last={index === files.length - 1} />
             ))}
           </ul>

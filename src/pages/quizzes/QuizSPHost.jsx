@@ -94,7 +94,7 @@ const DeadlineCountdown = ({ deadline }) => {
  * RosterPanel - Displays class students with join/absent status
  */
 const RosterPanel = ({ roster, session, isLoading }) => {
-  if (!session?.class_id) {
+  if (!(session?.class_id || session?.has_roster)) {
     return (
       <Alert severity="info" sx={{ mb: 2 }}>
         <AlertTitle>No Class Roster</AlertTitle>
@@ -390,7 +390,7 @@ const QuizSPHost = () => {
   }, [sessionId, showSnackbar]);
 
   const fetchRosterData = useCallback(async () => {
-    if (!session?.class_id) {
+    if (!(session?.class_id || session?.has_roster)) {
       setRoster(null);
       setOutsiders([]);
       return;
@@ -417,7 +417,7 @@ const QuizSPHost = () => {
   }, [fetchData]);
 
   useEffect(() => {
-    if (session && session.class_id) {
+    if (session && (session.class_id || session.has_roster)) {
       fetchRosterData();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -678,7 +678,7 @@ const QuizSPHost = () => {
           startIcon={<RefreshIcon />}
           onClick={async () => {
             await fetchData(false);
-            if (session?.class_id) {
+            if ((session?.class_id || session?.has_roster)) {
               await fetchRosterData();
             }
           }}

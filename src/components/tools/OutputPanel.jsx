@@ -1,3 +1,6 @@
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 // /src/components/tools/OutputPanel.jsx
 
 import React, { useState, useEffect } from 'react';
@@ -129,7 +132,7 @@ const OutputPanel = ({ isLoading, error, generatedContent, onClear, onSave, isSa
         {/* Content Area with Upgraded Markdown Rendering */}
         <CardContent sx={{ flexGrow: 1, overflowY: 'auto' }}>
           <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
+            remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[[rehypeKatex, { trust: false, maxExpand: 1000, maxSize: 20 }]]}
             components={{
               // Text and Header overrides
               p: ({node, ...props}) => <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }} {...props} />,

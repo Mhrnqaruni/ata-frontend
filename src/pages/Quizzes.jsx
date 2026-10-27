@@ -1,3 +1,4 @@
+import RenameActivityDialog from '../components/common/RenameActivityDialog';
 // /src/pages/Quizzes.jsx
 
 // --- Core React Imports ---
@@ -64,7 +65,7 @@ const EmptyState = ({ onAddQuiz }) => (
 /**
  * Quiz card component displaying a single quiz
  */
-const QuizCard = ({ quiz, displayTitle, onEdit, onDuplicate, onDelete, onStartSession, onStartSPSession, onResumeSPSession, activeSession, onPublish, onReview }) => {
+const QuizCard = ({ quiz, displayTitle, onEdit, onDuplicate, onDelete, onRename, onStartSession, onStartSPSession, onResumeSPSession, activeSession, onPublish, onReview }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useNavigate();
 
@@ -96,7 +97,7 @@ const QuizCard = ({ quiz, displayTitle, onEdit, onDuplicate, onDelete, onStartSe
   };
 
   const selfPaced = quiz.settings?.mode === 'self_paced';
-  const meta = [`${quiz.question_count || 0} ${quiz.question_count === 1 ? 'question' : 'questions'}`, quiz.class_name].filter(Boolean).join(' · ');
+  const meta = [`${quiz.question_count || 0} ${quiz.question_count === 1 ? 'question' : 'questions'}`, (quiz.audience ? `${quiz.audience.class_ids.length} classes · ${quiz.audience.tag_ids.length} tags${quiz.audience.mode==='filter'?' · filtered':''}` : quiz.class_name)].filter(Boolean).join(' · ');
 
   return (
     <Card className="mst-rim mst-lift mst-quiz-card" data-enter="">
@@ -112,7 +113,7 @@ const QuizCard = ({ quiz, displayTitle, onEdit, onDuplicate, onDelete, onStartSe
             />
             <Chip color={getStatusColor(quiz.status)} label={getStatusLabel(quiz.status)} size="small" />
           </div>
-          <IconButton aria-label={`Options for ${displayTitle}`} onClick={handleMenuOpen} size="small">
+          <IconButton aria-label={`Options for ${displayTitle}`} onClick={handleMenuOpen} aria-haspopup="menu" aria-expanded={Boolean(anchorEl)} sx={{width:44,height:44}}>
             <MoreVertIcon />
           </IconButton>
         </div>
@@ -193,6 +194,7 @@ const QuizCard = ({ quiz, displayTitle, onEdit, onDuplicate, onDelete, onStartSe
       </CardActions>
 
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+        <MenuItem onClick={()=>{handleMenuClose();onRename(quiz);}}><EditIcon fontSize="small" sx={{mr:1}}/>Rename</MenuItem>
         {quiz.status !== 'completed' && (
           <MenuItem
             onClick={() => {
@@ -260,8 +262,11 @@ const Quizzes = () => {
   const [activeSessions, setActiveSessions] = useState({});
   const [sessionsLoading, setSessionsLoading] = useState(false);
 
+  const [renameItem,setRenameItem] = useState(null);
+
   // Delete confirmation dialog
   const [deleteDialog, setDeleteDialog] = useState({ open: false, quizId: null });
+  const [deleting,setDeleting]=useState(false);
 
   // Duplicate dialog
   const [duplicateDialog, setDuplicateDialog] = useState({
@@ -426,6 +431,8 @@ const Quizzes = () => {
   };
 
   const handleConfirmDelete = async () => {
+    if(deleting)return;
+    setDeleting(true);
     try {
       await quizService.deleteQuiz(deleteDialog.quizId);
       handleCloseDeleteDialog();
@@ -435,6 +442,7 @@ const Quizzes = () => {
       setError(err.message || "Failed to delete quiz.");
       handleCloseDeleteDialog();
     }
+    finally { setDeleting(false); }
   };
 
   const handleOpenDuplicateDialog = (quizId) => {
@@ -590,6 +598,7 @@ const Quizzes = () => {
               displayTitle={formatTitle(quiz)}
               onEdit={handleEditQuiz}
               onDuplicate={handleOpenDuplicateDialog}
+              onRename={quiz=>setRenameItem({kind:"quiz",id:quiz.id,name:quiz.title})}
               onDelete={handleOpenDeleteDialog}
               onStartSession={handleStartSession}
               onStartSPSession={handleCreateSPSession}
@@ -625,18 +634,19 @@ const Quizzes = () => {
         {renderContent()}
       </Box>
 
+      <RenameActivityDialog item={renameItem} onClose={()=>setRenameItem(null)} onSaved={fetchQuizzes}/>
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialog.open} onClose={handleCloseDeleteDialog}>
+      <Dialog open={deleteDialog.open} onClose={deleting ? undefined : handleCloseDeleteDialog}>
         <DialogTitle>Delete this quiz?</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete this quiz? This action cannot be undone.
+            Delete this quiz and remove its sessions from normal use? Its grades will no longer count in student, class or tag statistics. Internal history is retained. Open sessions must be ended first.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDeleteDialog}>Cancel</Button>
-          <Button onClick={handleConfirmDelete} color="error" variant="contained">
-            Delete
+          <Button disabled={deleting} onClick={handleCloseDeleteDialog}>Cancel</Button>
+          <Button disabled={deleting} onClick={handleConfirmDelete} color="error" variant="contained">
+            {deleting ? "Deleting…" : "Delete"}
           </Button>
         </DialogActions>
       </Dialog>

@@ -1,3 +1,4 @@
+import TagAnalytics from '../../components/tags/TagAnalytics';
 import ComparisonTableContainer from '../../components/common/ComparisonTableContainer';
 // /src/pages/quizzes/QuizSPAnalytics.jsx
 
@@ -156,7 +157,7 @@ const QuizSPAnalytics = () => {
     'asc'
   );
 
-  // Sorting configuration for Class Students table
+  // Sorting configuration for Expected students table
   const studentColumnConfig = {
     student_name: { type: 'string' },
     score: { type: 'number' },
@@ -552,12 +553,12 @@ const QuizSPAnalytics = () => {
         </ComparisonTableContainer>
       </Paper>
 
-      {/* Class Students Table */}
+      {/* Expected students Table */}
       {classStudents.length > 0 && (
         <Paper sx={{ mb: 3 }}>
           <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              Class Students ({classStudents.length})
+              Expected students ({classStudents.length})
             </Typography>
           </Box>
           <ComparisonTableContainer>
@@ -805,6 +806,7 @@ const QuizSPAnalytics = () => {
         )}
       </Paper>
 
+      <TagAnalytics activityId={sessionId}/>
       {/* Floating Chat Window */}
       <FloatingChatWindow
         open={chatOpen}

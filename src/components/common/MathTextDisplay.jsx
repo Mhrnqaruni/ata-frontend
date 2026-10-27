@@ -1,6 +1,7 @@
 // /src/components/common/MathTextDisplay.jsx
 
 import React, { useMemo } from 'react';
+import 'katex/dist/katex.min.css';
 import { parseTextWithMath } from '../../utils/mathRenderer';
 
 /**
@@ -20,7 +21,7 @@ const MathTextDisplay = ({ text, component: Component = 'span', ...props }) => {
             <span
               key={idx}
               dangerouslySetInnerHTML={{ __html: part.content }}
-              style={{ display: part.isDisplay ? 'block' : 'inline' }}
+              style={{ display: part.isDisplay ? 'block' : 'inline', maxWidth: '100%', overflowX: part.isDisplay ? 'auto' : undefined }}
             />
           );
         } else if (part.type === 'error') {

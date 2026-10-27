@@ -3,6 +3,7 @@
 import React from 'react';
 import { TextField, Box, Typography } from '@mui/material';
 import MathTextDisplay from './MathTextDisplay';
+import { normalizeMathText } from '../../utils/mathRenderer';
 
 /**
  * TextField with live math formula preview
@@ -16,13 +17,14 @@ const MathInputWithPreview = ({
   helperText,
   ...props 
 }) => {
-  const showPreview = (value || '').includes('$');
+  const sourceValue = typeof value === 'string' ? value : value == null ? '' : JSON.stringify(value);
+  const showPreview = /\$|\\\(|\\\[/.test(sourceValue) || normalizeMathText(sourceValue) !== sourceValue;
 
   return (
     <Box sx={{ minWidth: 0, maxWidth: "100%" }}>
       <TextField
         fullWidth
-        value={value}
+        value={sourceValue}
         onChange={onChange}
         label={label}
         placeholder={placeholder}
@@ -43,7 +45,7 @@ const MathInputWithPreview = ({
           <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
             Preview:
           </Typography>
-          <MathTextDisplay text={value} />
+          <MathTextDisplay text={sourceValue} />
         </Box>
       )}
     </Box>

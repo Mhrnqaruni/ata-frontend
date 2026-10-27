@@ -329,7 +329,7 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                           {cooldownFeedback.ai_feedback && (
                             <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
                               <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                Feedback: {cooldownFeedback.ai_feedback}
+                                Feedback: <MathTextDisplay text={cooldownFeedback.ai_feedback} />
                               </Typography>
                             </Box>
                           )}
@@ -337,7 +337,7 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                           {!cooldownFeedback.ai_feedback && cooldownFeedback.explanation && (
                             <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
                               <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
-                                {cooldownFeedback.explanation}
+                                <MathTextDisplay text={cooldownFeedback.explanation} />
                               </Typography>
                             </Box>
                           )}
@@ -355,7 +355,7 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                           {cooldownFeedback.ai_feedback && (
                             <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
                               <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                Feedback: {cooldownFeedback.ai_feedback}
+                                Feedback: <MathTextDisplay text={cooldownFeedback.ai_feedback} />
                               </Typography>
                             </Box>
                           )}
@@ -378,7 +378,7 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                           {!cooldownFeedback.ai_feedback && cooldownFeedback.explanation && (
                             <Box sx={{ mt: 1, p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
                               <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
-                                {cooldownFeedback.explanation}
+                                <MathTextDisplay text={cooldownFeedback.explanation} />
                               </Typography>
                             </Box>
                           )}
@@ -914,10 +914,10 @@ const AnswerReviewDisplay = ({ sessionId, guestToken, onViewLeaderboard }) => {
                     ) : (
                       <Box sx={{ mb: 2 }}>
                         <Typography variant="body2" sx={{ mb: 1 }}>
-                          Your Answer: {studentAnswerText || 'No answer'}
+                          Your Answer: <MathTextDisplay text={studentAnswerText || 'No answer'} />
                         </Typography>
                         <Typography variant="body2" sx={{ mb: 1 }}>
-                          Correct Answer: {correctAnswerText || 'N/A'}
+                          Correct Answer: <MathTextDisplay text={correctAnswerText || 'N/A'} />
                         </Typography>
                       </Box>
                     )}
@@ -925,7 +925,7 @@ const AnswerReviewDisplay = ({ sessionId, guestToken, onViewLeaderboard }) => {
                     {review.explanation && (
                       <Alert severity="info" sx={{ mt: 2 }}>
                         <Typography variant="body2">
-                          Explanation: {review.explanation}
+                          Explanation: <MathTextDisplay text={review.explanation} />
                         </Typography>
                       </Alert>
                     )}

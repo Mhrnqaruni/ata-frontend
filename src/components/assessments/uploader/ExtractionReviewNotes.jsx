@@ -24,28 +24,22 @@ function ReadingNote({ issue }) {
 
 export function ExtractionSummary({ review }) {
   if (!review) return null;
-  const general = (review.issues || []).filter(issue => !issue.questionId);
-  return <Box sx={{ mb: 2 }}>
-    <Alert severity={(review.issues || []).length ? 'warning' : 'info'}>
-      <Typography variant="body2" fontWeight={600}>
-        {review.readerCount === 3 ? 'Three independent readings compared' : 'Documents read visually'}
-      </Typography>
-      <Typography variant="body2">
-        {kinds[review.questionDocumentType] || 'Question paper'} question paper
-        {review.answerKeyDocumentType ? ` · ${kinds[review.answerKeyDocumentType] || 'Uncertain'} answer key` : ''}.
-        {review.reconciled ? ' Differences were checked automatically against the originals.' : ''}
-        {' Check the extracted content before continuing.'}
-        {!review.answerKeyDocumentType && ' No answer key was supplied. Check or enter the expected answers and marking scheme, or choose a library source below.'}
-      </Typography>
-    </Alert>
-    {general.map((issue, index) => <Alert key={index} severity="warning" sx={{ mt: 1 }}><ReadingNote issue={issue} /></Alert>)}
+  const issues=review.issues || [];
+  const general=issues.filter(issue=>!issue.questionId);
+  return <Box sx={{mb:2}}>
+    {issues.length>0 && <Alert severity="warning" sx={{mb:1}}>Check the flagged source notes before continuing. Edit unclear questions or answers below.</Alert>}
+    {!review.answerKeyDocumentType && <Alert severity="info" sx={{mb:1}}>No answer key supplied. Enter expected answers if needed, or choose a library source below.</Alert>}
+    <details className="mst-source-notes"><summary>Source notes</summary>
+      <Typography variant="body2" sx={{mt:1}}>{review.readerCount===3?'Three independent readings compared.':'Documents read visually.'} {kinds[review.questionDocumentType]||'Uncertain'} question paper{review.answerKeyDocumentType?` · ${kinds[review.answerKeyDocumentType]||'Uncertain'} answer key`:''}. {review.reconciled?'Differences were checked against the originals. ':''}Review the extracted content; agreement is not a guarantee of accuracy.</Typography>
+      {general.map((issue,index)=><Alert key={index} severity="warning" sx={{mt:1}}><ReadingNote issue={issue}/></Alert>)}
+    </details>
   </Box>;
 }
 
 export function QuestionReadingNotes({ issues }) {
   if (!issues.length) return null;
   return <Alert severity="warning" sx={{ mb: 2 }}>
-    <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>Source reading notes</Typography>
+    <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>Check source: {[...new Set(issues.map(issue=>fields[issue.field] || "Source"))].join(", ")}</Typography>
     {issues.map((issue, index) => <Box key={index} sx={{ mt: index ? 1.5 : 0 }}><ReadingNote issue={issue} /></Box>)}
     <Typography variant="body2" sx={{ mt: 1 }}>Check the original and edit the fields below. These notes describe the AI extraction.</Typography>
   </Alert>;

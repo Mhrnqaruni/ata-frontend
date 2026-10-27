@@ -1499,3 +1499,84 @@ main.MuiBox-root > .mst-footer { margin-top: auto; padding-top: 48px; }
 @media (max-width: 599px) {
   .mst-ordered-upload .mst-file-icon { display: none; }
 }
+
+/* Phase 1.9: quiet reading surfaces, scoped to quiz editing. */
+.mst-quiz-editor .mst-rim, .mst-quiz-import.MuiPaper-root {
+  background: #fff; background-image: none; backdrop-filter: none;
+  box-shadow: 0 2px 8px rgb(0 0 0 / .06);
+}
+:root[data-theme-mode="dark"] .mst-quiz-editor .mst-rim,
+:root[data-theme-mode="dark"] .mst-quiz-import.MuiPaper-root { background: #172033; }
+.mst-quiz-editor .mst-rim::before, .mst-quiz-editor .mst-rim::after,
+.mst-quiz-editor .mst-quiz-light { display: none; }
+.mst-quiz-editor .mst-focused-question { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.mst-import-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(100px, .65fr); gap: 16px 12px; padding-top: 8px; }
+.mst-import-wide { grid-column: 1 / -1; min-width: 0; }
+.mst-quiz-import .mst-upload[data-size="compact"] .mst-drop { min-height: 90px; padding: 12px; gap: 4px; }
+.mst-quiz-import .mst-drop-orb { display: none; }
+.mst-quiz-import .MuiDialogActions-root { padding: 12px 24px 16px; }
+.mst-quiz-import .MuiSelect-select { white-space: normal; }
+@media (max-width: 600px) {
+  .mst-quiz-import.MuiPaper-root { margin: 12px; width: calc(100% - 24px); max-height: calc(100% - 24px); }
+  .mst-quiz-import .MuiDialogContent-root { padding: 8px 16px; }
+  .mst-quiz-import .MuiDialogTitle-root { padding: 16px; }
+}
+
+/* Phase1.14 Designer D08-D13: compact controls and opaque data surfaces only. */
+.mst-assessment-students.MuiPaper-root, .mst-review-workspace .mst-review-q.MuiPaper-root,
+.mst-quiz-editor .mst-builder-card.MuiPaper-root, .mst-quiz-editor .mst-question-card.MuiPaper-root,
+.mst-quiz-card.MuiPaper-root { background:#f2f7fe; background-image:none; backdrop-filter:none; box-shadow:none; border:1px solid #cddcf0; border-radius:16px; }
+:root[data-theme-mode="dark"] .mst-assessment-students.MuiPaper-root,
+:root[data-theme-mode="dark"] .mst-review-workspace .mst-review-q.MuiPaper-root,
+:root[data-theme-mode="dark"] .mst-quiz-editor .mst-builder-card.MuiPaper-root,
+:root[data-theme-mode="dark"] .mst-quiz-editor .mst-question-card.MuiPaper-root,
+:root[data-theme-mode="dark"] .mst-quiz-card.MuiPaper-root { background:#16253b; border-color:#304764; }
+.mst-assessment-students.mst-rim::before,.mst-review-q.mst-rim::before,.mst-quiz-card.mst-rim::before,
+.mst-quiz-editor .mst-builder-card.mst-rim::before { display:none; }
+.mst-question-nav[data-single="true"] .mst-question-nav-controls,
+.mst-question-nav[data-single="true"] .mst-question-nav-grid,
+.mst-question-nav[data-single="true"] .mst-question-nav-hint[aria-live] { display:none; }
+.mst-mobile-step-label { display:none; }
+.mst-math-help { margin-top:8px; font-size:12px; color:var(--mst-ink-2); }
+.mst-math-help summary,.mst-optional-quiz-phase summary { cursor:pointer; min-height:32px; align-content:center; }
+.mst-math-help p { margin:6px 0; }
+.mst-optional-quiz-phase summary { font-weight:600; }
+.mst-quiz-editor .mst-builder-card { padding:20px; }
+@media(max-width:599px) {
+ .mst-question-nav { padding:12px; }
+ .mst-question-nav-heading { display:none; }
+ .mst-question-nav[data-single="true"] .mst-question-nav-heading { display:flex; margin:0; }
+ .mst-question-nav-controls { display:grid; grid-template-columns:minmax(0,1fr) 130px; align-items:end; gap:8px; }
+ .mst-question-nav-step { margin:0; gap:4px; }
+ .mst-question-nav-step>button { min-width:0; font-size:12px; }
+ .mst-question-nav-hint { display:none; }
+ .mst-question-nav .mst-review-filters { margin-bottom:8px; }
+ .mst-review-workspace .mst-page-head-title { font-size:24px; line-height:30px; }
+ .mst-review-workspace .mst-page-head-crumbs { display:none; }
+ .mst-review-workspace .mst-review-overview { margin:8px 0; font-size:12px; }
+ .mst-review-workspace .mst-review-overview p { margin:0; }
+ .mst-quiz-editor .mst-builder-stepper { display:none; }
+ .mst-mobile-step-label { display:block; font-size:13px; color:var(--mst-ink-2); margin:8px 0 16px; }
+ .mst-quiz-editor .mst-builder-card { padding:16px; }
+ .mst-quiz-editor .mst-builder-toolbar { margin-bottom:12px; }
+ .mst-quiz-editor .mst-question-nav[data-single="true"] { display:none; }
+}
+
+/* Designer D14-D17: compact tag management and unobscured assessment actions. */
+.mst-tag-member-list { border:1px solid var(--mst-edge); border-radius:14px; overflow:hidden; }
+.mst-tag-member-row { display:flex; align-items:center; gap:8px; padding:8px 12px; min-height:56px; background:#f2f7fe; border-bottom:1px solid var(--mst-edge); }
+.mst-tag-member-row:last-child { border-bottom:0; }
+:root[data-theme-mode="dark"] .mst-tag-member-row { background:#16253b; }
+.mst-tags-panel .MuiButton-root { min-height:40px; }
+.mst-replace-sources>summary { cursor:pointer; font-weight:600; padding:12px 0; min-height:44px; }
+.mst-replace-sources[open]>summary { margin-bottom:12px; }
+.mst-wizard-bar { position:static !important; margin-top:16px; }
+.mst-wizard-body :is(input,textarea,button,select,[tabindex]) { scroll-margin-block:100px; }
+
+.mst-source-notes summary { cursor:pointer; min-height:40px; align-content:center; color:var(--mst-ink-2); font-size:13px; }
+
+/* Designer final D15: grid tracks and the tag selector must shrink beside its menu. */
+.mst-tags-panel { width:100%; min-width:0; grid-template-columns:minmax(0,1fr); }
+.mst-tags-panel > * { min-width:0; max-width:100%; }
+.mst-tags-panel .MuiAutocomplete-root { min-width:0; }
+.mst-tag-member-row > .MuiBox-root { min-width:0; overflow-wrap:anywhere; }

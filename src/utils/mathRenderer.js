@@ -88,76 +88,41 @@ function convertSimpleMathFallback(expr) {
  * @param {string} text - Text with $ and $$ delimited formulas
  * @returns {Array} Array of {type, content, isDisplay, error} objects
  */
-export function parseTextWithMath(text) {
-  if (!text) return [{ type: 'text', content: '' }];
+// Only repair an entire unmistakable formula, never equations guessed inside prose.
+export function normalizeMathText(text) {
+  if (typeof text !== 'string' || !text || /\$|\\\(|\\\[/.test(text)) return text;
+  const signal = /\\(?:frac|sqrt|pi|partial|int|sum|alpha|beta|theta)\b|[\w)]\s*[\^_]/.test(text);
+  const stripped = text.replace(/\\[A-Za-z]+|\b(?:sqrt|sin|cos|tan|log|ln|pi)\b/g, '');
+  return signal && !/[A-Za-z]{3,}/.test(stripped) ? '$' + text.trim() + '$' : text;
+}
 
+export function parseTextWithMath(text) {
+  const source = normalizeMathText(typeof text === 'string' ? text : text == null ? '' : JSON.stringify(text));
   const parts = [];
   let lastIndex = 0;
-
-  // Regex to match $$...$$ or $...$
-  const regex = /\$\$(.*?)\$\$|\$(.*?)\$/g;
-  let match;
-
-  while ((match = regex.exec(text)) !== null) {
-    // Add text before the math
-    if (match.index > lastIndex) {
-      parts.push({
-        type: 'text',
-        content: text.slice(lastIndex, match.index)
-      });
-    }
-
-    // Add the math part
-    const mathContent = match[1] || match[2]; // $$...$$ or $...$
-    const isDisplay = !!match[1]; // true if $$...$$
-
+  // Preserve escaped currency; also accept existing \(...\)/\[...\] content.
+  const regex = /(?<!\\)\$\$([\s\S]+?)\$\$|(?<![\\$])\$(?!\$)([^$\n]+?)\$(?![\d$])|\\\(([\s\S]+?)\\\)|\\\[([\s\S]+?)\\\]/g;
+  for (const match of source.matchAll(regex)) {
+    if (match.index > lastIndex) parts.push({ type: 'text', content: source.slice(lastIndex, match.index) });
+    const content = match[1] ?? match[2] ?? match[3] ?? match[4];
+    const isDisplay = match[1] != null || match[4] != null;
     try {
-      const tex = toLatex(mathContent);
-      const html = katex.renderToString(tex, {
-        throwOnError: false,
-        displayMode: isDisplay,
-      });
-
-      parts.push({
-        type: 'math',
-        content: html,
-        isDisplay
-      });
-    } catch (e) {
-      try {
-        const fallbackTex = mathContent.includes('\\')
-          ? mathContent
-          : convertSimpleMathFallback(mathContent);
-        const fallbackHtml = katex.renderToString(fallbackTex, {
-          throwOnError: false,
-          displayMode: isDisplay,
-        });
-
-        parts.push({
-          type: 'math',
-          content: fallbackHtml,
-          isDisplay
-        });
-      } catch (fallbackError) {
-        // If math parsing fails, show it as error
-        parts.push({
-          type: 'error',
-          content: mathContent,
-          error: String(fallbackError?.message || fallbackError)
-        });
+      if (content.length > 10000) throw new Error('Equation is too long');
+      let tex = content.trim();
+      if (!tex.includes('\\')) {
+        // Legacy quizzes used mathjs syntax. Do not reinterpret genuine LaTeX.
+        try { tex = toLatex(tex); } catch { tex = convertSimpleMathFallback(tex); }
       }
+      parts.push({ type: 'math', isDisplay, content: katex.renderToString(tex, {
+        throwOnError: true, trust: false, strict: 'warn', displayMode: isDisplay,
+        output: 'htmlAndMathml', maxExpand: 1000, maxSize: 20,
+      }) });
+    } catch (error) {
+      // Keep the source visible for correction; never silently substitute another formula.
+      parts.push({ type: 'error', content, error: String(error.message || error) });
     }
-
-    lastIndex = regex.lastIndex;
+    lastIndex = match.index + match[0].length;
   }
-
-  // Add remaining text after last math
-  if (lastIndex < text.length) {
-    parts.push({
-      type: 'text',
-      content: text.slice(lastIndex)
-    });
-  }
-
-  return parts;
+  if (lastIndex < source.length) parts.push({ type: 'text', content: source.slice(lastIndex) });
+  return parts.length ? parts : [{ type: 'text', content: source }];
 }

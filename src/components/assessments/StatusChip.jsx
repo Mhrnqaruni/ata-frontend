@@ -22,12 +22,12 @@ const statusConfig = {
     AI_GRADED: { label: "AI graded", color: "primary", icon: <AutoAwesomeRounded className="mst-ai-glyph" /> },
     PENDING_REVIEW: { label: "Pending review", color: "warning", icon: <RateReviewOutlined /> },
     TEACHER_GRADED: { label: "Teacher graded", color: "success", icon: <HowToRegOutlined /> },
+    INCOMPLETE: { label: "Incomplete", color: "warning", icon: <ErrorOutlineOutlined /> },
     ABSENT: { label: "Absent", color: "default" },
 };
 
-const formatTime = (seconds) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 
-const StatusChip = ({ status, progress, remainingSeconds = 0 }) => {
+const StatusChip = ({ status, progress }) => {
     const config = statusConfig[status] || { label: status, color: "default", icon: null };
     const progressPercent = progress && progress.total > 0 ? (progress.processed / progress.total) * 100 : 0;
     const isProcessing = status === 'Processing' || status === 'Summarizing';
@@ -40,11 +40,9 @@ const StatusChip = ({ status, progress, remainingSeconds = 0 }) => {
                     <LinearProgress aria-label="Grading progress" value={progressPercent} variant="determinate" />
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.75, gap: 1 }}>
                         <Typography color="text.secondary" variant="caption">
-                            {status === 'Summarizing' ? 'Finishing the results…' : `${progress.processed} of ${progress.total} graded`}
+                            {status === 'Summarizing' ? 'Finishing the results…' : `${progress.processed} of ${progress.total} analysed`}
                         </Typography>
-                        {remainingSeconds > 0 && status === 'Processing' && (
-                            <Typography color="text.secondary" variant="caption">about {formatTime(remainingSeconds)} left</Typography>
-                        )}
+
                     </Box>
                 </Box>
             )}

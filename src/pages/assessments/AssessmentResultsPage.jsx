@@ -1,6 +1,8 @@
+import AssessmentAnalytics from '../../components/assessments/AssessmentAnalytics';
+import TagAnalytics from '../../components/tags/TagAnalytics';
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { Box, Alert, Skeleton } from '@mui/material';
+import { useParams, useSearchParams } from 'react-router-dom';
+import { Box, Alert, Skeleton, Tabs, Tab } from '@mui/material';
 import PeopleAltOutlined from '@mui/icons-material/PeopleAltOutlined';
 import FunctionsOutlined from '@mui/icons-material/FunctionsOutlined';
 import RateReviewOutlined from '@mui/icons-material/RateReviewOutlined';
@@ -20,6 +22,8 @@ const summarise = (rows = []) => {
 
 const AssessmentResultsPage = () => {
   const { job_id } = useParams();
+  const [searchParams,setSearchParams]=useSearchParams();
+  const activeTab=searchParams.get("tab")==="analytics"?"analytics":"students";
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [results, setResults] = useState(null);
@@ -61,19 +65,26 @@ const AssessmentResultsPage = () => {
   const sum = summarise(rows);
 
   return (
-    <Box>
+    <Box className={activeTab === "analytics" ? "mst-analytics-page" : undefined}>
       <PageHeader
-        breadcrumbs={[{ label: 'Assessments', to: '/assessments' }, { label: results?.assessmentName || 'Results' }]}
+        breadcrumbs={[{ label: 'Assessments', to: '/assessments' }, { label: activeTab === 'analytics' ? 'Analytics' : (results?.assessmentName || 'Results') }]}
         title={results?.assessmentName || 'Assessment results'}
         titleAdornment={results?.status ? <StatusChip status={results.status} /> : null}
       />
+      <Tabs value={activeTab} onChange={(_,value)=>{const next=new URLSearchParams(searchParams);value==='analytics'?next.set('tab',value):next.delete('tab');setSearchParams(next);}} aria-label="Assessment results views" sx={{mb:3}}>
+        <Tab value="students" label="Students" id="students-tab" aria-controls="students-panel"/>
+        <Tab value="analytics" label="Analytics" id="analytics-tab" aria-controls="analytics-panel"/>
+      </Tabs>
+      {activeTab==='analytics'?<Box role="tabpanel" id="analytics-panel" aria-labelledby="analytics-tab"><AssessmentAnalytics jobId={job_id} assessmentOnly={results?.assessmentOnly}/></Box>:<Box role="tabpanel" id="students-panel" aria-labelledby="students-tab">
       <dl className="mst-results-summary" aria-label="Assessment summary">
-        <div><dt>Students</dt><dd>{sum.students}</dd></div>
-        <div><dt>Average</dt><dd>{sum.average == null ? '—' : `${sum.average.toFixed(1)}%`}</dd></div>
+        <div><dt>Students shown</dt><dd>{sum.students}</dd></div>
+        <div><dt>Average of graded submissions</dt><dd>{sum.average == null ? '—' : `${sum.average.toFixed(1)}%`}</dd></div>
         <div><dt>Needs review</dt><dd>{sum.pending}</dd></div>
       </dl>
       <div className="mst-section-label">Students</div>
-      <ResultsTable rows={rows} />
+      <TagAnalytics activityId={job_id}/>
+      <ResultsTable rows={rows} assessmentOnly={results?.assessmentOnly} />
+      </Box>}
     </Box>
   );
 };

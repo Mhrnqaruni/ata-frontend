@@ -34,6 +34,7 @@ import SlideGenerator from './pages/tools/SlideGenerator';
 import RubricGenerator from './pages/tools/RubricGenerator';
 import Assessments from './pages/Assessments';
 import NewAssessmentV2 from './pages/assessments/NewAssessmentV2';
+import QuickAssessment from './pages/assessments/QuickAssessment';
 import AssessmentResultsPage from './pages/assessments/AssessmentResultsPage';
 import AssessmentReviewPage from './pages/assessments/AssessmentReviewPage';
 import RedirectReviewToFirstStudent from './pages/assessments/RedirectReviewToFirstStudent';
@@ -134,6 +135,7 @@ const ThemedApp = () => {
           <Route path="/tools/rubric-generator" element={<RubricGenerator />} />
           <Route path="/assessments" element={<Assessments />} />
           <Route path="/assessments/new" element={<NewAssessmentV2 />} />
+          <Route path="/assessments/quick" element={<QuickAssessment />} />
           <Route path="/assessments/:job_id/results" element={<AssessmentResultsPage />} />
           <Route path="/assessments/:job_id/review/:entity_id" element={<AssessmentReviewPage />} />
           <Route path="/quizzes" element={<Quizzes />} />

@@ -1,5 +1,6 @@
-import React from 'react';
-import { Button, Card, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip, Typography, useTheme } from '@mui/material';
+import React, { useState } from 'react';
+import { useSnackbar } from '../../hooks/useSnackbar';
+import { Button, Card, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip, Typography, useTheme, Menu, MenuItem } from '@mui/material';
 import DownloadRounded from '@mui/icons-material/DownloadRounded';
 import EmptyState from '../common/EmptyState';
 import { initialsOf } from '../classes/StudentTable';
@@ -9,17 +10,20 @@ import StatusChip from './StatusChip';
 import '../common/responsive-table.css';
 import reviewService from '../../services/reviewService';
 
-const ResultsTable = ({ rows }) => {
+const ResultsTable = ({ rows, assessmentOnly = false }) => {
   const navigate = useNavigate();
   const { job_id } = useParams();
   const theme = useTheme();
 
-  const handleDownload = (entityId) => {
-    reviewService.downloadReport(job_id, entityId)
-      .catch(err => {
-        // Optionally show an error to the user
-        console.error(err.message);
-      });
+  const { showSnackbar } = useSnackbar();
+  const [downloadMenu, setDownloadMenu] = useState(null);
+  const [downloading, setDownloading] = useState(null);
+  const handleDownload = async (format) => {
+    const entityId = downloadMenu.entityId;
+    setDownloadMenu(null); setDownloading(entityId);
+    try { await reviewService.downloadReport(job_id, entityId, format); }
+    catch (error) { showSnackbar(error.message || 'Report download failed.', 'error'); }
+    finally { setDownloading(null); }
   };
 
   const handleReview = (entityId) => {
@@ -57,7 +61,7 @@ const ResultsTable = ({ rows }) => {
       grade = <span className="mst-cell-muted">—</span>;
     }
     const canReview = s.status !== 'ABSENT';
-    const canDownload = s.status !== 'ABSENT' && s.status !== 'PENDING_REVIEW';
+    const canDownload = s.totalScore != null && ['AI_GRADED','TEACHER_GRADED'].includes(s.status);
     return (
       <TableRow key={s.entityId} className="mst-result-record">
         <TableCell component="th" scope="row" data-label="Student">
@@ -66,27 +70,33 @@ const ResultsTable = ({ rows }) => {
             <span className="mst-person-name">{s.studentName}</span>
           </span>
         </TableCell>
-        <TableCell className="mst-cell-muted" data-label="Student ID">{s.studentId}</TableCell>
+        <TableCell className="mst-cell-muted" data-label="Student ID">{assessmentOnly && s.isOutsider ? "—" : s.studentId}</TableCell>
         <TableCell data-label="Status"><StatusChip status={s.status} /></TableCell>
         <TableCell data-label="Grade">{grade}</TableCell>
         <TableCell align="right" className="mst-row-actions mst-row-actions-on" data-label="Actions">
+          {s.status==='ABSENT'?<span className="mst-cell-muted">No submission</span>:<>
           <Button size="small" variant="outlined" onClick={() => handleReview(s.entityId)} disabled={!canReview} sx={{ mr: 0.5 }}>
             Review
           </Button>
           <Tooltip title={canDownload ? 'Download report' : 'No report yet'}>
             <span>
-              <IconButton aria-label={`Download ${s.studentName}'s report`} onClick={() => handleDownload(s.entityId)} disabled={!canDownload}>
+              <IconButton aria-label={`Download ${s.studentName}'s report`} onClick={event => setDownloadMenu({ anchor: event.currentTarget, entityId: s.entityId })} disabled={!canDownload || downloading === s.entityId}>
                 <DownloadRounded fontSize="small" />
               </IconButton>
             </span>
           </Tooltip>
+          </>}
         </TableCell>
       </TableRow>
     );
   };
 
   return (
-    <Card className="mst-rim">
+    <Card className="mst-rim mst-assessment-students">
+    <Menu anchorEl={downloadMenu?.anchor} open={Boolean(downloadMenu)} onClose={() => setDownloadMenu(null)}>
+      <MenuItem onClick={() => handleDownload('pdf')}>PDF (.pdf)</MenuItem>
+      <MenuItem onClick={() => handleDownload('docx')}>Word (.docx)</MenuItem>
+    </Menu>
     <TableContainer>
       <Table className="mst-responsive-table mst-result-records mst-table" aria-label="Student results">
         <TableHead>
@@ -107,7 +117,7 @@ const ResultsTable = ({ rows }) => {
                 colSpan={5}
                 className="mst-table-group"
               >
-                <Typography component="span" variant="overline">Not in the class roster</Typography>
+                <Typography component="span" variant="overline">{assessmentOnly ? "Students in this assessment" : "Not in the class roster"}</Typography>
               </TableCell>
             </TableRow>
           )}

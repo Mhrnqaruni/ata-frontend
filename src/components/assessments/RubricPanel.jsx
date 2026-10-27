@@ -1,3 +1,6 @@
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 // /src/components/assessments/RubricPanel.jsx
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -28,7 +31,7 @@ const RubricPanel = ({ question, rubric }) => {
           <Typography variant="body1" whiteSpace="pre-wrap">{question?.text}</Typography>
         </TabPanel>
         <TabPanel value={activeTab} index={1}>
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{rubric || 'No rubric provided.'}</ReactMarkdown>
+          <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[[rehypeKatex, { trust: false, maxExpand: 1000, maxSize: 20 }]]}>{rubric || 'No rubric provided.'}</ReactMarkdown>
         </TabPanel>
       </Box>
     </Card>
