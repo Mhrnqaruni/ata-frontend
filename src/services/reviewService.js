@@ -9,6 +9,7 @@ const reviewService = {
         jobId: data.jobId,
         assessmentName: data.assessmentName,
         status: data.status,
+        assessmentOnly: data.assessmentOnly ?? false,
         studentsAiGraded: data.studentsAiGraded ?? [],
         studentsPending:  data.studentsPending  ?? [],
         students: data.students ?? [],
