@@ -14,7 +14,7 @@ export default function RenameActivityDialog({ item, onClose, onSaved }) {
     setBusy(true); setError('');
     try {
       await renameActivity(item.kind, item.id, name.trim());
-      onSaved(); onClose();
+      onSaved?.(); onClose();
     } catch (failure) {
       const detail = failure.response?.data?.detail;
       setError(typeof detail === 'string' ? detail : 'Could not rename. Please try again.');

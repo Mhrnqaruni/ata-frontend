@@ -20,8 +20,18 @@ const dir = await mkdtemp(path.join(process.cwd(), '.navigation-test-'));
 const output = path.join(dir, 'runtime.mjs');
 await build({ stdin: { contents: `export {default as api} from './src/services/api.js';
 export * from './src/services/queryCache.js'; export * from './src/hooks/useAuth.jsx';
-export { teacherOptions, quizSessionOptions } from './src/hooks/useTeacherData.js';`,
+export { teacherOptions, quizSessionOptions } from './src/hooks/useTeacherData.js';
+export { default as RenameActivityDialog } from './src/components/common/RenameActivityDialog.jsx';`,
   resolveDir: process.cwd(), loader: 'jsx' }, bundle: true, packages: 'external', platform: 'node',
+  plugins: [{ name: 'visual-shell-only', setup(build) {
+    build.onResolve({ filter: /^@mui\/material$/ }, () => ({ path: 'mui', namespace: 'test-shell' }));
+    build.onLoad({ filter: /.*/, namespace: 'test-shell' }, () => ({
+      contents: `import React from 'react'; export const Dialog=p=>React.createElement('Dialog',p,p.children),
+      DialogTitle=p=>React.createElement('DialogTitle',p,p.children), DialogContent=p=>React.createElement('DialogContent',p,p.children),
+      DialogActions=p=>React.createElement('DialogActions',p,p.children), TextField=p=>React.createElement('TextField',p),
+      Button=p=>React.createElement('Button',p,p.children), Alert=p=>React.createElement('Alert',p,p.children);`,
+      loader: 'js', resolveDir: process.cwd() }));
+  } }],
   format: 'esm', outfile: output, define: { 'import.meta.env.VITE_API_BASE_URL': '"http://offline.invalid"' } });
 const runtime = await import(pathToFileURL(output));
 const {api, queryClient: client, resetTeacherSession: reset, sessionGeneration: generation,
@@ -123,4 +133,14 @@ test('polling is bounded by activity and historical quiz cards never request ses
   assert.equal(quick.refetchInterval({state:{data:[]}}),15000);
   assert.equal(assessments.refetchInterval({state:{data:[{status:'Processing'}]}}),5000);
   assert.equal(quick.refetchOnWindowFocus,'always');
+});
+
+test('actual rename submission closes after success without an optional refresh callback', async () => {
+  reset();storage.clear();let calls=0,closed=0,tree;
+  api.defaults.adapter=config=>{calls++;return Promise.resolve(response(config,{name:'Updated'}));};
+  await act(async()=>{tree=Renderer.create(React.createElement(runtime.RenameActivityDialog,{item:{kind:'assessment',id:'synthetic',name:'Old'},onClose:()=>closed++}));});
+  await act(async()=>tree.root.findByType('TextField').props.onChange({target:{value:'Updated'}}));
+  await act(async()=>{await tree.root.findByType('Dialog').props.PaperProps.onSubmit({preventDefault(){}});});
+  assert.equal(calls,1);assert.equal(closed,1);assert.equal(tree.root.findAllByType('Alert').length,0);
+  await act(async()=>tree.unmount());
 });
