@@ -1,6 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  Box,
   Button,
   TextField,
   MenuItem,
@@ -9,9 +8,12 @@ import {
   DialogContent,
   DialogTitle,
   DialogActions,
-  Stack,
-  Typography,
 } from "@mui/material";
+import { Chip, IconButton, Menu, Tooltip } from "@mui/material";
+import MoreHorizRounded from "@mui/icons-material/MoreHorizRounded";
+import ChevronLeftRounded from "@mui/icons-material/ChevronLeftRounded";
+import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
+import CheckRounded from "@mui/icons-material/CheckRounded";
 import service from "../../services/quickAssessmentService";
 
 export default function QuickGroupReview({
@@ -22,7 +24,18 @@ export default function QuickGroupReview({
 }) {
   const [selected, setSelected] = useState(0);
   const [preview, setPreview] = useState(null);
+  const [previewLabel, setPreviewLabel] = useState("");
   const [error, setError] = useState("");
+  const [pageMenu, setPageMenu] = useState(null);
+  const [movePage, setMovePage] = useState(null);
+  const [destination, setDestination] = useState("");
+  const [opening, setOpening] = useState(false);
+  useEffect(
+    () => () => {
+      if (preview) URL.revokeObjectURL(preview);
+    },
+    [preview],
+  );
   const groups = value?.groups || [];
   const group = groups[Math.min(selected, groups.length - 1)];
   const update = (next) =>
@@ -86,6 +99,11 @@ export default function QuickGroupReview({
     edit("pages", pages);
   };
   const show = async (p) => {
+    setPreviewLabel(
+      `${preparation.files.find((file) => file.id === p.inputId)?.name || "Student paper"} · page ${p.page}`,
+    );
+    setOpening(true);
+    setError("");
     try {
       setPreview(
         URL.createObjectURL(
@@ -94,43 +112,86 @@ export default function QuickGroupReview({
       );
     } catch {
       setError("Could not load this page. Try again.");
+    } finally {
+      setOpening(false);
     }
   };
   const close = () => {
-    if (preview) URL.revokeObjectURL(preview);
     setPreview(null);
   };
   if (!group) return null;
+  const selectedIndex = groups.indexOf(group);
+  const remaining = groups.filter((g) => g.uncertain).length;
   return (
-    <Box sx={{ mt: 2 }}>
-      <Typography variant="h6">Check student pages</Typography>
-      <Typography variant="body2" sx={{ mb: 2 }}>
-        Each group is one student. Move, reorder or split pages if needed.
-        Similar names can belong to different students.
-      </Typography>
-      {error && <Alert severity="error">{error}</Alert>}
-      <TextField
-        disabled={disabled}
-        select
-        fullWidth
-        label="Student group"
-        value={group.id}
-        onChange={(e) =>
-          setSelected(groups.findIndex((g) => g.id === e.target.value))
-        }
-      >
-        {groups.map((g, i) => (
-          <MenuItem key={g.id} value={g.id}>
-            {g.name || `Student ${i + 1}`} · {g.pages.length} pages
-            {g.uncertain ? " · Check needed" : ""}
-          </MenuItem>
-        ))}
-      </TextField>
+    <section className="qa-group-panel" aria-label="Check student pages">
+      <div className="qa-group-title">
+        <div>
+          <h2>Check student pages</h2>
+          <p>One group per student. Check only what needs attention.</p>
+        </div>
+        <Chip
+          size="small"
+          color={remaining ? "warning" : "success"}
+          variant="outlined"
+          label={remaining ? `${remaining} to check` : "All checked"}
+        />
+      </div>
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+      <div className="qa-group-nav">
+        <Tooltip title="Previous student">
+          <span>
+            <IconButton
+              disabled={disabled || selectedIndex === 0}
+              aria-label="Previous student"
+              onClick={() => setSelected(selectedIndex - 1)}
+            >
+              <ChevronLeftRounded />
+            </IconButton>
+          </span>
+        </Tooltip>
+        <TextField
+          size="small"
+          disabled={disabled}
+          select
+          label="Student"
+          SelectProps={{
+            renderValue: () =>
+              `${group.name || `Student ${selectedIndex + 1}`} · ${group.pages.length} ${group.pages.length === 1 ? "page" : "pages"}`,
+          }}
+          value={group.id}
+          onChange={(e) =>
+            setSelected(groups.findIndex((g) => g.id === e.target.value))
+          }
+        >
+          {groups.map((g, i) => (
+            <MenuItem key={g.id} value={g.id}>
+              {g.name || `Student ${i + 1}`} · {g.pages.length}{" "}
+              {g.pages.length === 1 ? "page" : "pages"}
+              {g.uncertain ? " · Check needed" : " · Checked"}
+            </MenuItem>
+          ))}
+        </TextField>
+        <Tooltip title="Next student">
+          <span>
+            <IconButton
+              disabled={disabled || selectedIndex === groups.length - 1}
+              aria-label="Next student"
+              onClick={() => setSelected(selectedIndex + 1)}
+            >
+              <ChevronRightRounded />
+            </IconButton>
+          </span>
+        </Tooltip>
+      </div>
       {(value.issues || []).map((issue, i) => (
         <Alert
           key={i}
           severity="warning"
-          sx={{ my: 1 }}
+          sx={{ mb: 2 }}
           action={
             <Button
               disabled={disabled}
@@ -149,108 +210,180 @@ export default function QuickGroupReview({
         </Alert>
       ))}
       {group.reason && (
-        <Alert severity="warning" sx={{ my: 1 }}>
+        <Alert severity="warning" sx={{ mb: 2 }}>
           {group.reason}
         </Alert>
       )}
-      {group.uncertain && (
-        <Button
-          disabled={disabled}
-          onClick={() =>
-            update(
-              groups.map((g) =>
-                g.id === group.id ? { ...g, uncertain: false, reason: "" } : g,
-              ),
-            )
-          }
-          sx={{ my: 1 }}
-        >
-          Confirm these pages belong to this student
-        </Button>
-      )}
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ my: 2 }}>
+      <div aria-label="Student pages">
+        {group.pages.map((p, i) => (
+          <div className="qa-page-row" key={`${p.inputId}-${p.page}`}>
+            <span className="qa-page-number" aria-hidden="true">
+              {i + 1}
+            </span>
+            <span className="qa-page-label">
+              <strong>
+                {preparation.files.find((f) => f.id === p.inputId)?.name}
+              </strong>
+              <span>Original page {p.page}</span>
+            </span>
+            <span className="qa-page-actions">
+              <Button
+                size="small"
+                disabled={disabled || opening}
+                aria-label={`View ${preparation.files.find((file) => file.id === p.inputId)?.name || "student paper"}, page ${p.page}`}
+                onClick={() => show(p)}
+              >
+                {opening ? "Opening…" : "View"}
+              </Button>
+              <Tooltip title="Page actions">
+                <IconButton
+                  size="small"
+                  disabled={disabled}
+                  aria-label={`Page ${i + 1} actions`}
+                  aria-haspopup="menu"
+                  onClick={(e) =>
+                    setPageMenu({ anchor: e.currentTarget, index: i })
+                  }
+                >
+                  <MoreHorizRounded />
+                </IconButton>
+              </Tooltip>
+            </span>
+          </div>
+        ))}
+      </div>
+      <div className="qa-fields-grid" style={{ marginTop: 18 }}>
         <TextField
           disabled={disabled}
-          fullWidth
-          label="Student name (optional)"
+          size="small"
+          label="Student name"
+          placeholder={`Student ${selectedIndex + 1}`}
           value={group.name}
           onChange={(e) => edit("name", e.target.value)}
         />
         <TextField
           disabled={disabled}
-          fullWidth
+          size="small"
           label="Student ID (optional)"
           value={group.studentNumber}
           onChange={(e) => edit("studentNumber", e.target.value)}
         />
-      </Stack>
-      {group.pages.map((p, i) => (
-        <Box
-          key={`${p.inputId}-${p.page}`}
-          sx={{
-            py: 1,
-            borderBottom: "1px solid",
-            borderColor: "divider",
-            minWidth: 0,
+      </div>
+      <div className="qa-group-confirm">
+        {group.uncertain ? (
+          <Button
+            variant="outlined"
+            startIcon={<CheckRounded />}
+            disabled={disabled}
+            onClick={() =>
+              update(
+                groups.map((g) =>
+                  g.id === group.id
+                    ? { ...g, uncertain: false, reason: "" }
+                    : g,
+                ),
+              )
+            }
+          >
+            Confirm student pages
+          </Button>
+        ) : (
+          <Chip
+            size="small"
+            icon={<CheckRounded />}
+            label="Pages checked"
+            color="success"
+            variant="outlined"
+          />
+        )}
+      </div>
+      <Menu
+        anchorEl={pageMenu?.anchor}
+        open={!!pageMenu}
+        onClose={() => setPageMenu(null)}
+      >
+        <MenuItem
+          disabled={disabled || !pageMenu?.index}
+          onClick={() => {
+            reorder(pageMenu.index, -1);
+            setPageMenu(null);
           }}
         >
-          <Typography sx={{ overflowWrap: "anywhere" }}>
-            {i + 1}. {preparation.files.find((f) => f.id === p.inputId)?.name} ·
-            page {p.page}
-          </Typography>
-          <Stack
-            direction="row"
-            useFlexGap
-            flexWrap="wrap"
-            spacing={1}
+          Move earlier
+        </MenuItem>
+        <MenuItem
+          disabled={disabled || pageMenu?.index === group.pages.length - 1}
+          onClick={() => {
+            reorder(pageMenu.index, 1);
+            setPageMenu(null);
+          }}
+        >
+          Move later
+        </MenuItem>
+        <MenuItem
+          disabled={disabled || !pageMenu?.index}
+          onClick={() => {
+            split(pageMenu.index);
+            setPageMenu(null);
+          }}
+        >
+          Start new student here
+        </MenuItem>
+        <MenuItem
+          disabled={disabled || groups.length < 2}
+          onClick={() => {
+            setMovePage(pageMenu.index);
+            setDestination("");
+            setPageMenu(null);
+          }}
+        >
+          Move to another student…
+        </MenuItem>
+      </Menu>
+      <Dialog
+        open={movePage !== null}
+        onClose={() => setMovePage(null)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Move page to another student</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            fullWidth
+            select
+            label="Student"
+            value={destination}
             sx={{ mt: 1 }}
+            onChange={(e) => setDestination(e.target.value)}
           >
-            <Button size="small" onClick={() => show(p)}>
-              View page
-            </Button>
-            <Button
-              size="small"
-              disabled={disabled || !i}
-              onClick={() => reorder(i, -1)}
-            >
-              Earlier
-            </Button>
-            <Button
-              size="small"
-              disabled={disabled || i === group.pages.length - 1}
-              onClick={() => reorder(i, 1)}
-            >
-              Later
-            </Button>
-            {i > 0 && (
-              <Button disabled={disabled} size="small" onClick={() => split(i)}>
-                Split before this page
-              </Button>
-            )}
-            {groups.length > 1 && (
-              <TextField
-                disabled={disabled}
-                select
-                size="small"
-                label="Move to student"
-                value=""
-                sx={{ minWidth: 165 }}
-                onChange={(e) => move(i, e.target.value)}
-              >
-                {groups
-                  .filter((g) => g.id !== group.id)
-                  .map((g) => (
-                    <MenuItem key={g.id} value={g.id}>
-                      {g.name || `Student ${groups.indexOf(g) + 1}`}
-                    </MenuItem>
-                  ))}
-              </TextField>
-            )}
-          </Stack>
-        </Box>
-      ))}
+            {groups
+              .filter((g) => g.id !== group.id)
+              .map((g) => (
+                <MenuItem key={g.id} value={g.id}>
+                  {g.name || `Student ${groups.indexOf(g) + 1}`}
+                </MenuItem>
+              ))}
+          </TextField>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setMovePage(null)}>Cancel</Button>
+          <Button
+            variant="contained"
+            disabled={!destination || disabled}
+            onClick={() => {
+              move(movePage, destination);
+              setMovePage(null);
+            }}
+          >
+            Move page
+          </Button>
+        </DialogActions>
+      </Dialog>
       <Dialog open={!!preview} onClose={close} maxWidth="md" fullWidth>
-        <DialogTitle>Original student page</DialogTitle>
+        <DialogTitle sx={{ overflowWrap: "anywhere" }}>
+          {previewLabel}
+        </DialogTitle>
         <DialogContent>
           <img
             src={preview || undefined}
@@ -262,6 +395,6 @@ export default function QuickGroupReview({
           <Button onClick={close}>Close</Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </section>
   );
 }

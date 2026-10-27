@@ -1,0 +1,614 @@
+/* Quick Assessment uses MST tokens and shared uploads; styles stay inside this flow. */
+.qa-page {
+  max-width: 920px;
+  margin: 0 auto;
+  padding-bottom: 32px;
+}
+.qa-page .mst-page-head {
+  margin-bottom: 24px;
+}
+.qa-panel {
+  border: 1px solid var(--mst-edge);
+  border-radius: 20px;
+  background: #f2f7fe;
+  box-shadow: none;
+  padding: 28px;
+}
+.qa-page h2 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: 650;
+  color: var(--mst-ink);
+}
+.qa-page h3 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 650;
+}
+.qa-page p {
+  margin: 5px 0 0;
+  color: var(--mst-ink-2);
+  font-size: 14px;
+  line-height: 21px;
+}
+.qa-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.qa-panel .MuiButton-root {
+  min-height: 40px;
+  text-transform: none;
+}
+.qa-panel .MuiInputBase-root {
+  border-radius: 10px;
+}
+.qa-panel .qa-primary {
+  min-height: 44px;
+  padding: 10px 20px;
+  box-shadow: none;
+  flex-shrink: 0;
+}
+.qa-panel .qa-upload-primary .mst-drop {
+  min-height: 180px;
+  border-radius: 14px;
+  background: var(--mst-accent-tint);
+  border-color: var(--mst-accent);
+}
+.qa-panel .qa-upload-primary .mst-drop[data-filled="true"] {
+  min-height: 104px;
+  grid-template-columns: 44px minmax(0, 1fr);
+  text-align: left;
+  justify-items: start;
+  column-gap: 14px;
+  padding: 18px;
+}
+.qa-upload-primary .mst-drop[data-filled="true"] .mst-drop-orb {
+  grid-row: 1 / 3;
+}
+.qa-panel .mst-drop-orb {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  margin: 0 0 4px;
+}
+.qa-panel .mst-drop-browse {
+  background: var(--mst-accent-solid);
+  color: white;
+  border: none;
+  border-radius: 9px;
+  height: 36px;
+}
+.qa-panel .mst-file {
+  background: var(--mst-well);
+  border-radius: 10px;
+}
+.qa-panel .mst-file-name {
+  overflow-wrap: anywhere;
+}
+.qa-panel .qa-options {
+  border: 1px solid var(--mst-edge);
+  border-radius: 12px !important;
+  background: transparent;
+  margin: 22px 0 0;
+  box-shadow: none;
+}
+.qa-options::before {
+  display: none;
+}
+.qa-options .MuiAccordionSummary-root {
+  min-height: 72px;
+  padding: 0 16px;
+}
+.qa-options .MuiAccordionSummary-content {
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0;
+  min-width: 0;
+}
+.qa-options-icon {
+  color: var(--mst-accent-ink);
+}
+.qa-options-copy {
+  display: grid;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+.qa-options-copy strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+.qa-options-copy > span {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--mst-ink-2);
+  overflow-wrap: anywhere;
+}
+.qa-optional {
+  color: var(--mst-ink-2);
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--mst-neutral);
+}
+.qa-options .MuiAccordionDetails-root {
+  padding: 8px 16px 20px;
+}
+.qa-fields-grid,
+.qa-source-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+}
+.qa-review-choice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 0;
+}
+.qa-review-choice strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+.qa-review-choice p {
+  font-size: 12px;
+  margin-top: 2px;
+}
+.qa-upload-source .mst-upload[data-size="compact"] .mst-drop {
+  min-height: 94px;
+  padding: 12px;
+  border-radius: 10px;
+  grid-template-columns: 32px minmax(0, 1fr);
+  column-gap: 10px;
+  justify-items: start;
+  text-align: left;
+}
+.qa-upload-source .mst-drop .mst-drop-orb {
+  width: 32px;
+  height: 32px;
+  grid-row: 1 / 3;
+  margin: 0;
+}
+.qa-upload-source .mst-drop-title {
+  font-size: 14px;
+  line-height: 20px;
+}
+.qa-upload-source .mst-drop-hint {
+  font-size: 12px;
+}
+.qa-upload-source .mst-file-state {
+  display: none;
+}
+.qa-actionbar {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--mst-edge);
+}
+.qa-action-note {
+  display: grid;
+  gap: 3px;
+  font-size: 13px;
+  color: var(--mst-ink-2);
+}
+.qa-action-note strong {
+  color: var(--mst-ink);
+  font-weight: 600;
+}
+.qa-status-heading {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.qa-status-heading > div {
+  min-width: 0;
+}
+.qa-status-heading p {
+  overflow-wrap: anywhere;
+}
+.qa-status-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: var(--mst-accent-tint);
+  color: var(--mst-accent-ink);
+}
+.qa-progress-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 20px 0;
+  font-size: 14px;
+}
+.qa-stage-list {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 18px;
+  padding: 0;
+}
+.qa-stage-list li {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+  color: var(--mst-ink-2);
+  padding: 12px 0;
+  border-top: 2px solid var(--mst-edge);
+}
+.qa-stage-list li[data-state="current"],
+.qa-stage-list li[data-state="done"] {
+  border-color: var(--mst-accent);
+  color: var(--mst-ink);
+}
+.qa-stage-list li > span {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--mst-neutral);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.qa-stage-list li[data-state="current"] > span {
+  color: white;
+  background: var(--mst-accent-solid);
+}
+.qa-secondary-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+.qa-secondary-actions .MuiButton-root {
+  font-size: 12px;
+}
+.qa-recovery-sources {
+  margin-top: 20px;
+}
+.qa-confirm {
+  margin: 16px 0 0 !important;
+  align-items: center;
+}
+.qa-confirm .MuiTypography-root {
+  font-size: 14px;
+}
+.qa-scheme {
+  padding-top: 24px;
+  margin-top: 20px;
+  border-top: 1px solid var(--mst-edge);
+}
+.qa-question-nav {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+}
+.qa-question-nav .MuiButton-root {
+  min-width: 44px;
+}
+.qa-question-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.qa-group-panel {
+  padding-top: 24px;
+  margin-top: 20px;
+  border-top: 1px solid var(--mst-edge);
+}
+.qa-group-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.qa-group-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.qa-group-nav .MuiTextField-root {
+  flex: 1;
+  min-width: 0;
+}
+.qa-page-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--mst-edge);
+  border-radius: 12px;
+  background: var(--mst-well);
+}
+.qa-page-row + .qa-page-row {
+  margin-top: 8px;
+}
+.qa-page-number {
+  flex-shrink: 0;
+  width: 36px;
+  height: 42px;
+  border-radius: 6px;
+  background: var(--mst-accent-tint);
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  color: var(--mst-accent-ink);
+}
+.qa-page-label {
+  min-width: 0;
+  flex: 1;
+}
+.qa-page-label strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.qa-page-label span {
+  font-size: 12px;
+  color: var(--mst-ink-2);
+}
+.qa-page-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.qa-group-confirm {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+@media (max-width: 600px) {
+  .qa-page {
+    padding: 0 0 24px;
+  }
+  .qa-page .mst-page-head {
+    margin-bottom: 20px;
+  }
+  .qa-panel {
+    padding: 18px 16px;
+    border-radius: 16px;
+  }
+  .qa-section-heading {
+    margin-bottom: 16px;
+  }
+  .qa-panel .qa-upload-primary .mst-drop {
+    min-height: 168px;
+    padding: 16px 12px;
+  }
+  .qa-options-copy > span {
+    font-size: 12px;
+  }
+  .qa-optional {
+    display: none;
+  }
+  .qa-fields-grid,
+  .qa-source-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .qa-actionbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    margin-top: 20px;
+    padding-top: 16px;
+  }
+  .qa-actionbar .qa-primary {
+    width: 100%;
+  }
+  .qa-stage-list {
+    gap: 8px;
+  }
+  .qa-stage-list li {
+    flex-direction: column;
+    align-items: flex-start;
+    font-size: 12px;
+  }
+  .qa-status-heading {
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .qa-status-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+  }
+  .qa-panel .mst-file-state {
+    display: none;
+  }
+  .qa-page-row {
+    gap: 8px;
+    padding: 10px;
+  }
+}
+
+:root[data-theme-mode="dark"] .qa-panel {
+  background: #16253b;
+  border-color: #304764;
+}
+:root:not([data-theme-mode="dark"]) .qa-panel {
+  border-color: #cddcf0;
+}
+.qa-panel .mst-file-state {
+  display: none;
+}
+.qa-limits {
+  margin-top: 10px !important;
+  font-size: 12px !important;
+  color: var(--mst-ink-2);
+}
+.qa-upload-primary .mst-drop-browse {
+  border-radius: 999px;
+}
+.qa-panel .qa-options {
+  border-left: 0;
+  border-right: 0;
+  border-radius: 0 !important;
+}
+.qa-options .MuiAccordionSummary-root {
+  padding-left: 0;
+  padding-right: 0;
+}
+.qa-options .MuiAccordionDetails-root {
+  padding-left: 0;
+  padding-right: 0;
+}
+.qa-upload-source .mst-file-name {
+  white-space: normal;
+}
+
+.qa-panel .qa-options {
+  border-bottom: 0;
+}
+.qa-actionbar {
+  margin-top: 16px;
+  padding-top: 16px;
+}
+.qa-fields-grid {
+  grid-template-columns: minmax(0, 2fr) minmax(180px, 1fr);
+}
+.qa-panel .mst-file-name {
+  white-space: normal;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+}
+.qa-panel .mst-files {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+.qa-panel .mst-file {
+  border-radius: 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--mst-edge);
+  box-shadow: none;
+}
+.qa-panel .mst-file-remove {
+  width: 44px;
+  height: 44px;
+}
+.qa-panel [data-expanded="false"] .mst-files-list > li:nth-child(n + 6) {
+  display: none;
+}
+.qa-panel .qa-source-help {
+  margin: 0 0 12px;
+  font-size: 13px;
+}
+@media (max-width: 600px) {
+  .qa-fields-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .qa-panel .qa-upload-primary .mst-drop[data-filled="true"] {
+    min-height: 84px;
+    padding: 12px;
+    grid-template-columns: 32px minmax(0, 1fr);
+  }
+  .qa-panel .qa-upload-primary .mst-drop[data-filled="true"] .mst-drop-orb {
+    width: 32px;
+    height: 32px;
+  }
+  .qa-panel .qa-upload-primary .mst-drop[data-filled="true"] .mst-drop-title {
+    font-size: 14px;
+  }
+}
+
+.qa-prompt-preview {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  background: var(--mst-well);
+  border-radius: 10px;
+}
+.qa-prompt-text {
+  flex: 1;
+  min-width: 0;
+}
+.qa-prompt-preview > .MuiButton-root {
+  flex-shrink: 0;
+}
+@media (max-width: 600px) {
+  .qa-prompt-preview {
+    flex-direction: column;
+    gap: 6px;
+  }
+}
+
+.qa-status-icon[data-state="failed"],
+.qa-status-icon[data-state="interrupted"] {
+  color: var(--mst-warn-ink);
+  background: color-mix(in srgb, var(--mst-warn) 12%, transparent);
+}
+
+.qa-scheme-layout {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+}
+.qa-question-navigation {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.qa-scheme-editor {
+  min-width: 0;
+}
+.qa-question-navigation .mst-question-nav {
+  position: static;
+  box-shadow: none;
+  background: transparent;
+}
+@media (max-width: 900px) {
+  .qa-scheme-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+}
+
+.qa-panel > .qa-group-panel,
+.qa-panel > .qa-scheme {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.qa-has-actions .mst-page-head-actions .MuiIconButton-root {
+  border: 1px solid var(--mst-edge);
+  background: var(--mst-well);
+}
+@media (max-width: 600px) {
+  .qa-has-actions .mst-page-head-actions {
+    position: absolute;
+    right: 0;
+    top: 8px;
+    width: auto;
+    margin: 0;
+  }
+  .qa-has-actions .mst-page-head-text {
+    padding-right: 40px;
+  }
+}
