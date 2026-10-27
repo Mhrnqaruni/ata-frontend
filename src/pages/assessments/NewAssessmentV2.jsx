@@ -256,8 +256,9 @@ const NewAssessmentV2 = () => {
     setActiveStep((prev) => prev - 1);
   };
 
+  // Shared by the step content and the outer wizard description.
+  const isProcessing = state.status === 'parsing' || state.status === 'submitting';
   const getStepContent = (step) => {
-    const isProcessing = state.status === 'parsing' || state.status === 'submitting';
     switch (step) {
       case 0:
         return <Box sx={{display:'grid',gap:2}}>
