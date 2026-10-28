@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent,
-  DialogTitle, MenuItem, Paper, Stack, TextField, Typography } from '@mui/material';
+  DialogTitle, MenuItem, ListSubheader, Paper, Stack, TextField, Typography } from '@mui/material';
 import AddRounded from '@mui/icons-material/AddRounded';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -76,6 +76,7 @@ export default function FamilyHome() {
               else setSelected(value);
             }} sx={{ minWidth: 240, maxWidth: { sm: 380 } }}>
               {rows.map(item => <MenuItem key={item.id} value={item.id}>{item.displayName} · {item.gradeLevel || 'Year not set'}</MenuItem>)}
+              <ListSubheader>Manage family</ListSubheader>
               <MenuItem value="__add">Add another child</MenuItem>
               {child && <MenuItem value="__edit">Edit {child.displayName}'s profile</MenuItem>}
             </TextField>

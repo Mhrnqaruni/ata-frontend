@@ -144,3 +144,18 @@ test('actual rename submission closes after success without an optional refresh 
   assert.equal(calls,1);assert.equal(closed,1);assert.equal(tree.root.findAllByType('Alert').length,0);
   await act(async()=>tree.unmount());
 });
+
+
+test('unsaved family drafts warn on reload and session reset clears them', () => {
+  reset();
+  const draftKey = ['family', generation(), 'adult-A', 'child-A', 'quizDraft', 'activity-A'];
+  client.setQueryData(draftKey, { answers: { q1: 0 }, attemptId: 'synthetic-attempt' });
+  const leaving = new Event('beforeunload', { cancelable: true });
+  window.dispatchEvent(leaving);
+  assert.equal(leaving.defaultPrevented, true);
+  reset();
+  assert.equal(client.getQueryData(draftKey), undefined);
+  const afterLogout = new Event('beforeunload', { cancelable: true });
+  window.dispatchEvent(afterLogout);
+  assert.equal(afterLogout.defaultPrevented, false);
+});

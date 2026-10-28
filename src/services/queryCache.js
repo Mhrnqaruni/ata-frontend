@@ -55,3 +55,11 @@ export function invalidateAfter(service, commands, families) {
   }
   return wrapped;
 }
+
+// Unsaved family answers stay in memory only. Warn before a reload would discard them.
+if (typeof window !== 'undefined') window.addEventListener('beforeunload', event => {
+  const dirty = queryClient.getQueryCache().getAll().some(query =>
+    query.queryKey[0] === 'family' && query.queryKey[4] === 'quizDraft' &&
+    Object.keys(query.state.data?.answers || {}).length > 0);
+  if (dirty) { event.preventDefault(); event.returnValue = ''; }
+});

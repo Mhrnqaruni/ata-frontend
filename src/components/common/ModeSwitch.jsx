@@ -35,7 +35,7 @@ export default function ModeSwitch({ collapsed = false }) {
         aria-pressed={parent === (mode === 'parent')} onClick={() => select(mode)}
         variant={parent === (mode === 'parent') ? 'contained' : 'text'}
         sx={{ minWidth: 0, flex: 1, fontSize: collapsed ? 10 : 12 }}>
-        {mode === 'teacher' ? 'Teacher' : 'Parent'}
+        {`${hasMode(user, mode) ? '' : 'Set up '}${mode === 'teacher' ? 'Teacher' : 'Parent'}`}
       </Button>)}
     </Stack>
     {error && <Alert severity="error" sx={{ mt: 1 }}>{error}</Alert>}
