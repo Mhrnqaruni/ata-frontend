@@ -6,6 +6,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../services/api';
+import FamilyLearning from './FamilyLearning';
 import { hasMode } from '../../services/accountModes';
 import { queryClient, sessionGeneration } from '../../services/queryCache';
 
@@ -18,15 +19,20 @@ export default function FamilyHome() {
   const children = useQuery({ queryKey: key, enabled: !!user?.id && enabled,
     queryFn: async ({ signal }) => (await api.get('/api/parent/settings/manual-learners', { signal })).data });
   const [params, setParams] = useSearchParams();
-  const selected = params.get('child') || '';
-  const setSelected = id => setParams(id ? { child: id } : {}, { replace: true });
+  let rememberedChild = '';
+  try { rememberedChild = sessionStorage.getItem(`mst.family.child.${user?.id}`) || ''; } catch { /* Storage is optional. */ }
+  const selected = params.get('child') || rememberedChild;
+  const setSelected = id => {
+    try { sessionStorage.setItem(`mst.family.child.${user.id}`, id); } catch { /* URL selection still works. */ }
+    setParams(id ? { child: id } : {}, { replace: true });
+  };
   const [form, setForm] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   // Never let account changes inherit child selection or pending form contents.
   useEffect(() => { setForm(null); setError(''); }, [user?.id]);
   const rows = children.data?.filter(child => child.isActive !== false) || [];
-  const child = rows.find(item => item.id === selected) || rows[0];
+  const child = selected ? rows.find(item => item.id === selected) : rows[0];
   function addChild() { setError(''); setForm({ id: crypto.randomUUID(), name: '', year: '' }); }
   async function save() {
     const currentGeneration = sessionGeneration();
@@ -62,23 +68,25 @@ export default function FamilyHome() {
           <Button variant="contained" startIcon={<AddRounded />} onClick={addChild}>Add your child</Button>
         </Paper> : <>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }}>
-            <TextField select label="Learning for" value={child.id} onChange={e => setSelected(e.target.value)} sx={{ minWidth: 240 }}>
+            <TextField select label="Learning for" value={child?.id || ''} onChange={e => {
+              const value = e.target.value;
+              if (value === '__add') addChild();
+              else if (value === '__edit' && child) { setError(''); setForm({ id: child.id,
+                name: child.displayName, year: child.gradeLevel || '', edit: true }); }
+              else setSelected(value);
+            }} sx={{ minWidth: 240, maxWidth: { sm: 380 } }}>
               {rows.map(item => <MenuItem key={item.id} value={item.id}>{item.displayName} · {item.gradeLevel || 'Year not set'}</MenuItem>)}
+              <MenuItem value="__add">Add another child</MenuItem>
+              {child && <MenuItem value="__edit">Edit {child.displayName}'s profile</MenuItem>}
             </TextField>
-            <Button startIcon={<AddRounded />} onClick={addChild}>Add another child</Button>
-            <Button onClick={() => { setError(''); setForm({ id: child.id, name: child.displayName,
-              year: child.gradeLevel || '', edit: true }); }}>Edit child</Button>
           </Stack>
-          <Paper sx={{ p: { xs: 3, sm: 4 } }}>
-            <Typography variant="h4">{child.displayName}'s learning space</Typography>
-            <Typography color="text.secondary" sx={{ mt: 1 }}>{child.gradeLevel}</Typography>
-            <Alert severity="info" sx={{ mt: 3 }}>Development preview: family profiles and mode switching are ready to test. Guided learning and uploads are being connected next.</Alert>
-          </Paper>
+          {child ? <FamilyLearning key={`${user.id}:${child.id}`} child={child} /> :
+            <Alert severity="warning">That child is unavailable. Choose one of your children before preparing an activity.</Alert>}
         </>}
       {error && !form && <Alert severity="error">{error}</Alert>}
     </Stack>
     <Dialog open={!!form} onClose={() => { if (!busy) setForm(null); }} fullWidth maxWidth="xs">
-      <DialogTitle>Who are we helping?</DialogTitle>
+      <DialogTitle>{form?.edit ? "Edit child" : "Who are we helping?"}</DialogTitle>
       <DialogContent><Stack spacing={2} sx={{ pt: 1 }}>
         <TextField autoFocus label="Child's first name" value={form?.name || ''} inputProps={{ maxLength: 255 }}
           onChange={e => setForm({ ...form, name: e.target.value })} disabled={busy} />
@@ -89,7 +97,7 @@ export default function FamilyHome() {
         {error && <Alert severity="error">{error}</Alert>}
       </Stack></DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}><Button disabled={busy} onClick={() => setForm(null)}>Cancel</Button>
-        <Button variant="contained" disabled={busy || !form?.name.trim() || !form?.year} onClick={save}>{busy ? 'Saving…' : 'Continue'}</Button>
+        <Button variant="contained" disabled={busy || !form?.name.trim() || !form?.year} onClick={save}>{busy ? 'Saving…' : form?.edit ? 'Save changes' : 'Continue'}</Button>
       </DialogActions>
     </Dialog>
   </Box>;
