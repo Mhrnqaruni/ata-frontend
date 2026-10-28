@@ -17,6 +17,7 @@ import LightModeOutlined from "@mui/icons-material/LightModeOutlined";
 import DarkModeOutlined from "@mui/icons-material/DarkModeOutlined";
 import LogoutRounded from "@mui/icons-material/LogoutRounded";
 import PersonOutlineRounded from "@mui/icons-material/PersonOutlineRounded";
+import ModeSwitch from './ModeSwitch';
 import logo from "../../assets/mst_logo_no_bg.png";
 import { useThemeMode } from "../../hooks/useThemeMode";
 import { useAuth } from "../../hooks/useAuth";
@@ -71,6 +72,8 @@ function SidebarPanel({ collapsed, onToggleCollapse, onNavigate, showCollapse })
   }, [location.pathname, collapsed]);
 
   const name = user?.fullName || user?.full_name || user?.email || "Your account";
+  const familyMode = location.pathname === '/family';
+  const groups = familyMode ? [{ label: null, items: [{ text: 'My family', icon: HomeOutlined, path: '/family' }] }] : NAV_GROUPS;
   const role = user?.role ? user.role[0].toUpperCase() + user.role.slice(1) : "Teacher";
 
   return (
@@ -92,9 +95,10 @@ function SidebarPanel({ collapsed, onToggleCollapse, onNavigate, showCollapse })
         ) : null}
       </div>
 
+      <ModeSwitch collapsed={collapsed} />
       <nav aria-label="Main" className="mst-side-nav" ref={listRef}>
         {indicator !== null ? <span aria-hidden="true" className="mst-side-indicator" style={{ transform: `translateY(${indicator}px)` }} /> : null}
-        {NAV_GROUPS.map((group) => (
+        {groups.map((group) => (
           <div className="mst-side-group" key={group.label || "home"}>
             {group.label ? (collapsed ? <span aria-hidden="true" className="mst-side-rule" /> : <div className="mst-side-label">{group.label}</div>) : null}
             {group.items.map((item) => {

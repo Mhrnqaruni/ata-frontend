@@ -43,6 +43,7 @@ const Chatbot = lazy(() => import('./pages/Chatbot'));
 const StudentProfile = lazy(() => import('./pages/StudentProfile'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 import ParentPortalPending from './pages/ParentPortalPending';
+const FamilyHome = lazy(() => import('./pages/family/FamilyHome'));
 import Quizzes from './pages/Quizzes';
 const QuizBuilder = lazy(() => import('./pages/quizzes/QuizBuilder'));
 const QuizHost = lazy(() => import('./pages/quizzes/QuizHost'));
@@ -111,6 +112,10 @@ const ThemedApp = () => {
             </ProtectedRoute>
           }
         />
+
+        <Route path="/family" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+          <Route index element={<FamilyHome />} />
+        </Route>
 
         {/* --- [CRITICAL MODIFICATION 4/4: DEFINE PROTECTED ROUTES] --- */}
         {/* This parent Route uses the ProtectedRoute component as its element.

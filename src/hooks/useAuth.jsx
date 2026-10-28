@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useMemo, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
+import api from '../services/api';
 import { resetTeacherSession, sessionGeneration } from '../services/queryCache.js';
 
 const AuthContext = createContext(null);
@@ -62,9 +63,16 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('authToken');
     navigate('/login');
   }, [navigate]);
+  const enableMode = useCallback(async mode => {
+    const generation = sessionGeneration();
+    const { data } = await api.put(`/api/auth/modes/${mode}`);
+    if (generation !== sessionGeneration()) throw new Error('Your session changed. Please sign in again.');
+    setUser(data);
+    return data;
+  }, []);
   const register = useCallback(payload => authService.register(payload), []);
-  const value = useMemo(() => ({ user, isAuthenticated: !!user, isAuthLoading, login, logout, register }),
-    [user, isAuthLoading, login, logout, register]);
+  const value = useMemo(() => ({ user, isAuthenticated: !!user, isAuthLoading, login, logout, register, enableMode }),
+    [user, isAuthLoading, login, logout, register, enableMode]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 export const useAuth = () => {
