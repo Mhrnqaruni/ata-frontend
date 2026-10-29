@@ -1,20 +1,30 @@
 {
-  "redirects": [
-    {
-      "destination": "/family",
-      "source": "/parent-pending",
-      "permanent": false
-    },
-    {
-      "destination": "/family",
-      "source": "/parent-portal/:path*",
-      "permanent": false
-    }
-  ],
   "rewrites": [
     {
       "source": "/(.*)",
       "destination": "/index.html"
+    }
+  ],
+  "redirects": [
+    {
+      "destination": "/family",
+      "permanent": false,
+      "source": "/parent-pending"
+    },
+    {
+      "destination": "/family",
+      "permanent": false,
+      "source": "/parent-portal"
+    },
+    {
+      "destination": "/family",
+      "permanent": false,
+      "source": "/parent-portal/"
+    },
+    {
+      "destination": "/family",
+      "permanent": false,
+      "source": "/parent-portal/:path*"
     }
   ]
 }

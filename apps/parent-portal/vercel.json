@@ -2,8 +2,18 @@
   "redirects": [
     {
       "destination": "https://app.mysmartteach.com/family",
-      "source": "/:path*",
-      "permanent": false
+      "permanent": false,
+      "source": "/"
+    },
+    {
+      "destination": "https://app.mysmartteach.com/family",
+      "permanent": false,
+      "source": "/parent-portal/"
+    },
+    {
+      "destination": "https://app.mysmartteach.com/family",
+      "permanent": false,
+      "source": "/:path*"
     }
   ]
 }
