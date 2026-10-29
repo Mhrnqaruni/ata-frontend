@@ -64,9 +64,9 @@ const StudentTable = ({ students, onEdit, onDelete, onProgressTracker }) => {
         <Table className="mst-responsive-table mst-sortable-table mst-table" aria-label="Student roster">
           <TableHead>
             <TableRow>
-              <TableCell sx={{ width: '42%' }}>{sortable('name', 'Student')}</TableCell>
-              <TableCell>{sortable('studentId', 'Student ID')}</TableCell>
-              <TableCell>{sortable('overallGrade', 'Overall grade')}</TableCell>
+              <TableCell sortDirection={sortColumn==='name'?sortDirection:false} sx={{ width: '42%' }}>{sortable('name', 'Student')}</TableCell>
+              <TableCell sortDirection={sortColumn==='studentId'?sortDirection:false}>{sortable('studentId', 'Student ID')}</TableCell>
+              <TableCell sortDirection={sortColumn==='overallGrade'?sortDirection:false}>{sortable('overallGrade', 'Overall grade')}</TableCell>
               <TableCell align="right" sx={{ width: 196 }}>Actions</TableCell>
             </TableRow>
           </TableHead>

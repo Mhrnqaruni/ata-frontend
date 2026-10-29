@@ -124,7 +124,13 @@ const NewAssessmentV2 = () => {
         if(restoredAnalysis.current!==analysisId){
           restoredAnalysis.current=analysisId;
           const {retryJobId: ignoredRetry,...draft}=data.draft;
-          dispatch({type:'RESTORE_ANALYSIS',payload:draft});
+          // Reload the already accepted bytes; no new analysis is submitted here.
+          const sources = data.sources || [];
+          const files = await Promise.all(sources.map(item=>analysisService.source(analysisId,item)));
+          if(stopped)return;
+          dispatch({type:'RESTORE_ANALYSIS',payload:{...draft,
+            questionFiles:files.filter((_,i)=>sources[i].role==='question'),
+            answerKeyFiles:files.filter((_,i)=>sources[i].role==='key')}});
           if(!retryJobId && draft.audience){
             tagService.preview(draft.audience).then(preview=>{
               if(!stopped)dispatch({type:'UPDATE_FIELD',payload:{field:'audienceStudents',value:preview.students}});
@@ -159,6 +165,16 @@ const NewAssessmentV2 = () => {
     if([...state.questionFiles,...state.answerKeyFiles].reduce((sum,file)=>sum+file.size,0)>20*1024*1024){
       showSnackbar('Question paper and answer key together must be 20 MB or smaller.','error');return;
     }
+    if(state.markingStrategy === 'ai' && (String(totalMarksInputProps.value).trim()==='' || !Number.isInteger(Number(totalMarksInputProps.value)) || Number(totalMarksInputProps.value)<=0)){
+      showSnackbar('Enter a positive whole-number total before reading the documents.','error'); return;
+    }
+    analysisPosting.current=true;
+    try { if(state.answerKeyFiles.length){
+      const digest=async file=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',await file.arrayBuffer()))).join(',');
+      const hashes=await Promise.all(state.questionFiles.map(digest));
+      const keys=await Promise.all(state.answerKeyFiles.map(digest));
+      if(keys.some(hash=>hashes.includes(hash)))showSnackbar('The same document is in both groups. Both selections are kept; make sure it contains the questions and answers.','warning');
+    }} catch { analysisPosting.current=false;showSnackbar('The selected file could not be read. Please select it again.','error');return; }
     analysisPosting.current=true;setUploadingAnalysis(true);setAnalysis(null);setAnalysisError('');
     dispatch({type:'START_PARSING'});
     const id=crypto.randomUUID();
@@ -169,15 +185,19 @@ const NewAssessmentV2 = () => {
         markingStrategy:state.markingStrategy,totalMarks:state.totalMarks,audience:state.audience,retryJobId},
         state.questionFiles,state.answerKeyFiles);
     }catch(error){
-      if(error.response){
+      if(error.response && error.response.status >= 400 && error.response.status < 500){
         params.delete('analysisId');navigate({pathname:location.pathname,search:params.toString()},{replace:true});
         dispatch({type:'PARSE_FAILURE',payload:typeof error.response.data?.detail === 'string' ? error.response.data.detail : 'Documents were not accepted. Check the files and try again.'});
       }else setAnalysisError('Upload confirmation was interrupted. Checking whether your analysis was accepted.');
     }finally{analysisPosting.current=false;setUploadingAnalysis(false);}
-  },[state.questionFiles,state.answerKeyFiles,state.classId,state.assessmentName,state.markingStrategy,state.totalMarks,state.audience,retryJobId,location.pathname,location.search,navigate,showSnackbar]);
+  },[state.questionFiles,state.answerKeyFiles,state.classId,state.assessmentName,state.markingStrategy,state.totalMarks,totalMarksInputProps.value,state.audience,retryJobId,location.pathname,location.search,navigate,showSnackbar]);
 
   // handleSubmit is now simpler, as the config is already in state (unchanged)
   const handleSubmit = async () => {
+    const questions=state.config?.sections.flatMap(section=>section.questions)||[];
+    if(state.config?.gradingMode==='library' || (state.config?.gradingMode!=='ai_auto_grade' && questions.some(q=>!String(q.answer||'').trim()&&!String(q.rubric||'').trim()))){
+      showSnackbar('Enter an expected answer or marking scheme for each question, or explicitly choose AI-generated judgement.','error');return;
+    }
     dispatch({ type: 'START_SUBMITTING' });
 
     try {
@@ -303,18 +323,10 @@ const NewAssessmentV2 = () => {
                 onChange={(value) => dispatch({ type: 'UPDATE_FIELD', payload: { field: 'markingStrategy', value } })}
                 options={[
                   { value: 'document', label: 'Read them from the paper', description: 'Use the marks printed in the documents.', icon: <DescriptionOutlined /> },
-                  { value: 'ai', label: 'Let AI share out the marks', description: 'Give the total; AI assigns marks per question.', icon: <CalculateOutlined />, ai: true },
+                  { value: 'ai', label: 'Let AI share out the marks', description: 'Give the total; AI assigns marks per question.', icon: <CalculateOutlined />, ai: true, content: <TextField type="number" label="Total marks for this exam" {...totalMarksInputProps} disabled={isProcessing} sx={{mt:1,width:220,maxWidth:'100%'}} /> },
                 ]}
                 value={state.markingStrategy}
               />
-              {state.markingStrategy === 'ai' && (
-                <TextField
-                  type="number"
-                  label="Total marks for this exam"
-                  {...totalMarksInputProps}
-                  sx={{ mt: 2, width: 240, maxWidth: '100%' }}
-                />
-              )}
             </Box>
             <div className="mst-structure-row">
               <Button className="mst-ai" variant="contained" onClick={handleStructure} disabled={!state.questionFiles.length || isProcessing} startIcon={isProcessing ? <CircularProgress size={18} color="inherit" /> : <AutoAwesomeRounded />}>
@@ -323,6 +335,7 @@ const NewAssessmentV2 = () => {
               {!state.questionFiles.length && !state.config ? <span className="mst-hint">Add question-paper files to continue.</span> : null}
             </div>
             </Box>
+            {analysis?.result?.allocationWarning && <Alert severity="warning">{analysis.result.allocationWarning} Check and set each question’s marks before starting grading.</Alert>}
             {state.status === 'parsing' ? (
               <div className="mst-ai-progress" role="status">
                 <div className="mst-ai-bar" />

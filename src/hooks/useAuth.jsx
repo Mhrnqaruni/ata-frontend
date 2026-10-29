@@ -28,12 +28,14 @@ export const AuthProvider = ({ children }) => {
       }
     };
     // Another tab's login/logout replaces this tab's entire authenticated cache.
-    const changed = event => { if (event.key === 'authToken' || event.key === null) void restore(); };
+    const changed = event => { if (event.key === 'authToken' || event.key === null) void restore(); else if(event.key==='mst-account-update') void refreshName(); };
     void restore(true);
     const expired = () => { setUser(null); setIsAuthLoading(false); };
+    const refreshName=async()=>{const g=sessionGeneration();try{const current=await authService.getMe();if(mounted&&g===sessionGeneration())setUser(current);}catch{/* Existing auth interceptor owns expiration. */}};
+    window.addEventListener('mst-account-changed',refreshName);
     window.addEventListener('storage', changed);
     window.addEventListener('mst-session-expired', expired);
-    return () => { mounted = false; window.removeEventListener('storage', changed); window.removeEventListener('mst-session-expired', expired); };
+    return () => { mounted = false; window.removeEventListener('mst-account-changed',refreshName); window.removeEventListener('storage', changed); window.removeEventListener('mst-session-expired', expired); };
   }, []);
 
   const login = useCallback(async (email, password) => {

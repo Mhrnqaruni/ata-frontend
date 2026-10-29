@@ -9,6 +9,7 @@ let generation = 0;
 export const sessionGeneration = () => generation;
 export function resetTeacherSession({ preserveDrafts = false } = {}) {
   generation += 1;
+  if(typeof window !== 'undefined') window.dispatchEvent(new Event('mst-session-reset'));
   // Unsent parent drafts survive reload in this tab, but never sign-out/account changes.
   try { if(!preserveDrafts) for(const key of Object.keys(sessionStorage)) if(key.startsWith('mst.family.draft.')) sessionStorage.removeItem(key); } catch { /* Storage is optional. */ }
   queryClient.clear(); // Cancels old reads before a new account can render.

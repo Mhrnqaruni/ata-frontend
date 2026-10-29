@@ -1,3 +1,4 @@
+import EducationSelector, { educationLabel } from '../../components/common/EducationSelector';
 import NumberField from '../../components/common/NumberField';
 // /src/pages/tools/SlideGenerator.jsx
 
@@ -51,7 +52,7 @@ const SettingsPanel = ({
             newState.selected_book = null;
             newState.selected_chapters = [];
             // Auto-update the main Grade Level dropdown for convenience
-            if (value) { newState.grade_level = value.name; }
+            // Source level never changes the teacher’s chosen learning context.
         }
         if (field === 'selected_year') {
             newState.selected_subject = null;
@@ -104,15 +105,7 @@ const SettingsPanel = ({
                 <CardContent>
                     <Stack spacing={3}>
                         {/* --- SLIDE-SPECIFIC SETTINGS --- */}
-                        <FormControl fullWidth disabled={isLoading || activeTab === 2}>
-                            <InputLabel id="grade-level-label">Grade level</InputLabel>
-                            <Select name="grade_level" value={formState.grade_level} label="Grade level" onChange={handleInputChange}>
-                                <MenuItem value="Primary School">Primary School</MenuItem>
-                                <MenuItem value="Secondary School">Secondary School</MenuItem>
-                                <MenuItem value="Years 10 & 11 (GCSE)">Years 10 & 11 (GCSE)</MenuItem>
-                                <MenuItem value="Sixth Form - College">Sixth Form - College</MenuItem>
-                            </Select>
-                        </FormControl>
+                        <EducationSelector value={formState.education} legacy={formState.grade_level} disabled={isLoading} onChange={education=>handleInputChange({target:{name:'education',value:education}})} />
                         
                         <NumberField
                             name="num_slides"
@@ -230,7 +223,8 @@ const SlideGenerator = () => {
 
     // Snapshot the settings being used for this specific generation
     const settingsForApi = {
-      grade_level: formState.grade_level,
+      grade_level: educationLabel(formState.education, formState.grade_level),
+      education: formState.education,
       source_text: formState.source_text,
       selected_chapter_paths: formState.selected_chapters.map(c => c.path),
       num_slides: Number(formState.num_slides),

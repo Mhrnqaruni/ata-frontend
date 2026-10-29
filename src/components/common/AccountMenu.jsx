@@ -1,3 +1,4 @@
+import AccountSettings from './AccountSettings';
 import React, { useState } from 'react';
 import { Avatar, Button, Divider, IconButton, ListItemIcon, ListSubheader, Menu, MenuItem, Typography } from '@mui/material';
 import ExpandMoreRounded from '@mui/icons-material/ExpandMoreRounded';
@@ -14,6 +15,7 @@ import './AccountMenu.css';
 export default function AccountMenu({ compact = false }) {
   const { user, logout } = useAuth();
   const { mode, toggleThemeMode } = useThemeMode();
+  const [settings,setSettings]=useState(false);
   const [anchor, setAnchor] = useState(null);
   const name = user?.fullName || user?.full_name || user?.email || 'Your account';
   const initial = name.trim().charAt(0).toUpperCase() || '?';
@@ -39,7 +41,9 @@ export default function AccountMenu({ compact = false }) {
         <ListItemIcon><Icon fontSize="small" /></ListItemIcon>{value === 'light' ? 'Light' : 'Dark'}
         {mode === value && <CheckRounded fontSize="small" className="mst-account-check" aria-hidden />}</MenuItem>; })}
       <Divider />
+      {user?.role!=="admin" && <MenuItem onClick={()=>{setAnchor(null);setSettings(true);}}>Account settings</MenuItem>}
       <MenuItem onClick={() => { setAnchor(null); logout(); }}><ListItemIcon><LogoutRounded fontSize="small" /></ListItemIcon>Sign out</MenuItem>
     </Menu>
+    {settings && <AccountSettings open onClose={()=>setSettings(false)}/>}
   </>;
 }

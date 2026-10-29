@@ -1,3 +1,4 @@
+import EducationSelector, { educationLabel } from '../../components/common/EducationSelector';
 import React, { useState, useEffect, useMemo } from 'react';
 
 // MUI Component Imports
@@ -51,7 +52,7 @@ const SettingsPanel = ({
             newState.selected_chapters = [];
             // Auto-update the main Grade Level dropdown to match the library selection for convenience
             if (value) {
-                newState.grade_level = value.name;
+                // Source level never changes the teacher’s chosen learning context.
             }
         }
         if (field === 'selected_year') {
@@ -104,15 +105,7 @@ const SettingsPanel = ({
                 <Divider />
                 <CardContent>
                     <Stack spacing={3}>
-                        <FormControl fullWidth disabled={isLoading || activeTab === 2}>
-                            <InputLabel id="grade-level-label">Grade level</InputLabel>
-                            <Select name="grade_level" value={formState.grade_level} label="Grade level" onChange={handleInputChange}>
-                                <MenuItem value="Primary School">Primary School</MenuItem>
-                                <MenuItem value="Secondary School">Secondary School</MenuItem>
-                                <MenuItem value="Years 10 & 11 (GCSE)">Years 10 & 11 (GCSE)</MenuItem>
-                                <MenuItem value="Sixth Form - College">Sixth Form - College</MenuItem>
-                            </Select>
-                        </FormControl>
+                        <EducationSelector value={formState.education} legacy={formState.grade_level} disabled={isLoading} onChange={education=>handleInputChange({target:{name:'education',value:education}})} />
 
                         <Box>
                             <Button variant="outlined" onClick={onOpenModal} fullWidth disabled={isLoading}>
@@ -228,7 +221,8 @@ const QuestionGenerator = () => {
 
     // Snapshot the settings that are being used for this specific generation
     const settingsForApi = {
-      grade_level: formState.grade_level,
+      grade_level: educationLabel(formState.education, formState.grade_level),
+      education: formState.education,
       source_text: formState.source_text,
       selected_chapter_paths: formState.selected_chapters.map(c => c.path),
       question_configs: formState.question_configs,

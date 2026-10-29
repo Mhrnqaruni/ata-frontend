@@ -16,10 +16,10 @@ export default function QuestionNavigator({ items, selected, onSelect, label = '
         {items.map(item => (
           <button type="button" key={item.id} onClick={() => onSelect(item.id)}
             aria-current={selected === item.id ? 'step' : undefined}
-            aria-label={`Question ${item.number}${item.state ? ` (${item.state})` : ''}`}
-            title={`Question ${item.number}${item.state ? ` · ${item.state}` : ''}`}
+            aria-label={`${item.label || `Question ${item.number}`}${item.state ? ` (${item.state})` : ''}`}
+            title={`${item.label || `Question ${item.number}`}${item.state ? ` · ${item.state}` : ''}`}
             data-state={item.state || undefined}>
-            {item.number}<span aria-hidden="true" />
+            {item.label || item.number}<span aria-hidden="true" />
           </button>
         ))}
       </div>
@@ -30,7 +30,7 @@ export default function QuestionNavigator({ items, selected, onSelect, label = '
         <select id={id} value={current?.id ?? ''} onChange={event => onSelect(event.target.value)} disabled={!items.length}>
           {!current && <option value="" disabled>{items.length ? "Choose a question" : "No questions"}</option>}
           {items.map(item => <option value={item.id} key={item.id}>
-            Question {item.number}{item.state ? ` · ${item.state}` : ''}
+            {item.label || `Question ${item.number}`}{item.state ? ` · ${item.state}` : ''}
           </option>)}
         </select>
       </div>

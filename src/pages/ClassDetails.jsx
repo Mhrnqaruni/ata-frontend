@@ -1,3 +1,4 @@
+import RosterImportDialog from '../components/classes/RosterImportDialog';
 import { useTeacherData } from '../hooks/useTeacherData';
 import QueryNotice from '../components/common/QueryNotice';
 // /src/pages/ClassDetails.jsx (FINAL ENHANCED VERSION)
@@ -49,6 +50,7 @@ const ClassDetails = () => {
   const error = classData === undefined && classQuery.error;
 
   // State organized by feature for clarity
+  const [importOpen,setImportOpen]=useState(false);
   const [studentModal, setStudentModal] = useState({ open: false, mode: 'add', data: null, state: { isLoading: false, error: null } });
   const [classEditModal, setClassEditModal] = useState({ open: false, state: { isLoading: false, error: null } });
   const [deleteConfirmation, setDeleteConfirmation] = useState({ open: false, type: null, data: null });
@@ -180,6 +182,7 @@ const ClassDetails = () => {
       <PageHeader
         actions={
           <>
+            <Button variant="outlined" onClick={()=>setImportOpen(true)}>Import students</Button>
             <Button variant="contained" startIcon={<AddOutlined />} onClick={handleOpenAddStudentModal}>Add student</Button>
             <Button className="mst-ai" startIcon={<AutoAwesomeIcon />} onClick={() => setChatOpen(true)} variant="contained">Analytics with AI</Button>
           </>
@@ -223,6 +226,7 @@ const ClassDetails = () => {
         <MenuItem onClick={handleOpenConfirmClassDelete} sx={{ color: 'error.main' }}><ListItemIcon><DeleteOutlineOutlined fontSize="small" color="error"/></ListItemIcon>Delete class</MenuItem>
       </Menu>
 
+      <RosterImportDialog open={importOpen} onClose={()=>setImportOpen(false)} classId={class_id}/>
       <StudentModal open={studentModal.open} onClose={handleStudentModalClose} onSubmit={handleStudentModalSubmit} mode={studentModal.mode} initialData={studentModal.data} isLoading={studentModal.state.isLoading} error={studentModal.state.error}/>
       <ClassEditModal open={classEditModal.open} onClose={handleClassEditModalClose} onSubmit={handleClassEditModalSubmit} initialData={classEditModal.data} isLoading={classEditModal.state.isLoading} error={classEditModal.state.error}/>
       <ConfirmationModal open={deleteConfirmation.open} onClose={handleCloseConfirmDelete} onConfirm={deleteConfirmation.type === 'student' ? handleDeleteStudent : handleDeleteClass} title={`Delete ${deleteConfirmation.type === 'student' ? 'Student' : 'Class'}`} description={confirmationDescription}/>

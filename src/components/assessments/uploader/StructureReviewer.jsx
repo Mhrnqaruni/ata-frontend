@@ -72,8 +72,8 @@ export default function StructureReviewer({ config, dispatch, disabled }) {
               return (
                 <div className="mst-sr-q" key={q.id}>
                   <button type="button" className="mst-extracted-toggle" onClick={() => toggle(q.id)}
-                    aria-expanded={open} aria-controls={`extracted-${q.id}`} aria-label={`Question ${number}: ${q.text || 'Untitled'}`}>
-                    <span className="mst-question-num" aria-hidden="true">{number}</span>
+                    aria-expanded={open} aria-controls={`extracted-${q.id}`} aria-label={`${q.printedLabel || `Question ${number}`}: ${q.text || 'Untitled'}`}>
+                    <span className="mst-question-num" aria-hidden="true">{q.printedLabel || number}</span>
                     <span className="mst-extracted-preview"><MathTextDisplay text={q.text || `Question ${number} · add question text`} />{readingIssues.length > 0 ? ' · Check source' : ''}</span>
                     <span className="mst-hint">{q.maxScore ?? 0} marks</span>
                     <span aria-hidden="true">{open ? '−' : '+'}</span>
