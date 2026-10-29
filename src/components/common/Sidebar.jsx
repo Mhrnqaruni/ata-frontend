@@ -17,7 +17,7 @@ import LightModeOutlined from "@mui/icons-material/LightModeOutlined";
 import DarkModeOutlined from "@mui/icons-material/DarkModeOutlined";
 import LogoutRounded from "@mui/icons-material/LogoutRounded";
 import PersonOutlineRounded from "@mui/icons-material/PersonOutlineRounded";
-import ModeSwitch from './ModeSwitch';
+import AccountMenu from './AccountMenu';
 import logo from "../../assets/mst_logo_no_bg.png";
 import { useThemeMode } from "../../hooks/useThemeMode";
 import { useAuth } from "../../hooks/useAuth";
@@ -95,7 +95,7 @@ function SidebarPanel({ collapsed, onToggleCollapse, onNavigate, showCollapse })
         ) : null}
       </div>
 
-      <ModeSwitch collapsed={collapsed} />
+
       <nav aria-label="Main" className="mst-side-nav" ref={listRef}>
         {indicator !== null ? <span aria-hidden="true" className="mst-side-indicator" style={{ transform: `translateY(${indicator}px)` }} /> : null}
         {groups.map((group) => (
@@ -137,41 +137,7 @@ function SidebarPanel({ collapsed, onToggleCollapse, onNavigate, showCollapse })
       </nav>
 
       <div className="mst-side-bottom">
-        <button aria-controls={menuAnchor ? "mst-account-menu" : undefined} aria-expanded={Boolean(menuAnchor)} aria-haspopup="menu" aria-label={`Account: ${name}`} className="mst-side-user" onClick={(event) => setMenuAnchor(event.currentTarget)} type="button">
-          <span aria-hidden="true" className="mst-avatar">{initialsOf(user?.fullName || user?.email)}</span>
-          <span className="mst-side-user-text">
-            <span className="mst-side-user-name">{name}</span>
-            <span className="mst-side-user-role">{role}</span>
-          </span>
-          <ChevronLeftRounded className="home-account-chevron" aria-hidden="true"/>
-        </button>
-        <Menu anchorEl={menuAnchor} anchorOrigin={{ vertical: "top", horizontal: "right" }} id="mst-account-menu" onClose={() => setMenuAnchor(null)} open={Boolean(menuAnchor)} transformOrigin={{ vertical: "bottom", horizontal: "left" }}>
-          <MenuItem disabled className="home-menu-heading">Appearance</MenuItem>
-          <MenuItem role="menuitemradio" aria-checked={mode==='light'} selected={mode==='light'} onClick={()=>{if(mode!=='light')toggleThemeMode();setMenuAnchor(null);}}>
-            <ListItemIcon><LightModeOutlined fontSize="small"/></ListItemIcon>Light appearance
-          </MenuItem>
-          <MenuItem role="menuitemradio" aria-checked={mode==='dark'} selected={mode==='dark'} onClick={()=>{if(mode!=='dark')toggleThemeMode();setMenuAnchor(null);}}>
-            <ListItemIcon><DarkModeOutlined fontSize="small"/></ListItemIcon>Dark appearance
-          </MenuItem>
-          <Divider/>
-          <MenuItem disabled>
-            <ListItemIcon>
-              <PersonOutlineRounded fontSize="small" />
-            </ListItemIcon>
-            Profile
-          </MenuItem>
-          <MenuItem
-            onClick={() => {
-              setMenuAnchor(null);
-              logout();
-            }}
-          >
-            <ListItemIcon>
-              <LogoutRounded fontSize="small" />
-            </ListItemIcon>
-            Sign out
-          </MenuItem>
-        </Menu>
+        <AccountMenu />
       </div>
     </div>
   );

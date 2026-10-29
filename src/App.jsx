@@ -113,9 +113,7 @@ const ThemedApp = () => {
           }
         />
 
-        <Route path="/family" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-          <Route index element={<FamilyHome />} />
-        </Route>
+        <Route path="/family" element={<ProtectedRoute><Suspense fallback={<Box>Loading notebook…</Box>}><FamilyHome /></Suspense></ProtectedRoute>} />
 
         {/* --- [CRITICAL MODIFICATION 4/4: DEFINE PROTECTED ROUTES] --- */}
         {/* This parent Route uses the ProtectedRoute component as its element.

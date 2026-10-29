@@ -1,47 +1,47 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Accordion, AccordionDetails, AccordionSummary, Alert, Box, Button, Dialog, DialogActions,
-  DialogContent, DialogTitle, Stack, Typography, CircularProgress } from '@mui/material';
-import ExpandMoreRounded from '@mui/icons-material/ExpandMoreRounded';
+import { Alert, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Typography, useMediaQuery } from '@mui/material';
 import MathText from '../../components/common/MathTextDisplay';
 import api from '../../services/api';
 
-/** File previews use the authenticated API, never a public storage URL. */
-export default function FamilySource({ base, source }) {
+/** "Read": the original notes or pages. File previews use the authenticated API, never a public storage URL. */
+export default function FamilySource({ base, source, onQuiz }) {
+  const [open, setOpen] = useState(false);
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const phone = useMediaQuery('(max-width:599px)');
   const alive = useRef(true);
   const url = useRef(null);
-  const invoker = useRef(null);
   const [requested, setRequested] = useState(null);
   useEffect(() => { alive.current = true; return () => { alive.current = false; if (url.current) URL.revokeObjectURL(url.current); }; }, []);
-  function close() { if (url.current) URL.revokeObjectURL(url.current); url.current = null; setPreview(null); }
-  async function open(file, index, button) {
-    if (button) invoker.current = button;
-    setRequested({ file, index });
-    setBusy(true); setError('');
+  function clear() { if (url.current) URL.revokeObjectURL(url.current); url.current = null; setPreview(null); }
+  function close() { clear(); setOpen(false); setError(''); }
+  async function show(file, index) {
+    setRequested({ file, index }); setBusy(true); setError('');
     try {
       const { data } = await api.get(`${base}/materials/${source.id}/files/${index}`, { responseType: 'blob' });
       if (!alive.current) return;
-      close(); url.current = URL.createObjectURL(data); setPreview({ url: url.current, name: file.name, mime: file.mime });
+      clear(); url.current = URL.createObjectURL(data); setPreview({ url: url.current, name: file.name, mime: file.mime });
     } catch { if (alive.current) setError('Could not open this file. Please try again.'); }
     finally { if (alive.current) setBusy(false); }
   }
+  function openReader() { setOpen(true); if (!source.body && source.files.length === 1) void show(source.files[0], 0); }
   return <>
-    <Accordion disableGutters elevation={0} sx={{ bgcolor: 'transparent', borderRadius: 0, boxShadow: 'none' }}>
-      <AccordionSummary expandIcon={<ExpandMoreRounded />}><Typography variant="body2">View original material</Typography></AccordionSummary>
-      <AccordionDetails>
-        {source.body && <Box sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.7 }}><MathText text={source.body} /></Box>}
-        <Stack spacing={0.5}>{source.files.map((file, i) => <Button disabled={busy} key={i} sx={{ justifyContent: 'flex-start', textAlign: 'left', overflowWrap: 'anywhere', minWidth: 0 }} onClick={event => open(file, i, event.currentTarget)}>{busy && requested?.index === i && <CircularProgress size={16} sx={{ mr: 1 }} aria-label="Opening file" />}{i + 1}. {file.name} · {file.pages} page(s)</Button>)}</Stack>
-        {source.provenance?.author && <Typography variant="caption" color="text.secondary">Original {source.provenance.author} notes · version {source.provenance.version}</Typography>}
-        {error && <Alert severity="error" action={<Button onClick={() => open(requested.file, requested.index)}>Retry</Button>}>{error}</Alert>}
-      </AccordionDetails>
-    </Accordion>
-    <Dialog open={!!preview} onClose={close} maxWidth="md" fullWidth TransitionProps={{ onExited: () => invoker.current?.focus() }}>
-      <DialogTitle>{preview?.name}</DialogTitle><DialogContent>
-        {preview?.mime === 'application/pdf' ? <iframe title="Original material" src={preview.url} style={{ width: '100%', height: '65vh', border: 0 }} /> :
-          preview && <Box component="img" src={preview.url} alt="Uploaded original page" sx={{ maxWidth: '100%', maxHeight: '65vh', objectFit: 'contain' }} />}
-      </DialogContent><DialogActions><Button onClick={close}>Close</Button></DialogActions>
+    <Button size="small" onClick={openReader} aria-label={`Read the notes: ${source.title}`}>Read notes</Button>
+    <Dialog open={open} onClose={close} maxWidth="md" fullWidth fullScreen={phone} className="fam-dialog">
+      <DialogTitle>{preview?.name || source.title}</DialogTitle>
+      <DialogContent>
+        {preview ? (preview.mime === 'application/pdf' ? <iframe title={preview.name} src={preview.url} className="fam-pdf" />
+          : <Box component="img" src={preview.url} alt={`Page: ${preview.name}`} className="fam-page-img" />)
+          : <>{source.body && <div className="fam-prose fam-notes"><MathText text={source.body} /></div>}
+            {source.files.length > 0 && <div className="fam-files-open">{source.files.map((file, i) => <Button key={i} variant="outlined" disabled={busy} onClick={() => show(file, i)}
+              startIcon={busy && requested?.index === i ? <CircularProgress size={16} aria-label="Opening file" /> : null}>{i + 1}. {file.name} · {file.pages} page{file.pages === 1 ? '' : 's'}</Button>)}</div>}
+            {source.provenance?.author && <Typography className="fam-small">Written by {source.provenance.author === 'MST' ? 'MySmartTeach' : source.provenance.author}</Typography>}</>}
+        {busy && !preview && source.files.length === 1 && !source.body && <CircularProgress aria-label="Opening file" />}
+        {error && <Alert severity="error" action={<Button onClick={() => show(requested.file, requested.index)}>Try again</Button>}>{error}</Alert>}
+      </DialogContent>
+      <DialogActions>{preview && source.files.length > 1 && <Button onClick={clear}>All pages</Button>}<span className="fam-grow" /><Button onClick={close}>Close</Button>
+        {onQuiz && source.purpose !== 'work' && <Button variant="contained" onClick={() => { close(); onQuiz(); }}>Make a quiz on this</Button>}</DialogActions>
     </Dialog>
   </>;
 }
