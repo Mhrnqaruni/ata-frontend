@@ -8,7 +8,8 @@ export default function useActivityProgress(activity, initial) {
   const [value, setValue] = useState(initial),
     [ready, setReady] = useState(false),
     [error, setError] = useState(""),
-    [saving, setSaving] = useState(false);
+    [saving, setSaving] = useState(false),
+    [conflict, setConflict] = useState(false);
   const current = useRef(initial),
     revision = useRef(0),
     queued = useRef(null),
@@ -38,12 +39,14 @@ export default function useActivityProgress(activity, initial) {
       } catch (e) {
         blocked.current = true;
         queued.current = data;
-        if (alive.current)
+        if (alive.current) {
+          setConflict(e.response?.status === 409);
           setError(
             e.response?.status === 409
-              ? "This activity changed in another tab. Recent unconfirmed edits may be lost if you close. Reopen to load the saved version before editing."
-              : "Could not confirm the save. Recent edits are not confirmed saved. Closing or reloading may lose them; reopen to check the saved version once connected.",
+              ? "This was changed on another screen."
+              : "Can’t save right now. Check your internet.",
           );
+        }
         break;
       }
     }
@@ -68,7 +71,7 @@ export default function useActivityProgress(activity, initial) {
       .catch((e) => {
         if (alive.current && e.code !== "ERR_CANCELED")
           setError(
-            "Could not load saved progress. Close and reopen this activity.",
+            "Couldn’t load your place. Close and reopen this.",
           );
       });
     return () => {
@@ -98,5 +101,26 @@ export default function useActivityProgress(activity, initial) {
     clearTimeout(timer.current);
     timer.current = setTimeout(flush, 250);
   };
-  return { value, update, ready, error, saving };
+  /** After a network failure: try the same save again (nothing typed since is lost; it is in the queue). */
+  const retry = () => {
+    blocked.current = false;
+    if (alive.current) { setError(""); setConflict(false); }
+    if (!queued.current) queued.current = current.current;
+    void flush();
+  };
+  /** After a conflict: load the version saved elsewhere and carry on from there. */
+  const reload = async () => {
+    try {
+      const { data } = await api.get(path);
+      revision.current = data.revision;
+      queued.current = null;
+      blocked.current = false;
+      const saved = Object.keys(data.data).length ? { ...initial, ...data.data } : initial;
+      current.current = saved;
+      if (alive.current) { setValue(saved); setError(""); setConflict(false); }
+    } catch {
+      if (alive.current) setError("Can’t load the latest right now. Check your internet.");
+    }
+  };
+  return { value, update, ready, error, saving, conflict, retry, reload };
 }

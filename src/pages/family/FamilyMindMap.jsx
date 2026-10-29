@@ -48,9 +48,8 @@ export default function FamilyMindMap({ title, overview, branches, nextStep, onA
   const parent = index.parent.get(node.id);
   const panel = <Detail node={node} parent={parent} root={root} nextStep={nextStep} onAsk={onAsk} onChoose={choose} />;
   if (phone) return <div className="fam-mm fam-mm-phone">
-    <div className="fam-mm-tools"><Button size="small" startIcon={<UnfoldMoreRounded />} onClick={expandAll}>Open all</Button><Button size="small" startIcon={<UnfoldLessRounded />} onClick={collapseAll}>Close all</Button></div>
     <Outline node={root} open={open} selected={selected} onSelect={setSelected} onToggle={toggle} onAsk={onAsk} parentOf={index.parent} />
-    {nextStep && <section className="fam-tip fam-mm-tip"><LightbulbOutlined className="fam-tip-icon" aria-hidden /><div className="fam-tip-body"><Typography className="fam-tip-title">What to do next</Typography><div className="fam-prose"><MathText text={nextStep} /></div></div></section>}
+    {nextStep && <section className="fam-tip fam-mm-tip"><LightbulbOutlined className="fam-tip-icon" aria-hidden /><div className="fam-tip-body"><Typography className="fam-tip-title">Next step</Typography><div className="fam-prose"><MathText text={nextStep} /></div></div></section>}
   </div>;
   return <div className="fam-mm">
     <Canvas root={root} open={open} selected={selected} onChoose={choose} onToggle={toggle} onExpandAll={expandAll} onCollapseAll={collapseAll} fitAsk={fitAsk} />
@@ -61,18 +60,14 @@ export default function FamilyMindMap({ title, overview, branches, nextStep, onA
 function Detail({ node, parent, root, nextStep, onAsk, onChoose }) {
   const leaf = !node.children.length && node.depth > 0;
   return <div className="fam-mm-detail">
-    <span className="fam-mm-level" data-depth={Math.min(node.depth, 3)}>{levelName(node, parent)}</span>
     <Typography component="h2" className="fam-mm-detail-title"><MathText text={node.label} /></Typography>
-    {node.explanation ? <div className="fam-prose fam-mm-explain"><MathText text={node.explanation} /></div>
+    {node.explanation ? <div className="fam-prose fam-mm-explain" data-clamp={node.depth === 0}><MathText text={node.explanation} /></div>
       : leaf && parent ? <div className="fam-mm-context"><Typography className="fam-small">Part of <b><MathText text={parent.label} /></b></Typography>
         {parent.explanation && <div className="fam-prose"><MathText text={parent.explanation} /></div>}</div> : null}
-    {node.children.length > 0 && <div className="fam-mm-kids"><Typography className="fam-small">Inside this {node.depth === 0 ? 'map' : 'topic'}</Typography>
-      <div className="fam-mm-kid-list">{node.children.map(child => <button key={child.id} type="button" className="fam-mm-kid" data-depth={Math.min(child.depth, 3)} onClick={() => onChoose(child)}>
-        <span><MathText text={child.label} /></span><ChevronRightRounded aria-hidden /></button>)}</div></div>}
+
     {onAsk && node.depth > 0 && <Button variant={leaf && !node.explanation ? 'contained' : 'outlined'} startIcon={<ChatBubbleOutlineRounded />} onClick={() => onAsk(parent && parent.depth > 0 ? `${node.label} (${parent.label})` : node.label)} className="fam-mm-ask">
-      {leaf && !node.explanation ? 'Explain this simply' : 'Ask about this in the chat'}</Button>}
-    {node.depth === 0 && <Typography className="fam-small fam-mm-hint">Tap a topic on the map to open its smaller topics.</Typography>}
-    {nextStep && node.depth === 0 && <section className="fam-tip"><LightbulbOutlined className="fam-tip-icon" aria-hidden /><div className="fam-tip-body"><Typography className="fam-tip-title">What to do next</Typography><div className="fam-prose"><MathText text={nextStep} /></div></div></section>}
+      {leaf && !node.explanation ? 'Explain this simply' : 'Ask about this'}</Button>}
+    {nextStep && node.depth === 0 && <section className="fam-tip"><LightbulbOutlined className="fam-tip-icon" aria-hidden /><div className="fam-tip-body"><Typography className="fam-tip-title">Next step</Typography><div className="fam-prose"><MathText text={nextStep} /></div></div></section>}
   </div>;
 }
 
@@ -107,9 +102,9 @@ function Canvas({ root, open, selected, onChoose, onToggle, onExpandAll, onColla
   place(root, PAD);
   let maxX = 0, maxY = 0; pos.forEach(p => { maxX = Math.max(maxX, p.x + p.w); maxY = Math.max(maxY, p.y + p.h); });
   const stageW = maxX + PAD + 40, stageH = maxY + PAD;
-  const fitZoom = () => { const el = box.current; if (!el) return 1; return Math.max(0.6, Math.min(1, (el.clientWidth - 16) / stageW, (el.clientHeight - 16) / stageH)); };
+  const fitZoom = () => { const el = box.current; if (!el) return 1; return Math.max(0.6, Math.min(1.2, (el.clientWidth * 0.8) / stageW, (el.clientHeight - 24) / stageH)); };
   function fit() { setZoom(fitZoom()); }
-  const step = d => setZoom(z => Math.round(Math.max(0.6, Math.min(1.4, z + d)) * 10) / 10);
+  const step = d => setZoom(z => Math.round(Math.max(0.6, Math.min(1.6, z + d)) * 10) / 10);
   // After every open or close the whole visible tree is fitted (never above 100 %), so nothing runs off the screen.
   const fitPending = useRef(0);
   const openKey = [...open].sort().join('|');
@@ -123,15 +118,6 @@ function Canvas({ root, open, selected, onChoose, onToggle, onExpandAll, onColla
     return () => clearTimeout(t);
   }, [selected, openKey]);
   return <div className="fam-mm-board">
-    <div className="fam-mm-tools" role="toolbar" aria-label="Mind map tools">
-      <Button size="small" startIcon={<UnfoldMoreRounded />} onClick={onExpandAll}>Open all</Button>
-      <Button size="small" startIcon={<UnfoldLessRounded />} onClick={onCollapseAll}>Close all</Button>
-      <span className="fam-grow" />
-      <IconButton className="fam-icon-btn" aria-label="Zoom out" onClick={() => step(-0.1)} disabled={zoom <= 0.6}><RemoveRounded /></IconButton>
-      <span className="fam-small fam-mm-zoom">{Math.round(zoom * 100)}%</span>
-      <IconButton className="fam-icon-btn" aria-label="Zoom in" onClick={() => step(0.1)} disabled={zoom >= 1.4}><AddRounded /></IconButton>
-      <IconButton className="fam-icon-btn" aria-label="Fit the map to the screen" onClick={fit}><FitScreenRounded /></IconButton>
-    </div>
     <div className="fam-mm-canvas" ref={box}>
       <div className="fam-mm-sizer" style={{ width: stageW * zoom, height: stageH * zoom }}>
         <div className="fam-mm-stage" style={{ width: stageW, height: stageH, transform: `scale(${zoom})` }}>
@@ -149,6 +135,11 @@ function Canvas({ root, open, selected, onChoose, onToggle, onExpandAll, onColla
             </div>; })}
         </div>
       </div>
+    </div>
+    <div className="fam-mm-float" role="toolbar" aria-label="Zoom">
+      <IconButton aria-label="Zoom out" onClick={() => step(-0.1)} disabled={zoom <= 0.6}><RemoveRounded /></IconButton>
+      <IconButton aria-label="Zoom in" onClick={() => step(0.1)} disabled={zoom >= 1.6}><AddRounded /></IconButton>
+      <IconButton aria-label="Fit the map to the screen" onClick={fit}><FitScreenRounded /></IconButton>
     </div>
   </div>;
 }

@@ -20,15 +20,15 @@ export default function AccountMenu({ compact = false }) {
   const open = e => setAnchor(e.currentTarget);
   return <>
     {compact ? <IconButton aria-label={`Account: ${name}`} aria-haspopup="menu" aria-expanded={!!anchor} onClick={open} className="mst-account-btn">
-        <Avatar sx={{ width: 32, height: 32, bgcolor: 'action.selected', color: 'primary.main', fontSize: 15, fontWeight: 600 }}>{initial}</Avatar></IconButton>
+        <Avatar sx={{ width: 32, height: 32, bgcolor: 'var(--f-accent, var(--mst-accent-solid))', color: '#fff', fontSize: 15, fontWeight: 600 }}>{initial}</Avatar></IconButton>
       : <Button aria-label={`Account: ${name}`} aria-haspopup="menu" aria-expanded={!!anchor} onClick={open} endIcon={<ExpandMoreRounded />}
         sx={{ minHeight: 44, gap: 1, maxWidth: 220, color: 'text.primary' }} className="mst-account-btn">
-        <Avatar sx={{ width: 30, height: 30, bgcolor: 'action.selected', color: 'primary.main', fontSize: 14, fontWeight: 600 }}>{initial}</Avatar>
+        <Avatar sx={{ width: 30, height: 30, bgcolor: 'var(--f-accent, var(--mst-accent-solid))', color: '#fff', fontSize: 14, fontWeight: 600 }}>{initial}</Avatar>
         <Typography noWrap sx={{ fontSize: 14, fontWeight: 500 }}>{name.split(' ')[0]}</Typography>
       </Button>}
     <Menu open={!!anchor} anchorEl={anchor} onClose={() => setAnchor(null)} className="mst-account-menu"
       anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} transformOrigin={{ vertical: 'top', horizontal: 'right' }}>
-      <div className="mst-account-who" aria-hidden><Avatar sx={{ width: 36, height: 36, bgcolor: 'action.selected', color: 'primary.main', fontSize: 15, fontWeight: 600 }}>{initial}</Avatar>
+      <div className="mst-account-who" aria-hidden><Avatar sx={{ width: 36, height: 36, bgcolor: 'var(--f-accent, var(--mst-accent-solid))', color: '#fff', fontSize: 15, fontWeight: 600 }}>{initial}</Avatar>
         <span><span className="mst-account-name">{name}</span>{user?.email && user.email !== name && <span className="mst-account-mail">{user.email}</span>}</span></div>
       <Divider />
       <ModeSwitch onSelected={() => setAnchor(null)} />

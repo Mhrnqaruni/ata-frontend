@@ -17,6 +17,7 @@ import FamilyLearning from './FamilyLearning';
 import { hasMode } from '../../services/accountModes';
 import { queryClient, sessionGeneration } from '../../services/queryCache';
 import { childTone } from './familyWords';
+import FamilyLoading from './FamilyLoading';
 import './family.css';
 
 const YEARS = Array.from({ length: 11 }, (_, i) => `Year ${i + 1}`);
@@ -36,7 +37,7 @@ export function ChildAvatar({ child, size = 36 }) {
 }
 
 /** Name and school year are all a parent must give; notes and worksheets are optional. */
-function ChildForm({ form, setForm, busy, compact, welcome, nameRef }) {
+function ChildForm({ form, setForm, busy, compact, welcome, nameRef, tried }) {
   const locked = busy || form.saved;
   const yearRefs = useRef([]);
   const pickYear = year => setForm({ ...form, year });
@@ -46,11 +47,11 @@ function ChildForm({ form, setForm, busy, compact, welcome, nameRef }) {
     const next = (i + step + YEARS.length) % YEARS.length; pickYear(YEARS[next]); yearRefs.current[next]?.focus();
   }
   return <div className="fam-form">
-    <TextField inputRef={nameRef} label="First name" placeholder="For example: Sam" value={form.name} autoComplete="off" inputProps={{ maxLength: 255 }} className="fam-field-lg"
+    <TextField inputRef={nameRef} label="First name" placeholder="For example: Sam" value={form.name} error={!!tried && !form.name.trim()} autoComplete="off" inputProps={{ maxLength: 255 }} className="fam-field-lg"
       onChange={e => setForm({ ...form, name: e.target.value })} disabled={locked} fullWidth />
     <div>
       <Typography component="div" className="fam-label" id={`year-${form.id}`}>School year</Typography>
-      <div className="fam-years" role="radiogroup" aria-labelledby={`year-${form.id}`} data-size={welcome ? 'lg' : 'md'}>
+      <div className="fam-years" role="radiogroup" aria-labelledby={`year-${form.id}`} data-size={welcome ? 'lg' : 'md'} data-missing={!!tried && !form.year}>
         {YEARS.map((year, i) => { const on = form.year === year; return <button type="button" key={year} role="radio" aria-checked={on}
           ref={el => { yearRefs.current[i] = el; }} tabIndex={on || (!form.year && i === 0) ? 0 : -1}
           className="fam-year" data-on={on} disabled={locked} onClick={() => pickYear(year)} onKeyDown={e => onYearKey(e, i)}>
@@ -89,6 +90,7 @@ export default function FamilyHome() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [removeAsk, setRemoveAsk] = useState(false);
+  const [tried, setTried] = useState(false);
   const [childMenu, setChildMenu] = useState(null);
   const phone = useMediaQuery('(max-width:599px)');
   const nameRef = useRef(null);
@@ -98,8 +100,8 @@ export default function FamilyHome() {
   const rows = children.data?.filter(child => child.isActive !== false) || [];
   const child = selected ? rows.find(item => item.id === selected) : rows[0];
   const firstRun = enabled && children.isSuccess && rows.length === 0;
-  function addChild() { setError(''); setForm(blankChild()); }
-  function editChild() { if (!child) return; setError(''); setForm({ id: child.id, name: child.displayName, year: child.gradeLevel || '', notes: child.notes || '', files: [], uploadId: crypto.randomUUID(), edit: true }); }
+  function addChild() { setError(''); setTried(false); setForm(blankChild()); }
+  function editChild() { if (!child) return; setError(''); setTried(false); setForm({ id: child.id, name: child.displayName, year: child.gradeLevel || '', notes: child.notes || '', files: [], uploadId: crypto.randomUUID(), edit: true }); }
   async function save(current, setCurrent, done) {
     const currentGeneration = sessionGeneration();
     setBusy(true); setError('');
@@ -144,7 +146,7 @@ export default function FamilyHome() {
   const welcomeReady = welcome.name.trim() && welcome.year;
   const account = <AccountMenu compact={phone} />;
   return <div className="fam-app">
-    {!(phone && rows.length > 0) && <header className="fam-top">
+    {!(enabled && (children.isPending || rows.length > 0)) && <header className="fam-top">
       <img src={mode === 'dark' ? darkLogo : logo} alt="MySmartTeach" className="fam-logo" />
       <span className="fam-top-label">Parent mode</span>
       <span className="fam-grow" />{account}
@@ -157,19 +159,20 @@ export default function FamilyHome() {
         setBusy(true); setError('');
         try { await enableMode('parent'); } catch (e) { setError(e.message || 'Could not start Parent mode.'); } finally { setBusy(false); }
       }}>{busy ? 'Starting…' : 'Start Parent mode'}</Button></section></main>
-    : children.isPending ? <main className="fam-centre-page"><CircularProgress aria-label="Loading your children" /></main>
+    : children.isPending ? <FamilyLoading />
     : children.isError ? <main className="fam-centre-page"><Alert severity="error" action={<Button onClick={() => children.refetch()}>Try again</Button>}>Could not load your children.</Alert></main>
-    : firstRun ? <main className="fam-centre-page"><form className="fam-welcome" onSubmit={e => { e.preventDefault(); if (welcomeReady && !busy) void save(welcome, setWelcome, () => setWelcome(blankChild())); }}>
+    : firstRun ? <main className="fam-centre-page"><form className="fam-welcome" onSubmit={e => { e.preventDefault(); setTried(true); if (welcomeReady && !busy) void save(welcome, setWelcome, () => setWelcome(blankChild())); }}>
         <Typography component="h1" className="fam-title">Let’s set up your child</Typography>
-        <Typography className="fam-lead">We’ll make quizzes and help that fit their school year. No school account needed.</Typography>
-        <ChildForm form={welcome} setForm={setWelcome} busy={busy} compact={phone} welcome />
+        <Typography className="fam-lead">We’ll match everything to their school year.</Typography>
+        <ChildForm form={welcome} setForm={setWelcome} busy={busy} compact={phone} welcome tried={tried} />
         {error && <Alert severity="error">{error}{welcome.saved && ' Your child is saved. Try the upload again, or add worksheets later.'}</Alert>}
-        <Button type="submit" variant="contained" size="large" fullWidth disabled={busy || !welcomeReady}>{busy ? 'Saving…' : welcome.saved ? 'Try the upload again' : 'Start'}</Button>
-        {!welcomeReady && <Typography className="fam-small fam-hint">Add a first name and a school year to start.</Typography>}
+        <Button type="submit" variant="contained" size="large" fullWidth disabled={busy}>{busy ? 'Saving…' : welcome.saved ? 'Try the upload again' : 'Start'}</Button>
+        {tried && !welcomeReady && <Typography className="fam-small fam-need" role="alert">Name and year needed</Typography>}
         <ol className="fam-steps-line" aria-label="How it works"><li data-on="true" aria-current="step"><b>1</b> Add your child</li><li><b>2</b> Pick a topic</li><li><b>3</b> Learn together</li></ol>
       </form></main>
     : <>
-      <nav className="fam-childbar" aria-label="Your children">
+      <nav className="fam-childbar fam-onebar" aria-label="Your children">
+        {!phone && <><img src={mode === 'dark' ? darkLogo : logo} alt="MySmartTeach" className="fam-logo" /><span className="fam-top-label">Parent mode</span><span className="fam-bar-sep" aria-hidden /></>}
         {phone && rows.length > 1 ? <>
           <button type="button" className="fam-tab fam-tab-switch" data-on="true" aria-haspopup="menu" aria-expanded={!!childMenu} onClick={e => setChildMenu(e.currentTarget)}
             aria-label={`${child?.displayName || 'Child'}, ${child?.gradeLevel || ''}. Change child`}>
@@ -193,7 +196,7 @@ export default function FamilyHome() {
         </div>}
         <span className="fam-grow" />
         <Button variant="outlined" className="fam-edit" onClick={editChild} disabled={!child} startIcon={phone ? null : <EditRounded />} aria-label={`Edit ${child?.displayName || 'child'}`}>Edit</Button>
-        {phone && account}
+        {account}
       </nav>
       {child ? <FamilyLearning key={`${user.id}:${child.id}`} child={child} /> :
         <main className="fam-centre-page"><Alert severity="warning">That child isn’t available. Choose one of your children above.</Alert></main>}
@@ -202,13 +205,13 @@ export default function FamilyHome() {
     <Dialog open={!!form} onClose={() => { if (!busy) setForm(null); }} fullWidth maxWidth="xs" fullScreen={phone}
       TransitionProps={{ onEntered: () => nameRef.current?.focus() }} className="fam-dialog">
       <DialogTitle>{form?.edit ? `Edit ${child?.displayName || 'child'}` : 'Add a child'}</DialogTitle>
-      <DialogContent>{form && <ChildForm form={form} setForm={setForm} busy={busy} compact={phone} nameRef={nameRef} />}
+      <DialogContent>{form && <ChildForm form={form} setForm={setForm} busy={busy} compact={phone} nameRef={nameRef} tried={tried} />}
         {error && <Alert severity="error" sx={{ mt: 2 }}>{error}{form?.saved && ' Your child is saved. Try the upload again, or close and add worksheets from their notebook.'}</Alert>}
         {form?.edit && !form?.saved && <div className="fam-remove-row"><Button className="fam-danger" disabled={busy} onClick={() => setRemoveAsk(true)}>Remove {child?.displayName || 'this child'}…</Button></div>}
       </DialogContent>
-      <DialogActions>{!ready && !form?.saved && <Typography className="fam-small fam-hint fam-grow">Add a first name and a school year.</Typography>}
+      <DialogActions>{tried && !ready && !form?.saved ? <Typography className="fam-small fam-need fam-grow" role="alert">Name and year needed</Typography> : <span className="fam-grow" />}
         <Button disabled={busy} onClick={() => setForm(null)}>Cancel</Button>
-        <Button variant="contained" disabled={busy || !ready} onClick={() => save(form, setForm, () => setForm(null))}>{busy ? 'Saving…' : form?.saved ? 'Try the upload again' : form?.edit ? 'Save changes' : 'Add child'}</Button>
+        <Button variant="contained" disabled={busy} onClick={() => { setTried(true); if (ready) void save(form, setForm, () => { setForm(null); setTried(false); }); }}>{busy ? 'Saving…' : form?.saved ? 'Try the upload again' : form?.edit ? 'Save changes' : 'Add child'}</Button>
       </DialogActions>
     </Dialog>
     <Dialog open={removeAsk} onClose={() => { if (!busy) setRemoveAsk(false); }} maxWidth="xs" fullWidth className="fam-dialog">

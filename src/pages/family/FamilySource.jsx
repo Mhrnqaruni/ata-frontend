@@ -36,7 +36,7 @@ export default function FamilySource({ base, source, onQuiz }) {
           : <>{source.body && <div className="fam-prose fam-notes"><MathText text={source.body} /></div>}
             {source.files.length > 0 && <div className="fam-files-open">{source.files.map((file, i) => <Button key={i} variant="outlined" disabled={busy} onClick={() => show(file, i)}
               startIcon={busy && requested?.index === i ? <CircularProgress size={16} aria-label="Opening file" /> : null}>{i + 1}. {file.name} · {file.pages} page{file.pages === 1 ? '' : 's'}</Button>)}</div>}
-            {source.provenance?.author && <Typography className="fam-small">Written by {source.provenance.author === 'MST' ? 'MySmartTeach' : source.provenance.author}</Typography>}</>}
+</>}
         {busy && !preview && source.files.length === 1 && !source.body && <CircularProgress aria-label="Opening file" />}
         {error && <Alert severity="error" action={<Button onClick={() => show(requested.file, requested.index)}>Try again</Button>}>{error}</Alert>}
       </DialogContent>

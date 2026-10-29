@@ -3,6 +3,7 @@ import { Alert, Badge, Button, Checkbox, CircularProgress, Collapse, Dialog, Dia
   IconButton, LinearProgress, MenuItem, TextField, Typography, useMediaQuery } from '@mui/material';
 import CloseRounded from '@mui/icons-material/CloseRounded';
 import AddRounded from '@mui/icons-material/AddRounded';
+import RemoveRounded from '@mui/icons-material/RemoveRounded';
 import UploadFileRounded from '@mui/icons-material/UploadFileRounded';
 import MenuBookRounded from '@mui/icons-material/MenuBookRounded';
 import QuizRounded from '@mui/icons-material/QuizRounded';
@@ -25,6 +26,7 @@ import useFamilyChats from './useFamilyChats';
 import FamilyConversation from './FamilyConversation';
 import FamilyResult from './FamilyResult';
 import FamilySource from './FamilySource';
+import FamilyLoading from './FamilyLoading';
 import { StatusChip, TopicCard, kindIcon } from './FamilyParts';
 import { isRunning as active, kindWords, levelWords, statusOf, ukDate } from './familyWords';
 
@@ -79,10 +81,12 @@ export default function FamilyLearning({ child }) {
   const desktop = useMediaQuery('(min-width:1000px)');
   const phone = useMediaQuery('(max-width:599px)');
   const [pane, setPane] = useState('chat');
+  const [panelTab, setPanelTab] = useState(null);
   const [allDone, setAllDone] = useState(false);
   const [actionSources, setActionSources] = useState([]);
   const [title, setTitle] = useState(''), [tag, setTag] = useState(''), [difficulty, setDifficulty] = useState('Standard'), [quizType, setQuizType] = useState('mcq');
   const [moreOptions, setMoreOptions] = useState(false);
+  const [countOther, setCountOther] = useState(false);
   const selectionKey = ['family', generation, user.id, child.id, 'selectedActivity'];
   const [activityId, setActivityIdState] = useState(() => queryClient.getQueryData(selectionKey));
   const setActivityId = id => { setActivityIdState(id); queryClient.setQueryData(selectionKey, id); };
@@ -92,6 +96,8 @@ export default function FamilyLearning({ child }) {
   const [actionKind, setActionKind] = useState(null);
   const [confirmNew, setConfirmNew] = useState(null);
   const [stopAsk, setStopAsk] = useState(false);
+  const [viewerProgress, setViewerProgress] = useState('');
+  const [viewerAction, setViewerAction] = useState(null);
   const [count, setCount] = useState('5');
   const [focus, setFocus] = useState('');
   const [busy, setBusy] = useState(false);
@@ -101,7 +107,6 @@ export default function FamilyLearning({ child }) {
   const alive = useRef(true);
   const topicsRef = useRef(null);
   const panelRef = useRef(null), doneRef = useRef(null);
-  const [fit, setFit] = useState(3);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
   const valid = () => alive.current && generation === sessionGeneration();
   const sources = home.data?.materials || [];
@@ -128,13 +133,12 @@ export default function FamilyLearning({ child }) {
   function closeViewer(force = false) {
     const draft = activity && queryClient.getQueryData(draftKeyFor(activity.id));
     if (!force && activity?.kind === 'quiz' && draft?.practising && Object.keys(draft.answers || {}).length > 0) { setStopAsk(true); return; }
-    setStopAsk(false); setViewerOpen(false);
+    setStopAsk(false); setViewerOpen(false); setViewerProgress('');
   }
   function openCreate(kind) {
-    setBasis(selectedIds.length?'materials':chats.data?.turns.some(t=>t.activity.status==='completed')?'conversation':'topic');setTopicText('');
-    setActionSources([...selectedIds]); setActionKind(kind); setTitle(''); setTag(''); setFocus(''); setMoreOptions(false); setError('');
-    if (kind === 'flashcards' && !['5', '10'].includes(count)) setCount('5');
-    if (kind === 'quiz' && !['3', '5', '10'].includes(count)) setCount('5');
+    setBasis(sources.length?'materials':chats.data?.turns.some(t=>t.activity.status==='completed')?'conversation':'topic');setTopicText('');
+    setActionSources(selectedIds.length ? [...selectedIds] : sources[0] ? [sources[0].id] : []); setActionKind(kind); setTitle(''); setTag(''); setFocus(''); setMoreOptions(false); setError('');
+    setCountOther(false); setCount('5'); if (kind === 'quiz') setDifficulty('Standard');
   }
   function toggleSource(id, checked) { setSelectedSources(checked ? [...selectedIds, id] : selectedIds.filter(x => x !== id)); setSourceId(''); }
   const years = Number((child.gradeLevel || '').replace(/[^0-9]/g, ''));
@@ -226,52 +230,52 @@ export default function FamilyLearning({ child }) {
     const tick = () => setSeconds(Math.max(0, Math.floor((Date.now() - Date.parse(activity.createdAt)) / 1000)));
     tick(); const timer = setInterval(tick, 1000); return () => clearInterval(timer);
   }, [activity?.id, activity?.status, activity?.createdAt]);
-  // "Done so far" shows as many rows as fit the laptop panel; the rest wait behind "See all" (no panel scrolling).
-  useLayoutEffect(() => {
-    const panel = panelRef.current; if (!desktop || allDone || !panel) return undefined;
-    const measure = () => {
-      const first = doneRef.current?.firstElementChild; if (!first) return;
-      const rowH = first.getBoundingClientRect().height + 8;
-      const over = panel.scrollHeight - panel.clientHeight;
-      if (over > 1) setFit(n => Math.max(1, Math.min(n, history.length) - Math.ceil(over / rowH)));
-      else if (fit < history.length && -over > rowH + 4) setFit(n => n + Math.floor((-over - 4) / rowH));
-    };
-    measure();
-    const observer = new ResizeObserver(measure); observer.observe(panel);
-    return () => observer.disconnect();
-  }, [desktop, allDone, history.length, fit]);
-  if (home.isPending) return <main className="fam-centre-page"><CircularProgress aria-label="Loading saved learning" /></main>;
+  if (home.isPending) return <FamilyLoading variant="body" label="Opening the notebook" />;
   if (home.isError && (!home.data || [403, 404].includes(home.error?.response?.status))) return <main className="fam-centre-page"><Alert severity="error" action={<Button onClick={() => home.refetch()}>Try again</Button>}>Could not load this child’s notebook.</Alert></main>;
-  const showTopics = () => { if (desktop) { topicsRef.current?.scrollIntoView({ block: 'nearest' }); topicsRef.current?.focus(); } else setPane('topics'); };
-  const doneRows = allDone ? history : history.slice(0, desktop ? fit : 50);
-  function quizFrom(ids) { setSelectedSources(ids); setActionSources(ids); setTitle(''); setTag(''); setFocus(''); setMoreOptions(false); setError(''); if (!['3', '5', '10'].includes(count)) setCount('5'); setActionKind('quiz'); }
+  const showTopics = () => { if (desktop) setPanelTab('materials'); else setPane('topics'); };
+  const doneRows = allDone ? history : history.slice(0, 5);
+  const tab = panelTab || (sources.length ? 'activities' : 'materials');
+  function quizFrom(ids) { setSelectedSources(ids); setActionSources(ids); setBasis('materials'); setCountOther(false); setTitle(''); setTag(''); setFocus(''); setMoreOptions(false); setError(''); if (!['3', '5', '10'].includes(count)) setCount('5'); setActionKind('quiz'); }
 
-  const topicsSection = <section className="fam-sec" ref={topicsRef} tabIndex={-1} aria-labelledby="fam-sec-topics">
-    <header className="fam-sec-head"><Typography component="h2" id="fam-sec-topics" className="fam-sec-title">Learning about</Typography>
-      <Button size="small" startIcon={<AddRounded />} onClick={() => setPicker(true)}>Add</Button></header>
-    {sources.length > 1 && <Typography className="fam-small fam-sec-note">Tick the ones you want to use.</Typography>}
-    <ul className="fam-list">{sources.map(item => <li key={item.id} className="fam-src">
-      <Checkbox disabled={chats.busy} checked={selectedIds.includes(item.id)} onChange={e => toggleSource(item.id, e.target.checked)} inputProps={{ 'aria-label': `Use ${item.title}` }} />
-      <div className="fam-src-text"><span className="fam-src-title">{item.title}</span>
-        <span className="fam-small">{item.purpose === 'work' ? `Homework · ${item.files.length} file${item.files.length === 1 ? '' : 's'}` : item.files.length ? `Worksheet · ${item.files.length} file${item.files.length === 1 ? '' : 's'}` : 'From MySmartTeach'}</span></div>
-      <FamilySource base={base} source={item} onQuiz={() => quizFrom([item.id])} />
-    </li>)}</ul>
-    {sources.length > 0 && !desktop && <button type="button" className="fam-homework" onClick={() => setPicker(true)}>
-      <span className="fam-topic-icon" aria-hidden><AddRounded /></span>
-      <span className="fam-topic-text"><span className="fam-topic-title">Add a topic or worksheet</span><span className="fam-topic-sub">Maths topics, or a photo of any sheet</span></span>
-      <ChevronRightRounded className="fam-topic-go" aria-hidden /></button>}
-    {!sources.length && <div className="fam-empty"><Typography>Materials are optional. Add a topic or worksheet when useful.</Typography>
-      <Button variant="contained" onClick={() => setPicker(true)} startIcon={<MenuBookRounded />}>Pick a topic</Button></div>}
+  const topicsSection = <section className="fam-sec" ref={topicsRef} tabIndex={-1} aria-label="Materials">
+    <div className="fam-add-grid">
+      <button type="button" className="fam-add-card" onClick={() => setPicker(true)} disabled={busy}>
+        <span className="fam-act-icon" data-kind="learn" aria-hidden><MenuBookRounded /></span>
+        <span className="fam-topic-text"><span className="fam-topic-title">Choose a topic</span><span className="fam-topic-sub">Maths topics by school year</span></span></button>
+      <button type="button" className="fam-add-card" onClick={() => newUpload('learning')} disabled={busy}>
+        <span className="fam-act-icon" data-kind="cards" aria-hidden><UploadFileRounded /></span>
+        <span className="fam-topic-text"><span className="fam-topic-title">Upload a worksheet or book</span><span className="fam-topic-sub">A photo or a PDF, any subject</span></span></button>
+    </div>
+    {(() => {
+      const row = item => <li key={item.id} className="fam-src">
+        <Checkbox disabled={chats.busy} checked={selectedIds.includes(item.id)} onChange={e => toggleSource(item.id, e.target.checked)} inputProps={{ 'aria-label': `Use ${item.title} in the chat` }} />
+        <div className="fam-src-text"><span className="fam-src-title">{item.title}</span>
+          <span className="fam-small">{item.purpose === 'work' ? 'Homework' : item.files.length ? 'Your worksheet' : 'MySmartTeach notes'}</span></div>
+        <FamilySource base={base} source={item} onQuiz={() => quizFrom([item.id])} />
+      </li>;
+      const used = sources.filter(item => selectedIds.includes(item.id)), unused = sources.filter(item => !selectedIds.includes(item.id));
+      return <>
+        <header className="fam-sec-head"><Typography component="h2" className="fam-sec-title">Your materials</Typography></header>
+        {sources.length > 0 && <Typography className="fam-small fam-sec-note">Tick the ones the chat should use.</Typography>}
+        {used.length > 0 && <ul className="fam-list">{used.map(row)}</ul>}
+        {unused.length > 0 && (used.length ? <details className="fam-src-group"><summary>Not in use ({unused.length})<ExpandMoreRounded className="fam-chev" aria-hidden /></summary><ul className="fam-list">{unused.map(row)}</ul></details>
+          : <ul className="fam-list">{unused.map(row)}</ul>)}
+        {!sources.length && <Typography className="fam-small fam-empty-line">Nothing here yet. Add a topic or upload a worksheet.</Typography>}</>;
+    })()}
   </section>;
 
   const makeSection = <section className="fam-sec" aria-labelledby="fam-sec-make">
     <header className="fam-sec-head"><Typography component="h2" id="fam-sec-make" className="fam-sec-title">Make something</Typography></header>
-    {!selectedIds.length && <Typography className="fam-small fam-sec-note">Use materials, a topic or this conversation.</Typography>}
-    <div className="fam-tiles">{makeTiles.map(([kind, label, hint]) => { const Icon = kindIcon[kind]; return <button key={kind} type="button" className="fam-tile"
+    <div className="fam-tiles">{makeTiles.map(([kind, label, hint]) => { const Icon = kindIcon[kind]; return <button key={kind} type="button" className="fam-tile" data-kind={kind}
       disabled={busy || !chats.id} onClick={() => openCreate(kind)}><Icon className="fam-tile-icon" aria-hidden /><span className="fam-tile-label">{label}</span><span className="fam-tile-hint">{hint}</span></button>; })}</div>
-    <button type="button" className="fam-homework" disabled={busy} onClick={() => newUpload('work')}>
-      <span className="fam-topic-icon" aria-hidden><PhotoCameraRounded /></span>
-      <span className="fam-topic-text"><span className="fam-topic-title">Check homework</span><span className="fam-topic-sub">Take a photo of finished work</span></span>
+  </section>;
+
+  const homeworkSection = <section className="fam-sec" aria-labelledby="fam-sec-hw">
+    <header className="fam-sec-head"><Typography component="h2" id="fam-sec-hw" className="fam-sec-title">Homework</Typography></header>
+    <button type="button" className="fam-hwbtn" disabled={busy} onClick={() => newUpload('work')}>
+      <span className="fam-act-icon" data-kind="check" aria-hidden><PhotoCameraRounded /></span>
+      <span className="fam-topic-text"><span className="fam-topic-title">Check homework</span>
+        <span className="fam-topic-sub">Photo of finished work, marked by AI</span></span>
       <ChevronRightRounded className="fam-topic-go" aria-hidden /></button>
   </section>;
 
@@ -279,11 +283,12 @@ export default function FamilyLearning({ child }) {
     <header className="fam-sec-head"><Typography component="h2" id="fam-sec-done" className="fam-sec-title">Done so far</Typography></header>
     <ul className="fam-list" ref={doneRef}>{doneRows.map(row => { const Icon = kindIcon[row.kind] || AutoAwesomeRounded; return <li key={row.id}>
       <button type="button" className="fam-act" onClick={() => openActivity(row)}>
-        <span className="fam-act-icon" aria-hidden><Icon /></span>
-        <span className="fam-act-text"><span className="fam-act-title">{row.title}</span><span className="fam-small">{kindWords[row.kind]?.label} · {ukDate(row.createdAt)}</span></span>
+        <span className="fam-act-icon" data-kind={row.kind} aria-hidden><Icon /></span>
+        <span className="fam-act-text"><span className="fam-act-title">{row.title}</span><span className="fam-small">{row.title === kindWords[row.kind]?.label ? '' : `${kindWords[row.kind]?.label} · `}{ukDate(row.createdAt).replace(/ \d{4}$/, '')}</span></span>
         <StatusChip row={row} attempt={attemptFor(row)} />
       </button></li>; })}</ul>
     {history.length > doneRows.length && <Button size="small" onClick={() => setAllDone(true)}>See all ({history.length})</Button>}
+    {allDone && history.length > 5 && <Button size="small" onClick={() => setAllDone(false)}>Show fewer</Button>}
     {!history.length && <Typography className="fam-small fam-empty-line">Quizzes and cards you make will appear here.</Typography>}
   </section>;
 
@@ -294,28 +299,32 @@ export default function FamilyLearning({ child }) {
       <span className="fam-topic-icon" aria-hidden><UploadFileRounded /></span>
       <span className="fam-topic-text"><span className="fam-topic-title">Use your own worksheet</span><span className="fam-topic-sub">Add a photo or a PDF</span></span>
       <ChevronRightRounded className="fam-topic-go" aria-hidden /></button>
-    {topics.length > suggested.length && <Button onClick={() => setPicker(true)}>See topics for other years</Button>}
+    {topics.length > suggested.length && <Button onClick={() => setPicker(true)}>See all topics</Button>}
     {error && !picker && !upload && !actionKind && <Alert severity="error">{error}</Alert>}
   </div>;
 
   const conversation = <FamilyConversation key={`${child.id}:${chats.id||"loading"}`} chat={chats} child={child} suggestion={questionSuggestion} materials={sources.filter(s => selectedIds.includes(s.id))} materialIds={selectedIds}
     available={sources.filter(s => !selectedIds.includes(s.id) && s.purpose !== 'work')} onUseMaterial={id => toggleSource(id, true)}
     activities={history} attempts={attempts} onActivity={openActivity} onToggleMaterial={id => toggleSource(id, false)} onMaterials={showTopics}
-    onCreate={openCreate} onUpload={files => newUpload('learning',files||[])} uploadState={upload} onTopic={() => setPicker(true)} starter={sources.length ? null : starter} compact={phone} />;
+    onCreate={openCreate} onHomework={() => newUpload('work')} onUpload={files => newUpload('learning',files||[])} uploadState={upload} onTopic={() => setPicker(true)} starter={sources.length ? null : starter} compact={phone} />;
 
   const viewerBody = !activity ? (detail.isError ? <div className="fam-viewer-scroll fam-centre"><Alert severity="error" action={<Button onClick={() => detail.refetch()}>Try again</Button>}>Could not open this.</Alert></div>
       : <div className="fam-viewer-scroll fam-centre"><CircularProgress aria-label="Opening" /></div>)
     : active(activity) ? <><div className="fam-viewer-scroll fam-centre"><section className="fam-making" role="status">
         <AutoAwesomeRounded className="fam-making-icon" aria-hidden /><Typography component="h2" className="fam-h">{kindWords[activity.kind]?.making || 'Getting it ready'}…</Typography>
-        <LinearProgress className="fam-making-bar" /><Typography className="fam-small">{Math.floor(seconds / 60)}m {String(seconds % 60).padStart(2, '0')}s · Usually under a minute. You can close this and keep chatting.</Typography>
+        <LinearProgress className="fam-making-bar" /><Typography className="fam-small">About a minute. You can close this.</Typography>
       </section></div><footer className="fam-viewer-foot"><span className="fam-grow" /><Button variant="outlined" onClick={() => closeViewer(true)}>Back to notebook</Button></footer></>
-    : activity.result ? <FamilyResult key={activity.id} activity={activity} childName={child.displayName} onRecord={record} busy={busy} attempts={attempts}
+    : activity.result ? <FamilyResult key={activity.id} activity={activity} childName={child.displayName} onProgress={setViewerProgress} onHeaderAction={setViewerAction} base={base} onRecord={record} busy={busy} attempts={attempts}
         draftKey={draftKeyFor(activity.id)} saveError={recordError} sourceFiles={activity.sourceFiles || activitySource?.files || []}
         onClose={() => closeViewer(true)} onNewVersion={() => setConfirmNew(activity.kind)}
         onAsk={label => { setSelectedSources(activity.materialIds || [activity.materialId]); setQuestionSuggestion({ text: `Help me explain ${label} to ${child.displayName} in a simple way.`, id: crypto.randomUUID() }); closeViewer(true); setPane('chat'); }}
-        onMakeQuiz={() => { closeViewer(true); setSelectedSources(activity.materialIds || [activity.materialId]); setActionSources(activity.materialIds || [activity.materialId]); setActionKind('quiz'); setCount('3'); }} />
+        onExplain={text => { setQuestionSuggestion({ text: text.slice(0, 3900), id: crypto.randomUUID(), send: true }); closeViewer(true); setPane('chat'); }}
+        onMakeQuiz={() => { closeViewer(true); const ids = (activity.materialIds?.length ? activity.materialIds : activity.materialId ? [activity.materialId] : []).filter(id => sources.some(x => x.id === id));
+          if (ids.length) setSelectedSources(ids); setActionSources(ids); setBasis(ids.length ? 'materials' : activity.settings?.topic ? 'topic' : 'conversation'); setTopicText(activity.settings?.topic || '');
+          setTitle(''); setTag(''); setFocus(''); setMoreOptions(false); setCountOther(false); setCount('3'); setDifficulty('Standard'); setActionKind('quiz'); }} />
     : <><div className="fam-viewer-scroll fam-centre"><section className="fam-making">
-        <Alert severity="warning">{activity.status === 'needs_input' ? (activity.error || 'Some pages seem to be missing. Add them and we’ll try again.') : (activity.error || 'This couldn’t be made this time. Your saved work is safe.')}</Alert>
+        <Typography component="h2" className="fam-h">{activity.status === 'needs_input' ? 'Some pages are missing' : `We couldn’t make this ${(kindWords[activity.kind]?.label || 'activity').toLowerCase()}`}</Typography>
+        <Typography className="fam-done-sub">{activity.status === 'needs_input' ? (activity.error || 'Add them and we’ll try again.') : 'Your other work is safe.'}</Typography>
         {error && <Alert severity="error">{error}</Alert>}</section></div>
       <footer className="fam-viewer-foot"><Button onClick={() => closeViewer(true)}>Back to notebook</Button><span className="fam-grow" />
         {activity.status === 'needs_input' ? <Button variant="contained" disabled={busy} onClick={() => { setSourceId(activity.materialId); closeViewer(true); void addMissingPages(); }}>Add the missing pages</Button>
@@ -327,15 +336,22 @@ export default function FamilyLearning({ child }) {
     {home.isError && <Alert severity="warning" className="fam-banner">Could not refresh. Showing what was saved.</Alert>}
     {desktop ? <div className="fam-main">
       {conversation}
-      <aside className="fam-panel" ref={panelRef} aria-label={`${child.displayName}’s topics and activities`}>{topicsSection}{makeSection}{doneSection}</aside>
+      <aside className="fam-panel" ref={panelRef} aria-label={`${child.displayName}’s materials and activities`}>
+        <div className="fam-panel-tabs" role="tablist" aria-label="Side panel">
+          {[['materials', 'Materials', 0], ['activities', 'Activities', 0]].map(([id, label, n]) =>
+            <button key={id} type="button" role="tab" aria-selected={tab === id} className="fam-panel-tab" data-on={tab === id} onClick={() => setPanelTab(id)}>
+              {label}{n ? <span className="fam-panel-n">{n}</span> : null}</button>)}
+        </div>
+        <div role="tabpanel" className="fam-panel-body">{tab === 'materials' ? topicsSection : <>{makeSection}{homeworkSection}{doneSection}</>}</div>
+      </aside>
     </div> : <>
       <div className="fam-main fam-main-phone">
         <div className="fam-pane-chat" hidden={pane !== 'chat'}>{conversation}</div>
         <div className="fam-pane" hidden={pane !== 'topics'}>{topicsSection}</div>
-        <div className="fam-pane" hidden={pane !== 'activities'}>{makeSection}{doneSection}</div>
+        <div className="fam-pane" hidden={pane !== 'activities'}>{makeSection}{homeworkSection}{doneSection}</div>
       </div>
       <nav className="fam-bottom" aria-label="Notebook sections">
-        {[['chat', 'Chat', ChatRounded, 0], ['topics', 'Topics', MenuBookRounded, sources.length], ['activities', 'Activities', AutoAwesomeRounded, readyCount]].map(([id, label, Icon, n]) =>
+        {[['chat', 'Chat', ChatRounded, 0], ['topics', 'Materials', MenuBookRounded, sources.length], ['activities', 'Activities', AutoAwesomeRounded, readyCount]].map(([id, label, Icon, n]) =>
           <button key={id} type="button" className="fam-bottom-btn" data-on={pane === id} aria-current={pane === id ? 'page' : undefined} onClick={() => setPane(id)}>
             <span className="fam-bottom-pill">{id === 'activities' && n > 0 ? <Badge color="primary" badgeContent={n} aria-hidden><Icon /></Badge> : <Icon />}</span>
             <span>{label}{id === 'topics' && n ? ` (${n})` : ''}{id === 'activities' && n ? <span className="fam-sr"> ({n} ready)</span> : ''}</span></button>)}
@@ -344,9 +360,11 @@ export default function FamilyLearning({ child }) {
     <Dialog open={viewerOpen} onClose={() => closeViewer()} fullScreen className="fam-viewer" TransitionProps={{ timeout: { enter: 240, exit: 180 } }}>
       <header className="fam-viewer-head">
         <IconButton className="fam-icon-btn" aria-label="Close and go back to the notebook" onClick={() => closeViewer()}><CloseRounded /></IconButton>
-        <span className="fam-viewer-kind" aria-hidden><KindIcon /></span>
-        <div className="fam-viewer-title"><Typography component="h1" className="fam-viewer-name">{activity?.title || 'Activity'}</Typography>
-          <Typography className="fam-small">{activity ? `${kindWords[activity.kind]?.label || 'Activity'} for ${child.displayName} · ${activity.basis==='topic'?'Based on a topic':activity.basis==='conversation'?'Based on a saved conversation':'Based on selected materials'}` : ''}</Typography></div>
+        <span className="fam-viewer-kind" data-kind={activity?.kind} aria-hidden><KindIcon /></span>
+        <div className="fam-viewer-title"><Typography component="h1" className="fam-viewer-name">{activity?.kind === 'check' && /^homework( check)?$/i.test(activity?.title || '') ? `${child.displayName}’s homework` : activity?.title || 'Activity'}</Typography>
+          {viewerProgress && <Typography className="fam-small fam-viewer-progress-inline">{viewerProgress}</Typography>}</div>
+        {viewerProgress && <span className="fam-viewer-progress" aria-live="polite">{viewerProgress}</span>}
+        {viewerAction && <span className="fam-viewer-action">{viewerAction}</span>}
       </header>
       <div className="fam-viewer-main">{viewerBody}</div>
     </Dialog>
@@ -362,16 +380,16 @@ export default function FamilyLearning({ child }) {
       <DialogContent>
         {catalogue.isError && <Alert severity="error" action={<Button onClick={() => catalogue.refetch()}>Try again</Button>}>Topics could not load.</Alert>}
         {catalogue.isPending && <CircularProgress aria-label="Loading topics" />}
-        {suggested.length > 0 && <><Typography className="fam-label">For {child.gradeLevel}</Typography>
+        {suggested.length > 0 && <><Typography className="fam-label">{child.gradeLevel} topics</Typography>
           <div className="fam-topic-list">{suggested.map(topic => <TopicCard key={topic.id} topic={topic} busy={busy} loading={busy && pending?.topicId === topic.id} onClick={() => choose(topic)} />)}</div></>}
-        {otherYears.length > 0 && <><Typography className="fam-label fam-gap">Other years</Typography>
+        {otherYears.length > 0 && <details className="fam-src-group fam-gap-d" open={!suggested.length || undefined}><summary>Other years<ExpandMoreRounded className="fam-chev" aria-hidden /></summary>
           <div className="fam-yearchips" role="group" aria-label="Other years">{otherYears.map(y => <button key={y} type="button" className="fam-yearchip" data-on={otherYear === y} aria-pressed={otherYear === y}
             onClick={() => setOtherYear(otherYear === y ? null : y)}>Year {y}</button>)}</div>
-          {otherYear && <div className="fam-topic-list">{topics.filter(t => t.year === otherYear).map(topic => <TopicCard key={topic.id} topic={topic} busy={busy} loading={busy && pending?.topicId === topic.id} onClick={() => choose(topic)} />)}</div>}</>}
+          {otherYear && <div className="fam-topic-list">{topics.filter(t => t.year === otherYear).map(topic => <TopicCard key={topic.id} topic={topic} busy={busy} loading={busy && pending?.topicId === topic.id} onClick={() => choose(topic)} />)}</div>}</details>}
         <Typography className="fam-label fam-gap">Your own worksheet</Typography>
         <button type="button" className="fam-topic" onClick={() => newUpload('learning')} disabled={busy}>
           <span className="fam-topic-icon" aria-hidden><UploadFileRounded /></span>
-          <span className="fam-topic-text"><span className="fam-topic-title">Add a photo or a PDF</span><span className="fam-topic-sub">Any subject: homework sheets, textbook pages</span></span>
+          <span className="fam-topic-text"><span className="fam-topic-title">Add a photo or PDF</span><span className="fam-topic-sub">Any subject</span></span>
           <ChevronRightRounded className="fam-topic-go" aria-hidden /></button>
         {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
       </DialogContent>
@@ -379,27 +397,29 @@ export default function FamilyLearning({ child }) {
     </Dialog>
 
     <Dialog open={!!upload} onClose={() => { if (!busy) setUpload(null); }} fullWidth maxWidth="sm" fullScreen={phone} className="fam-dialog">
-      <DialogTitle>{upload?.reason === 'missing' ? 'Add the missing pages' : upload?.purpose === 'work' ? 'Check homework' : 'Add a worksheet'}</DialogTitle>
+      <DialogTitle>{upload?.reason === 'missing' ? 'Add the missing pages' : upload?.purpose === 'work' ? `Check ${child.displayName}’s homework` : 'Add a worksheet'}</DialogTitle>
       <DialogContent><div className="fam-form">
         <Typography className="fam-lead-s">{upload?.reason === 'missing' ? 'Your first pages are already here. Add the pages that were missing, then save.'
-          : upload?.purpose === 'work' ? `Take a photo of each page of ${child.displayName}’s finished work. Include the questions with the answers.` : 'Take a photo of the worksheet, or choose a PDF.'}</Typography>
-        <Button component="label" className="fam-drop" disabled={busy}>
-          <PhotoCameraRounded aria-hidden /><span>{upload?.files.length ? 'Add more photos or files' : 'Take a photo or choose files'}</span>
-          <input hidden type="file" multiple accept=".pdf,.png,.jpg,.jpeg" onChange={e => {
-            const files = [...upload.files, ...Array.from(e.target.files || [])].filter((file, index, all) =>
-              all.findIndex(other => other.name === file.name && other.size === file.size && other.lastModified === file.lastModified) === index);
-            setUpload({ ...upload, files, changed: upload.submitted || upload.changed });
-            e.target.value = ''; // Allow reselecting a file after removing it.
-          }} />
-        </Button>
-        <Typography className="fam-small">Photos (JPG or PNG) or PDFs · up to 10 files</Typography>
+          : upload?.purpose === 'work' ? 'Photograph each page, questions and answers.' : 'Photograph the sheet, or choose a PDF.'}</Typography>
+        <div className="fam-drop-row">
+          {['photo', 'files'].map(way => <Button key={way} component="label" className="fam-drop" disabled={busy}>
+            {way === 'photo' ? <PhotoCameraRounded aria-hidden /> : <UploadFileRounded aria-hidden />}<span>{way === 'photo' ? 'Take a photo' : 'Choose files'}</span>
+            <input hidden type="file" multiple={way === 'files'} accept={way === 'photo' ? 'image/jpeg,image/png' : '.pdf,.png,.jpg,.jpeg'} capture={way === 'photo' ? 'environment' : undefined} onChange={e => {
+              const files = [...upload.files, ...Array.from(e.target.files || [])].filter((file, index, all) =>
+                all.findIndex(other => other.name === file.name && other.size === file.size && other.lastModified === file.lastModified) === index);
+              setUpload({ ...upload, files, changed: upload.submitted || upload.changed });
+              e.target.value = ''; // Allow reselecting a file after removing it.
+            }} />
+          </Button>)}
+        </div>
+        <Typography className="fam-small">Up to 10 photos or PDFs</Typography>
         {(upload?.files || []).length > 0 && <ul className="fam-files">{upload.files.map((file, i) => <li key={i}>
           <span className="fam-file-name">{i + 1}. {file.name}</span><span className="fam-small">{Math.ceil(file.size / 1024)} KB</span>
           <IconButton disabled={busy} aria-label={`Remove ${file.name}`} onClick={() => setUpload({ ...upload, files: upload.files.filter((_, index) => index !== i), changed: upload.submitted || upload.changed })}><CloseRounded fontSize="small" /></IconButton>
         </li>)}</ul>}
-        <TextField label="Name (optional)" placeholder={upload?.purpose === 'work' ? 'For example: Fractions homework' : 'For example: Times tables sheet'} value={upload?.title || ''} disabled={busy}
-          onChange={e => setUpload({ ...upload, title: e.target.value, changed: upload.submitted || upload.changed })} fullWidth />
-        {upload?.purpose === 'work' && !upload?.reason && <Typography className="fam-small">Marking uses AI and takes about a minute. It’s guidance, not an official mark.</Typography>}
+        {upload?.purpose !== 'work' && <TextField label="Name (optional)" placeholder="For example: Times tables sheet" value={upload?.title || ''} disabled={busy}
+          onChange={e => setUpload({ ...upload, title: e.target.value, changed: upload.submitted || upload.changed })} fullWidth />}
+        {upload?.purpose === 'work' && !upload?.reason && <Typography className="fam-small">AI marking takes about a minute. It’s a guide, not a final mark.</Typography>}
         {error && <Alert severity="error">{error}</Alert>}
         {upload?.changed && <Alert severity="info">The earlier files may already be saved.
           <Button onClick={() => { setUpload(null); void refresh(); }}>See what’s saved</Button>
@@ -411,35 +431,45 @@ export default function FamilyLearning({ child }) {
 
     {chats.error&&<Alert severity="error">{chats.error}</Alert>}
     <Dialog open={Boolean(actionKind)} onClose={() => !busy && setActionKind(null)} fullWidth maxWidth="sm" fullScreen={phone} className="fam-dialog">
-      <DialogTitle>Make {makeTitle[actionKind] || 'something'} for {child.displayName}</DialogTitle>
+      <DialogTitle>{{ quiz: 'Make a quiz', flashcards: 'Make flashcards', mindmap: 'Make a mind map', story: 'Make a story' }[actionKind] || 'Make something'}</DialogTitle>
       <DialogContent><div className="fam-form">
-        <TextField select label="Based on" value={basis} onChange={e=>setBasis(e.target.value)}>
-          <MenuItem value="materials" disabled={!sources.length}>Selected materials</MenuItem><MenuItem value="topic">A topic I describe</MenuItem><MenuItem value="conversation" disabled={!chats.data?.turns.some(t=>t.activity.status==='completed')}>This conversation</MenuItem>
-        </TextField>
-        {basis==='topic'&&<TextField multiline minRows={2} label="What should it cover?" value={topicText} onChange={e=>setTopicText(e.target.value)} inputProps={{maxLength:1500}}/>}
-        {basis==='conversation'&&<Typography className="fam-small">Uses a saved snapshot of this chat. Later messages won’t change this activity.</Typography>}
-        {basis==='materials'&&(sources.length > 1 ? <div><Typography className="fam-label">About</Typography><div className="fam-yearchips">{sources.map(item => { const on = actionSources.includes(item.id);
-          return <button key={item.id} type="button" className="fam-yearchip" data-on={on} aria-pressed={on} onClick={() => setActionSources(on ? actionSources.filter(id => id !== item.id) : [...actionSources, item.id])}>{on && <CheckRounded aria-hidden />}{item.title}</button>; })}</div></div>
-          : <Typography className="fam-lead-s">About: <b>{sources[0]?.title}</b></Typography>)}
+        {(() => {
+          const canChat = !!chats.data?.turns.some(t => t.activity.status === 'completed');
+          const about = [...(sources.length ? [['materials', 'My topics']] : []), ...(canChat ? [['conversation', 'This chat']] : []), ['topic', 'Describe it']];
+          return <Segmented id="fam-about" label="About" value={basis} options={about}
+            onChange={v => { setBasis(v); if (v === 'materials' && !actionSources.length) setActionSources(selectedIds.length ? [...selectedIds] : [sources[0].id]); }} />;
+        })()}
+        {basis === 'materials' && (sources.length > 1 ? <div className="fam-yearchips" role="group" aria-label="Which topics">{sources.map(item => { const on = actionSources.includes(item.id);
+            return <button key={item.id} type="button" className="fam-yearchip" data-on={on} aria-pressed={on} onClick={() => setActionSources(on ? actionSources.filter(id => id !== item.id) : [...actionSources, item.id])}>{on && <CheckRounded aria-hidden />}{item.title}</button>; })}</div>
+          : <Typography className="fam-small">{sources[0]?.title}</Typography>)}
+        {basis === 'topic' && <TextField multiline minRows={1} maxRows={3} label="What should it be about?" placeholder="For example: times tables to 12" value={topicText} onChange={e => setTopicText(e.target.value)} inputProps={{ maxLength: 1500 }} fullWidth />}
         {actionKind === 'quiz' && <ChoiceCards label="Type" id="fam-type" value={quizType} onChange={setQuizType}
           options={[['mcq', 'Multiple choice', 'Pick from 4 answers', ListRounded], ['boolean', 'True or false', 'Is it true or not?', ThumbsUpDownRounded]]} />}
-        {actionKind === 'quiz' && <Segmented id="fam-count" label="How many questions" value={count} onChange={setCount} options={[['3', '3'], ['5', '5'], ['10', '10']]} />}
-        {actionKind === 'flashcards' && <Segmented id="fam-count" label="How many cards" value={count} onChange={setCount} options={[['5', '5'], ['10', '10']]} />}
-        {['quiz', 'flashcards'].includes(actionKind) && <Segmented id="fam-level" label="Level" value={difficulty} onChange={setDifficulty} options={levelWords} />}
-        {['quiz','flashcards'].includes(actionKind)&&<TextField type="number" label="Custom count (1–10)" value={count} onChange={e=>setCount(e.target.value)} inputProps={{min:1,max:10}} onBlur={()=>setCount(String(Math.max(1,Math.min(10,Number(count)||5))))}/>}
-        {actionKind==='flashcards'&&<TextField select label="Card style" value={cardStyle} onChange={e=>setCardStyle(e.target.value)}><MenuItem value="question_answer">Question and answer</MenuItem><MenuItem value="definitions">Definitions</MenuItem><MenuItem value="worked_examples">Worked examples</MenuItem></TextField>}
-        {actionKind==='mindmap'&&<><TextField select label="Detail" value={mapDepth} onChange={e=>setMapDepth(Number(e.target.value))}>{[2,3,4].map(n=><MenuItem key={n} value={n}>{n===2?'Overview':n===3?'Standard':'Detailed'}</MenuItem>)}</TextField><TextField select label="Main branches (up to)" value={mapBreadth} onChange={e=>setMapBreadth(Number(e.target.value))}>{[3,4,5].map(n=><MenuItem key={n} value={n}>{n}</MenuItem>)}</TextField></>}
-        {actionKind==='story'&&<><TextField select label="Length" value={storyLength} onChange={e=>setStoryLength(e.target.value)}><MenuItem value="short">Short · 3 sections</MenuItem><MenuItem value="standard">Standard · 5 sections</MenuItem></TextField><TextField label="Theme (optional)" value={storyTheme} onChange={e=>setStoryTheme(e.target.value)} inputProps={{maxLength:100}} placeholder="Space, woodland animals, everyday life…"/><TextField select label="Tone" value={storyTone} onChange={e=>setStoryTone(e.target.value)}>{['calm','playful','adventure'].map(t=><MenuItem key={t} value={t}>{t}</MenuItem>)}</TextField></>}
+        {['quiz', 'flashcards'].includes(actionKind) && <div>
+          <Segmented id="fam-count" label={actionKind === 'quiz' ? 'Questions' : 'Cards'} value={countOther ? 'other' : count}
+            onChange={v => { if (v === 'other') setCountOther(true); else { setCountOther(false); setCount(v); } }} options={[['3', '3'], ['5', '5'], ['10', '10'], ['other', 'Other']]} />
+          {countOther && <div className="fam-stepper" role="group" aria-label={actionKind === 'quiz' ? 'Number of questions' : 'Number of cards'}>
+            <IconButton aria-label="One fewer" disabled={Number(count) <= 1} onClick={() => setCount(String(Math.max(1, (Number(count) || 5) - 1)))}><RemoveRounded /></IconButton>
+            <span className="fam-stepper-n" aria-live="polite">{Number(count) || 5}</span>
+            <IconButton aria-label="One more" disabled={Number(count) >= 10} onClick={() => setCount(String(Math.min(10, (Number(count) || 5) + 1)))}><AddRounded /></IconButton>
+          </div>}</div>}
+        {actionKind === 'quiz' && <Segmented id="fam-level" label="Level" value={difficulty} onChange={setDifficulty} options={levelWords} />}
+        {actionKind === 'mindmap' && <Segmented id="fam-size" label="Size" value={String(mapDepth)} onChange={v => { const n = Number(v); setMapDepth(n); setMapBreadth(n + 1); }} options={[['2', 'Small'], ['3', 'Medium'], ['4', 'Big']]} />}
+        {actionKind === 'story' && <><Segmented id="fam-length" label="Length" value={storyLength} onChange={setStoryLength} options={[['short', 'Short'], ['standard', 'Long']]} />
+          <TextField label="Story idea (optional)" placeholder="For example: space pirates" value={storyTheme} onChange={e => setStoryTheme(e.target.value)} inputProps={{ maxLength: 100 }} fullWidth /></>}
         <TextField label="Anything to focus on? (optional)" placeholder="For example: tenths and hundredths" value={focus} onChange={e => setFocus(e.target.value)} inputProps={{ maxLength: 300 }} fullWidth />
-        <div><Button size="small" onClick={() => setMoreOptions(!moreOptions)} aria-expanded={moreOptions} endIcon={<ExpandMoreRounded className="fam-chev" data-open={moreOptions} />}>Name and tag (optional)</Button>
-          <Collapse in={moreOptions}><div className="fam-form fam-more-opts"><TextField label="Name (optional)" placeholder="We’ll name it for you" value={title} onChange={e => setTitle(e.target.value)} inputProps={{ maxLength: 160 }} fullWidth />
+        <div><Button size="small" onClick={() => setMoreOptions(!moreOptions)} aria-expanded={moreOptions} endIcon={<ExpandMoreRounded className="fam-chev" data-open={moreOptions} />}>More options</Button>
+          <Collapse in={moreOptions}><div className="fam-form fam-more-opts">
+            {actionKind === 'flashcards' && <Segmented id="fam-style" label="Card style" value={cardStyle} onChange={setCardStyle} options={[['question_answer', 'Q & A'], ['definitions', 'Words'], ['worked_examples', 'Examples']]} />}
+            {actionKind === 'story' && <Segmented id="fam-tone" label="Tone" value={storyTone} onChange={setStoryTone} options={[['calm', 'Calm'], ['playful', 'Playful'], ['adventure', 'Adventure']]} />}
+            <TextField label="Name (optional)" placeholder="We’ll name it for you" value={title} onChange={e => setTitle(e.target.value)} inputProps={{ maxLength: 160 }} fullWidth />
             <TextField label="Tag (optional)" placeholder="For example: homework" value={tag} onChange={e => setTag(e.target.value)} inputProps={{ maxLength: 30 }} fullWidth /></div></Collapse></div>
-        {phone && <Typography className="fam-small">Saved in the background. You can keep chatting.</Typography>}
         {error && <Alert severity="error">{error}</Alert>}
       </div></DialogContent>
-      <DialogActions><Typography className="fam-small fam-grow fam-hide-phone">Saved in the background. You can keep chatting.</Typography>
+      <DialogActions><Typography className="fam-small fam-grow">Takes about a minute.</Typography>
         <Button disabled={busy} onClick={() => setActionKind(null)}>Cancel</Button>
-        <Button variant="contained" disabled={busy || !Number.isInteger(Number(count)) || Number(count)<1 || Number(count)>10 || (basis==='materials'&&!actionSources.length) || (basis==='topic'&&!topicText.trim())} onClick={() => start(actionKind)} startIcon={<AutoAwesomeRounded />}>{busy ? 'Starting…' : `Make ${kindWords[actionKind]?.label.toLowerCase() || 'it'}`}</Button></DialogActions>
+        <Button variant="contained" disabled={busy || !Number.isInteger(Number(count)) || Number(count) < 1 || Number(count) > 10 || (basis === 'materials' && !actionSources.length) || (basis === 'topic' && !topicText.trim())} onClick={() => start(actionKind)} startIcon={<AutoAwesomeRounded />}>
+          {busy ? 'Starting…' : { quiz: 'Make quiz', flashcards: 'Make cards', mindmap: 'Make map', story: 'Make story' }[actionKind] || 'Make it'}</Button></DialogActions>
     </Dialog>
 
     <Dialog open={Boolean(confirmNew)} onClose={() => setConfirmNew(null)} fullWidth maxWidth="xs" className="fam-dialog">

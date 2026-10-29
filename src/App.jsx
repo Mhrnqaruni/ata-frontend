@@ -44,6 +44,7 @@ const StudentProfile = lazy(() => import('./pages/StudentProfile'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 import ParentPortalPending from './pages/ParentPortalPending';
 const FamilyHome = lazy(() => import('./pages/family/FamilyHome'));
+import FamilyLoading from './pages/family/FamilyLoading';
 import Quizzes from './pages/Quizzes';
 const QuizBuilder = lazy(() => import('./pages/quizzes/QuizBuilder'));
 const QuizHost = lazy(() => import('./pages/quizzes/QuizHost'));
@@ -113,7 +114,7 @@ const ThemedApp = () => {
           }
         />
 
-        <Route path="/family" element={<ProtectedRoute><Suspense fallback={<Box>Loading notebook…</Box>}><FamilyHome /></Suspense></ProtectedRoute>} />
+        <Route path="/family" element={<ProtectedRoute><Suspense fallback={<FamilyLoading />}><FamilyHome /></Suspense></ProtectedRoute>} />
 
         {/* --- [CRITICAL MODIFICATION 4/4: DEFINE PROTECTED ROUTES] --- */}
         {/* This parent Route uses the ProtectedRoute component as its element.
