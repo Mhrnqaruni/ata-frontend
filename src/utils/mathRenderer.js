@@ -91,9 +91,15 @@ function convertSimpleMathFallback(expr) {
 // Only repair an entire unmistakable formula, never equations guessed inside prose.
 export function normalizeMathText(text) {
   if (typeof text !== 'string' || !text || /\$|\\\(|\\\[/.test(text)) return text;
-  const signal = /\\(?:frac|sqrt|pi|partial|int|sum|alpha|beta|theta)\b|[\w)]\s*[\^_]/.test(text);
-  const stripped = text.replace(/\\[A-Za-z]+|\b(?:sqrt|sin|cos|tan|log|ln|pi)\b/g, '');
-  return signal && !/[A-Za-z]{3,}/.test(stripped) ? '$' + text.trim() + '$' : text;
+  // A paper often has prose followed by a standalone equation on its next line.
+  // Recognise those complete lines only; never solve or rewrite maths inside prose.
+  if (text.includes('\n')) return text.split('\n').map(normalizeMathText).join('\n');
+  const candidate = text.replace(/²/g, '^2').replace(/³/g, '^3');
+  const derivative = candidate.trim().match(/^d([A-Za-z])\/d([A-Za-z])\s*=$/);
+  if (derivative) return `$\\frac{d${derivative[1]}}{d${derivative[2]}} =$`;
+  const signal = /\\(?:frac|sqrt|pi|partial|int|sum|alpha|beta|theta)\b|[\w)]\s*[\^_]/.test(candidate);
+  const stripped = candidate.replace(/\\[A-Za-z]+|\b(?:sqrt|sin|cos|tan|log|ln|pi)\b/g, '');
+  return signal && !/[A-Za-z]{3,}/.test(stripped) ? '$' + candidate.trim() + '$' : text;
 }
 
 export function parseTextWithMath(text) {

@@ -13,3 +13,10 @@ test('each assessment opens an existing record without dispatch',()=>{
  assert.equal(assessmentDestination({id:'x',status:'Failed'}),'/assessments/new?retryJobId=x');
  for(const status of ['Queued','Processing','Summarizing'])assert.equal(assessmentDestination({id:'x',status}),'/assessments?focus=x');
 });
+
+import {normalizeMathText} from '../src/utils/mathRenderer.js';
+test('standalone paper equations render without correcting an answer or touching prose',()=>{
+ assert.equal(normalizeMathText('Differentiate with respect to x.\ny = sin(3x²)\ndy/dx ='),'Differentiate with respect to x.\n$y = sin(3x^2)$\n$\\frac{dy}{dx} =$');
+ assert.equal(normalizeMathText('The answer cos(3x²) is incomplete.'),'The answer cos(3x²) is incomplete.');
+ assert.equal(normalizeMathText('Price $5.00'),'Price $5.00');
+});
