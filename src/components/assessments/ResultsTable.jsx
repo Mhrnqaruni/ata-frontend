@@ -1,6 +1,8 @@
+import useTableSort from '../../hooks/useTableSort';
+import { Link } from 'react-router-dom';
 import React, { useState } from 'react';
 import { useSnackbar } from '../../hooks/useSnackbar';
-import { Button, Card, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip, Typography, useTheme, Menu, MenuItem } from '@mui/material';
+import { Button, Card, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip, Typography, useTheme, Menu, MenuItem, TableSortLabel } from '@mui/material';
 import DownloadRounded from '@mui/icons-material/DownloadRounded';
 import EmptyState from '../common/EmptyState';
 import { initialsOf } from '../classes/StudentTable';
@@ -14,6 +16,13 @@ const ResultsTable = ({ rows, assessmentOnly = false }) => {
   const navigate = useNavigate();
   const { job_id } = useParams();
   const theme = useTheme();
+  const [showIds,setShowIds]=useState(false);
+  const prepared=(rows||[]).map(row=>({...row,
+    gradeSort:['AI_GRADED','TEACHER_GRADED'].includes(row.status) && row.totalScore != null && row.maxTotalScore > 0 ? row.totalScore / row.maxTotalScore * 100 : null,
+    statusSort: ({PENDING_REVIEW:0,TEACHER_GRADED:1,AI_GRADED:2,ABSENT:3})[row.status] ?? null}));
+  const {sortedData,requestSort,sortColumn,sortDirection}=useTableSort(prepared,{studentName:{type:'string'},statusSort:{type:'number'},gradeSort:{type:'number'}},'studentName');
+  const heading=(key,label)=><TableCell sortDirection={sortColumn===key?sortDirection:false}><TableSortLabel active={sortColumn===key} direction={sortColumn===key?sortDirection:'asc'} onClick={()=>requestSort(key)}>{label}</TableSortLabel></TableCell>;
+
 
   const { showSnackbar } = useSnackbar();
   const [downloadMenu, setDownloadMenu] = useState(null);
@@ -38,8 +47,8 @@ const ResultsTable = ({ rows, assessmentOnly = false }) => {
     );
   }
 
-  const rosteredStudents = rows.filter(s => !s.isOutsider);
-  const outsiderStudents = rows.filter(s => s.isOutsider);
+  const rosteredStudents = sortedData.filter(s => !s.isOutsider);
+  const outsiderStudents = sortedData.filter(s => s.isOutsider);
 
   const renderStudentRow = (s) => {
     let grade;
@@ -67,10 +76,10 @@ const ResultsTable = ({ rows, assessmentOnly = false }) => {
         <TableCell component="th" scope="row" data-label="Student">
           <span className="mst-person">
             <span aria-hidden="true" className="mst-avatar">{initialsOf(s.studentName)}</span>
-            <span className="mst-person-name">{s.studentName}</span>
+            {s.isOutsider ? <span className="mst-person-name" style={{cursor:"default",textDecoration:"none"}}>{s.studentName}</span> : <Link className="mst-person-name" to={`/students/${encodeURIComponent(s.entityId)}`}>{s.studentName}</Link>}
           </span>
         </TableCell>
-        <TableCell className="mst-cell-muted" data-label="Student ID">{assessmentOnly && s.isOutsider ? "—" : s.studentId}</TableCell>
+        {showIds && <TableCell className="mst-cell-muted" data-label="Student ID">{s.isOutsider ? "—" : s.studentId}</TableCell>}
         <TableCell data-label="Status"><StatusChip status={s.status} /></TableCell>
         <TableCell data-label="Grade">{grade}</TableCell>
         <TableCell align="right" className="mst-row-actions mst-row-actions-on" data-label="Actions">
@@ -93,18 +102,20 @@ const ResultsTable = ({ rows, assessmentOnly = false }) => {
 
   return (
     <Card className="mst-rim mst-assessment-students">
+    <Button size="small" aria-pressed={showIds} onClick={()=>setShowIds(v=>!v)}>{showIds?"Hide":"Show"} student IDs</Button>
     <Menu anchorEl={downloadMenu?.anchor} open={Boolean(downloadMenu)} onClose={() => setDownloadMenu(null)}>
       <MenuItem onClick={() => handleDownload('pdf')}>PDF (.pdf)</MenuItem>
       <MenuItem onClick={() => handleDownload('docx')}>Word (.docx)</MenuItem>
     </Menu>
+    {sortColumn==='gradeSort' && <Typography variant="caption" sx={{px:2}}>Sorted by percentage; ungraded results last.</Typography>}
     <TableContainer>
-      <Table className="mst-responsive-table mst-result-records mst-table" aria-label="Student results">
+      <Table className="mst-responsive-table mst-sortable-table mst-result-records mst-table" aria-label="Student results">
         <TableHead>
           <TableRow>
-            <TableCell sx={{ width: '30%' }}>Student</TableCell>
-            <TableCell>Student ID</TableCell>
-            <TableCell>Status</TableCell>
-            <TableCell>Grade</TableCell>
+            {heading("studentName","Student")}
+            {showIds && <TableCell>Student ID</TableCell>}
+            {heading("statusSort","Status")}
+            {heading("gradeSort","Grade")}
             <TableCell align="right" sx={{ width: 168 }}>Actions</TableCell>
           </TableRow>
         </TableHead>
@@ -114,7 +125,7 @@ const ResultsTable = ({ rows, assessmentOnly = false }) => {
           {outsiderStudents.length > 0 && (
             <TableRow className="mst-result-group">
               <TableCell
-                colSpan={5}
+                colSpan={showIds?5:4}
                 className="mst-table-group"
               >
                 <Typography component="span" variant="overline">{assessmentOnly ? "Students in this assessment" : "Not in the class roster"}</Typography>

@@ -19,7 +19,7 @@ globalThis.BroadcastChannel = undefined;
 const dir = await mkdtemp(path.join(process.cwd(), '.navigation-test-'));
 const output = path.join(dir, 'runtime.mjs');
 await build({ stdin: { contents: `export {default as api} from './src/services/api.js';
-export * from './src/services/queryCache.js'; export * from './src/hooks/useAuth.jsx';
+export {default as useActivityProgress} from './src/pages/family/useActivityProgress.js'; export * from './src/services/queryCache.js'; export * from './src/hooks/useAuth.jsx';
 export { teacherOptions, quizSessionOptions } from './src/hooks/useTeacherData.js';
 export { default as RenameActivityDialog } from './src/components/common/RenameActivityDialog.jsx';`,
   resolveDir: process.cwd(), loader: 'jsx' }, bundle: true, packages: 'external', platform: 'node',
@@ -143,4 +143,44 @@ test('actual rename submission closes after success without an optional refresh 
   await act(async()=>{await tree.root.findByType('Dialog').props.PaperProps.onSubmit({preventDefault(){}});});
   assert.equal(calls,1);assert.equal(closed,1);assert.equal(tree.root.findAllByType('Alert').length,0);
   await act(async()=>tree.unmount());
+});
+
+
+test('unsaved family drafts warn on reload and session reset clears them', () => {
+  reset();
+  const draftKey = ['family', generation(), 'adult-A', 'child-A', 'quizDraft', 'activity-A'];
+  client.setQueryData(draftKey, { answers: { q1: 0 }, attemptId: 'synthetic-attempt' });
+  const leaving = new Event('beforeunload', { cancelable: true });
+  window.dispatchEvent(leaving);
+  assert.equal(leaving.defaultPrevented, true);
+  reset();
+  assert.equal(client.getQueryData(draftKey), undefined);
+  const afterLogout = new Event('beforeunload', { cancelable: true });
+  window.dispatchEvent(afterLogout);
+  assert.equal(afterLogout.defaultPrevented, false);
+});
+
+
+test('parent drafts survive authenticated reload but clear on account reset', () => {
+  const data={'mst.family.draft.A.child.chat':'unfinished question','unrelated':'keep'};
+  globalThis.sessionStorage=Object.assign(data,{getItem:key=>data[key]??null,setItem:(key,value)=>{data[key]=value},removeItem:key=>{delete data[key]}});
+  reset({preserveDrafts:true});
+  assert.equal(sessionStorage.getItem('mst.family.draft.A.child.chat'),'unfinished question');
+  reset();
+  assert.equal(sessionStorage.getItem('mst.family.draft.A.child.chat'),null);
+  assert.equal(sessionStorage.getItem('unrelated'),'keep');
+  delete globalThis.sessionStorage;
+});
+
+test('unconfirmed progress is marked unsaved and blocked, not silently overwritten', async () => {
+  reset();let progress;
+  api.defaults.adapter=async config=>{if(config.method==='get')return response(config,{revision:0,data:{}});throw new Error('offline')};
+  function Probe(){progress=runtime.useActivityProgress({childId:'child',id:'activity'},{index:0});return null;}
+  let tree;await act(async()=>{tree=Renderer.create(React.createElement(Probe));await tick()});
+  assert.equal(progress.ready,true);
+  act(()=>progress.update({index:1}));assert.equal(progress.saving,true);
+  await act(async()=>{await new Promise(resolve=>setTimeout(resolve,350))});
+  assert.ok(typeof progress.error === "string" && progress.error.length > 0);assert.equal(progress.saving,false);
+  act(()=>progress.update({index:2}));assert.equal(progress.value.index,1);
+  act(()=>tree.unmount());
 });

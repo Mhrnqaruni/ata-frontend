@@ -163,6 +163,7 @@ const MessageBubbleComponent = ({ message }) => {
               }]
             ]}
             components={{
+              p: ({node, ...props}) => <p style={{whiteSpace:"pre-wrap", margin:"0 0 8px"}} {...props}/>,
               // Style code blocks (but NOT math - let KaTeX handle it)
               code: ({node, inline, className, children, ...props}) => {
                 // If this is a math element, return it unchanged (let KaTeX handle it)

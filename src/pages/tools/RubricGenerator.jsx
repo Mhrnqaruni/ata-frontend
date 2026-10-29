@@ -1,3 +1,4 @@
+import EducationSelector, { educationLabel } from '../../components/common/EducationSelector';
 // /src/pages/tools/RubricGenerator.jsx
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -113,15 +114,7 @@ const SettingsPanel = ({
                 <Divider />
                 <CardContent>
                     <Stack spacing={4}>
-                        <FormControl fullWidth disabled={isLoading}>
-                            <InputLabel>Grade level</InputLabel>
-                            <Select name="grade_level" value={formState.grade_level} label="Grade level" onChange={(e) => setFormState({...formState, grade_level: e.target.value})}>
-                                <MenuItem value="Primary School">Primary School</MenuItem>
-                                <MenuItem value="Secondary School">Secondary School</MenuItem>
-                                <MenuItem value="Years 10 & 11 (GCSE)">Years 10 & 11 (GCSE)</MenuItem>
-                                <MenuItem value="Sixth Form - College">Sixth Form - College</MenuItem>
-                            </Select>
-                        </FormControl>
+                        <EducationSelector value={formState.education} legacy={formState.grade_level} disabled={isLoading} onChange={education=>handleInputChange({target:{name:'education',value:education}})} />
                         
                         {/* --- Render the first SourceInputBlock for the Assignment Context --- */}
                         <SourceInputBlock
@@ -221,7 +214,8 @@ const RubricGenerator = () => {
 
     // Assemble the settings object that matches the Pydantic model
     const settingsForApi = {
-      grade_level: formState.grade_level,
+      grade_level: educationLabel(formState.education, formState.grade_level),
+      education: formState.education,
       assignment_text: formState.assignment_text,
       assignment_chapter_paths: formState.assignment_library.selected_chapters.map(c => c.path),
       guidance_text: formState.guidance_text,

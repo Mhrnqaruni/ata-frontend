@@ -13,6 +13,10 @@ export default {
       })
     ).data;
   },
+  source: async (id, item) => {
+    const response=await api.get(`/api/assessment-analyses/${id}/sources/${item.index}`,{responseType:'blob'});
+    return new File([response.data],item.name);
+  },
   get: async (id) =>
     (await api.get(`/api/assessment-analyses/${id}`, { timeout: 10000 })).data,
 };

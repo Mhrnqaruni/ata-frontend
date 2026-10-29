@@ -21,7 +21,7 @@ export default function AssessmentCard({ job, onDelete, onRename }) {
   const date = job.createdAt ? new Date(job.createdAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : null;
 
   return (
-    <Card className={`mst-rim mst-asm-card${clickable ? " mst-lift" : ""}`} data-enter="">
+    <Card id={`assessment-${job.id}`} tabIndex={-1} className={`mst-rim mst-asm-card${clickable ? " mst-lift" : ""}`} data-enter="">
       {working ? <div aria-hidden="true" className="mst-ai-bar mst-asm-bar" /> : null}
       <div className="mst-asm-body" onClick={clickable ? open : undefined} role="presentation">
         <div className="mst-asm-top">

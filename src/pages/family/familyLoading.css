@@ -1,0 +1,43 @@
+/* Loading skeleton for the parent space. Self-contained: it can render before family.css or the parent tokens exist. */
+.fam-load { --l-ground: #f6f7fa; --l-card: #ffffff; --l-bone: #e9ecf3; --l-shine: #f6f7fb; --l-edge: rgb(16 24 40 / .08); --l-ink: #4a5468;
+  position: fixed; inset: 0; z-index: 1; display: flex; flex-direction: column; background: var(--l-ground); font-family: "Figtree", "Geist", system-ui, sans-serif; }
+:root[data-theme-mode="dark"] .fam-load { --l-ground: #0f1424; --l-card: #171e35; --l-bone: #222b47; --l-shine: #2b3557; --l-edge: rgb(255 255 255 / .08); --l-ink: #b7bfce; }
+.fam-load-body { position: relative; inset: auto; flex: 1; min-height: 0; z-index: auto; }
+.fam-load-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.fam-load i { display: block; border-radius: 10px; background: linear-gradient(90deg, var(--l-bone) 0%, var(--l-shine) 50%, var(--l-bone) 100%) 0 0 / 200% 100%;
+  animation: fam-load-shine 1.4s ease-in-out infinite; }
+@keyframes fam-load-shine { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+.fam-load-head { flex: none; height: 68px; display: flex; align-items: center; gap: 12px; padding: 0 24px; background: var(--l-card); border-bottom: 1px solid var(--l-edge); }
+.fam-load-logo { width: 104px; height: 40px; object-fit: contain; opacity: .9; }
+.fam-load-pill { height: 28px; border-radius: 999px !important; }
+.fam-load-sep { width: 1px !important; height: 32px; background: var(--l-edge) !important; animation: none !important; margin: 0 4px; }
+.fam-load-tab { width: 150px; height: 48px; border-radius: 999px !important; }
+.fam-load-tab-2 { width: 120px; opacity: .6; }
+.fam-load-dot { width: 36px; height: 36px; border-radius: 50% !important; }
+.fam-load-grow { flex: 1; }
+.fam-load-main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 360px; }
+.fam-load-chat { display: flex; flex-direction: column; gap: 18px; width: 100%; max-width: 760px; margin: 0 auto; padding: 24px; }
+.fam-load-msg { display: flex; flex-direction: column; gap: 10px; }
+.fam-load-msg i { height: 14px; }
+.fam-load-me { align-items: flex-end; }
+.fam-load-me i { height: 44px; border-radius: 18px 4px 18px 18px !important; }
+.fam-load-card { display: flex; align-items: center; gap: 12px; max-width: 420px; padding: 14px 16px; border-radius: 16px; background: var(--l-card); }
+.fam-load-card span { display: flex; flex-direction: column; gap: 8px; }
+.fam-load-card span i { height: 14px; }
+.fam-load-tile { width: 48px; height: 48px; border-radius: 12px !important; }
+.fam-load-compose { height: 56px; border-radius: 20px; background: var(--l-card); border: 1px solid var(--l-edge); display: flex; align-items: center; padding: 0 20px; }
+.fam-load-compose i { height: 14px; }
+.fam-load-panel { display: flex; flex-direction: column; gap: 12px; padding: 16px 20px; background: var(--l-card); border-left: 1px solid var(--l-edge); }
+.fam-load-tabs { height: 44px; border-radius: 12px !important; }
+.fam-load-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.fam-load-grid i { height: 72px; border-radius: 12px !important; }
+.fam-load-row { height: 52px; border-radius: 12px !important; }
+.fam-load-caption { position: absolute; left: 0; right: 0; top: 46%; margin: 0; text-align: center; font-size: 16px; font-weight: 500; color: var(--l-ink); pointer-events: none; }
+@media (min-width: 1000px) { .fam-load-caption { right: 360px; } }
+
+@media (max-width: 999px) { .fam-load-main { grid-template-columns: minmax(0, 1fr); } .fam-load-panel { display: none; } }
+@media (max-width: 599px) {
+  .fam-load-head { height: 64px; padding: 0 12px; } .fam-load-logo, .fam-load-head .fam-load-pill:first-of-type, .fam-load-sep, .fam-load-tab-2 { display: none; }
+  .fam-load-tab { width: 140px; height: 44px; } .fam-load-chat { padding: 16px 12px; }
+}
+@media (prefers-reduced-motion: reduce) { .fam-load i { animation: none; } }

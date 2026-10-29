@@ -1,3 +1,4 @@
+import { assessmentDestination } from '../utils/assessmentNavigation';
 import { useTeacherData } from '../hooks/useTeacherData';
 import QueryNotice from '../components/common/QueryNotice';
 import React, { useEffect, useState } from 'react';
@@ -36,7 +37,7 @@ export default function Home() {
   const quizzes = quizQuery.data ?? null;
   const errors = { summary: !summary && summaryQuery.error,
     assessments: !assessments && assessmentQuery.error, quizzes: !quizzes && quizQuery.error };
-  const recent = (assessments || []).filter(job => job.status !== 'Completed').sort(newest);
+  const recent = [...(assessments || [])].sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
   const activeQuizzes = (quizzes || []).filter(quiz => quiz.status !== 'completed').sort(newest);
   const pending = recent.filter(job => job.status === 'Pending Review').length;
   const drafts = activeQuizzes.filter(quiz => quiz.status === 'draft').length;
@@ -51,7 +52,7 @@ export default function Home() {
       <PerformancePanel assessments={assessments} loadError={errors.assessments} />
       <div className="home-recent-grid">
         <RecentPanel title="Recent assessments" note={pending ? `${pending} needs attention` : null} to="/assessments" loading={!assessments} error={errors.assessments} empty={assessments?.length ? 'All assessments are complete. See all for results.' : 'No assessments yet. Open Assessments to get started.'}>
-          {recent.slice(0, 4).map(job => <li key={job.id}><Link className="mst-list-row home-row-button" to={job.status === 'Pending Review' ? `/assessments/${job.id}/results` : '/assessments'}><span className="mst-tile" data-size="sm"><GradingOutlined /></span><span className="mst-list-text"><span className="mst-list-title">{job.assessmentName}</span><span className="mst-list-meta">{[job.className, shortDate(job.createdAt)].filter(Boolean).join(' · ')}</span></span><ArrowForwardRounded className="home-row-arrow" aria-hidden="true" /></Link></li>)}
+          {recent.slice(0, 4).map(job => <li key={job.id}><Link className="mst-list-row home-row-button" to={assessmentDestination(job)}><span className="mst-tile" data-size="sm"><GradingOutlined /></span><span className="mst-list-text"><span className="mst-list-title">{job.assessmentName}</span><span className="mst-list-meta">{[job.className, shortDate(job.createdAt)].filter(Boolean).join(' · ')}</span></span><ArrowForwardRounded className="home-row-arrow" aria-hidden="true" /></Link></li>)}
         </RecentPanel>
         <RecentPanel title="Quizzes" note={drafts ? `${drafts} ${drafts === 1 ? 'draft' : 'drafts'} to finish` : null} to="/quizzes" loading={!quizzes} error={errors.quizzes} empty={quizzes?.length ? 'All quizzes are complete. See all for results.' : 'No quizzes yet. Open Quizzes to create one.'}>
           {activeQuizzes.slice(0, 4).map(quiz => <li key={quiz.id}><Link className="mst-list-row home-row-button" to={`/quizzes/${quiz.id}/edit`}><span className="mst-tile" data-size="sm"><QuizOutlined /></span><span className="mst-list-text"><span className="mst-list-title">{quiz.title}</span><span className="mst-list-meta">{quiz.question_count || 0} questions · {quiz.settings?.mode === 'self_paced' ? 'Self-paced' : 'Live'}</span></span><span className="home-work-state">{quiz.status === 'published' ? 'Ready' : String(quiz.status || '').replace(/^./, c => c.toUpperCase())}</span></Link></li>)}

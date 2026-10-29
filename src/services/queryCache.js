@@ -7,8 +7,11 @@ export const queryClient = new QueryClient({
 });
 let generation = 0;
 export const sessionGeneration = () => generation;
-export function resetTeacherSession() {
+export function resetTeacherSession({ preserveDrafts = false } = {}) {
   generation += 1;
+  if(typeof window !== 'undefined') window.dispatchEvent(new Event('mst-session-reset'));
+  // Unsent parent drafts survive reload in this tab, but never sign-out/account changes.
+  try { if(!preserveDrafts) for(const key of Object.keys(sessionStorage)) if(key.startsWith('mst.family.draft.')) sessionStorage.removeItem(key); } catch { /* Storage is optional. */ }
   queryClient.clear(); // Cancels old reads before a new account can render.
   return generation;
 }
@@ -55,3 +58,11 @@ export function invalidateAfter(service, commands, families) {
   }
   return wrapped;
 }
+
+// Unsaved family answers stay in memory only. Warn before a reload would discard them.
+if (typeof window !== 'undefined') window.addEventListener('beforeunload', event => {
+  const dirty = queryClient.getQueryCache().getAll().some(query =>
+    query.queryKey[0] === 'family' && query.queryKey[4] === 'quizDraft' &&
+    Object.keys(query.state.data?.answers || {}).length > 0);
+  if (dirty) { event.preventDefault(); event.returnValue = ''; }
+});

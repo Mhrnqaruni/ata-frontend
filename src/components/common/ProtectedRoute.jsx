@@ -10,6 +10,7 @@ import { Box, CircularProgress } from '@mui/material';
 // --- Custom Hook Import for Authentication State ---
 // This is the critical link to our global authentication context.
 import { useAuth } from '../../hooks/useAuth';
+import { hasMode } from '../../services/accountModes';
 
 /**
  * A wrapper component that acts as a security checkpoint for private routes.
@@ -71,13 +72,13 @@ const ProtectedRoute = ({ children, requiredRole, redirectTo }) => {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  if (requiredRole && user?.role !== requiredRole) {
+  if (requiredRole && !hasMode(user, requiredRole)) {
     const fallbackPath =
       redirectTo ??
       (user?.role === 'admin'
         ? '/admin'
         : user?.role === 'parent'
-          ? '/parent-pending'
+          ? '/family'
           : '/login');
     return <Navigate to={fallbackPath} replace />;
   }

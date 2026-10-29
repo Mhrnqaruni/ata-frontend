@@ -1,3 +1,4 @@
+import { sessionGeneration } from '../../services/queryCache';
 import NumberField from '../../components/common/NumberField';
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
@@ -12,6 +13,7 @@ import QuestionNavigator from '../../components/common/QuestionNavigator';
 
 // Tab-memory drafts survive SPA Back/Forward. Never persist or auto-save grades.
 const reviewDrafts = new Map();
+if(typeof window !== 'undefined') window.addEventListener('mst-session-reset',()=>reviewDrafts.clear());
 const questionBasis = q => JSON.stringify([q.questionText,q.maxScore,q.grade,q.feedback,q.status]);
 
 const AssessmentReviewPage = () => {
@@ -29,7 +31,7 @@ const AssessmentReviewPage = () => {
   const requestVersion = useRef(0);
   const draftBasis = useRef({});
   const [draftNotice,setDraftNotice] = useState("");
-  const draftKey = `${job_id}:${entity_id}`;
+  const draftKey = `${sessionGeneration()}:${job_id}:${entity_id}`;
 
   useEffect(() => {
     let active = true;
@@ -121,7 +123,7 @@ const AssessmentReviewPage = () => {
   const current = visible.find(q => q.questionId === selected) || visible[0];
   const number = current ? questions.findIndex(q => q.questionId === current.questionId) + 1 : 0;
   const items = visible.map(q => ({
-    id: q.questionId, number: questions.indexOf(q) + 1, title: q.questionText?.slice(0, 80),
+    id: q.questionId, label:q.printedLabel, number: questions.indexOf(q) + 1, title: q.questionText?.slice(0, 80),
     state: dirty[q.questionId] ? 'Unsaved' : q.status === 'PENDING_REVIEW' ? 'Needs review' : 'Marked',
   }));
 
@@ -151,7 +153,7 @@ const AssessmentReviewPage = () => {
           {!current ? <Alert severity="success">Nothing needs review. Choose All to inspect marked answers.</Alert> : (
             <Card className="mst-rim mst-review-q" key={current.questionId}>
               <div className="mst-review-q-head">
-                <h2 className="mst-review-q-title">Question {number} <span className="mst-hint">of {questions.length}</span></h2>
+                <h2 className="mst-review-q-title">{current.printedLabel || `Question ${number}`} <span className="mst-hint">({number} of {questions.length})</span></h2>
                 <StatusChip status={current.status} />
               </div>
               <p className="mst-review-q-text"><MathTextDisplay text={current.questionText} /></p>

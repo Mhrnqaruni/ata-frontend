@@ -14,6 +14,7 @@ export default function ChoiceCards({ name, value, onChange, options, legend, di
         {options.map((opt) => {
           const selected = value === opt.value;
           return (
+            <div key={opt.value} style={{minWidth:0}}>
             <label
               className="mst-choice mst-sheen-once"
               data-disabled={opt.disabled ? "true" : undefined}
@@ -50,6 +51,8 @@ export default function ChoiceCards({ name, value, onChange, options, legend, di
                 <CheckRounded />
               </span>
             </label>
+            {selected && opt.content}
+            </div>
           );
         })}
       </div>

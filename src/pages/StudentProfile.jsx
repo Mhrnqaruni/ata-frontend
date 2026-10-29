@@ -96,7 +96,7 @@ const AssessmentsTable = ({ assessments, theme, renderTypeChip, renderMarkCell, 
                                 {renderMarkCell(assessment)}
                             </TableCell>
                             <TableCell align="right" data-label="Actions">
-                                {assessment.type === 'exam' && assessment.jobId && assessment.status !== 'ABSENT' && assessment.status !== 'PENDING_REVIEW' && (
+                                {assessment.type === 'exam' && assessment.jobId && assessment.status === 'GRADED' && (
                                     <Button
                                         size="small"
                                         startIcon={<DownloadRounded />}
@@ -163,22 +163,26 @@ const StudentProfile = () => {
     const [chatOpen, setChatOpen] = useState(false);
 
     useEffect(() => {
+        let active = true;
         const fetchStudentData = async () => {
             if (!student_id || !user) return;
             try {
                 setLoading(true);
                 const data = await studentService.getStudentTranscript(student_id);
+                if (!active) return;
                 setStudentData(data);
                 setError(null);
             } catch (err) {
+                if (!active) return;
                 setError(err.response?.data?.detail || 'Failed to fetch student data.');
                 console.error(err);
             } finally {
-                setLoading(false);
+                if (active) setLoading(false);
             }
         };
 
         fetchStudentData();
+        return () => {active=false;};
     }, [student_id, user]);
 
     const handleDownloadReport = (event,jobId) => {if(!reportBusy)setReportMenu({anchor:event.currentTarget,jobId});};
@@ -202,17 +206,17 @@ const StudentProfile = () => {
                 return;
             }
 
-            const isSelfPaced = (assessment.assessmentName || '').includes('(SP)');
+            const isSelfPaced = assessment.deliveryKind === 'self_paced';
             const studentName = studentData?.name || 'Student';
             let response;
 
             if (isSelfPaced) {
-                if (!studentData?.studentId) {
+                if (!assessment.reportStudentId) {
                     setSnackbarMessage('Missing student school ID. Please refresh the page and try again.');
                     return;
                 }
                 response = await api.get(
-                    `/api/quiz-sp-sessions/${assessment.sessionId}/student/${studentData.studentId}/report.docx`,
+                    `/api/quiz-sp-sessions/${assessment.sessionId}/student/${encodeURIComponent(assessment.reportStudentId)}/report.docx`,
                     { responseType: 'blob' }
                 );
             } else {
@@ -286,6 +290,9 @@ const StudentProfile = () => {
     };
 
     const renderMarkCell = (assessment) => {
+        if (assessment.status === 'UNAVAILABLE') return <Chip label="Unavailable" size="small"/>;
+        if (assessment.status === 'PENDING_GRADE') return <Chip label="Awaiting grading" size="small"/>;
+        if (assessment.status === 'FAILED') return <Chip label="Grading failed" size="small"/>;
         if (assessment.status === 'ABSENT') {
             return <Chip label="Absent" color="default" size="small" />;
         }
@@ -330,6 +337,7 @@ const StudentProfile = () => {
     }
 
     const overallAveragePercent = (() => {
+        if (studentData.aggregateAvailable === false) return null;
         const rows = (studentData.classSummaries || []).flatMap((summary) => summary.assessments || []);
         const gradedRows = rows.filter(
             (row) => row.status === 'GRADED' && row.totalScore !== null && row.maxTotalScore
@@ -365,7 +373,8 @@ const StudentProfile = () => {
                     </div>
                 </div>
                 {(() => {
-                    const rows = (studentData.classSummaries || []).flatMap((summary) => summary.assessments || []);
+                    if (studentData.aggregateAvailable === false) return null;
+        const rows = (studentData.classSummaries || []).flatMap((summary) => summary.assessments || []);
                     const count = (status) => rows.filter((row) => row.status === status).length;
                     return (
                         <div className="mst-minis mst-profile-minis">

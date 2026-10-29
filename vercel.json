@@ -1,17 +1,17 @@
 {
-  "rewrites": [
+  "redirects": [
     {
-      "source": "/parent-portal",
-      "destination": "https://mst-parent-portal.vercel.app/parent-portal/"
+      "destination": "/family",
+      "source": "/parent-pending",
+      "permanent": false
     },
     {
-      "source": "/parent-portal/",
-      "destination": "https://mst-parent-portal.vercel.app/parent-portal/"
-    },
-    {
+      "destination": "/family",
       "source": "/parent-portal/:path*",
-      "destination": "https://mst-parent-portal.vercel.app/parent-portal/:path*"
-    },
+      "permanent": false
+    }
+  ],
+  "rewrites": [
     {
       "source": "/(.*)",
       "destination": "/index.html"

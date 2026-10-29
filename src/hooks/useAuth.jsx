@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useMemo, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
+import api from '../services/api';
 import { resetTeacherSession, sessionGeneration } from '../services/queryCache.js';
 
 const AuthContext = createContext(null);
@@ -11,8 +12,8 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     let mounted = true;
-    const restore = async () => {
-      const generation = resetTeacherSession();
+    const restore = async (initial = false) => {
+      const generation = resetTeacherSession({ preserveDrafts: initial && Boolean(localStorage.getItem('authToken')) });
       setUser(null);
       setIsAuthLoading(true);
       try {
@@ -27,12 +28,14 @@ export const AuthProvider = ({ children }) => {
       }
     };
     // Another tab's login/logout replaces this tab's entire authenticated cache.
-    const changed = event => { if (event.key === 'authToken' || event.key === null) void restore(); };
-    void restore();
+    const changed = event => { if (event.key === 'authToken' || event.key === null) void restore(); else if(event.key==='mst-account-update') void refreshName(); };
+    void restore(true);
     const expired = () => { setUser(null); setIsAuthLoading(false); };
+    const refreshName=async()=>{const g=sessionGeneration();try{const current=await authService.getMe();if(mounted&&g===sessionGeneration())setUser(current);}catch{/* Existing auth interceptor owns expiration. */}};
+    window.addEventListener('mst-account-changed',refreshName);
     window.addEventListener('storage', changed);
     window.addEventListener('mst-session-expired', expired);
-    return () => { mounted = false; window.removeEventListener('storage', changed); window.removeEventListener('mst-session-expired', expired); };
+    return () => { mounted = false; window.removeEventListener('mst-account-changed',refreshName); window.removeEventListener('storage', changed); window.removeEventListener('mst-session-expired', expired); };
   }, []);
 
   const login = useCallback(async (email, password) => {
@@ -62,9 +65,16 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('authToken');
     navigate('/login');
   }, [navigate]);
+  const enableMode = useCallback(async mode => {
+    const generation = sessionGeneration();
+    const { data } = await api.put(`/api/auth/modes/${mode}`);
+    if (generation !== sessionGeneration()) throw new Error('Your session changed. Please sign in again.');
+    setUser(data);
+    return data;
+  }, []);
   const register = useCallback(payload => authService.register(payload), []);
-  const value = useMemo(() => ({ user, isAuthenticated: !!user, isAuthLoading, login, logout, register }),
-    [user, isAuthLoading, login, logout, register]);
+  const value = useMemo(() => ({ user, isAuthenticated: !!user, isAuthLoading, login, logout, register, enableMode }),
+    [user, isAuthLoading, login, logout, register, enableMode]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 export const useAuth = () => {

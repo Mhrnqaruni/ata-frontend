@@ -87,7 +87,7 @@ const Login = () => {
     if (user?.role === "admin") {
       navigate("/admin", { replace: true });
     } else if (user?.role === "parent") {
-      navigate("/parent-pending", { replace: true });
+      navigate("/family", { replace: true });
     } else if (user?.role === "teacher") {
       navigate("/", { replace: true });
     }
@@ -123,7 +123,7 @@ const Login = () => {
       if (currentUser?.role === "admin") {
         navigate("/admin", { replace: true });
       } else if (currentUser?.role === "parent") {
-        navigate("/parent-pending", { replace: true });
+        navigate("/family", { replace: true });
       } else {
         navigate(from, { replace: true });
       }
