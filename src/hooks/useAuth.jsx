@@ -12,8 +12,8 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     let mounted = true;
-    const restore = async () => {
-      const generation = resetTeacherSession();
+    const restore = async (initial = false) => {
+      const generation = resetTeacherSession({ preserveDrafts: initial && Boolean(localStorage.getItem('authToken')) });
       setUser(null);
       setIsAuthLoading(true);
       try {
@@ -29,7 +29,7 @@ export const AuthProvider = ({ children }) => {
     };
     // Another tab's login/logout replaces this tab's entire authenticated cache.
     const changed = event => { if (event.key === 'authToken' || event.key === null) void restore(); };
-    void restore();
+    void restore(true);
     const expired = () => { setUser(null); setIsAuthLoading(false); };
     window.addEventListener('storage', changed);
     window.addEventListener('mst-session-expired', expired);

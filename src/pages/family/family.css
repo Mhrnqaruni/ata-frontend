@@ -619,3 +619,7 @@
   .fam-mm-foot .MuiButton-root { padding: 0 12px; }
   .fam-mm-foot .MuiButton-containedPrimary { flex: 0 0 auto; }
 }
+
+/* Compact transcript events; full cards remain in the Activities panel. */
+[data-space="family"] .fam-chat-activity-row{display:flex;align-items:center;gap:12px;padding:10px 14px;margin:8px 0;border:1px solid var(--f-edge);border-radius:12px;background:var(--f-card)}
+[data-space="family"] .fam-chat-activity-row>svg{width:20px;height:20px;flex:none}

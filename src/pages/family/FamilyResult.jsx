@@ -13,6 +13,7 @@ import { useQuery } from '@tanstack/react-query';
 import { queryClient } from '../../services/queryCache';
 import MathText from '../../components/common/MathTextDisplay';
 import { forChild, ukDate } from './familyWords';
+import useActivityProgress from './useActivityProgress';
 import FamilyMindMap from './FamilyMindMap';
 
 const letters = 'ABCD';
@@ -41,10 +42,10 @@ export default function FamilyResult({ activity, childName, onRecord, busy, atte
   return <>
     <div className="fam-viewer-scroll"><div className="fam-read">
       {result.needsInformation && <Alert severity="warning">{result.message}</Alert>}
-      {result.explanation && activity.kind !== 'check' && <div className="fam-lead"><MathText text={result.explanation} /></div>}
-      {activity.kind === 'flashcards' && <Flashcards cards={result.cards || []} />}
+      {result.explanation && !['check','story'].includes(activity.kind) && <div className="fam-lead"><MathText text={result.explanation} /></div>}
+      {activity.kind === 'flashcards' && <Flashcards activity={activity} cards={result.cards || []} />}
       {activity.kind === 'mindmap' && <MindMap title={result.title} branches={result.mindmap || []} onAsk={onAsk} />}
-      {activity.kind === 'story' && <Story sections={result.story || []} />}
+      {activity.kind === 'story' && <><Story activity={activity} sections={result.story || []}/>{result.explanation&&<details className="fam-tip"><summary>What this helps explain</summary><Prose text={result.explanation}/></details>}</>}
       {activity.kind === 'check' && !result.needsInformation && <WorkCheck checks={result.checks || []} />}
       {result.references?.length > 0 && <Typography className="fam-small">From {result.references.map(ref => `${sourceFiles[ref.fileNumber - 1]?.name || `file ${ref.fileNumber}`}, page ${ref.page}`).join(' · ')}</Typography>}
       {result.nextStep && <NextStep text={forChild(result.nextStep, childName)} onAsk={() => onAsk?.(activity.title)} />}
@@ -67,24 +68,26 @@ function NextStep({ text, onAsk }) {
 }
 
 function Quiz({ activity, result, childName, onRecord, busy, attempts, draftKey, saveError, onAsk, onNewVersion, onClose }) {
-  // A session-only, owner/child/activity-scoped draft survives closing the quiz, not sign-out.
-  const { data: draft } = useQuery({ queryKey: draftKey, enabled: false, initialData: () => freshDraft(false),
-    queryFn: () => freshDraft(false), gcTime: 3600000 });
-  const update = patch => queryClient.setQueryData(draftKey, current => ({ ...(current || freshDraft(false)), ...patch }));
+  const saved=useActivityProgress(activity,freshDraft(false));
+  const draft=saved.value;
+  const update=patch=>{saved.update(patch);queryClient.setQueryData(draftKey,{...draft,...patch})};
+  const restart=useRef(queryClient.getQueryData(draftKey)?.restartRequested);
+  useEffect(()=>{if(saved.ready&&restart.current){restart.current=false;update(freshDraft(true))}},[saved.ready]);
   const questions = result.questions;
   const recorded = attempts.filter(row => row.activityId === activity.id);
   const shownAttempt = recorded.find(row => row.id === draft.finishedAttempt) || recorded[0];
   const showResult = !draft.practising && recorded.length > 0;
   async function finish() {
     const id = draft.attemptId;
-    if (await onRecord(id, draft.answers)) queryClient.setQueryData(draftKey, { ...freshDraft(false), finishedAttempt: id });
+    if (await onRecord(id, draft.answers)) update({ ...freshDraft(false), finishedAttempt: id });
   }
+  if(!saved.ready)return <div className="fam-viewer-scroll fam-centre">{saved.error?<Alert severity="error">{saved.error}</Alert>:<CircularProgress aria-label="Loading saved practice"/>}</div>;
   if (showResult && draft.finishedAttempt && !recorded.some(row => row.id === draft.finishedAttempt))
     return <div className="fam-viewer-scroll fam-centre"><CircularProgress aria-label="Saving the result" /></div>;
   if (showResult) return <QuizResult attempt={shownAttempt} earlier={recorded.filter(row => row.id !== shownAttempt.id)} questions={questions}
-    childName={childName} nextStep={result.nextStep} busy={busy} onClose={onClose} onNewVersion={onNewVersion}
-    onAsk={() => onAsk?.(activity.title)} onRetry={() => queryClient.setQueryData(draftKey, freshDraft(true))} />;
-  return <QuizRunner questions={questions} draft={draft} update={update} busy={busy} saveError={saveError} childName={childName} onFinish={finish} />;
+    childName={childName} nextStep={result.nextStep} busy={busy||!!saved.error} onClose={onClose} onNewVersion={onNewVersion}
+    onAsk={() => onAsk?.(activity.title)} onRetry={() => update(freshDraft(true))} />;
+  return <QuizRunner questions={questions} draft={draft} update={update} busy={busy||!!saved.error} saveError={saveError||saved.error} childName={childName} onFinish={finish} />;
 }
 
 function QuizRunner({ questions, draft, update, busy, saveError, childName, onFinish }) {
@@ -124,6 +127,7 @@ function QuizRunner({ questions, draft, update, busy, saveError, childName, onFi
             </button>;
           })}
         </div>
+        {q.hint&&!checked&&<details className="fam-tip"><summary>Give me a hint</summary><Prose text={q.hint}/></details>}
         {checked && <div ref={feedback} className="fam-feedback" data-tone={correct ? 'ok' : 'warm'} role="status">
           <Typography className="fam-feedback-title">{correct ? 'Well done!' : 'Not quite.'}</Typography>
           {!correct && <Typography>The answer is {letters[q.correctIndex]}: <MathText text={q.options[q.correctIndex]} /></Typography>}
@@ -137,7 +141,7 @@ function QuizRunner({ questions, draft, update, busy, saveError, childName, onFi
       <span className="fam-grow" />
       {!checked ? <Button variant="contained" size="large" disabled={chosen === undefined || busy} onClick={check}>Check answer</Button>
         : last ? <Button variant="contained" size="large" disabled={busy || !allAnswered} onClick={onFinish}>{busy ? 'Saving…' : 'See results'}</Button>
-        : <Button variant="contained" size="large" endIcon={<ArrowForwardRounded />} onClick={() => go(index + 1)}>Next question</Button>}
+        : <Button variant="contained" size="large" disabled={busy} endIcon={<ArrowForwardRounded />} onClick={() => go(index + 1)}>Next question</Button>}
     </footer>
   </>;
 }
@@ -201,7 +205,7 @@ function QuizResult({ attempt, earlier, questions, childName, nextStep, busy, on
       {rows.length < questions.length && <button type="button" className="fam-rows-summary" onClick={() => setAll(true)}>
         <span><b>{right} of {questions.length} right</b> · see each question</span><ExpandMoreRounded aria-hidden /></button>}
       {ratio === 1 ? <section className="fam-tip"><AutoAwesomeRounded className="fam-tip-icon" aria-hidden /><div className="fam-tip-body">
-          <Typography className="fam-tip-title">Ready for a harder one?</Typography><Typography>{childName} knows this well. Make new questions, and choose Hard if you like.</Typography></div></section>
+          <Typography className="fam-tip-title">Ready for a harder one?</Typography><Typography>Every answer in this practice was correct. You can try new questions at a harder level.</Typography></div></section>
         : nextStep && <NextStep text={forChild(nextStep, childName)} onAsk={onAsk} />}
       </div>
     </div></div>
@@ -218,23 +222,26 @@ function QuizResult({ attempt, earlier, questions, childName, nextStep, busy, on
   </>;
 }
 
-function Flashcards({ cards }) {
-  const [i, setI] = useState(0); const [flipped, setFlipped] = useState(false);
-  if (!cards.length) return null;
-  const card = cards[Math.min(i, cards.length - 1)];
-  const move = n => { setFlipped(false); setI(n); };
+function Flashcards({cards,activity}) {
+  const saved=useActivityProgress(activity,{index:0,ratings:{},finished:false});
+  const [flipped,setFlipped]=useState(false);
+  const ids=cards.map((c,i)=>c.id||`c${i+1}`),order=saved.value.order||ids;
+  const i=Math.min(saved.value.index||0,order.length-1),card=cards[ids.indexOf(order[i])];
+  const ratings=saved.value.ratings||{},missed=ids.filter(id=>ratings[id]==='practise');
+  if(!saved.ready)return saved.error?<Alert severity="error">{saved.error}</Alert>:<CircularProgress aria-label="Loading saved cards"/>;
+  if(!card)return null;
+  const move=n=>{setFlipped(false);saved.update({index:n})};
+  const rate=value=>{setFlipped(false);saved.update({ratings:{...ratings,[order[i]]:value},index:i<order.length-1?i+1:i,finished:i===order.length-1})};
   return <section className="fam-cards">
-    <Typography className="fam-small" aria-live="polite">Card {i + 1} of {cards.length}</Typography>
-    <button type="button" key={i} className="fam-flip" data-flipped={flipped} onClick={() => setFlipped(!flipped)} aria-label={flipped ? 'Show the question side' : 'Show the answer side'}>
-      <span className="fam-flip-inner">
-        <span className="fam-flip-face fam-flip-front" aria-hidden={flipped}><MathText text={card.front} /><span className="fam-flip-hint">Tap to see the answer</span></span>
-        <span className="fam-flip-face fam-flip-back" aria-hidden={!flipped}><MathText text={card.back} /><span className="fam-flip-hint">Tap to see the question</span></span>
-      </span>
+    {saved.error&&<Alert severity="error">{saved.error}</Alert>}
+    {saved.value.finished?<><Typography component="h2">Cards reviewed</Typography><Typography>{Object.keys(ratings).length} of {ids.length} rated · {missed.length} to practise again.</Typography><Button disabled={!missed.length||!!saved.error} onClick={()=>saved.update({order:missed,index:0,finished:false})}>Practise missed cards</Button><Button disabled={!!saved.error} onClick={()=>saved.update({order:ids,index:0,finished:false})}>Review all cards</Button></>:<>
+    <Typography className="fam-small" aria-live="polite">Card {i+1} of {order.length} · {saved.error?'Not saved':saved.saving?'Saving…':'Progress saved'}</Typography>
+    <button type="button" className="fam-flip" data-flipped={flipped} onClick={()=>setFlipped(!flipped)} aria-label={flipped?'Show question':'Reveal answer'}>
+      <span className="fam-flip-inner"><span className="fam-flip-face fam-flip-front" aria-hidden={flipped}><MathText text={card.front}/><span className="fam-flip-hint">Tap to see the answer</span></span><span className="fam-flip-face fam-flip-back" aria-hidden={!flipped}><MathText text={card.back}/></span></span>
     </button>
-    <div className="fam-cards-nav">
-      <Button disabled={i === 0} onClick={() => move(i - 1)} startIcon={<ArrowBackRounded />} className="fam-back" data-hide={i === 0}>Previous card</Button>
-      <Button variant="outlined" disabled={i >= cards.length - 1} onClick={() => move(i + 1)} endIcon={<ArrowForwardRounded />}>Next card</Button>
-    </div>
+    {flipped&&<><Prose text={card.explanation||''}/><div className="fam-cards-nav"><Button disabled={!!saved.error} onClick={()=>rate('practise')}>Practise again</Button><Button variant="contained" disabled={!!saved.error} onClick={()=>rate('got_it')}>Got it</Button></div></>}
+    <div className="fam-cards-nav"><Button disabled={i===0||!!saved.error} onClick={()=>move(i-1)}>Previous card</Button><Button disabled={i>=order.length-1||!!saved.error} onClick={()=>move(i+1)}>Next card</Button></div>
+    </>}
   </section>;
 }
 
@@ -250,13 +257,18 @@ function MindMap({ title, branches, onAsk }) {
   </section>;
 }
 
-function Story({ sections }) {
-  return <section className="fam-story"><Chip size="small" label="A made-up story with real facts" className="fam-chip" />
-    {sections.map((section, i) => <article key={i}><Typography component="h3" className="fam-story-title">{section.title}</Typography><Prose text={section.text} /></article>)}
+function Story({sections,activity}) {
+  const saved=useActivityProgress(activity,{index:0,finished:false});
+  if(!saved.ready)return saved.error?<Alert severity="error">{saved.error}</Alert>:<CircularProgress aria-label="Loading reading position"/>;
+  const i=Math.min(saved.value.index||0,sections.length-1),section=sections[i];
+  if(!section)return null;
+  return <section className="fam-story"><Typography className="fam-small">Fictional learning story · Section {i+1} of {sections.length}</Typography>
+    {saved.error&&<Alert severity="error">{saved.error}</Alert>}<article><Typography component="h3" className="fam-story-title">{section.title}</Typography><Prose text={section.text}/></article>
+    <div className="fam-cards-nav"><Button disabled={i===0||!!saved.error} onClick={()=>saved.update({index:i-1,finished:false})}>Previous</Button>{i<sections.length-1?<Button disabled={!!saved.error} onClick={()=>saved.update({index:i+1})}>Next section</Button>:<Button disabled={!!saved.error} onClick={()=>saved.update(saved.value.finished?{index:0,finished:false}:{finished:true})}>{saved.value.finished?'Read again':'Finish reading'}</Button>}</div>
+    {saved.value.finished&&<Typography className="fam-small">Reading finished. You can return to this story any time.</Typography>}
   </section>;
 }
 
-const judgement = { correct: ['ok', 'Looks right'], needs_work: ['warm', 'Have another look'], uncertain: ['neutral', 'Hard to read: please check'] };
 function WorkCheck({ checks }) {
   const right = checks.filter(check => check.judgement === 'correct').length;
   return <section className="fam-check">
