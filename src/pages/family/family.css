@@ -1059,3 +1059,35 @@
 .fam-hw-sheet-paper .fam-hw-chip { min-width: 0; height: 44px; }
 .fam-hw-more-text p { margin: 0 0 8px; }
 .fam-hw-q .katex, .fam-hw-text .katex, .fam-hw-add-row .katex { white-space: nowrap; }
+
+/* Phase 1.23: keep the established notebook, prioritise reading and typing space. */
+.fam-chat-title-button.MuiButton-root { max-width: 100%; min-height: 44px; color: var(--f-ink); text-transform: none; justify-content: flex-start; font-size: 15px; }
+.fam-compose-row > .fam-icon-btn.MuiIconButton-root, .fam-compose-row > .fam-send.MuiIconButton-root { align-self: center; margin-bottom: 0; flex: 0 0 44px; width: 44px; height: 44px; }
+.fam-source-context { display:flex; align-items:center; gap:6px; border:0; background:none; color:var(--f-ink-2); font:inherit; font-size:12px; min-height:32px; cursor:pointer; padding:2px 8px; }
+.fam-source-context svg { font-size:16px; }
+.fam-main[data-panel-closed="true"] { grid-template-columns: minmax(0,1fr) 64px; }
+.fam-panel[hidden] { display:none; }
+.fam-panel-rail { width:64px; display:flex; flex-direction:column; align-items:center; gap:12px; padding:12px 2px; border-left:1px solid var(--f-edge); }
+.fam-panel-rail .MuiIconButton-root { width:44px; height:44px; flex-shrink:0; color:var(--f-ink-2); }
+.fam-collapse-panel.MuiButton-root { align-self:flex-end; min-height:44px; color:var(--f-ink-2); font-size:12px; }
+.fam-markdown { overflow-wrap:anywhere; white-space:normal; line-height:1.65; }
+.fam-markdown p { margin:0 0 .75em; white-space:pre-line; }
+.fam-markdown p:last-child { margin-bottom:0; }
+.fam-markdown :is(pre,.katex-display,.fam-table-scroll) { max-width:100%; overflow-x:auto; }
+.fam-markdown pre { padding:12px; background:var(--f-fill); border-radius:8px; }
+.fam-markdown table { border-collapse:collapse; font-size:.95em; }
+.fam-markdown :is(th,td) { padding:8px 12px; border:1px solid var(--f-edge); text-align:left; }
+.fam-markdown th { background:var(--f-fill); }
+.fam-bubble-answer { background:color-mix(in srgb,var(--f-accent-tint) 30%,var(--f-card)); }
+
+.fam-evidence { margin:8px 16px; max-width:100%; font-size:13px; color:var(--f-ink-2); }
+.fam-evidence summary { cursor:pointer; min-height:32px; padding:6px 0; }
+.fam-evidence .MuiButton-root { text-transform:none; max-width:100%; overflow-wrap:anywhere; }
+
+.fam-panel-body[hidden],.fam-pane-chat[hidden] { display:none!important; }
+.fam-pane-chat { min-width:0; min-height:0; }
+@media(max-width:999px) { .fam-main > .fam-panel { height:100%; border-left:0; } }
+
+.fam-file-names { font-size:12px; margin:4px 0; overflow-wrap:anywhere; }
+.fam-file-names summary { cursor:pointer; min-height:28px; }
+.fam-file-names ul { padding-left:16px; }
