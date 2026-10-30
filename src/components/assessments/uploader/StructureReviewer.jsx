@@ -47,6 +47,10 @@ export default function StructureReviewer({ config, dispatch, disabled }) {
   return (
     <div className="mst-structure-review">
       <ExtractionSummary review={readingReview} />
+      {config.paperInstructions && <MathInputWithPreview fullWidth multiline minRows={2}
+        label="Paper instructions" value={config.paperInstructions} disabled={disabled}
+        helperText="These instructions apply to every question."
+        onChange={event => dispatch({type:'UPDATE_CONFIG_FIELD', payload:{field:'paperInstructions', value:event.target.value}})} /> }
       <div className="mst-structure-toolbar">
         <p>Check the extracted questions and answers before you continue.</p>
         {showAll && <div>

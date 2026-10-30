@@ -10,6 +10,7 @@ import { useSnackbar } from '../../hooks/useSnackbar';
 import StatusChip from '../../components/assessments/StatusChip';
 import PageHeader from '../../components/common/PageHeader';
 import QuestionNavigator from '../../components/common/QuestionNavigator';
+import OriginalScriptDialog from '../../components/assessments/OriginalScriptDialog';
 
 // Tab-memory drafts survive SPA Back/Forward. Never persist or auto-save grades.
 const reviewDrafts = new Map();
@@ -24,6 +25,7 @@ const AssessmentReviewPage = () => {
   const [data, setData] = useState(null);
   const [selected, setSelected] = useState(null);
   const [filter, setFilter] = useState('all');
+  const [sourceOpen, setSourceOpen] = useState(false);
   const [dirty, setDirty] = useState({});
   const [saving, setSaving] = useState(null);
   const [saveError, setSaveError] = useState({});
@@ -132,6 +134,8 @@ const AssessmentReviewPage = () => {
   if (!data) return <Alert severity="info">No review data found.</Alert>;
   return (
     <Box className="mst-review-workspace" sx={{ maxWidth: 1240, mx: 'auto', minWidth: 0 }}>
+      {sourceOpen && current && <OriginalScriptDialog key={`${job_id}:${entity_id}:${current.questionId}:${current.sourceExecutionId}`}
+        jobId={job_id} studentId={entity_id} question={current} studentName={data.studentName} onClose={()=>setSourceOpen(false)} /> }
       <PageHeader backLabel="Back to results" backTo={`/assessments/${job_id}/results`}
         breadcrumbs={[{ label: 'Assessments', to: '/assessments' }, { label: 'Results', to: `/assessments/${job_id}/results` }, { label: 'Review' }]}
         title={data.studentName || 'Review'}
@@ -158,7 +162,13 @@ const AssessmentReviewPage = () => {
               </div>
               <p className="mst-review-q-text"><MathTextDisplay text={current.questionText} /></p>
               <div className="mst-review-answer">
-                <span className="mst-review-answer-label">Student's answer</span>
+                <Box sx={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:1, flexWrap:'wrap'}}>
+                  <span className="mst-review-answer-label">AI reading of the answer</span>
+                  <Button size="small" sx={{minHeight:44}} onClick={()=>setSourceOpen(true)}>View submitted script</Button>
+                </Box>
+                <p className="mst-hint">{current.readingState === 'blank' ? 'The AI readings report a blank response.' :
+                  ['unclear','missing_source'].includes(current.readingState) ? 'Some evidence could not be read. Compare the submitted script.' :
+                  'Compare with the script when checking accuracy. Saving a mark does not verify this transcription.'}</p>
                 <span className="mst-review-answer-text"><MathTextDisplay text={current.studentAnswer || 'No answer was read from the sheet.'} /></span>
               </div>
               <div className="mst-review-fields">

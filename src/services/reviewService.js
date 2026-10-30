@@ -2,6 +2,13 @@ import { invalidateAfter, cacheFamilies } from './queryCache';
 import apiClient from './api';
 
 const reviewService = {
+  async source(jobId, studentId, questionId, execution) {
+    return (await apiClient.get(`/api/assessments/${jobId}/students/${studentId}/questions/${questionId}/source`, {params:{execution}})).data;
+  },
+  async sourceContent(jobId, studentId, questionId, source, original=-1) {
+    return (await apiClient.get(`/api/assessments/${jobId}/students/${studentId}/questions/${questionId}/source/content`,
+      {params:{execution:source.executionId, sha256:source.sha256, original}, responseType:'blob'})).data;
+  },
   async getResultsOverview(jobId) {
     try {
       const { data } = await apiClient.get(`/api/assessments/${jobId}/overview`);

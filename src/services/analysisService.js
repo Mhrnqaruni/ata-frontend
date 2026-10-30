@@ -13,6 +13,8 @@ export default {
       })
     ).data;
   },
+  reference: async (requestId, config, retryJobId) =>
+    (await api.post("/api/assessment-analyses/reference", {requestId, config, retryJobId}, {timeout: 15000})).data,
   source: async (id, item) => {
     const response=await api.get(`/api/assessment-analyses/${id}/sources/${item.index}`,{responseType:'blob'});
     return new File([response.data],item.name);
