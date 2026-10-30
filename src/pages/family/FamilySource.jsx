@@ -47,6 +47,8 @@ export default function FamilySource({
     requestSequence.current += 1;
     clear();
     setOpen(false);
+    setBusy(false);
+    setRequested(null);
     setError("");
   }
   async function show(file, index) {

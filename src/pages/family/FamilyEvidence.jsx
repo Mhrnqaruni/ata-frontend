@@ -5,7 +5,11 @@ import FamilySource from "./FamilySource";
 export default function FamilyEvidence({ base, activity }) {
   const evidence = activity?.evidence;
   const references = evidence?.pages || activity?.result?.references || [];
-  if ((!evidence || evidence.outcome === "general") && !references.length)
+  if (
+    (!evidence || evidence.outcome === "general") &&
+    !references.length &&
+    activity?.basis !== "conversation"
+  )
     return null;
   const files = activity?.sourceFiles || [];
   const used = [...new Set(references.map((item) => item.fileNumber))];
@@ -13,11 +17,13 @@ export default function FamilyEvidence({ base, activity }) {
     <details className="fam-evidence">
       <summary>Sources & coverage</summary>
       <p className="fam-small">
-        {evidence?.outcome === "general"
-          ? "General help; no document pages used."
-          : references.length
-            ? "Based on these selected pages, not the entire book."
-            : "No supporting passage was found in the selected materials."}
+        {activity?.basis === "conversation"
+          ? "Based on this chat’s saved context, not newly retrieved document pages."
+          : evidence?.outcome === "general"
+            ? "General help; no document pages used."
+            : references.length
+              ? "Based on these selected pages, not the entire book."
+              : "No supporting passage was found in the selected materials."}
       </p>
       {used.map((number) => {
         const file = files[number - 1];
