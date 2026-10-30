@@ -20,6 +20,7 @@ export default function FamilyDictation({
   conversationId,
   disabled,
   onInsert,
+  onReady,
   onBegin,
 }) {
   const [open, setOpen] = useState(false),
@@ -75,6 +76,14 @@ export default function FamilyDictation({
     `/api/family/children/${childId}/conversations/${conversationId}/dictations/${id}`;
   const receive = (data) => {
     if (data.state === "response") {
+      if (data.transcript && onReady?.(data.transcript.trim())) {
+        cancel();
+        return;
+      }
+      if (data.transcript)
+        setError(
+          "Your draft changed or needs more space. Review this transcript before inserting.",
+        );
       setText(data.transcript || "");
       setState("review");
       if (!data.transcript)
@@ -117,6 +126,7 @@ export default function FamilyDictation({
     }
   }
   async function start() {
+    request.current = null;
     const token = ++epoch.current;
     setError("");
     setText("");

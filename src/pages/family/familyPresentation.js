@@ -19,3 +19,21 @@ export function safeMarkdownUrl(value) {
     return "";
   }
 }
+
+/** Automatic speech insertion is allowed only into the unchanged captured draft. */
+export function mergeDictation(
+  current,
+  transcript,
+  captured,
+  automatic = false,
+) {
+  const unchanged = captured && captured.text === current;
+  if (automatic && !unchanged) return null;
+  const left = unchanged ? current.slice(0, captured.start) : current;
+  const right = unchanged ? current.slice(captured.end) : "";
+  const before =
+    left && !/\s$/.test(left) && !/^[.,!?;:)]/.test(transcript) ? " " : "";
+  const after = right && !/^[\s.,!?;:)]/.test(right) ? " " : "";
+  const next = left + before + transcript + after + right;
+  return next.length <= 4000 ? next : null;
+}

@@ -1,3 +1,4 @@
+import { mergeDictation } from "./familyPresentation";
 import FamilyDictation from "./FamilyDictation";
 import FamilyEvidence from "./FamilyEvidence";
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -342,6 +343,19 @@ export default function FamilyConversation({
     input.current?.focus();
   }, [suggestion?.id]);
 
+  function insertDictation(transcript, automatic = false) {
+    const current = queryClient.getQueryData(draftKey) ?? text;
+    const next = mergeDictation(
+      current,
+      transcript,
+      dictationInsertion.current,
+      automatic,
+    );
+    if (next === null) return false;
+    setDictationUndo({ before: current, after: next });
+    change(next);
+    return true; // Only a draft update. Send remains a separate explicit action.
+  }
   async function olderMessages() {
     const element = log.current,
       height = element?.scrollHeight || 0,
@@ -804,18 +818,8 @@ export default function FamilyConversation({
                   end: input.current?.selectionEnd ?? text.length,
                 };
               }}
-              onInsert={(transcript) => {
-                const at = dictationInsertion.current;
-                const next =
-                  at && at.text === text
-                    ? text.slice(0, at.start) + transcript + text.slice(at.end)
-                    : [text, transcript].filter(Boolean).join(" ");
-                if (next.length > 4000) return false;
-                setDictationUndo({ before: text, after: next });
-                change(next);
-                input.current?.focus();
-                return true;
-              }}
+              onReady={(transcript) => insertDictation(transcript, true)}
+              onInsert={(transcript) => insertDictation(transcript)}
             />
             <IconButton
               className="fam-send"
