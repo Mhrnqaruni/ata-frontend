@@ -16,6 +16,7 @@ import {
   LinearProgress,
   MenuItem,
   TextField,
+  Tooltip,
   Typography,
   useMediaQuery,
 } from "@mui/material";
@@ -1109,17 +1110,24 @@ export default function FamilyLearning({ child }) {
         </div>
         {desktop && panelClosed && (
           <nav className="fam-panel-rail" aria-label="Notebook panel">
-            <Button onClick={showTopics} title="Open materials">
-              Materials
-            </Button>
-            <Button
-              onClick={() => {
-                collapsePanel(false);
-                setPanelTab("activities");
-              }}
-            >
-              Activities{readyCount > 0 ? ` (${readyCount} ready)` : ""}
-            </Button>
+            <Tooltip title="Open materials" placement="left">
+              <IconButton onClick={showTopics} aria-label="Open materials">
+                <MenuBookRounded />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title={`Open activities${readyCount > 0 ? ` (${readyCount} ready)` : ""}`} placement="left">
+              <IconButton
+                aria-label={`Open activities${readyCount > 0 ? ` (${readyCount} ready)` : ""}`}
+                onClick={() => {
+                  collapsePanel(false);
+                  setPanelTab("activities");
+                }}
+              >
+                <Badge badgeContent={readyCount} max={99} color="primary">
+                  <AutoAwesomeRounded />
+                </Badge>
+              </IconButton>
+            </Tooltip>
           </nav>
         )}
         <aside

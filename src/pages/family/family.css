@@ -1068,7 +1068,7 @@
 .fam-main[data-panel-closed="true"] { grid-template-columns: minmax(0,1fr) 64px; }
 .fam-panel[hidden] { display:none; }
 .fam-panel-rail { width:64px; display:flex; flex-direction:column; align-items:center; gap:12px; padding:12px 2px; border-left:1px solid var(--f-edge); }
-.fam-panel-rail .MuiButton-root { min-width:44px; width:60px; min-height:44px; padding:6px 2px; font-size:10px; overflow-wrap:anywhere; color:var(--f-ink-2); }
+.fam-panel-rail .MuiIconButton-root { width:44px; height:44px; flex-shrink:0; color:var(--f-ink-2); }
 .fam-collapse-panel.MuiButton-root { align-self:flex-end; min-height:44px; color:var(--f-ink-2); font-size:12px; }
 .fam-markdown { overflow-wrap:anywhere; white-space:normal; line-height:1.65; }
 .fam-markdown p { margin:0 0 .75em; white-space:pre-line; }
