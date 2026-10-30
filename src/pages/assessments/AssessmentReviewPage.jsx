@@ -15,7 +15,7 @@ import OriginalScriptDialog from '../../components/assessments/OriginalScriptDia
 // Tab-memory drafts survive SPA Back/Forward. Never persist or auto-save grades.
 const reviewDrafts = new Map();
 if(typeof window !== 'undefined') window.addEventListener('mst-session-reset',()=>reviewDrafts.clear());
-const questionBasis = q => JSON.stringify([q.questionText,q.maxScore,q.grade,q.feedback,q.status]);
+const questionBasis = q => JSON.stringify([q.questionText,q.maxScore,q.grade,q.feedback,q.status,q.sourceExecutionId,q.studentAnswer,q.readingState,q.evidencePages,q.revisionHash]);
 
 const AssessmentReviewPage = () => {
   const { job_id, entity_id } = useParams();
@@ -105,13 +105,13 @@ const AssessmentReviewPage = () => {
     setSaving(q.questionId);
     setSaveError(previous => ({ ...previous, [q.questionId]: null }));
     try {
-      await reviewService.saveQuestion(job_id, entity_id, q.questionId, { grade, feedback: q.feedback ?? '' });
+      const confirmation = await reviewService.saveQuestion(job_id, entity_id, q.questionId, { grade, feedback: q.feedback ?? '', expectedRevision:q.revisionHash });
       if (version !== requestVersion.current) return;
       setData(previous => ({ ...previous, perQuestion: previous.perQuestion.map(item =>
-        item.questionId === q.questionId ? { ...item, status: 'TEACHER_GRADED' } : item) }));
+        item.questionId === q.questionId ? { ...item, status: 'TEACHER_GRADED', revisionHash:confirmation.resultRevision } : item) }));
       const cached={...(reviewDrafts.get(draftKey)||{})};delete cached[q.questionId];
       if(Object.keys(cached).length)reviewDrafts.set(draftKey,cached);else {reviewDrafts.delete(draftKey);setDraftNotice('');}
-      draftBasis.current[q.questionId]=questionBasis({...q,grade,status:'TEACHER_GRADED'});
+      draftBasis.current[q.questionId]=questionBasis({...q,grade,status:'TEACHER_GRADED',revisionHash:confirmation.resultRevision});
       setDirty(previous => ({ ...previous, [q.questionId]: false }));
       setSaved(previous => ({ ...previous, [q.questionId]: true }));
       showSnackbar('Question saved.', 'success');

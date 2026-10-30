@@ -324,8 +324,8 @@ const NewAssessmentV2 = () => {
               {analysis?.status==='completed' && <Box><ElapsedTime clock={analysis.clock}/></Box>}
               <Box>Your extracted questions are saved. Unsaved edits are not automatically saved. Replace source files only if you want to analyse new documents.</Box>
             </Alert>}
-            <Box component={state.config && !isProcessing ? 'details' : 'div'} className="mst-replace-sources">
-              {state.config && !isProcessing && <summary>Replace source files</summary>}
+            <Box component={state.config ? 'details' : 'div'} className="mst-replace-sources">
+              {state.config && <summary>Replace source files</summary>}
             <div className="mst-form-row">
               <OrderedDocumentUploader
                 title="Question paper"

@@ -6,7 +6,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
  *
  * The story is the backend's real rule (app/services/assessment_service.py, finalize_question):
  *   a teacher's handwritten answer sheets go in → MySmartTeach marks every answer THREE times with the same AI
- *   model, in parallel → if at least two marks agree (within 0.1) the answer is AI graded; if no two agree it
+ *   model, in parallel → agreement on criterion decisions and supporting evidence permits an AI mark; otherwise it
  *   waits as "Pending Review" → the teacher reviews ("Teacher Graded") → each student gets personalised feedback.
  * The loop shows the two clear cases: paper A (8 · 8 · 8 → AI graded) and paper B (8 · 5 · 7 → teacher review).
  * It is an illustration: nothing is fetched, no real marks are shown.
@@ -25,14 +25,14 @@ const LIVE = [[3_100, 8_500], [8_600, 15_600]];
 const CAPTIONS = [
   [0, "A teacher's handwritten answer sheets go in."],
   [3_000, "AI marks each answer three times."],
-  [5_800, "The marks agree, so it's AI\u00a0graded."],
+  [5_800, "Evidence and marks agree: AI\u00a0graded."],
   [7_500, "Every student gets personalised feedback."],
   [8_700, "AI marks each answer three times."],
   [11_300, "They don't agree, so a teacher reviews."],
   [13_900, "Reviewed, then sent as personalised feedback."],
   [15_600, ""],
 ];
-const STILL_CAPTION = ["Each answer is marked three times by\u00a0AI.", "If at least two marks agree, it's AI\u00a0graded; if not, a teacher reviews."];
+const STILL_CAPTION = ["Each answer is marked three times by\u00a0AI.", "The readings must agree on evidence and marks; otherwise a teacher reviews."];
 
 /* ── geometry: two layouts, every path a line or a cubic, sampled once (no layout reads per frame) ── */
 
@@ -435,7 +435,7 @@ export default function GradingLine({ tallFrom = 0 } = {}) {
         <span className="gl-tag">Illustration</span>
       </div>
       <svg
-        aria-label="Illustration: a teacher's handwritten answer sheets go into MySmartTeach; every answer is marked three times by AI; if at least two marks agree it is AI graded, otherwise it waits for the teacher to review; every student then gets personalised feedback."
+        aria-label="Illustration: a teacher's handwritten answer sheets go into MySmartTeach; every answer is marked three times by AI; if the readings agree on evidence and marking criteria it is AI graded, otherwise it waits for the teacher to review; every student then gets personalised feedback."
         className="gl-svg"
         ref={svg}
         role="img"
