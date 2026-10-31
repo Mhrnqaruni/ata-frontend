@@ -821,10 +821,10 @@ const AnswerReviewDisplay = ({ sessionId, guestToken, onViewLeaderboard }) => {
           >
             <Typography variant="h5" gutterBottom>Score Summary</Typography>
             <Typography variant="h2" sx={{ fontWeight: 600 }}>
-              {reviewData.total_score} / {reviewData.max_possible_score}
+              {reviewData.marking_pending ? 'Marking pending' : `${reviewData.total_score} / ${reviewData.max_possible_score}`}
             </Typography>
             <Typography variant="h6">
-              {reviewData.correct_count} out of {reviewData.total_questions} correct
+              {reviewData.marking_pending ? 'Your total will appear when marking is complete.' : `${reviewData.correct_count} out of ${reviewData.total_questions} correct`}
             </Typography>
           </Paper>
 
@@ -843,7 +843,7 @@ const AnswerReviewDisplay = ({ sessionId, guestToken, onViewLeaderboard }) => {
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1 }}>
                       <Chip label={`Question ${review.question_number}`} color="primary" size="small" />
                       <Chip
-                        label={`${review.points_earned} / ${review.max_points} pts`}
+                        label={review.question_type === 'poll' ? 'Poll · Not scored' : review.marking_status === 'pending' ? 'Marking pending' : `${review.points_earned} / ${review.max_points} pts`}
                         color={isCorrect ? 'success' : isIncorrect ? 'error' : 'default'}
                         icon={isCorrect ? <CheckCircleIcon /> : isIncorrect ? <CancelIcon /> : undefined}
                       />
