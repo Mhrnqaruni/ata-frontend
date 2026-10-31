@@ -10,11 +10,12 @@ import { useSnackbar } from '../../hooks/useSnackbar';
 import StatusChip from '../../components/assessments/StatusChip';
 import PageHeader from '../../components/common/PageHeader';
 import QuestionNavigator from '../../components/common/QuestionNavigator';
+import OriginalScriptDialog from '../../components/assessments/OriginalScriptDialog';
 
 // Tab-memory drafts survive SPA Back/Forward. Never persist or auto-save grades.
 const reviewDrafts = new Map();
 if(typeof window !== 'undefined') window.addEventListener('mst-session-reset',()=>reviewDrafts.clear());
-const questionBasis = q => JSON.stringify([q.questionText,q.maxScore,q.grade,q.feedback,q.status]);
+const questionBasis = q => JSON.stringify([q.questionText,q.maxScore,q.grade,q.feedback,q.status,q.sourceExecutionId,q.studentAnswer,q.readingState,q.evidencePages,q.revisionHash]);
 
 const AssessmentReviewPage = () => {
   const { job_id, entity_id } = useParams();
@@ -24,6 +25,7 @@ const AssessmentReviewPage = () => {
   const [data, setData] = useState(null);
   const [selected, setSelected] = useState(null);
   const [filter, setFilter] = useState('all');
+  const [sourceOpen, setSourceOpen] = useState(false);
   const [dirty, setDirty] = useState({});
   const [saving, setSaving] = useState(null);
   const [saveError, setSaveError] = useState({});
@@ -103,13 +105,13 @@ const AssessmentReviewPage = () => {
     setSaving(q.questionId);
     setSaveError(previous => ({ ...previous, [q.questionId]: null }));
     try {
-      await reviewService.saveQuestion(job_id, entity_id, q.questionId, { grade, feedback: q.feedback ?? '' });
+      const confirmation = await reviewService.saveQuestion(job_id, entity_id, q.questionId, { grade, feedback: q.feedback ?? '', expectedRevision:q.revisionHash });
       if (version !== requestVersion.current) return;
       setData(previous => ({ ...previous, perQuestion: previous.perQuestion.map(item =>
-        item.questionId === q.questionId ? { ...item, status: 'TEACHER_GRADED' } : item) }));
+        item.questionId === q.questionId ? { ...item, status: 'TEACHER_GRADED', revisionHash:confirmation.resultRevision } : item) }));
       const cached={...(reviewDrafts.get(draftKey)||{})};delete cached[q.questionId];
       if(Object.keys(cached).length)reviewDrafts.set(draftKey,cached);else {reviewDrafts.delete(draftKey);setDraftNotice('');}
-      draftBasis.current[q.questionId]=questionBasis({...q,grade,status:'TEACHER_GRADED'});
+      draftBasis.current[q.questionId]=questionBasis({...q,grade,status:'TEACHER_GRADED',revisionHash:confirmation.resultRevision});
       setDirty(previous => ({ ...previous, [q.questionId]: false }));
       setSaved(previous => ({ ...previous, [q.questionId]: true }));
       showSnackbar('Question saved.', 'success');
@@ -132,6 +134,8 @@ const AssessmentReviewPage = () => {
   if (!data) return <Alert severity="info">No review data found.</Alert>;
   return (
     <Box className="mst-review-workspace" sx={{ maxWidth: 1240, mx: 'auto', minWidth: 0 }}>
+      {sourceOpen && current && <OriginalScriptDialog key={`${job_id}:${entity_id}:${current.questionId}:${current.sourceExecutionId}`}
+        jobId={job_id} studentId={entity_id} question={current} studentName={data.studentName} onClose={()=>setSourceOpen(false)} /> }
       <PageHeader backLabel="Back to results" backTo={`/assessments/${job_id}/results`}
         breadcrumbs={[{ label: 'Assessments', to: '/assessments' }, { label: 'Results', to: `/assessments/${job_id}/results` }, { label: 'Review' }]}
         title={data.studentName || 'Review'}
@@ -158,7 +162,13 @@ const AssessmentReviewPage = () => {
               </div>
               <p className="mst-review-q-text"><MathTextDisplay text={current.questionText} /></p>
               <div className="mst-review-answer">
-                <span className="mst-review-answer-label">Student's answer</span>
+                <Box sx={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:1, flexWrap:'wrap'}}>
+                  <span className="mst-review-answer-label">AI reading of the answer</span>
+                  <Button size="small" sx={{minHeight:44}} onClick={()=>setSourceOpen(true)}>View submitted script</Button>
+                </Box>
+                <p className="mst-hint">{current.readingState === 'blank' ? 'The AI readings report a blank response.' :
+                  ['unclear','missing_source'].includes(current.readingState) ? 'Some evidence could not be read. Compare the submitted script.' :
+                  'Compare with the script when checking accuracy. Saving a mark does not verify this transcription.'}</p>
                 <span className="mst-review-answer-text"><MathTextDisplay text={current.studentAnswer || 'No answer was read from the sheet.'} /></span>
               </div>
               <div className="mst-review-fields">

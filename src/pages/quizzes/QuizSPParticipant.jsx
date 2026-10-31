@@ -1025,6 +1025,7 @@ const QuizSPParticipant = () => {
           is_correct: result.is_correct,
           points_earned: result.points_earned,
           ai_feedback: result.ai_feedback,
+          marking_basis: result.marking_basis,
           explanation: result.explanation
         });
         setGradingStatus("complete");
@@ -1235,6 +1236,9 @@ const QuizSPParticipant = () => {
             {feedback.is_correct ? "Correct!" : "Incorrect"} ({feedback.points_earned}/{currentQuestion.points} points)
           </Typography>
 
+          {feedback.marking_basis && <Typography variant="caption" component="p">
+            {feedback.marking_basis === 'ai' ? 'AI marked against the accepted answer.' : feedback.marking_basis === 'keyword' ? 'Marked using the teacher’s keyword rules.' : 'Marked against the answer key.'}
+          </Typography>}
           {feedback.ai_feedback && (
             <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
               <Typography variant="body2">

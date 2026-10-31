@@ -1,3 +1,4 @@
+import PendingQuizMarks from './PendingQuizMarks';
 import TagAnalytics from '../../components/tags/TagAnalytics';
 import ComparisonTableContainer from '../../components/common/ComparisonTableContainer';
 // /src/pages/quizzes/QuizAnalytics.jsx - ENHANCED VERSION
@@ -70,7 +71,7 @@ const SessionSummaryCards = ({ analytics }) => {
     },
     {
       title: 'Average score',
-      value: `${analytics.average_score.toFixed(1)} pts`,
+      value: analytics.average_score == null ? 'Not yet marked' : `${analytics.average_score.toFixed(1)} pts`,
       icon: <ScoreIcon sx={{ fontSize: 24 }} />,
       color: 'success.main'
     },
@@ -655,14 +656,14 @@ const QuestionBreakdown = ({ questions }) => {
                   <TableCell align="right">
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flexDirection: { xs: 'column', sm: 'row' } }}>
                       <Typography variant="body2" sx={{ mr: { xs: 0, sm: 1 }, mb: { xs: 0.5, sm: 0 } }}>
-                        {(q.accuracy_rate * 100).toFixed(1)}%
+                        {q.accuracy_rate == null ? 'Pending' : `${(q.accuracy_rate * 100).toFixed(1)}%`}
                       </Typography>
-                      <LinearProgress
+                      {q.accuracy_rate != null && <LinearProgress
                         variant="determinate"
                         value={q.accuracy_rate * 100}
                         sx={{ width: { xs: 40, sm: 60 } }}
                         color={q.accuracy_rate >= 0.7 ? 'success' : q.accuracy_rate >= 0.4 ? 'warning' : 'error'}
-                      />
+                      />}
                     </Box>
                   </TableCell>
                   <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' } }}>{(q.average_time_ms / 1000).toFixed(1)}s</TableCell>
@@ -858,6 +859,7 @@ const QuizAnalytics = () => {
       <PageHeader
         actions={
           <>
+            {enhancedData.analytics.pending_answer_count > 0 && <PendingQuizMarks sessionId={enhancedData.sessionId} count={enhancedData.analytics.pending_answer_count} onSaved={fetchEnhancedAnalyticsData} />}
             {totalGradedParticipants > 0 && (
               <Button variant="contained" startIcon={<CloudDownloadIcon />} onClick={handleDownloadAllReports}>
                 Download all ({totalGradedParticipants})
@@ -926,15 +928,15 @@ const QuizAnalytics = () => {
               <Grid container spacing={2}>
                 <Grid item xs={4}>
                   <Typography variant="body2" color="text.secondary">Highest</Typography>
-                  <Typography variant="h5">{enhancedData.analytics.highest_score}</Typography>
+                  <Typography variant="h5">{enhancedData.analytics.highest_score ?? '—'}</Typography>
                 </Grid>
                 <Grid item xs={4}>
                   <Typography variant="body2" color="text.secondary">Median</Typography>
-                  <Typography variant="h5">{enhancedData.analytics.median_score.toFixed(1)}</Typography>
+                  <Typography variant="h5">{enhancedData.analytics.median_score == null ? '—' : enhancedData.analytics.median_score.toFixed(1)}</Typography>
                 </Grid>
                 <Grid item xs={4}>
                   <Typography variant="body2" color="text.secondary">Lowest</Typography>
-                  <Typography variant="h5">{enhancedData.analytics.lowest_score}</Typography>
+                  <Typography variant="h5">{enhancedData.analytics.lowest_score ?? '—'}</Typography>
                 </Grid>
               </Grid>
             </CardContent>
@@ -947,7 +949,7 @@ const QuizAnalytics = () => {
               <Grid container spacing={2}>
                 <Grid item xs={6}>
                   <Typography variant="body2" color="text.secondary">Average accuracy</Typography>
-                  <Typography variant="h5">{(enhancedData.analytics.average_accuracy_rate * 100).toFixed(1)}%</Typography>
+                  <Typography variant="h5">{enhancedData.analytics.average_accuracy_rate == null ? '—' : `${(enhancedData.analytics.average_accuracy_rate * 100).toFixed(1)}%`}</Typography>
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="body2" color="text.secondary">Active participants</Typography>

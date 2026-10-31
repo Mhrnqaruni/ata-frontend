@@ -7,8 +7,8 @@ const CompletedStats = ({ results }) => {
     return (
         <Stack direction="row" spacing={4} alignItems="center">
             <Box>
-                <Typography variant="h3">{results.classAverage}%</Typography>
-                <Typography variant="body2" color="text.secondary">Class Average</Typography>
+                <Typography variant="h3">{results.classAverage == null ? '—' : `${results.classAverage}%`}</Typography>
+                <Typography variant="body2" color="text.secondary">Submitted average</Typography>
             </Box>
             <Box>
                 <Typography variant="h3">#{results.hardestQuestion || 'N/A'}</Typography>

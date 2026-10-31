@@ -61,7 +61,8 @@ export function wizardReducerV2(state, action) {
       }
       return { ...state, [action.payload.field]: action.payload.value };
     case 'START_PARSING':
-      return { ...state, status: 'parsing', error: null, config: null };
+      // Keep the accepted questions while a replacement or reference is prepared.
+      return { ...state, status: 'parsing', error: null };
     case 'PARSE_SUCCESS':
       // When parsing succeeds, we populate the config and move to the 'reviewing' state.
       return { ...state, status: 'reviewing', config: action.payload };

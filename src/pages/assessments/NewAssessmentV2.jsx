@@ -192,11 +192,38 @@ const NewAssessmentV2 = () => {
     }finally{analysisPosting.current=false;setUploadingAnalysis(false);}
   },[state.questionFiles,state.answerKeyFiles,state.classId,state.assessmentName,state.markingStrategy,state.totalMarks,totalMarksInputProps.value,state.audience,retryJobId,location.pathname,location.search,navigate,showSnackbar]);
 
-  // handleSubmit is now simpler, as the config is already in state (unchanged)
+  const handlePrepareReference = async () => {
+    if (analysisPosting.current || !state.config) return;
+    const questions = state.config.sections.flatMap(section => section.questions);
+    if (questions.some(q => !q.text.trim() || !(q.maxScore > 0))) {
+      showSnackbar('Check each question and set its marks first.', 'error'); return;
+    }
+    analysisPosting.current = true;
+    const id = crypto.randomUUID();
+    const params = new URLSearchParams(location.search); params.set('analysisId', id);
+    dispatch({type: 'START_PARSING'});
+    setAnalysis(null); setAnalysisError('');
+    try {
+      await analysisService.reference(id, {...state.config, assessmentName: state.assessmentName,
+        classId: state.classId, audience: state.audience}, retryJobId);
+      navigate({pathname: location.pathname, search: params.toString()}, {replace: true});
+    } catch (error) {
+      if (error.response?.status >= 400 && error.response?.status < 500) {
+        dispatch({type:'PARSE_FAILURE', payload: typeof error.response.data?.detail === 'string'
+          ? error.response.data.detail : 'The marking scheme request was not accepted. Your questions are kept.'});
+      } else {
+        // An uncertain HTTP response is reconciled by ID, never posted twice.
+        navigate({pathname: location.pathname, search: params.toString()}, {replace: true});
+        setAnalysisError('Checking whether your marking scheme request was accepted.');
+      }
+    } finally { analysisPosting.current = false; }
+  };
+
+  // Grading uses one teacher-reviewed basis shared by all readings.
   const handleSubmit = async () => {
     const questions=state.config?.sections.flatMap(section=>section.questions)||[];
-    if(state.config?.gradingMode==='library' || (state.config?.gradingMode!=='ai_auto_grade' && questions.some(q=>!String(q.answer||'').trim()&&!String(q.rubric||'').trim()))){
-      showSnackbar('Enter an expected answer or marking scheme for each question, or explicitly choose AI-generated judgement.','error');return;
+    if(state.config?.gradingMode==='library' || questions.some(q=>!String(q.answer||'').trim()&&!String(q.rubric||'').trim())){
+      showSnackbar('Enter or prepare a shared marking scheme in Check the questions before starting grading.','error');return;
     }
     dispatch({ type: 'START_SUBMITTING' });
 
@@ -297,8 +324,8 @@ const NewAssessmentV2 = () => {
               {analysis?.status==='completed' && <Box><ElapsedTime clock={analysis.clock}/></Box>}
               <Box>Your extracted questions are saved. Unsaved edits are not automatically saved. Replace source files only if you want to analyse new documents.</Box>
             </Alert>}
-            <Box component={state.config && !isProcessing ? 'details' : 'div'} className="mst-replace-sources">
-              {state.config && !isProcessing && <summary>Replace source files</summary>}
+            <Box component={state.config ? 'details' : 'div'} className="mst-replace-sources">
+              {state.config && <summary>Replace source files</summary>}
             <div className="mst-form-row">
               <OrderedDocumentUploader
                 title="Question paper"
@@ -350,6 +377,9 @@ const NewAssessmentV2 = () => {
             {state.config && (
               <Box className="mst-reviewer" mt={4}>
                 <h3 className="mst-subhead">Check the questions</h3>
+                {state.config.referenceNotice && <Alert severity={state.config.referenceStatus === 'needs_review' ? 'warning' : 'info'} sx={{mb:2}}>{state.config.referenceNotice}</Alert>}
+                {state.config.sections.some(s => s.questions.some(q => !String(q.answer || '').trim() && !String(q.rubric || '').trim())) &&
+                  <Button variant="outlined" onClick={handlePrepareReference} disabled={isProcessing} sx={{mb:2}}>Prepare draft marking scheme</Button>}
                 <StructureReviewer config={state.config} dispatch={dispatch} disabled={isProcessing} />
                 <GradingModeSelector config={state.config} dispatch={dispatch} disabled={isProcessing} />
               </Box>

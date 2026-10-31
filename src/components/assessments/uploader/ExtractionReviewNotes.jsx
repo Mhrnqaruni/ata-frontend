@@ -28,7 +28,7 @@ export function ExtractionSummary({ review }) {
   const general=issues.filter(issue=>!issue.questionId);
   return <Box sx={{mb:2}}>
     {issues.length>0 && <Alert severity="warning" sx={{mb:1}}>Check the flagged source notes before continuing. Edit unclear questions or answers below.</Alert>}
-    {!review.answerKeyDocumentType && <Alert severity="info" sx={{mb:1}}>No answer key supplied. Enter expected answers if needed, or choose a library source below.</Alert>}
+    {!review.answerKeyDocumentType && <Alert severity="info" sx={{mb:1}}>No answer key was uploaded. Review or prepare the shared answers and marking scheme before grading.</Alert>}
     <details className="mst-source-notes"><summary>Source notes</summary>
       <Typography variant="body2" sx={{mt:1}}>{review.readerCount===3?'Three independent readings compared.':'Documents read visually.'} {kinds[review.questionDocumentType]||'Uncertain'} question paper{review.answerKeyDocumentType?` · ${kinds[review.answerKeyDocumentType]||'Uncertain'} answer key`:''}. {review.reconciled?'Differences were checked against the originals. ':''}Review the extracted content; agreement is not a guarantee of accuracy.</Typography>
       {general.map((issue,index)=><Alert key={index} severity="warning" sx={{mt:1}}><ReadingNote issue={issue}/></Alert>)}
