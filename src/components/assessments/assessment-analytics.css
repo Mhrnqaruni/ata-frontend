@@ -1,3 +1,6 @@
+/* Styles for the assessment analytics tab: the blue summary panels, question tiles, leaderboard and detail lists. */
+/* Area: assessments */
+
 /* Opaque blue surfaces are intentionally local: no changes to the rest of MST. */
 .mst-assessment-analytics {
   --aa-panel: #f2f7fe;

@@ -1,4 +1,5 @@
-// /ata-frontend/src/services/studentService.js
+// Wraps the endpoint that returns one student's full transcript (GET /api/students/{id}/transcript).
+// Area: academics
 
 import api from './api';
 

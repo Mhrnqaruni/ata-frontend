@@ -1,3 +1,7 @@
+// A number field that lets the user clear it while typing and restores or limits the value when focus leaves.
+// Works with event-based onChange handlers, for forms that do not use the useNumberInput hook.
+// Area: platform
+
 import React, { useEffect, useRef, useState } from 'react';
 import { TextField } from '@mui/material';
 
@@ -10,23 +14,42 @@ export default function NumberField({ value, onChange, onBlur, onFocus, inputPro
   const previous = useRef(value);
   const bounds = { ...InputProps?.inputProps, ...inputProps };
   useEffect(() => {
-    if (!focused.current) { setDraft(value ?? ''); previous.current = value; }
+    if (!focused.current) {
+      setDraft(value ?? '');
+      previous.current = value;
+    }
   }, [value]);
-  return <TextField {...props} type="number" value={draft} inputProps={inputProps} InputProps={InputProps}
-    onFocus={event => { focused.current = true; previous.current = value; onFocus?.(event); }}
-    onChange={event => {
-      setDraft(event.target.value);
-      if (event.target.value !== '') onChange?.(event);
-    }}
-    onBlur={event => {
-      focused.current = false;
-      const fallback = previous.current === '' || previous.current == null ? (bounds.min ?? 0) : Number(previous.current);
-      const parsed = event.target.value === '' ? fallback : Number(event.target.value);
-      const finalValue = Math.min(bounds.max ?? Infinity, Math.max(bounds.min ?? -Infinity, Number.isFinite(parsed) ? parsed : fallback));
-      setDraft(String(finalValue));
-      // Preserve target.name and the existing forms' event-based handlers.
-      event.target.value = String(finalValue);
-      onChange?.(event);
-      onBlur?.(event);
-    }} />;
+  return (
+    <TextField
+      {...props}
+      type="number"
+      value={draft}
+      inputProps={inputProps}
+      InputProps={InputProps}
+      onFocus={(event) => {
+        focused.current = true;
+        previous.current = value;
+        onFocus?.(event);
+      }}
+      onChange={(event) => {
+        setDraft(event.target.value);
+        if (event.target.value !== '') onChange?.(event);
+      }}
+      onBlur={(event) => {
+        focused.current = false;
+        const fallback =
+          previous.current === '' || previous.current == null ? (bounds.min ?? 0) : Number(previous.current);
+        const parsed = event.target.value === '' ? fallback : Number(event.target.value);
+        const finalValue = Math.min(
+          bounds.max ?? Infinity,
+          Math.max(bounds.min ?? -Infinity, Number.isFinite(parsed) ? parsed : fallback)
+        );
+        setDraft(String(finalValue));
+        // Preserve target.name and the existing forms' event-based handlers.
+        event.target.value = String(finalValue);
+        onChange?.(event);
+        onBlur?.(event);
+      }}
+    />
+  );
 }

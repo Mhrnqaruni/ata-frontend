@@ -1,3 +1,7 @@
+/* Phone-width table styles: each row becomes a labelled card and sortable headers become 'Sort by' chips. */
+/* Also compacts assessment result rows. Used by the results, class student and student profile tables. */
+/* Area: platform */
+
 /* Opt-in record tables; keep all values/actions. Wide comparison tables stay scrollable. */
 .mst-responsive-table {
   width: 100%;

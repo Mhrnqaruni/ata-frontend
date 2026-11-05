@@ -1,13 +1,16 @@
-import React from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
-import rehypeKatex from "rehype-katex";
-import "katex/dist/katex.min.css";
-import { safeMarkdownUrl } from "./familyPresentation";
+// Shows an AI answer in the family space as Markdown with maths, with raw HTML, images and unsafe links off.
+// Area: family
+
+import React from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
+import { safeMarkdownUrl } from './familyPresentation';
 
 /** Raw HTML and model images are disabled; source citations use separate validated controls. */
-export default React.memo(function FamilyMarkdown({ text = "" }) {
+export default React.memo(function FamilyMarkdown({ text = '' }) {
   return (
     <div className="fam-markdown">
       <ReactMarkdown
@@ -18,7 +21,7 @@ export default React.memo(function FamilyMarkdown({ text = "" }) {
             rehypeKatex,
             {
               trust: false,
-              strict: "ignore",
+              strict: 'ignore',
               throwOnError: false,
               maxExpand: 100,
               maxSize: 20,
@@ -37,12 +40,7 @@ export default React.memo(function FamilyMarkdown({ text = "" }) {
               <span>{children}</span>
             ),
           table: ({ children }) => (
-            <div
-              className="fam-table-scroll"
-              tabIndex={0}
-              role="region"
-              aria-label="Scrollable answer table"
-            >
+            <div className="fam-table-scroll" tabIndex={0} role="region" aria-label="Scrollable answer table">
               <table>{children}</table>
             </div>
           ),

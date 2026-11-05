@@ -1,5 +1,5 @@
-
-// /src/services/authService.js
+// Wraps the auth endpoints: register, login (/api/auth/token) and the current user (/api/auth/me).
+// Area: identity
 
 // Import the single, pre-configured axios instance.
 // All requests made through this client will automatically have the correct base URL
@@ -42,10 +42,10 @@ const authService = {
     } catch (error) {
       if (error.code === 'ERR_CANCELED') throw error;
       // Log the technical error for developer debugging.
-      console.error("Error during registration:", error);
+      console.error('Error during registration:', error);
       // Extract a user-friendly message from the backend's structured error
       // response, or provide a generic fallback.
-      const errorMessage = error.response?.data?.detail || "Registration failed. Please try again.";
+      const errorMessage = error.response?.data?.detail || 'Registration failed. Please try again.';
       // Re-throw the error so the calling function can catch it and update the UI.
       throw new Error(errorMessage);
     }
@@ -65,7 +65,7 @@ const authService = {
       // The OAuth2 Password Flow requires `application/x-www-form-urlencoded` data.
       // URLSearchParams is the standard browser API to create this format.
       const formData = new URLSearchParams();
-      formData.append('username', email);    // The backend's form expects the email in the 'username' field.
+      formData.append('username', email); // The backend's form expects the email in the 'username' field.
       formData.append('password', password); // The password goes in the 'password' field.
 
       // Make a POST request, explicitly setting the Content-Type for maximum robustness.
@@ -79,8 +79,8 @@ const authService = {
       return response.data;
     } catch (error) {
       if (error.code === 'ERR_CANCELED') throw error;
-      console.error("Error during login:", error);
-      const errorMessage = error.response?.data?.detail || "Login failed. Please check your credentials.";
+      console.error('Error during login:', error);
+      const errorMessage = error.response?.data?.detail || 'Login failed. Please check your credentials.';
       throw new Error(errorMessage);
     }
   },
@@ -99,15 +99,15 @@ const authService = {
     try {
       // Make a simple GET request to the protected /api/auth/me endpoint.
       const response = await apiClient.get('/api/auth/me');
-      
+
       // Return the user profile data.
       return response.data;
     } catch (error) {
       if (error.code === 'ERR_CANCELED') throw error;
       // This error will be triggered if the token is invalid, expired, or missing.
       // The `useAuth` hook will handle this to log the user out.
-      console.error("Error fetching current user profile (/me):", error);
-      const errorMessage = error.response?.data?.detail || "Your session has expired. Please log in again.";
+      console.error('Error fetching current user profile (/me):', error);
+      const errorMessage = error.response?.data?.detail || 'Your session has expired. Please log in again.';
       throw new Error(errorMessage);
     }
   },

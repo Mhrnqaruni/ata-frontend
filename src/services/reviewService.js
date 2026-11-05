@@ -1,13 +1,25 @@
+// Wraps the review endpoints of /api/assessments: results overview, a student's marks, saving a teacher's edit.
+// Also fetches the submitted script and downloads a student's report as PDF or Word.
+// Area: assessments
+
 import { invalidateAfter, cacheFamilies } from './queryCache';
-import apiClient from './api';
+import apiClient, { apiError } from './api';
 
 const reviewService = {
   async source(jobId, studentId, questionId, execution) {
-    return (await apiClient.get(`/api/assessments/${jobId}/students/${studentId}/questions/${questionId}/source`, {params:{execution}})).data;
+    return (
+      await apiClient.get(`/api/assessments/${jobId}/students/${studentId}/questions/${questionId}/source`, {
+        params: { execution },
+      })
+    ).data;
   },
-  async sourceContent(jobId, studentId, questionId, source, original=-1) {
-    return (await apiClient.get(`/api/assessments/${jobId}/students/${studentId}/questions/${questionId}/source/content`,
-      {params:{execution:source.executionId, sha256:source.sha256, original}, responseType:'blob'})).data;
+  async sourceContent(jobId, studentId, questionId, source, original = -1) {
+    return (
+      await apiClient.get(`/api/assessments/${jobId}/students/${studentId}/questions/${questionId}/source/content`, {
+        params: { execution: source.executionId, sha256: source.sha256, original },
+        responseType: 'blob',
+      })
+    ).data;
   },
   async getResultsOverview(jobId) {
     try {
@@ -19,12 +31,15 @@ const reviewService = {
         status: data.status,
         assessmentOnly: data.assessmentOnly ?? false,
         studentsAiGraded: data.studentsAiGraded ?? [],
-        studentsPending:  data.studentsPending  ?? [],
+        studentsPending: data.studentsPending ?? [],
         students: data.students ?? [],
+        heldFiles: data.heldFiles ?? [], // #67: files held back from grading, with their lines
+        heldQuestions: data.heldQuestions ?? [], // questions held for every student, with their reason
+        answerKey: data.answerKey ?? null, // {writtenByAI, total} for a Quick assessment
       };
     } catch (error) {
       console.error(`Error fetching results overview for job ${jobId}:`, error);
-      throw new Error(error.response?.data?.detail || "Failed to load results overview.");
+      throw apiError(error, 'Failed to load results overview.');
     }
   },
 
@@ -39,10 +54,13 @@ const reviewService = {
         assessmentName: data.assessmentName,
         config: data.config ?? {},
         perQuestion: data.perQuestion ?? [],
+        // #67: an unmatched sheet's alert reads these two.
+        isOutsider: data.isOutsider ?? false,
+        matchNote: data.matchNote ?? null,
       };
     } catch (error) {
       console.error(`Error fetching review data for student ${studentId} in job ${jobId}:`, error);
-      throw new Error(error.response?.data?.detail || "Failed to load student review data.");
+      throw apiError(error, 'Failed to load student review data.');
     }
   },
 
@@ -55,7 +73,7 @@ const reviewService = {
       return data;
     } catch (error) {
       console.error(`Error saving question review for student ${studentId} in job ${jobId}:`, error);
-      throw new Error(error.response?.data?.detail || "Could not save changes.");
+      throw apiError(error, 'Could not save changes.');
     }
   },
 
@@ -96,7 +114,7 @@ const reviewService = {
     } catch (error) {
       console.error(`Error downloading report for student ${studentId} in job ${jobId}:`, error);
       // Optionally, show a user-facing error message here
-      throw new Error(error.response?.data?.detail || "Could not download the report.");
+      throw apiError(error, 'Could not download the report.');
     }
   },
 };

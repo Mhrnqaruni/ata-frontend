@@ -1,18 +1,10 @@
-// /src/components/tools/SourceInputBlock.jsx
+// A reusable source picker with Text, File and Library tabs, the last choosing chapters from the curriculum books.
+// Area: ai_tools
 
 import React, { useState, useMemo } from 'react';
 
 // MUI Component Imports
-import {
-  Box,
-  Typography,
-  Tabs,
-  Tab,
-  Stack,
-  TextField,
-  Autocomplete,
-  CircularProgress,
-} from '@mui/material';
+import { Box, Typography, Tabs, Tab, Stack, TextField, Autocomplete, CircularProgress } from '@mui/material';
 
 // Custom Component Imports
 import FileUploadZone from './FileUploadZone';
@@ -50,21 +42,25 @@ const SourceInputBlock = ({
 
   // Memoized options for the cascading library dropdowns
   const yearOptions = useMemo(() => librarySelection.selected_level?.children || [], [librarySelection.selected_level]);
-  const subjectOptions = useMemo(() => librarySelection.selected_year?.children || [], [librarySelection.selected_year]);
-  const bookOptions = useMemo(() => librarySelection.selected_subject?.children || [], [librarySelection.selected_subject]);
-  const chapterOptions = useMemo(() => librarySelection.selected_book?.children || [], [librarySelection.selected_book]);
+  const subjectOptions = useMemo(
+    () => librarySelection.selected_year?.children || [],
+    [librarySelection.selected_year]
+  );
+  const bookOptions = useMemo(
+    () => librarySelection.selected_subject?.children || [],
+    [librarySelection.selected_subject]
+  );
+  const chapterOptions = useMemo(
+    () => librarySelection.selected_book?.children || [],
+    [librarySelection.selected_book]
+  );
 
   return (
     <Box>
       <Typography className="mst-field-group" component="div" variant="overline">
         {label}
       </Typography>
-      <Tabs
-        value={activeTab}
-        onChange={handleTabChange}
-        variant="fullWidth"
-        sx={{ width: '100%' }}
-      >
+      <Tabs value={activeTab} onChange={handleTabChange} variant="fullWidth" sx={{ width: '100%' }}>
         <Tab label="Text" disabled={disabled} />
         <Tab label="File" disabled={disabled} />
         <Tab label="Library" disabled={disabled || libraryLoading} />
@@ -81,15 +77,9 @@ const SourceInputBlock = ({
             disabled={disabled}
           />
         )}
-        {activeTab === 1 && (
-          <FileUploadZone
-            file={fileValue}
-            setFile={onFileChange}
-            isLoading={disabled}
-          />
-        )}
-        {activeTab === 2 && (
-          libraryLoading ? (
+        {activeTab === 1 && <FileUploadZone file={fileValue} setFile={onFileChange} isLoading={disabled} />}
+        {activeTab === 2 &&
+          (libraryLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', pt: 4 }}>
               <CircularProgress />
             </Box>
@@ -138,8 +128,7 @@ const SourceInputBlock = ({
                 limitTags={3}
               />
             </Stack>
-          )
-        )}
+          ))}
       </Box>
     </Box>
   );

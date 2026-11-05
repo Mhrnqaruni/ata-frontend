@@ -1,3 +1,6 @@
+// The account menu item that switches between teacher and parent mode, and remembers the last page in each.
+// Area: identity
+
 import React, { useState } from 'react';
 import { Alert, CircularProgress, ListItemIcon, MenuItem } from '@mui/material';
 import FamilyRestroomRounded from '@mui/icons-material/FamilyRestroomRounded';
@@ -18,7 +21,8 @@ export default function ModeSwitch({ onSelected }) {
   // In the parent space, only accounts that teach get the way back to classes.
   if (location.pathname === '/family' && !hasMode(user, 'teacher')) return null;
   async function select(mode) {
-    setPending(true); setError('');
+    setPending(true);
+    setError('');
     try {
       if (!hasMode(user, mode)) await enableMode(mode);
       const currentMode = parent ? 'parent' : 'teacher';
@@ -26,20 +30,43 @@ export default function ModeSwitch({ onSelected }) {
       try {
         sessionStorage.setItem(`mst.route.${user.id}.${currentMode}`, location.pathname + location.search);
         const saved = sessionStorage.getItem(`mst.route.${user.id}.${mode}`);
-        if (saved?.startsWith('/') && !saved.startsWith('//') &&
-            (mode === 'parent' ? saved.startsWith('/family') : !saved.startsWith('/family'))) destination = saved;
-      } catch { /* Navigation still works when browser storage is unavailable. */ }
-      navigate(destination); onSelected?.();
-    } catch (e) { setError(e.response?.data?.detail || e.message || 'Could not switch. Please try again.'); }
-    finally { setPending(false); }
+        if (
+          saved?.startsWith('/') &&
+          !saved.startsWith('//') &&
+          (mode === 'parent' ? saved.startsWith('/family') : !saved.startsWith('/family'))
+        )
+          destination = saved;
+      } catch {
+        /* Navigation still works when browser storage is unavailable. */
+      }
+      navigate(destination);
+      onSelected?.();
+    } catch (e) {
+      setError(e.response?.data?.detail || e.message || 'Could not switch. Please try again.');
+    } finally {
+      setPending(false);
+    }
   }
   const Icon = parent ? SchoolRounded : FamilyRestroomRounded;
-  return <>
-    <MenuItem disabled={pending} onClick={() => select(parent ? 'teacher' : 'parent')} className="mst-mode-item">
-      <ListItemIcon>{pending ? <CircularProgress size={18} /> : <Icon fontSize="small" />}</ListItemIcon>
-      <span className="mst-mode-text"><span className="mst-mode-title">{parent ? 'Teacher mode' : 'Parent mode'}</span>
-        <span className="mst-mode-hint">{parent ? 'Back to your classes' : 'Help your own child at home'}</span></span>
-    </MenuItem>
-    {error && <Alert severity="error" sx={{ mx: 1, my: 0.5 }}>{error}</Alert>}
-  </>;
+  return (
+    <>
+      <MenuItem
+        disabled={pending}
+        onClick={() => select(parent ? 'teacher' : 'parent')}
+        className="mst-mode-item"
+        data-mst={parent ? 'teacher-mode' : 'parent-mode'}
+      >
+        <ListItemIcon>{pending ? <CircularProgress size={18} /> : <Icon fontSize="small" />}</ListItemIcon>
+        <span className="mst-mode-text">
+          <span className="mst-mode-title">{parent ? 'Teacher mode' : 'Parent mode'}</span>
+          <span className="mst-mode-hint">{parent ? 'Back to your classes' : 'Help your own child at home'}</span>
+        </span>
+      </MenuItem>
+      {error && (
+        <Alert severity="error" sx={{ mx: 1, my: 0.5 }}>
+          {error}
+        </Alert>
+      )}
+    </>
+  );
 }

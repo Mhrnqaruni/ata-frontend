@@ -1,9 +1,21 @@
-// /ata-frontend/src/components/common/ChartRenderer.jsx
+// Draws a chart that an assistant answer includes (bar, histogram, line or pie) with Recharts.
+// Area: chat
 
 import React from 'react';
 import {
-  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
 } from 'recharts';
 import { Paper, Typography, Box, Alert, useTheme } from '@mui/material';
 
@@ -31,10 +43,11 @@ const ChartRenderer = ({ data }) => {
     const { chart_type, labels, data: values, title } = data;
 
     // Transform data for recharts format
-    const chartData = labels?.map((label, index) => ({
-      name: label,
-      value: values?.[index] || 0
-    })) || [];
+    const chartData =
+      labels?.map((label, index) => ({
+        name: label,
+        value: values?.[index] || 0,
+      })) || [];
 
     const renderChart = () => {
       switch (chart_type) {
@@ -43,9 +56,19 @@ const ChartRenderer = ({ data }) => {
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
-                <XAxis dataKey="name" tick={{ fill: theme.palette.text.secondary, fontSize: 13 }} stroke={theme.palette.divider} />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fill: theme.palette.text.secondary, fontSize: 13 }}
+                  stroke={theme.palette.divider}
+                />
                 <YAxis tick={{ fill: theme.palette.text.secondary, fontSize: 13 }} stroke={theme.palette.divider} />
-                <Tooltip contentStyle={{ backgroundColor: theme.palette.background.paper, color: theme.palette.text.primary, borderColor: theme.palette.divider }} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: theme.palette.background.paper,
+                    color: theme.palette.text.primary,
+                    borderColor: theme.palette.divider,
+                  }}
+                />
                 <Legend />
                 <Bar dataKey="value" fill={theme.palette.primary.light} />
               </BarChart>
@@ -57,9 +80,19 @@ const ChartRenderer = ({ data }) => {
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
-                <XAxis dataKey="name" tick={{ fill: theme.palette.text.secondary, fontSize: 13 }} stroke={theme.palette.divider} />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fill: theme.palette.text.secondary, fontSize: 13 }}
+                  stroke={theme.palette.divider}
+                />
                 <YAxis tick={{ fill: theme.palette.text.secondary, fontSize: 13 }} stroke={theme.palette.divider} />
-                <Tooltip contentStyle={{ backgroundColor: theme.palette.background.paper, color: theme.palette.text.primary, borderColor: theme.palette.divider }} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: theme.palette.background.paper,
+                    color: theme.palette.text.primary,
+                    borderColor: theme.palette.divider,
+                  }}
+                />
                 <Legend />
                 <Bar dataKey="value" fill={theme.palette.primary.light} />
               </BarChart>
@@ -71,9 +104,19 @@ const ChartRenderer = ({ data }) => {
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
-                <XAxis dataKey="name" tick={{ fill: theme.palette.text.secondary, fontSize: 13 }} stroke={theme.palette.divider} />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fill: theme.palette.text.secondary, fontSize: 13 }}
+                  stroke={theme.palette.divider}
+                />
                 <YAxis tick={{ fill: theme.palette.text.secondary, fontSize: 13 }} stroke={theme.palette.divider} />
-                <Tooltip contentStyle={{ backgroundColor: theme.palette.background.paper, color: theme.palette.text.primary, borderColor: theme.palette.divider }} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: theme.palette.background.paper,
+                    color: theme.palette.text.primary,
+                    borderColor: theme.palette.divider,
+                  }}
+                />
                 <Legend />
                 <Line type="monotone" dataKey="value" stroke={theme.palette.primary.light} />
               </LineChart>
@@ -98,44 +141,35 @@ const ChartRenderer = ({ data }) => {
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip contentStyle={{ backgroundColor: theme.palette.background.paper, color: theme.palette.text.primary, borderColor: theme.palette.divider }} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: theme.palette.background.paper,
+                    color: theme.palette.text.primary,
+                    borderColor: theme.palette.divider,
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
           );
 
         default:
-          return (
-            <Alert severity="info">
-              Unknown chart type: {chart_type}
-            </Alert>
-          );
+          return <Alert severity="info">Unknown chart type: {chart_type}</Alert>;
       }
     };
 
     return (
       <Paper
         elevation={1}
-        sx={{ p: 1.5, mt: 0.5 }}  // Reduced padding and margin
-        ref={(el) => {
-          if (el) {
-            console.log('[ChartRenderer] Chart dimensions:', {
-              height: el.offsetHeight,
-              title: title || 'untitled'
-            });
-          }
-        }}
+        sx={{ p: 1.5, mt: 0.5 }} // Reduced padding and margin
       >
         {title && (
           <Typography variant="h6" gutterBottom>
             {title}
           </Typography>
         )}
-        <Box sx={{ width: '100%', height: 300 }}>
-          {renderChart()}
-        </Box>
+        <Box sx={{ width: '100%', height: 300 }}>{renderChart()}</Box>
       </Paper>
     );
-
   } catch (error) {
     console.error('Chart rendering error:', error);
     return (

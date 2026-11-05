@@ -1,4 +1,7 @@
-import React, { useEffect, useRef, useState } from "react";
+// The mic button and dialog of the family chat: records speech, transcribes it and inserts the text after review.
+// Area: family
+
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Button,
@@ -9,24 +12,17 @@ import {
   IconButton,
   TextField,
   Typography,
-} from "@mui/material";
-import MicNoneRounded from "@mui/icons-material/MicNoneRounded";
-import api from "../../services/api";
-import { canDictate, recordAudio } from "./dictationAudio";
+} from '@mui/material';
+import MicNoneRounded from '@mui/icons-material/MicNoneRounded';
+import api from '../../services/api';
+import { canDictate, recordAudio } from './dictationAudio';
 
 /** A transcript is staged for review, never sent or appended to a different chat. */
-export default function FamilyDictation({
-  childId,
-  conversationId,
-  disabled,
-  onInsert,
-  onReady,
-  onBegin,
-}) {
+export default function FamilyDictation({ childId, conversationId, disabled, onInsert, onReady, onBegin }) {
   const [open, setOpen] = useState(false),
-    [state, setState] = useState("idle"),
-    [text, setText] = useState(""),
-    [error, setError] = useState("");
+    [state, setState] = useState('idle'),
+    [text, setText] = useState(''),
+    [error, setError] = useState('');
   const active = useRef(true),
     recorder = useRef(null),
     abort = useRef(null),
@@ -43,9 +39,9 @@ export default function FamilyDictation({
     epoch.current++;
     cleanup();
     setOpen(false);
-    setState("idle");
-    setText("");
-    setError("");
+    setState('idle');
+    setText('');
+    setError('');
   };
   useEffect(() => {
     active.current = true;
@@ -53,47 +49,40 @@ export default function FamilyDictation({
       if (document.hidden) {
         epoch.current++;
         cleanup();
-        setState("idle");
-        setError(
-          "Recording stopped when this page was hidden. Your draft is unchanged.",
-        );
+        setState('idle');
+        setError('Recording stopped when this page was hidden. Your draft is unchanged.');
       }
     };
     const leave = () => {
       epoch.current++;
       cleanup();
     };
-    document.addEventListener("visibilitychange", hide);
-    window.addEventListener("pagehide", leave);
+    document.addEventListener('visibilitychange', hide);
+    window.addEventListener('pagehide', leave);
     return () => {
       active.current = false;
       leave();
-      document.removeEventListener("visibilitychange", hide);
-      window.removeEventListener("pagehide", leave);
+      document.removeEventListener('visibilitychange', hide);
+      window.removeEventListener('pagehide', leave);
     };
   }, [childId, conversationId]);
-  const endpoint = (id) =>
-    `/api/family/children/${childId}/conversations/${conversationId}/dictations/${id}`;
+  const endpoint = (id) => `/api/family/children/${childId}/conversations/${conversationId}/dictations/${id}`;
   const receive = (data) => {
-    if (data.state === "response") {
+    if (data.state === 'response') {
       if (data.transcript && onReady?.(data.transcript.trim())) {
         cancel();
         return;
       }
-      if (data.transcript)
-        setError(
-          "Your draft changed or needs more space. Review this transcript before inserting.",
-        );
-      setText(data.transcript || "");
-      setState("review");
-      if (!data.transcript)
-        setError("No clear speech was found. You can try another recording.");
+      if (data.transcript) setError('Your draft changed or needs more space. Review this transcript before inserting.');
+      setText(data.transcript || '');
+      setState('review');
+      if (!data.transcript) setError('No clear speech was found. You can try another recording.');
     } else {
-      setState("pending");
+      setState('pending');
       setError(
-        data.state === "dispatching"
-          ? "Still transcribing. Check again shortly."
-          : "This transcription could not be recovered. Your typed draft is unchanged.",
+        data.state === 'dispatching'
+          ? 'Still transcribing. Check again shortly.'
+          : 'This transcription could not be recovered. Your typed draft is unchanged.'
       );
     }
   };
@@ -102,7 +91,7 @@ export default function FamilyDictation({
     if (!recorder.current) return;
     const capture = recorder.current;
     recorder.current = null;
-    setState("transcribing");
+    setState('transcribing');
     clearTimeout(timer.current);
     try {
       const audio = await capture.stop();
@@ -110,46 +99,39 @@ export default function FamilyDictation({
       const id = crypto.randomUUID();
       request.current = id;
       const form = new FormData();
-      form.append("audio", audio, "dictation.wav");
+      form.append('audio', audio, 'dictation.wav');
       const { data } = await api.put(endpoint(id), form, {
         timeout: 110000,
-        headers: { "Content-Type": undefined },
+        headers: { 'Content-Type': undefined },
       });
       if (active.current && token === epoch.current) receive(data);
     } catch {
       if (active.current && token === epoch.current) {
-        setState("pending");
-        setError(
-          "Could not confirm the transcript. Check its saved status; no automatic AI retry was made.",
-        );
+        setState('pending');
+        setError('Could not confirm the transcript. Check its saved status; no automatic AI retry was made.');
       }
     }
   }
   async function start() {
     request.current = null;
     const token = ++epoch.current;
-    setError("");
-    setText("");
-    setState("permission");
+    setError('');
+    setText('');
+    setState('permission');
     abort.current = new AbortController();
     try {
-      recorder.current = await recordAudio(
-        abort.current.signal,
-        () => void stop(),
-      );
+      recorder.current = await recordAudio(abort.current.signal, () => void stop());
       if (!active.current || token !== epoch.current) {
         cleanup();
         return;
       }
-      setState("recording");
+      setState('recording');
       timer.current = setTimeout(() => void stop(), 60000);
     } catch {
       if (active.current && token === epoch.current) {
         cleanup();
-        setState("idle");
-        setError(
-          "Microphone unavailable or permission denied. You can keep typing.",
-        );
+        setState('idle');
+        setError('Microphone unavailable or permission denied. You can keep typing.');
       }
     }
   }
@@ -160,7 +142,7 @@ export default function FamilyDictation({
       if (active.current && token === epoch.current) receive(data);
     } catch {
       if (active.current && token === epoch.current)
-        setError("Could not check this recording. Please try again later.");
+        setError('Could not check this recording. Please try again later.');
     }
   }
   return (
@@ -169,59 +151,46 @@ export default function FamilyDictation({
         className="fam-icon-btn"
         aria-label="Dictate a message"
         disabled={disabled || !canDictate()}
-        title={
-          canDictate()
-            ? "Dictate a message"
-            : "Dictation requires a supported browser and HTTPS"
-        }
+        title={canDictate() ? 'Dictate a message' : 'Dictation requires a supported browser and HTTPS'}
         onClick={() => {
           onBegin?.();
           setOpen(true);
-          setError("");
-          setState("idle");
+          setError('');
+          setState('idle');
         }}
       >
         <MicNoneRounded />
       </IconButton>
-      <Dialog
-        open={open}
-        onClose={cancel}
-        fullWidth
-        maxWidth="sm"
-        className="fam-dialog"
-      >
+      <Dialog open={open} onClose={cancel} fullWidth maxWidth="sm" className="fam-dialog">
         <DialogTitle>Dictate a message</DialogTitle>
         <DialogContent>
-          {state === "idle" && (
+          {state === 'idle' && (
             <>
               <Typography>
-                Speak for up to a minute, then check your words. Nothing is sent
-                to the chat automatically.
+                Speak for up to a minute, then check your words. Nothing is sent to the chat automatically.
               </Typography>
               <details>
                 <summary>How your audio is handled</summary>
                 <Typography className="fam-small">
-                  Audio goes to our AI provider for transcription; MST does not
-                  save the recording. The transcript is recoverable for 24
-                  hours. A minimal request receipt prevents duplicate
-                  processing; operational backups follow the app’s retention
-                  policy.
+                  Audio goes to our AI provider for transcription; MST does not save the recording. The transcript is
+                  recoverable for 24 hours. A minimal request receipt prevents duplicate processing; operational backups
+                  follow the app’s retention policy.
                 </Typography>
               </details>
             </>
           )}
-          {["permission", "recording", "transcribing"].includes(state) && (
+          {['permission', 'recording', 'transcribing'].includes(state) && (
             <Typography role="status">
               {
                 {
-                  permission: "Waiting for microphone permission…",
-                  recording: "Listening… Stop when you’re ready.",
-                  transcribing: "Turning your recording into text…",
+                  permission: 'Waiting for microphone permission…',
+                  recording: 'Listening… Stop when you’re ready.',
+                  transcribing: 'Turning your recording into text…',
                 }[state]
               }
             </Typography>
           )}
-          {state === "review" && (
+          {state === 'review' && (
             <TextField
               autoFocus
               fullWidth
@@ -238,20 +207,18 @@ export default function FamilyDictation({
         </DialogContent>
         <DialogActions>
           <Button onClick={cancel}>Cancel</Button>
-          {state === "idle" && (
+          {state === 'idle' && (
             <Button variant="contained" onClick={start}>
               Start recording
             </Button>
           )}
-          {state === "recording" && (
+          {state === 'recording' && (
             <Button variant="contained" onClick={stop}>
               Stop recording
             </Button>
           )}
-          {state === "pending" && request.current && (
-            <Button onClick={check}>Check saved status</Button>
-          )}
-          {state === "review" && (
+          {state === 'pending' && request.current && <Button onClick={check}>Check saved status</Button>}
+          {state === 'review' && (
             <Button
               variant="contained"
               disabled={!text.trim()}
@@ -259,7 +226,7 @@ export default function FamilyDictation({
                 if (onInsert(text.trim())) cancel();
                 else
                   setError(
-                    "Your message would exceed 4,000 characters. Shorten this transcript or copy it before closing.",
+                    'Your message would exceed 4,000 characters. Shorten this transcript or copy it before closing.'
                   );
               }}
             >

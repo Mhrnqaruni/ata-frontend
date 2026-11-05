@@ -1,6 +1,7 @@
-// /src/services/adminService.js
+// Wraps the admin dashboard endpoint, GET /api/admin/dashboard, which returns all database counts and rows.
+// Area: platform
 
-import apiClient from './api';
+import apiClient, { apiError } from './api';
 
 /**
  * Service for admin dashboard operations
@@ -15,8 +16,8 @@ const adminService = {
       const response = await apiClient.get('/api/admin/dashboard');
       return response.data;
     } catch (error) {
-      console.error("Error fetching admin dashboard data:", error);
-      throw new Error(error.response?.data?.detail || "Failed to fetch dashboard data");
+      console.error('Error fetching admin dashboard data:', error);
+      throw apiError(error, 'Failed to fetch dashboard data');
     }
   },
 };

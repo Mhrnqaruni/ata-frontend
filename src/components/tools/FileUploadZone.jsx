@@ -1,5 +1,6 @@
-// /src/components/tools/FileUploadZone.jsx
-// One source file for an AI tool, using the app's shared upload surface.
+// Drop zone for the one source file (PDF, Word, PNG or JPG) an AI tool generates from, built on UploadDropzone.
+// Area: ai_tools
+
 import React from 'react';
 import UploadDropzone from '../common/UploadDropzone';
 

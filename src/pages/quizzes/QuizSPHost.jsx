@@ -1,5 +1,7 @@
+// The self-paced quiz host screen: access code and join link, deadline, each student's progress, roster and end.
+// Area: quizzes
+
 import ComparisonTableContainer from '../../components/common/ComparisonTableContainer';
-// /src/pages/quizzes/QuizSPHost.jsx
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -26,7 +28,7 @@ import {
   TableHead,
   TableRow,
   TextField,
-  CircularProgress
+  CircularProgress,
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -82,7 +84,7 @@ const DeadlineCountdown = ({ deadline }) => {
         display: 'block',
         mt: 0.5,
         color: isExpired ? 'error.main' : 'text.secondary',
-        fontWeight: isExpired ? 700 : 400
+        fontWeight: isExpired ? 700 : 400,
       }}
     >
       {isExpired ? 'Time expired' : `${timeLeft} remaining`}
@@ -155,38 +157,20 @@ const RosterPanel = ({ roster, session, isLoading }) => {
             </TableHead>
             <TableBody>
               {joinedStudents.map((entry) => (
-                <TableRow
-                  key={entry.id}
-                  sx={{ backgroundColor: 'success.light' }}
-                >
+                <TableRow key={entry.id} sx={{ backgroundColor: 'success.light' }}>
                   <TableCell>
-                    <Chip
-                      icon={<CheckCircleIcon />}
-                      label="Joined"
-                      color="success"
-                      size="small"
-                    />
+                    <Chip icon={<CheckCircleIcon />} label="Joined" color="success" size="small" />
                   </TableCell>
                   <TableCell>{entry.student_name}</TableCell>
                   <TableCell>{entry.student_school_id}</TableCell>
-                  <TableCell>
-                    {entry.joined_at ? new Date(entry.joined_at).toLocaleTimeString() : '-'}
-                  </TableCell>
+                  <TableCell>{entry.joined_at ? new Date(entry.joined_at).toLocaleTimeString() : '-'}</TableCell>
                 </TableRow>
               ))}
 
               {absentStudents.map((entry) => (
-                <TableRow
-                  key={entry.id}
-                  sx={{ backgroundColor: 'action.hover' }}
-                >
+                <TableRow key={entry.id} sx={{ backgroundColor: 'action.hover' }}>
                   <TableCell>
-                    <Chip
-                      icon={<HourglassEmptyIcon />}
-                      label="Absent"
-                      color="default"
-                      size="small"
-                    />
+                    <Chip icon={<HourglassEmptyIcon />} label="Absent" color="default" size="small" />
                   </TableCell>
                   <TableCell>{entry.student_name}</TableCell>
                   <TableCell>{entry.student_school_id}</TableCell>
@@ -231,11 +215,7 @@ const OutsiderPanel = ({ outsiders, sessionId, onOutsiderUpdate }) => {
 
     try {
       setLoading(true);
-      const result = await quizSPService.assignOutsiderToStudent(
-        sessionId,
-        outsider.id,
-        assignStudentId.trim()
-      );
+      const result = await quizSPService.assignOutsiderToStudent(sessionId, outsider.id, assignStudentId.trim());
       alert(`Successfully assigned to ${result.assigned_to.name}`);
       setAssigningOutsiderId(null);
       setAssignStudentId('');
@@ -253,7 +233,7 @@ const OutsiderPanel = ({ outsiders, sessionId, onOutsiderUpdate }) => {
       not_in_class: 'Student ID found but not enrolled in this class',
       student_not_found: 'Student ID not found in database',
       roster_not_synced: 'Student is in class but roster was not synced',
-      no_class_set: 'Quiz has no class association'
+      no_class_set: 'Quiz has no class association',
     };
     return reasons[reason] || reason;
   };
@@ -268,8 +248,7 @@ const OutsiderPanel = ({ outsiders, sessionId, onOutsiderUpdate }) => {
         <CardContent>
           <Alert severity="warning" sx={{ mb: 2 }}>
             <AlertTitle>What are Outsiders?</AlertTitle>
-            Outsiders are students who joined the quiz but were not on the expected
-            class roster. This could be due to:
+            Outsiders are students who joined the quiz but were not on the expected class roster. This could be due to:
             <ul>
               <li>Student is enrolled in a different class</li>
               <li>Student ID doesn't exist in the system</li>
@@ -280,14 +259,14 @@ const OutsiderPanel = ({ outsiders, sessionId, onOutsiderUpdate }) => {
           <ComparisonTableContainer>
             <Table size="small">
               <TableHead>
-              <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Student ID</TableCell>
-                <TableCell>Reason</TableCell>
-                <TableCell align="right">Assign</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Student ID</TableCell>
+                  <TableCell>Reason</TableCell>
+                  <TableCell align="right">Assign</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
                 {outsiders.map((outsider) => (
                   <TableRow key={outsider.id}>
                     <TableCell>{outsider.student_name}</TableCell>
@@ -299,12 +278,7 @@ const OutsiderPanel = ({ outsiders, sessionId, onOutsiderUpdate }) => {
                     </TableCell>
                     <TableCell align="right">
                       {outsider.assigned_student_id ? (
-                        <Chip
-                          label="Assigned"
-                          color="success"
-                          size="small"
-                          icon={<CheckCircleIcon />}
-                        />
+                        <Chip label="Assigned" color="success" size="small" icon={<CheckCircleIcon />} />
                       ) : assigningOutsiderId === outsider.id ? (
                         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                           <TextField
@@ -368,26 +342,29 @@ const QuizSPHost = () => {
   const [rosterLoading, setRosterLoading] = useState(false);
 
   // Fetch session and participants
-  const fetchData = useCallback(async (showLoading = true) => {
-    try {
-      if (showLoading) setIsLoading(true);
-      else setIsRefreshing(true);
+  const fetchData = useCallback(
+    async (showLoading = true) => {
+      try {
+        if (showLoading) setIsLoading(true);
+        else setIsRefreshing(true);
 
-      const [sessionData, participantsData] = await Promise.all([
-        quizSPService.getSPSession(sessionId),
-        quizSPService.getSPParticipants(sessionId)
-      ]);
+        const [sessionData, participantsData] = await Promise.all([
+          quizSPService.getSPSession(sessionId),
+          quizSPService.getSPParticipants(sessionId),
+        ]);
 
-      setSession(sessionData);
-      setParticipants(participantsData);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      showSnackbar(error.message, 'error');
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  }, [sessionId, showSnackbar]);
+        setSession(sessionData);
+        setParticipants(participantsData);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        showSnackbar(error.message, 'error');
+      } finally {
+        setIsLoading(false);
+        setIsRefreshing(false);
+      }
+    },
+    [sessionId, showSnackbar]
+  );
 
   const fetchRosterData = useCallback(async () => {
     if (!(session?.class_id || session?.has_roster)) {
@@ -400,7 +377,7 @@ const QuizSPHost = () => {
       setRosterLoading(true);
       const [rosterData, outsidersData] = await Promise.all([
         quizSPService.getSPSessionRoster(sessionId).catch(() => null),
-        quizSPService.getSPSessionOutsiders(sessionId).catch(() => ({ records: [] }))
+        quizSPService.getSPSessionOutsiders(sessionId).catch(() => ({ records: [] })),
       ]);
 
       setRoster(rosterData);
@@ -420,7 +397,7 @@ const QuizSPHost = () => {
     if (session && (session.class_id || session.has_roster)) {
       fetchRosterData();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
 
   // Copy access code
@@ -438,7 +415,9 @@ const QuizSPHost = () => {
 
   // End session
   const handleEndSession = async () => {
-    if (!window.confirm('Are you sure you want to end this session? Students will no longer be able to submit answers.')) {
+    if (
+      !window.confirm('Are you sure you want to end this session? Students will no longer be able to submit answers.')
+    ) {
       return;
     }
 
@@ -490,7 +469,7 @@ const QuizSPHost = () => {
           p: 4,
           mb: 3,
 
-          color: 'text.primary'
+          color: 'text.primary',
         }}
       >
         <Typography component="h1" variant="h1" sx={{ mb: 3, fontWeight: 600, textAlign: 'center' }}>
@@ -514,8 +493,9 @@ const QuizSPHost = () => {
                   borderRadius: 2,
                   px: 3,
                   py: 1.5,
-                  border: '1px solid', borderColor: 'divider',
-                  mb: 3
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  mb: 3,
                 }}
               >
                 <Typography
@@ -526,7 +506,7 @@ const QuizSPHost = () => {
                     lineHeight: 1.2,
                     fontVariantNumeric: 'tabular-nums',
                     letterSpacing: { xs: 2, sm: 6 },
-                    fontFamily: 'var(--font-mono)'
+                    fontFamily: 'var(--font-mono)',
                   }}
                 >
                   {session.access_code}
@@ -552,7 +532,7 @@ const QuizSPHost = () => {
                     borderRadius: 1,
                     px: 2,
                     py: 1,
-                    maxWidth: '100%'
+                    maxWidth: '100%',
                   }}
                 >
                   <Typography
@@ -560,7 +540,7 @@ const QuizSPHost = () => {
                     sx={{
                       fontFamily: 'var(--font-mono)',
                       fontSize: '0.9rem',
-                      wordBreak: 'break-all'
+                      wordBreak: 'break-all',
                     }}
                   >
                     {joinUrl}
@@ -587,15 +567,10 @@ const QuizSPHost = () => {
                   p: 2,
                   backgroundColor: 'white',
                   borderRadius: 2,
-                  boxShadow: 3
+                  boxShadow: 3,
                 }}
               >
-                <QRCodeSVG
-                  value={joinUrl}
-                  size={180}
-                  level="H"
-                  includeMargin={true}
-                />
+                <QRCodeSVG value={joinUrl} size={180} level="H" includeMargin={true} />
               </Box>
               <Typography variant="caption" sx={{ display: 'block', mt: 1, opacity: 0.9 }}>
                 Students can scan this QR code to join
@@ -678,7 +653,7 @@ const QuizSPHost = () => {
           startIcon={<RefreshIcon />}
           onClick={async () => {
             await fetchData(false);
-            if ((session?.class_id || session?.has_roster)) {
+            if (session?.class_id || session?.has_roster) {
               await fetchRosterData();
             }
           }}
@@ -697,12 +672,7 @@ const QuizSPHost = () => {
         </Button>
 
         {session.status === 'active' && (
-          <Button
-            variant="outlined"
-            color="error"
-            startIcon={<StopIcon />}
-            onClick={handleEndSession}
-          >
+          <Button variant="outlined" color="error" startIcon={<StopIcon />} onClick={handleEndSession}>
             End Session
           </Button>
         )}
@@ -710,11 +680,7 @@ const QuizSPHost = () => {
 
       <RosterPanel roster={roster} session={session} isLoading={rosterLoading} />
 
-      <OutsiderPanel
-        outsiders={outsiders}
-        sessionId={sessionId}
-        onOutsiderUpdate={fetchRosterData}
-      />
+      <OutsiderPanel outsiders={outsiders} sessionId={sessionId} onOutsiderUpdate={fetchRosterData} />
 
       {/* Participants Table */}
       <Paper>
@@ -727,9 +693,7 @@ const QuizSPHost = () => {
         {participants.length === 0 ? (
           <Box sx={{ p: 4, textAlign: 'center' }}>
             <HourglassEmptyIcon sx={{ fontSize: 60, color: 'text.disabled', mb: 2 }} />
-            <Typography color="text.secondary">
-              No students have joined yet
-            </Typography>
+            <Typography color="text.secondary">No students have joined yet</Typography>
             <Typography variant="caption" color="text.secondary">
               Share the access code with your students
             </Typography>
@@ -802,7 +766,6 @@ const QuizSPHost = () => {
           </ComparisonTableContainer>
         )}
       </Paper>
-
     </Container>
   );
 };

@@ -1,6 +1,7 @@
-// /ata-frontend/src/services/chatService.js
+// Wraps /api/chatbot for the assistant: list, create, open and delete chats, find them by entity, download a report.
+// Area: chat
 
-import apiClient from './api';
+import apiClient, { apiError } from './api';
 
 const chatService = {
   /**
@@ -12,8 +13,8 @@ const chatService = {
       const response = await apiClient.get('/api/chatbot/sessions');
       return response.data;
     } catch (error) {
-      console.error("Error fetching chat sessions:", error);
-      throw new Error(error.response?.data?.detail || "Failed to load chat history.");
+      console.error('Error fetching chat sessions:', error);
+      throw apiError(error, 'Failed to load chat history.');
     }
   },
 
@@ -43,33 +44,10 @@ const chatService = {
       const response = await apiClient.post('/api/chatbot/sessions', payload);
       return response.data; // Expected to be { sessionId: "..." }
     } catch (error) {
-      console.error("Error creating new chat session:", error);
-      throw new Error(error.response?.data?.detail || "Failed to start new chat.");
+      console.error('Error creating new chat session:', error);
+      throw apiError(error, 'Failed to start new chat.');
     }
   },
-
-  /**
-   * Uploads a file for use in the chat.
-   * @param {File} fileObject - The file to upload.
-   * @returns {Promise<object>} A promise that resolves to an object containing the fileId.
-   */
-  uploadFile: async (fileObject) => {
-    const formData = new FormData();
-    formData.append('file', fileObject);
-
-    try {
-      const response = await apiClient.post('/api/chatbot/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      return response.data; // Expected to be { file_id: "..." }
-    } catch (error) {
-      console.error("Error uploading file:", error);
-      throw new Error(error.response?.data?.detail || "Failed to upload file.");
-    }
-  },
-
 
   // Add inside the chatService object
   deleteChatSession: async (sessionId) => {
@@ -77,41 +55,41 @@ const chatService = {
       // A DELETE request returns no content on success (204)
       await apiClient.delete(`/api/chatbot/sessions/${sessionId}`);
     } catch (error) {
-      console.error("Error deleting chat session:", error);
-      throw new Error(error.response?.data?.detail || "Failed to delete chat.");
+      console.error('Error deleting chat session:', error);
+      throw apiError(error, 'Failed to delete chat.');
     }
   },
-
 
   getChatSessionDetails: async (sessionId) => {
     try {
       const response = await apiClient.get(`/api/chatbot/sessions/${sessionId}`);
       return response.data; // Expected to be the full ChatSessionDetail object
     } catch (error) {
-      console.error("Error fetching chat session details:", error);
-      throw new Error(error.response?.data?.detail || "Failed to load chat session.");
+      console.error('Error fetching chat session details:', error);
+      throw apiError(error, 'Failed to load chat session.');
     }
   },
 
+  // Past chats about one class, student or quiz, for the floating assistant's history menu.
   getChatSessionsByEntity: async (entityType, entityId) => {
     try {
       const response = await apiClient.get('/api/chatbot/sessions/by-entity', {
-        params: { entity_type: entityType, entity_id: entityId }
+        params: { entity_type: entityType, entity_id: entityId },
       });
       return response.data;
     } catch (error) {
-      console.error("Error fetching entity chat sessions:", error);
-      throw new Error(error.response?.data?.detail || "Failed to load chat history.");
+      console.error('Error fetching entity chat sessions:', error);
+      throw apiError(error, 'Failed to load chat history.');
     }
   },
 
   downloadChatReport: async (sessionId, fileName = null) => {
     try {
       const response = await apiClient.get(`/api/chatbot/sessions/${sessionId}/export-report`, {
-        responseType: 'blob'
+        responseType: 'blob',
       });
       const blob = new Blob([response.data], {
-        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -122,14 +100,10 @@ const chatService = {
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Error downloading chat report:", error);
-      throw new Error(error.response?.data?.detail || "Failed to download report.");
+      console.error('Error downloading chat report:', error);
+      throw apiError(error, 'Failed to download report.');
     }
   },
 };
-
-
-
-
 
 export default chatService;

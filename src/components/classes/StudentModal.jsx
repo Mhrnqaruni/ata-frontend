@@ -1,10 +1,22 @@
-// /src/components/classes/StudentModal.jsx
+// A dialog to add a student to a class or edit one: full name and student ID.
+// Area: academics
 
 // --- Core React Imports ---
 import React, { useState, useEffect } from 'react';
 
 // --- MUI Component Imports ---
-import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, Stack, IconButton, CircularProgress, Alert } from '@mui/material';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Button,
+  Stack,
+  IconButton,
+  CircularProgress,
+  Alert,
+} from '@mui/material';
 
 // --- Icon Imports ---
 import CloseOutlined from '@mui/icons-material/CloseOutlined';
@@ -32,7 +44,8 @@ const StudentModal = ({ open, onClose, onSubmit, mode, initialData, isLoading, e
   // It correctly populates the form when opening in 'edit' mode, and clears
   // it for 'add' mode, ensuring the form is always in the correct state.
   useEffect(() => {
-    if (open) { // Only run this logic when the modal is opened.
+    if (open) {
+      // Only run this logic when the modal is opened.
       if (mode === 'edit' && initialData) {
         setFormData({ name: initialData.name, studentId: initialData.studentId });
       } else {
@@ -44,12 +57,12 @@ const StudentModal = ({ open, onClose, onSubmit, mode, initialData, isLoading, e
   // --- Event Handlers ---
   const handleChange = (event) => {
     const { name, value } = event.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (event) => {
     event.preventDefault(); // Prevent default browser form submission.
-    onSubmit(formData);    // Delegate the submission logic to the parent component.
+    onSubmit(formData); // Delegate the submission logic to the parent component.
   };
 
   // --- Real-time Client-Side Validation ---
@@ -63,14 +76,14 @@ const StudentModal = ({ open, onClose, onSubmit, mode, initialData, isLoading, e
           <CloseOutlined />
         </IconButton>
       </DialogTitle>
-      
+
       {/* The form tag enables submission via the 'Enter' key. */}
       <form onSubmit={handleSubmit}>
         <DialogContent>
           <Stack spacing={3} sx={{ pt: 1 }}>
             {/* Display any submission error passed down from the parent. */}
             {error && <Alert severity="error">{error}</Alert>}
-            
+
             <TextField
               autoFocus // Automatically focus the first field when the modal opens.
               required
@@ -97,7 +110,9 @@ const StudentModal = ({ open, onClose, onSubmit, mode, initialData, isLoading, e
           </Stack>
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
-          <Button onClick={onClose} variant="outlined" disabled={isLoading}>Cancel</Button>
+          <Button onClick={onClose} variant="outlined" disabled={isLoading}>
+            Cancel
+          </Button>
           <Button
             type="submit"
             variant="contained"

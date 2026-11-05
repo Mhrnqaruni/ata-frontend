@@ -1,3 +1,6 @@
+/* Styles the shimmering loading skeleton shown while the parent space opens. */
+/* Area: family */
+
 /* Loading skeleton for the parent space. Self-contained: it can render before family.css or the parent tokens exist. */
 .fam-load { --l-ground: #f6f7fa; --l-card: #ffffff; --l-bone: #e9ecf3; --l-shine: #f6f7fb; --l-edge: rgb(16 24 40 / .08); --l-ink: #4a5468;
   position: fixed; inset: 0; z-index: 1; display: flex; flex-direction: column; background: var(--l-ground); font-family: "Figtree", "Geist", system-ui, sans-serif; }

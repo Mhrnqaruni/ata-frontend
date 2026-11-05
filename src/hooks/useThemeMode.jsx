@@ -1,4 +1,6 @@
-// /src/hooks/useThemeMode.jsx
+// Holds the light or dark mode (dark by default, remembered in localStorage) and gives components a toggle.
+// It also sets data-theme-mode on the page root, which the app stylesheet keys its colours off.
+// Area: platform
 
 // --- Core React Imports ---
 import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
@@ -16,8 +18,11 @@ export const ThemeModeProvider = ({ children }) => {
   // Initialize the state by trying to read the value from localStorage.
   // Default to dark while preserving an explicit saved choice.
   const [mode, setMode] = useState(() => {
-    try { return localStorage.getItem('themeMode') === 'light' ? 'light' : 'dark'; }
-    catch { return 'dark'; }
+    try {
+      return localStorage.getItem('themeMode') === 'light' ? 'light' : 'dark';
+    } catch {
+      return 'dark';
+    }
   });
 
   // --- Side Effect for Persistence ---
@@ -25,7 +30,11 @@ export const ThemeModeProvider = ({ children }) => {
   // It saves the new mode to localStorage, so the choice is remembered
   // across browser refreshes and sessions.
   useEffect(() => {
-    try { localStorage.setItem('themeMode', mode); } catch { /* Keep the theme usable without storage. */ }
+    try {
+      localStorage.setItem('themeMode', mode);
+    } catch {
+      /* Keep the theme usable without storage. */
+    }
     // Keep the root in step with the choice (index.html sets it once before React loads): the app's
     // stylesheet keys its ground and glass tokens off this attribute.
     const root = document.documentElement;
@@ -47,11 +56,7 @@ export const ThemeModeProvider = ({ children }) => {
   const value = useMemo(() => ({ mode, toggleThemeMode }), [mode]);
 
   // Provide the memoized value to all children of this component.
-  return (
-    <ThemeModeContext.Provider value={value}>
-      {children}
-    </ThemeModeContext.Provider>
-  );
+  return <ThemeModeContext.Provider value={value}>{children}</ThemeModeContext.Provider>;
 };
 
 /**

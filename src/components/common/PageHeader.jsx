@@ -1,22 +1,36 @@
-// /src/components/common/PageHeader.jsx
+// The title row at the top of a page: back button, breadcrumbs, title, subtitle and action buttons.
+// It sticks to the top and condenses into a glass bar once the page has scrolled.
+// Area: platform
+
 // The page's title row: breadcrumbs, the title, an optional line under it and up to two actions.
 // It sticks to the top as the page scrolls and condenses into a glass bar once the page has moved
 // (a 1px sentinel above it is watched, so nothing is measured while scrolling).
 
-import React, { useEffect, useRef, useState } from "react";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
-import { Breadcrumbs, IconButton, Link, Tooltip, Typography } from "@mui/material";
-import ArrowBackRounded from "@mui/icons-material/ArrowBackRounded";
+import React, { useEffect, useRef, useState } from 'react';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Breadcrumbs, IconButton, Link, Tooltip, Typography } from '@mui/material';
+import ArrowBackRounded from '@mui/icons-material/ArrowBackRounded';
 
-export default function PageHeader({ title, subtitle, breadcrumbs, actions, backTo, backLabel = "Back", titleAdornment, leading }) {
+export default function PageHeader({
+  title,
+  subtitle,
+  breadcrumbs,
+  actions,
+  backTo,
+  backLabel = 'Back',
+  titleAdornment,
+  leading,
+}) {
   const sentinel = useRef(null);
   const [condensed, setCondensed] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     const node = sentinel.current;
-    if (!node || typeof IntersectionObserver === "undefined") return undefined;
-    const io = new IntersectionObserver(([entry]) => setCondensed(!entry.isIntersecting), { rootMargin: "-12px 0px 0px 0px" });
+    if (!node || typeof IntersectionObserver === 'undefined') return undefined;
+    const io = new IntersectionObserver(([entry]) => setCondensed(!entry.isIntersecting), {
+      rootMargin: '-12px 0px 0px 0px',
+    });
     io.observe(node);
     return () => io.disconnect();
   }, []);
@@ -24,7 +38,7 @@ export default function PageHeader({ title, subtitle, breadcrumbs, actions, back
   return (
     <>
       <div aria-hidden="true" className="mst-page-sentinel" ref={sentinel} />
-      <header className="mst-page-head" data-condensed={condensed ? "true" : "false"} data-enter="">
+      <header className="mst-page-head" data-condensed={condensed ? 'true' : 'false'} data-enter="">
         {backTo ? (
           <Tooltip title={backLabel}>
             <IconButton aria-label={backLabel} className="mst-page-back" onClick={() => navigate(backTo)}>
@@ -42,10 +56,16 @@ export default function PageHeader({ title, subtitle, breadcrumbs, actions, back
                     {crumb.label}
                   </Link>
                 ) : (
-                  <Typography aria-current={i === breadcrumbs.length - 1 ? "page" : undefined} color="text.secondary" component="span" fontSize={14} key={crumb.label}>
+                  <Typography
+                    aria-current={i === breadcrumbs.length - 1 ? 'page' : undefined}
+                    color="text.secondary"
+                    component="span"
+                    fontSize={14}
+                    key={crumb.label}
+                  >
                     {crumb.label}
                   </Typography>
-                ),
+                )
               )}
             </Breadcrumbs>
           ) : null}

@@ -1,3 +1,6 @@
+/* Styles for the account menu in the teacher and family spaces: name, mode switch, appearance, sign out. */
+/* Area: platform */
+
 /* The account menu (both spaces): who is signed in, the mode switch with a hint, appearance with a tick, sign out. */
 .mst-account-menu .MuiMenu-paper { min-width: 268px; }
 .mst-account-who { display: flex; align-items: center; gap: 10px; padding: 8px 14px 10px; }

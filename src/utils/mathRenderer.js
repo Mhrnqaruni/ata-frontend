@@ -1,4 +1,6 @@
-// /src/utils/mathRenderer.js
+// Maths helpers: split text with $...$ or $$...$$ formulas into plain parts and KaTeX-rendered parts.
+// Also wraps bare equations in $ and converts older mathjs-style formulas to LaTeX.
+// Area: platform
 
 import katex from 'katex';
 import { create, all } from 'mathjs';
@@ -12,7 +14,7 @@ const trigRegex = /\b(arcsin|arccos|arctan|sin|cos|tan|log|ln)\b/g;
  */
 function toLatex(expr) {
   const node = math.parse(expr);
-  return node.toTex({ parenthesis: "keep" });
+  return node.toTex({ parenthesis: 'keep' });
 }
 
 function convertSqrtGroups(expr) {
@@ -102,12 +104,14 @@ export function normalizeMathText(text) {
   return signal && !/[A-Za-z]{3,}/.test(stripped) ? '$' + candidate.trim() + '$' : text;
 }
 
+// Splits text into text, math (KaTeX HTML) and error parts in order; an error part keeps the formula's source.
 export function parseTextWithMath(text) {
   const source = normalizeMathText(typeof text === 'string' ? text : text == null ? '' : JSON.stringify(text));
   const parts = [];
   let lastIndex = 0;
   // Preserve escaped currency; also accept existing \(...\)/\[...\] content.
-  const regex = /(?<!\\)\$\$([\s\S]+?)\$\$|(?<![\\$])\$(?!\$)([^$\n]+?)\$(?![\d$])|\\\(([\s\S]+?)\\\)|\\\[([\s\S]+?)\\\]/g;
+  const regex =
+    /(?<!\\)\$\$([\s\S]+?)\$\$|(?<![\\$])\$(?!\$)([^$\n]+?)\$(?![\d$])|\\\(([\s\S]+?)\\\)|\\\[([\s\S]+?)\\\]/g;
   for (const match of source.matchAll(regex)) {
     if (match.index > lastIndex) parts.push({ type: 'text', content: source.slice(lastIndex, match.index) });
     const content = match[1] ?? match[2] ?? match[3] ?? match[4];
@@ -117,12 +121,25 @@ export function parseTextWithMath(text) {
       let tex = content.trim();
       if (!tex.includes('\\')) {
         // Legacy quizzes used mathjs syntax. Do not reinterpret genuine LaTeX.
-        try { tex = toLatex(tex); } catch { tex = convertSimpleMathFallback(tex); }
+        try {
+          tex = toLatex(tex);
+        } catch {
+          tex = convertSimpleMathFallback(tex);
+        }
       }
-      parts.push({ type: 'math', isDisplay, content: katex.renderToString(tex, {
-        throwOnError: true, trust: false, strict: 'warn', displayMode: isDisplay,
-        output: 'htmlAndMathml', maxExpand: 1000, maxSize: 20,
-      }) });
+      parts.push({
+        type: 'math',
+        isDisplay,
+        content: katex.renderToString(tex, {
+          throwOnError: true,
+          trust: false,
+          strict: 'warn',
+          displayMode: isDisplay,
+          output: 'htmlAndMathml',
+          maxExpand: 1000,
+          maxSize: 20,
+        }),
+      });
     } catch (error) {
       // Keep the source visible for correction; never silently substitute another formula.
       parts.push({ type: 'error', content, error: String(error.message || error) });

@@ -1,6 +1,10 @@
-import FamilyEvidence from "./FamilyEvidence";
-import { activityBasis, materialName } from "./familyPresentation";
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+// One child's notebook in parent mode: the chat beside a panel of materials and past activities.
+// Also holds the dialogs that add materials and make quizzes, flashcards, mind maps and stories.
+// Area: family
+
+import FamilyEvidence from './FamilyEvidence';
+import { activityBasis, materialName } from './familyPresentation';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   Alert,
   Badge,
@@ -19,53 +23,47 @@ import {
   Tooltip,
   Typography,
   useMediaQuery,
-} from "@mui/material";
-import CloseRounded from "@mui/icons-material/CloseRounded";
-import AddRounded from "@mui/icons-material/AddRounded";
-import RemoveRounded from "@mui/icons-material/RemoveRounded";
-import UploadFileRounded from "@mui/icons-material/UploadFileRounded";
-import MenuBookRounded from "@mui/icons-material/MenuBookRounded";
-import QuizRounded from "@mui/icons-material/QuizRounded";
-import StyleRounded from "@mui/icons-material/StyleRounded";
-import AccountTreeRounded from "@mui/icons-material/AccountTreeRounded";
-import AutoStoriesRounded from "@mui/icons-material/AutoStoriesRounded";
-import PhotoCameraRounded from "@mui/icons-material/PhotoCameraRounded";
-import ChatRounded from "@mui/icons-material/ChatRounded";
-import AutoAwesomeRounded from "@mui/icons-material/AutoAwesomeRounded";
-import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
-import ExpandMoreRounded from "@mui/icons-material/ExpandMoreRounded";
-import CheckRounded from "@mui/icons-material/CheckRounded";
-import ThumbsUpDownRounded from "@mui/icons-material/ThumbsUpDownRounded";
-import ListRounded from "@mui/icons-material/ListRounded";
-import { useQuery, useQueries } from "@tanstack/react-query";
-import { useAuth } from "../../hooks/useAuth";
-import { queryClient, sessionGeneration } from "../../services/queryCache";
-import api from "../../services/api";
-import useFamilyChats from "./useFamilyChats";
-import FamilyConversation from "./FamilyConversation";
-import FamilyResult from "./FamilyResult";
-import FamilySource from "./FamilySource";
-import FamilyLoading from "./FamilyLoading";
-import { StatusChip, TopicCard, kindIcon } from "./FamilyParts";
-import {
-  isRunning as active,
-  kindWords,
-  levelWords,
-  statusOf,
-  ukDate,
-} from "./familyWords";
+} from '@mui/material';
+import CloseRounded from '@mui/icons-material/CloseRounded';
+import AddRounded from '@mui/icons-material/AddRounded';
+import RemoveRounded from '@mui/icons-material/RemoveRounded';
+import UploadFileRounded from '@mui/icons-material/UploadFileRounded';
+import MenuBookRounded from '@mui/icons-material/MenuBookRounded';
+import QuizRounded from '@mui/icons-material/QuizRounded';
+import StyleRounded from '@mui/icons-material/StyleRounded';
+import AccountTreeRounded from '@mui/icons-material/AccountTreeRounded';
+import AutoStoriesRounded from '@mui/icons-material/AutoStoriesRounded';
+import PhotoCameraRounded from '@mui/icons-material/PhotoCameraRounded';
+import ChatRounded from '@mui/icons-material/ChatRounded';
+import AutoAwesomeRounded from '@mui/icons-material/AutoAwesomeRounded';
+import ChevronRightRounded from '@mui/icons-material/ChevronRightRounded';
+import ExpandMoreRounded from '@mui/icons-material/ExpandMoreRounded';
+import CheckRounded from '@mui/icons-material/CheckRounded';
+import ThumbsUpDownRounded from '@mui/icons-material/ThumbsUpDownRounded';
+import ListRounded from '@mui/icons-material/ListRounded';
+import { useQuery, useQueries } from '@tanstack/react-query';
+import { useAuth } from '../../hooks/useAuth';
+import { queryClient, sessionGeneration } from '../../services/queryCache';
+import api from '../../services/api';
+import useFamilyChats from './useFamilyChats';
+import FamilyConversation from './FamilyConversation';
+import FamilyResult from './FamilyResult';
+import FamilySource from './FamilySource';
+import FamilyLoading from './FamilyLoading';
+import { StatusChip, TopicCard, kindIcon } from './FamilyParts';
+import { isRunning as active, kindWords, levelWords, statusOf, ukDate } from './familyWords';
 
 const makeTiles = [
-  ["quiz", "Quiz", "Questions to answer"],
-  ["flashcards", "Flashcards", "Cards to flip"],
-  ["mindmap", "Mind map", "See the big picture"],
-  ["story", "Story", "Learn through a story"],
+  ['quiz', 'Quiz', 'Questions to answer'],
+  ['flashcards', 'Flashcards', 'Cards to flip'],
+  ['mindmap', 'Mind map', 'See the big picture'],
+  ['story', 'Story', 'Learn through a story'],
 ];
 const makeTitle = {
-  quiz: "a quiz",
-  flashcards: "flashcards",
-  mindmap: "a mind map",
-  story: "a story",
+  quiz: 'a quiz',
+  flashcards: 'flashcards',
+  mindmap: 'a mind map',
+  story: 'a story',
 };
 
 /** A radio group drawn as one track with a sliding thumb (transform only). */
@@ -73,9 +71,7 @@ function Segmented({ label, options, value, onChange, id }) {
   const index = options.findIndex(([v]) => v === value);
   const refs = useRef([]);
   function onKey(e, i) {
-    const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[
-      e.key
-    ];
+    const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
     if (!step) return;
     e.preventDefault();
     const next = (i + step + options.length) % options.length;
@@ -87,17 +83,8 @@ function Segmented({ label, options, value, onChange, id }) {
       <Typography component="div" className="fam-label" id={id}>
         {label}
       </Typography>
-      <div
-        className="fam-seg"
-        role="radiogroup"
-        aria-labelledby={id}
-        style={{ "--n": options.length, "--i": index }}
-      >
-        <span
-          className="fam-seg-thumb"
-          aria-hidden
-          style={{ visibility: index < 0 ? "hidden" : undefined }}
-        />
+      <div className="fam-seg" role="radiogroup" aria-labelledby={id} style={{ '--n': options.length, '--i': index }}>
+        <span className="fam-seg-thumb" aria-hidden style={{ visibility: index < 0 ? 'hidden' : undefined }} />
         {options.map(([v, text], i) => (
           <button
             key={v}
@@ -141,9 +128,7 @@ function ChoiceCards({ label, id, options, value, onChange }) {
             <Icon className="fam-choice-icon" aria-hidden />
             <span className="fam-choice-title">{title}</span>
             <span className="fam-choice-hint">{hint}</span>
-            {v === value && (
-              <CheckRounded className="fam-choice-tick" aria-hidden />
-            )}
+            {v === value && <CheckRounded className="fam-choice-tick" aria-hidden />}
           </button>
         ))}
       </div>
@@ -154,46 +139,43 @@ function ChoiceCards({ label, id, options, value, onChange }) {
 export default function FamilyLearning({ child }) {
   const { user } = useAuth();
   const generation = sessionGeneration();
-  const key = ["family", generation, user.id, child.id, "home"];
+  const key = ['family', generation, user.id, child.id, 'home'];
   const base = `/api/family/children/${child.id}`;
   const home = useQuery({
     queryKey: key,
     queryFn: async ({ signal }) => (await api.get(base, { signal })).data,
     refetchInterval: (query) =>
       query.state.data?.activities.some(active) ||
-      query.state.data?.materials.some((item) =>
-        ["queued", "extracting"].includes(item.indexing?.status),
-      )
+      query.state.data?.materials.some((item) => ['queued', 'extracting'].includes(item.indexing?.status))
         ? 3000
         : false,
   });
   const catalogue = useQuery({
     enabled: false,
-    queryKey: ["family", generation, user.id, "topics"],
-    queryFn: async ({ signal }) =>
-      (await api.get("/api/family/topics", { signal })).data,
+    queryKey: ['family', generation, user.id, 'topics'],
+    queryFn: async ({ signal }) => (await api.get('/api/family/topics', { signal })).data,
   });
-  const [sourceId, setSourceId] = useState("");
+  const [sourceId, setSourceId] = useState('');
   const chats = useFamilyChats(child);
   const selectedSources = chats.data?.materialIds || [];
   const setSelectedSources = (ids) => chats.setSources(ids);
-  const [basis, setBasis] = useState("topic"),
-    [topicText, setTopicText] = useState("");
-  const [cardStyle, setCardStyle] = useState("question_answer"),
+  const [basis, setBasis] = useState('topic'),
+    [topicText, setTopicText] = useState('');
+  const [cardStyle, setCardStyle] = useState('question_answer'),
     [mapDepth, setMapDepth] = useState(3),
     [mapBreadth, setMapBreadth] = useState(4);
-  const [storyLength, setStoryLength] = useState("short"),
-    [storyTheme, setStoryTheme] = useState(""),
-    [storyTone, setStoryTone] = useState("calm");
+  const [storyLength, setStoryLength] = useState('short'),
+    [storyTheme, setStoryTheme] = useState(''),
+    [storyTone, setStoryTone] = useState('calm');
   const [questionSuggestion, setQuestionSuggestion] = useState(null);
   const [viewerOpen, setViewerOpen] = useState(false);
-  const desktop = useMediaQuery("(min-width:1000px)");
-  const phone = useMediaQuery("(max-width:599px)");
-  const [pane, setPane] = useState("chat");
+  const desktop = useMediaQuery('(min-width:1000px)');
+  const phone = useMediaQuery('(max-width:599px)');
+  const [pane, setPane] = useState('chat');
   const [panelTab, setPanelTab] = useState(null);
   const [panelClosed, setPanelClosed] = useState(() => {
     try {
-      return localStorage.getItem("mst.family.panelCollapsed") === "true";
+      return localStorage.getItem('mst.family.panelCollapsed') === 'true';
     } catch {
       return false;
     }
@@ -201,29 +183,21 @@ export default function FamilyLearning({ child }) {
   const collapsePanel = (value) => {
     setPanelClosed(value);
     try {
-      localStorage.setItem("mst.family.panelCollapsed", String(value));
+      localStorage.setItem('mst.family.panelCollapsed', String(value));
     } catch {
       /* Layout still works without persistence. */
     }
   };
   const [allDone, setAllDone] = useState(false);
   const [actionSources, setActionSources] = useState([]);
-  const [title, setTitle] = useState(""),
-    [tag, setTag] = useState(""),
-    [difficulty, setDifficulty] = useState("Standard"),
-    [quizType, setQuizType] = useState("mcq");
+  const [title, setTitle] = useState(''),
+    [tag, setTag] = useState(''),
+    [difficulty, setDifficulty] = useState('Standard'),
+    [quizType, setQuizType] = useState('mcq');
   const [moreOptions, setMoreOptions] = useState(false);
   const [countOther, setCountOther] = useState(false);
-  const selectionKey = [
-    "family",
-    generation,
-    user.id,
-    child.id,
-    "selectedActivity",
-  ];
-  const [activityId, setActivityIdState] = useState(() =>
-    queryClient.getQueryData(selectionKey),
-  );
+  const selectionKey = ['family', generation, user.id, child.id, 'selectedActivity'];
+  const [activityId, setActivityIdState] = useState(() => queryClient.getQueryData(selectionKey));
   const setActivityId = (id) => {
     setActivityIdState(id);
     queryClient.setQueryData(selectionKey, id);
@@ -234,13 +208,13 @@ export default function FamilyLearning({ child }) {
   const [actionKind, setActionKind] = useState(null);
   const [confirmNew, setConfirmNew] = useState(null);
   const [stopAsk, setStopAsk] = useState(false);
-  const [viewerProgress, setViewerProgress] = useState("");
+  const [viewerProgress, setViewerProgress] = useState('');
   const [viewerAction, setViewerAction] = useState(null);
-  const [count, setCount] = useState("5");
-  const [focus, setFocus] = useState("");
+  const [count, setCount] = useState('5');
+  const [focus, setFocus] = useState('');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const [recordError, setRecordError] = useState("");
+  const [error, setError] = useState('');
+  const [recordError, setRecordError] = useState('');
   const [pending, setPending] = useState(null);
   const alive = useRef(true);
   const topicsRef = useRef(null);
@@ -258,68 +232,42 @@ export default function FamilyLearning({ child }) {
     queries: selectedSources
       .filter((id) => !recentSources.some((source) => source.id === id))
       .map((id) => ({
-        queryKey: ["family", generation, user.id, child.id, "material", id],
-        queryFn: async ({ signal }) =>
-          (await api.get(`${base}/materials/${id}`, { signal })).data,
+        queryKey: ['family', generation, user.id, child.id, 'material', id],
+        queryFn: async ({ signal }) => (await api.get(`${base}/materials/${id}`, { signal })).data,
       })),
   });
-  const sources = [
-    ...recentSources,
-    ...linkedSources.map((query) => query.data).filter(Boolean),
-  ].map((item) => ({ ...item, title: materialName(item) }));
+  const sources = [...recentSources, ...linkedSources.map((query) => query.data).filter(Boolean)].map((item) => ({
+    ...item,
+    title: materialName(item),
+  }));
   const history = home.data?.activities || [];
   const attempts = home.data?.attempts || [];
   const attemptFor = (row) => attempts.find((a) => a.activityId === row.id);
-  const selectedActivityId =
-    activityId === undefined ? history[0]?.id : activityId;
-  const detailKey = [
-    "family",
-    generation,
-    user.id,
-    child.id,
-    "activity",
-    selectedActivityId,
-  ];
+  const selectedActivityId = activityId === undefined ? history[0]?.id : activityId;
+  const detailKey = ['family', generation, user.id, child.id, 'activity', selectedActivityId];
   const detail = useQuery({
     queryKey: detailKey,
     enabled: Boolean(selectedActivityId),
-    queryFn: async ({ signal }) =>
-      (await api.get(`${base}/activities/${selectedActivityId}`, { signal }))
-        .data,
+    queryFn: async ({ signal }) => (await api.get(`${base}/activities/${selectedActivityId}`, { signal })).data,
     refetchInterval: (query) => (active(query.state.data) ? 2500 : false),
   });
   const activity = detail.data;
-  const draftKeyFor = (id) => [
-    "family",
-    generation,
-    user.id,
-    child.id,
-    "quizDraft",
-    id,
-  ];
+  const draftKeyFor = (id) => ['family', generation, user.id, child.id, 'quizDraft', id];
   useEffect(() => {
     if (activity) {
       setCount(String(activity.count));
-      setFocus(activity.focus || "");
-      setRecordError("");
+      setFocus(activity.focus || '');
+      setRecordError('');
     }
   }, [activity?.id]);
   const selectedIds = selectedSources || []; // A missing recent-list entry is not deselection.
   const longBook =
-    basis === "materials" &&
+    basis === 'materials' &&
     sources
       .filter((item) => actionSources.includes(item.id))
-      .reduce(
-        (sum, item) =>
-          sum + item.files.reduce((pages, file) => pages + file.pages, 0),
-        0,
-      ) > 20;
-  const source =
-    sources.find((item) => item.id === sourceId) ||
-    sources.find((item) => item.id === selectedIds[0]);
-  const activitySource = sources.find(
-    (item) => item.id === activity?.materialId,
-  );
+      .reduce((sum, item) => sum + item.files.reduce((pages, file) => pages + file.pages, 0), 0) > 20;
+  const source = sources.find((item) => item.id === sourceId) || sources.find((item) => item.id === selectedIds[0]);
+  const activitySource = sources.find((item) => item.id === activity?.materialId);
   function openActivity(row, { retry = false } = {}) {
     if (retry)
       queryClient.setQueryData(draftKeyFor(row.id), {
@@ -334,68 +282,59 @@ export default function FamilyLearning({ child }) {
     setViewerOpen(true);
   }
   function closeViewer(force = false) {
-    const draft =
-      activity && queryClient.getQueryData(draftKeyFor(activity.id));
-    if (
-      !force &&
-      activity?.kind === "quiz" &&
-      draft?.practising &&
-      Object.keys(draft.answers || {}).length > 0
-    ) {
+    const draft = activity && queryClient.getQueryData(draftKeyFor(activity.id));
+    if (!force && activity?.kind === 'quiz' && draft?.practising && Object.keys(draft.answers || {}).length > 0) {
       setStopAsk(true);
       return;
     }
     setStopAsk(false);
     setViewerOpen(false);
-    setViewerProgress("");
+    setViewerProgress('');
   }
   function openCreate(kind) {
     setBasis(
       activityBasis(
         selectedIds,
-        chats.data?.turns.some((t) => t.activity.status === "completed"),
-      ),
+        chats.data?.turns.some((t) => t.activity.status === 'completed')
+      )
     );
-    setTopicText("");
+    setTopicText('');
     setActionSources([...selectedIds]);
     setActionKind(kind);
-    setTitle("");
-    setTag("");
-    setFocus("");
+    setTitle('');
+    setTag('');
+    setFocus('');
     setMoreOptions(false);
-    setError("");
+    setError('');
     setCountOther(false);
-    setCount("5");
-    if (kind === "quiz") setDifficulty("Standard");
+    setCount('5');
+    if (kind === 'quiz') setDifficulty('Standard');
   }
   function toggleSource(id, checked) {
-    setSelectedSources(
-      checked ? [...selectedIds, id] : selectedIds.filter((x) => x !== id),
-    );
-    setSourceId("");
+    setSelectedSources(checked ? [...selectedIds, id] : selectedIds.filter((x) => x !== id));
+    setSourceId('');
   }
-  const years = Number((child.gradeLevel || "").replace(/[^0-9]/g, ""));
+  const years = Number((child.gradeLevel || '').replace(/[^0-9]/g, ''));
   const topics = catalogue.data?.topics || [];
   const suggested = topics.filter((topic) => topic.year === years);
-  const otherYears = [
-    ...new Set(topics.filter((t) => t.year !== years).map((t) => t.year)),
-  ].sort((a, b) => a - b);
+  const otherYears = [...new Set(topics.filter((t) => t.year !== years).map((t) => t.year))].sort((a, b) => a - b);
   async function refresh() {
     await queryClient.invalidateQueries({ queryKey: key });
   }
+  // Runs one action at a time; if it fails, shows the server's message and leaves saved work untouched.
   async function command(work, onError) {
     if (busy) return false;
     setBusy(true);
-    setError("");
+    setError('');
     try {
       await work();
       return true;
     } catch (e) {
       if (valid()) {
         const message =
-          typeof e.response?.data?.detail === "string"
+          typeof e.response?.data?.detail === 'string'
             ? e.response.data.detail
-            : "This could not finish. Your saved work is safe.";
+            : 'This could not finish. Your saved work is safe.';
         setError(message);
         onError?.(message);
       }
@@ -407,22 +346,22 @@ export default function FamilyLearning({ child }) {
   function selectSource(id) {
     setSelectedSources([id]);
     setSourceId(id);
-    setFocus("");
+    setFocus('');
     setPending(null);
-    setError("");
+    setError('');
   }
   function choose(topic) {
     const existing = sources.find((item) => item.provenance?.id === topic.id);
     if (existing) {
       selectSource(existing.id);
       setPicker(false);
-      setPane("chat");
+      setPane('chat');
       return;
     }
     const request =
-      pending?.type === "topic" && pending.topicId === topic.id
+      pending?.type === 'topic' && pending.topicId === topic.id
         ? pending
-        : { type: "topic", id: crypto.randomUUID(), topicId: topic.id };
+        : { type: 'topic', id: crypto.randomUUID(), topicId: topic.id };
     setPending(request);
     void command(async () => {
       const { data } = await api.put(`${base}/topics/${request.id}`, {
@@ -432,37 +371,33 @@ export default function FamilyLearning({ child }) {
       if (valid()) {
         selectSource(data.id);
         setPicker(false);
-        setPane("chat");
+        setPane('chat');
       }
     });
   }
   function newUpload(purpose, files = []) {
     if (busy) return;
-    setError("");
+    setError('');
     setPicker(false);
     setUpload({
       id: crypto.randomUUID(),
       checkId: crypto.randomUUID(),
       purpose,
-      title: "",
+      title: '',
       files,
       conversationId: chats.id,
     });
   }
   function addMissingPages() {
-    const original =
-      sources.find((item) => item.id === activity?.materialId) || source;
+    const original = sources.find((item) => item.id === activity?.materialId) || source;
     if (!original) return;
     void command(async () => {
       // Preserve original answer pages in a NEW immutable group, not an in-place edit.
       const files = await Promise.all(
         original.files.map(async (file, index) => {
-          const { data } = await api.get(
-            `${base}/materials/${original.id}/files/${index}`,
-            { responseType: "blob" },
-          );
+          const { data } = await api.get(`${base}/materials/${original.id}/files/${index}`, { responseType: 'blob' });
           return new File([data], file.name, { type: file.mime });
-        }),
+        })
       );
       if (valid())
         setUpload({
@@ -471,7 +406,7 @@ export default function FamilyLearning({ child }) {
           purpose: original.purpose,
           title: original.title,
           files,
-          reason: "missing",
+          reason: 'missing',
         });
     });
   }
@@ -480,43 +415,38 @@ export default function FamilyLearning({ child }) {
     setUpload({ ...upload, submitted: true });
     void command(async () => {
       const form = new FormData();
-      form.append("title", captured.title || "");
-      form.append("purpose", captured.purpose);
-      captured.files.forEach((file) => form.append("files", file));
+      form.append('title', captured.title || '');
+      form.append('purpose', captured.purpose);
+      captured.files.forEach((file) => form.append('files', file));
       const { data } = await api.put(`${base}/materials/${captured.id}`, form, {
         timeout: 120000,
-        headers: { "Content-Type": undefined },
+        headers: { 'Content-Type': undefined },
         onUploadProgress: (e) => {
           if (valid())
             setUpload((u) =>
               u
                 ? {
                     ...u,
-                    percent: e.total
-                      ? Math.round((e.loaded / e.total) * 100)
-                      : null,
+                    percent: e.total ? Math.round((e.loaded / e.total) * 100) : null,
                   }
-                : u,
+                : u
             );
         },
       });
       await refresh();
-      if (captured.purpose === "work") {
+      if (captured.purpose === 'work') {
         // Marking is the reason a parent uploads homework, so it starts here (one explicit tap, one AI check).
-        const { data: job } = await api.put(
-          `${base}/activities/${captured.checkId}`,
-          {
-            materialId: data.id,
-            materialIds: [data.id],
-            kind: "check",
-            count: 5,
-            focus: "",
-            title: captured.title || "Homework check",
-            tag: "",
-            difficulty: "Standard",
-            quizType: "mcq",
-          },
-        );
+        const { data: job } = await api.put(`${base}/activities/${captured.checkId}`, {
+          materialId: data.id,
+          materialIds: [data.id],
+          kind: 'check',
+          count: 5,
+          focus: '',
+          title: captured.title || 'Homework check',
+          tag: '',
+          difficulty: 'Standard',
+          quizType: 'mcq',
+        });
         await refresh();
         if (valid()) {
           setUpload(null);
@@ -526,65 +456,44 @@ export default function FamilyLearning({ child }) {
         return;
       }
       if (captured.conversationId)
-        await api.put(
-          `${base}/conversations/${captured.conversationId}/materials/${data.id}`,
-        );
+        await api.put(`${base}/conversations/${captured.conversationId}/materials/${data.id}`);
       await queryClient.invalidateQueries({
-        queryKey: [
-          "family",
-          generation,
-          user.id,
-          child.id,
-          "conversation",
-          captured.conversationId,
-        ],
+        queryKey: ['family', generation, user.id, child.id, 'conversation', captured.conversationId],
       });
       if (valid()) {
         setUpload(null);
-        setPane("chat");
+        setPane('chat');
       }
     });
   }
+  // Makes an activity under a client-made ID that a repeat with the same settings reuses, so it is made once.
   function start(kind, again = false, requestedCount = Number(count) || 5) {
-    const ids = again
-      ? activity.materialIds || [activity.materialId]
-      : actionKind
-        ? actionSources
-        : selectedIds;
+    const ids = again ? activity.materialIds || [activity.materialId] : actionKind ? actionSources : selectedIds;
     const selectedBasis = again ? activity.basis : basis;
-    if (selectedBasis === "materials" && !ids.length) return;
+    if (selectedBasis === 'materials' && !ids.length) return;
     const payload = {
-      materialId: selectedBasis === "materials" ? ids[0] : null,
-      materialIds: selectedBasis === "materials" ? ids : [],
+      materialId: selectedBasis === 'materials' ? ids[0] : null,
+      materialIds: selectedBasis === 'materials' ? ids : [],
       kind,
       count: requestedCount,
       focus,
       basis: selectedBasis,
       topic: again ? activity.settings?.topic : topicText,
-      conversationId:
-        selectedBasis === "conversation"
-          ? again
-            ? activity.settings?.conversationId
-            : chats.id
-          : null,
+      conversationId: selectedBasis === 'conversation' ? (again ? activity.settings?.conversationId : chats.id) : null,
       conversationRevision:
-        selectedBasis === "conversation"
+        selectedBasis === 'conversation'
           ? again
             ? activity.settings?.conversationRevision
             : chats.data?.revision
           : null,
       sourceActivityId: again ? activity.id : null,
       originConversationId: chats.id,
-      cardStyle: again
-        ? activity.settings?.cardStyle || "question_answer"
-        : cardStyle,
+      cardStyle: again ? activity.settings?.cardStyle || 'question_answer' : cardStyle,
       mapDepth: again ? activity.settings?.mapDepth || 3 : mapDepth,
       mapBreadth: again ? activity.settings?.mapBreadth || 4 : mapBreadth,
-      storyLength: again
-        ? activity.settings?.storyLength || "short"
-        : storyLength,
-      storyTheme: again ? activity.settings?.storyTheme || "" : storyTheme,
-      storyTone: again ? activity.settings?.storyTone || "calm" : storyTone,
+      storyLength: again ? activity.settings?.storyLength || 'short' : storyLength,
+      storyTheme: again ? activity.settings?.storyTheme || '' : storyTheme,
+      storyTone: again ? activity.settings?.storyTone || 'calm' : storyTone,
       title: again ? activity.title : title,
       tag: again ? activity.tag : tag,
       difficulty: again ? activity.difficulty : difficulty,
@@ -592,34 +501,29 @@ export default function FamilyLearning({ child }) {
     };
     const signature = JSON.stringify({ ...payload, again });
     const request =
-      pending?.type === "activity" && pending.signature === signature
+      pending?.type === 'activity' && pending.signature === signature
         ? pending
         : {
-            type: "activity",
+            type: 'activity',
             id: crypto.randomUUID(),
             signature,
-            payload: again
-              ? { ...payload, newAttemptKey: crypto.randomUUID() }
-              : payload,
+            payload: again ? { ...payload, newAttemptKey: crypto.randomUUID() } : payload,
           };
     setPending(request);
     void command(async () => {
-      const { data } = await api.put(
-        `${base}/activities/${request.id}`,
-        request.payload,
-      );
+      const { data } = await api.put(`${base}/activities/${request.id}`, request.payload);
       await refresh();
       if (valid()) {
         setActivityId(data.id);
         setPending(null);
         setActionKind(null);
         setViewerOpen(again);
-        setPane("chat");
+        setPane('chat');
       }
     });
   }
   async function record(id, answers) {
-    setRecordError("");
+    setRecordError('');
     return command(async () => {
       await api.put(`${base}/activities/${activity.id}/attempts/${id}`, {
         answers,
@@ -630,29 +534,16 @@ export default function FamilyLearning({ child }) {
   const [seconds, setSeconds] = useState(0);
   useEffect(() => {
     if (!active(activity)) return;
-    const tick = () =>
-      setSeconds(
-        Math.max(
-          0,
-          Math.floor((Date.now() - Date.parse(activity.createdAt)) / 1000),
-        ),
-      );
+    const tick = () => setSeconds(Math.max(0, Math.floor((Date.now() - Date.parse(activity.createdAt)) / 1000)));
     tick();
     const timer = setInterval(tick, 1000);
     return () => clearInterval(timer);
   }, [activity?.id, activity?.status, activity?.createdAt]);
-  if (home.isPending)
-    return <FamilyLoading variant="body" label="Opening the notebook" />;
-  if (
-    home.isError &&
-    (!home.data || [403, 404].includes(home.error?.response?.status))
-  )
+  if (home.isPending) return <FamilyLoading variant="body" label="Opening the notebook" />;
+  if (home.isError && (!home.data || [403, 404].includes(home.error?.response?.status)))
     return (
       <main className="fam-centre-page">
-        <Alert
-          severity="error"
-          action={<Button onClick={() => home.refetch()}>Try again</Button>}
-        >
+        <Alert severity="error" action={<Button onClick={() => home.refetch()}>Try again</Button>}>
           Could not load this child’s notebook.
         </Alert>
       </main>
@@ -660,39 +551,29 @@ export default function FamilyLearning({ child }) {
   const showTopics = () => {
     if (desktop) {
       collapsePanel(false);
-      setPanelTab("materials");
-    } else setPane("topics");
+      setPanelTab('materials');
+    } else setPane('topics');
   };
   const doneRows = allDone ? history : history.slice(0, 5);
-  const tab = panelTab || (sources.length ? "activities" : "materials");
+  const tab = panelTab || (sources.length ? 'activities' : 'materials');
   function quizFrom(ids) {
     setSelectedSources(ids);
     setActionSources(ids);
-    setBasis("materials");
+    setBasis('materials');
     setCountOther(false);
-    setTitle("");
-    setTag("");
-    setFocus("");
+    setTitle('');
+    setTag('');
+    setFocus('');
     setMoreOptions(false);
-    setError("");
-    if (!["3", "5", "10"].includes(count)) setCount("5");
-    setActionKind("quiz");
+    setError('');
+    if (!['3', '5', '10'].includes(count)) setCount('5');
+    setActionKind('quiz');
   }
 
   const topicsSection = (
-    <section
-      className="fam-sec"
-      ref={topicsRef}
-      tabIndex={-1}
-      aria-label="Materials"
-    >
+    <section className="fam-sec" ref={topicsRef} tabIndex={-1} aria-label="Materials">
       <div className="fam-add-grid">
-        <button
-          type="button"
-          className="fam-add-card"
-          onClick={() => newUpload("learning")}
-          disabled={busy}
-        >
+        <button type="button" className="fam-add-card" onClick={() => newUpload('learning')} disabled={busy}>
           <span className="fam-act-icon" data-kind="cards" aria-hidden>
             <UploadFileRounded />
           </span>
@@ -709,7 +590,7 @@ export default function FamilyLearning({ child }) {
               disabled={chats.busy}
               checked={selectedIds.includes(item.id)}
               onChange={(e) => toggleSource(item.id, e.target.checked)}
-              inputProps={{ "aria-label": `Use ${item.title} in the chat` }}
+              inputProps={{ 'aria-label': `Use ${item.title} in the chat` }}
             />
             <div className="fam-src-text">
               <span className="fam-src-title" title={materialName(item)}>
@@ -726,25 +607,21 @@ export default function FamilyLearning({ child }) {
                 </details>
               )}
               <span className="fam-small">
-                {item.purpose === "work"
-                  ? "Homework"
+                {item.purpose === 'work'
+                  ? 'Homework'
                   : item.files.length
-                    ? `${item.files.length} file${item.files.length === 1 ? "" : "s"} · ${item.files.reduce((sum, file) => sum + file.pages, 0)} pages`
-                    : "MySmartTeach notes"}
+                    ? `${item.files.length} file${item.files.length === 1 ? '' : 's'} · ${item.files.reduce((sum, file) => sum + file.pages, 0)} pages`
+                    : 'MySmartTeach notes'}
               </span>
               {item.indexing && (
                 <span className="fam-small" role="status">
-                  {item.indexing.status === "ready"
-                    ? "Ready to use"
+                  {item.indexing.status === 'ready'
+                    ? 'Ready to use'
                     : `${item.indexing.status} · ${item.indexing.searchable}/${item.indexing.total} pages searchable`}
                 </span>
               )}
             </div>
-            <FamilySource
-              base={base}
-              source={item}
-              onQuiz={() => quizFrom([item.id])}
-            />
+            <FamilySource base={base} source={item} onQuiz={() => quizFrom([item.id])} />
           </li>
         );
         const used = sources.filter((item) => selectedIds.includes(item.id)),
@@ -757,9 +634,7 @@ export default function FamilyLearning({ child }) {
               </Typography>
             </header>
             {sources.length > 0 && (
-              <Typography className="fam-small fam-sec-note">
-                Tick the ones the chat should use.
-              </Typography>
+              <Typography className="fam-small fam-sec-note">Tick the ones the chat should use.</Typography>
             )}
             {used.length > 0 && <ul className="fam-list">{used.map(row)}</ul>}
             {unused.length > 0 &&
@@ -821,20 +696,13 @@ export default function FamilyLearning({ child }) {
           Homework
         </Typography>
       </header>
-      <button
-        type="button"
-        className="fam-hwbtn"
-        disabled={busy}
-        onClick={() => newUpload("work")}
-      >
+      <button type="button" className="fam-hwbtn" disabled={busy} onClick={() => newUpload('work')}>
         <span className="fam-act-icon" data-kind="check" aria-hidden>
           <PhotoCameraRounded />
         </span>
         <span className="fam-topic-text">
           <span className="fam-topic-title">Check homework</span>
-          <span className="fam-topic-sub">
-            Photo of finished work, marked by AI
-          </span>
+          <span className="fam-topic-sub">Photo of finished work, marked by AI</span>
         </span>
         <ChevronRightRounded className="fam-topic-go" aria-hidden />
       </button>
@@ -853,21 +721,15 @@ export default function FamilyLearning({ child }) {
           const Icon = kindIcon[row.kind] || AutoAwesomeRounded;
           return (
             <li key={row.id}>
-              <button
-                type="button"
-                className="fam-act"
-                onClick={() => openActivity(row)}
-              >
+              <button type="button" className="fam-act" onClick={() => openActivity(row)}>
                 <span className="fam-act-icon" data-kind={row.kind} aria-hidden>
                   <Icon />
                 </span>
                 <span className="fam-act-text">
                   <span className="fam-act-title">{row.title}</span>
                   <span className="fam-small">
-                    {row.title === kindWords[row.kind]?.label
-                      ? ""
-                      : `${kindWords[row.kind]?.label} · `}
-                    {ukDate(row.createdAt).replace(/ \d{4}$/, "")}
+                    {row.title === kindWords[row.kind]?.label ? '' : `${kindWords[row.kind]?.label} · `}
+                    {ukDate(row.createdAt).replace(/ \d{4}$/, '')}
                   </span>
                 </span>
                 <StatusChip row={row} attempt={attemptFor(row)} />
@@ -887,21 +749,14 @@ export default function FamilyLearning({ child }) {
         </Button>
       )}
       {!history.length && (
-        <Typography className="fam-small fam-empty-line">
-          Quizzes and cards you make will appear here.
-        </Typography>
+        <Typography className="fam-small fam-empty-line">Quizzes and cards you make will appear here.</Typography>
       )}
     </section>
   );
 
   const starter = (
     <div className="fam-starter">
-      <button
-        type="button"
-        className="fam-topic"
-        onClick={() => newUpload("learning")}
-        disabled={busy}
-      >
+      <button type="button" className="fam-topic" onClick={() => newUpload('learning')} disabled={busy}>
         <span className="fam-topic-icon" aria-hidden>
           <UploadFileRounded />
         </span>
@@ -912,23 +767,19 @@ export default function FamilyLearning({ child }) {
         <ChevronRightRounded className="fam-topic-go" aria-hidden />
       </button>
 
-      {error && !picker && !upload && !actionKind && (
-        <Alert severity="error">{error}</Alert>
-      )}
+      {error && !picker && !upload && !actionKind && <Alert severity="error">{error}</Alert>}
     </div>
   );
 
   const conversation = (
     <FamilyConversation
-      key={`${child.id}:${chats.id || "loading"}`}
+      key={`${child.id}:${chats.id || 'loading'}`}
       chat={chats}
       child={child}
       suggestion={questionSuggestion}
       materials={sources.filter((s) => selectedIds.includes(s.id))}
       materialIds={selectedIds}
-      available={sources.filter(
-        (s) => !selectedIds.includes(s.id) && s.purpose !== "work",
-      )}
+      available={sources.filter((s) => !selectedIds.includes(s.id) && s.purpose !== 'work')}
       onUseMaterial={(id) => toggleSource(id, true)}
       activities={history}
       attempts={attempts}
@@ -936,10 +787,10 @@ export default function FamilyLearning({ child }) {
       onToggleMaterial={(id) => toggleSource(id, false)}
       onMaterials={showTopics}
       onCreate={openCreate}
-      onHomework={() => newUpload("work")}
-      onUpload={(files) => newUpload("learning", files || [])}
+      onHomework={() => newUpload('work')}
+      onUpload={(files) => newUpload('learning', files || [])}
       uploadState={upload}
-      onTopic={() => newUpload("learning")}
+      onTopic={() => newUpload('learning')}
       starter={sources.length ? null : starter}
       compact={phone}
     />
@@ -948,10 +799,7 @@ export default function FamilyLearning({ child }) {
   const viewerBody = !activity ? (
     detail.isError ? (
       <div className="fam-viewer-scroll fam-centre">
-        <Alert
-          severity="error"
-          action={<Button onClick={() => detail.refetch()}>Try again</Button>}
-        >
+        <Alert severity="error" action={<Button onClick={() => detail.refetch()}>Try again</Button>}>
           Could not open this.
         </Alert>
       </div>
@@ -966,12 +814,10 @@ export default function FamilyLearning({ child }) {
         <section className="fam-making" role="status">
           <AutoAwesomeRounded className="fam-making-icon" aria-hidden />
           <Typography component="h2" className="fam-h">
-            {kindWords[activity.kind]?.making || "Getting it ready"}…
+            {kindWords[activity.kind]?.making || 'Getting it ready'}…
           </Typography>
           <LinearProgress className="fam-making-bar" />
-          <Typography className="fam-small">
-            About a minute. You can close this.
-          </Typography>
+          <Typography className="fam-small">About a minute. You can close this.</Typography>
         </section>
       </div>
       <footer className="fam-viewer-foot">
@@ -1004,7 +850,7 @@ export default function FamilyLearning({ child }) {
           id: crypto.randomUUID(),
         });
         closeViewer(true);
-        setPane("chat");
+        setPane('chat');
       }}
       onExplain={(text) => {
         setQuestionSuggestion({
@@ -1013,35 +859,25 @@ export default function FamilyLearning({ child }) {
           send: true,
         });
         closeViewer(true);
-        setPane("chat");
+        setPane('chat');
       }}
       onMakeQuiz={() => {
         closeViewer(true);
         const ids = (
-          activity.materialIds?.length
-            ? activity.materialIds
-            : activity.materialId
-              ? [activity.materialId]
-              : []
+          activity.materialIds?.length ? activity.materialIds : activity.materialId ? [activity.materialId] : []
         ).filter((id) => sources.some((x) => x.id === id));
         if (ids.length) setSelectedSources(ids);
         setActionSources(ids);
-        setBasis(
-          ids.length
-            ? "materials"
-            : activity.settings?.topic
-              ? "topic"
-              : "conversation",
-        );
-        setTopicText(activity.settings?.topic || "");
-        setTitle("");
-        setTag("");
-        setFocus("");
+        setBasis(ids.length ? 'materials' : activity.settings?.topic ? 'topic' : 'conversation');
+        setTopicText(activity.settings?.topic || '');
+        setTitle('');
+        setTag('');
+        setFocus('');
         setMoreOptions(false);
         setCountOther(false);
-        setCount("3");
-        setDifficulty("Standard");
-        setActionKind("quiz");
+        setCount('3');
+        setDifficulty('Standard');
+        setActionKind('quiz');
       }}
     />
   ) : (
@@ -1049,14 +885,14 @@ export default function FamilyLearning({ child }) {
       <div className="fam-viewer-scroll fam-centre">
         <section className="fam-making">
           <Typography component="h2" className="fam-h">
-            {activity.status === "needs_input"
-              ? "Some pages are missing"
-              : `We couldn’t make this ${(kindWords[activity.kind]?.label || "activity").toLowerCase()}`}
+            {activity.status === 'needs_input'
+              ? 'Some pages are missing'
+              : `We couldn’t make this ${(kindWords[activity.kind]?.label || 'activity').toLowerCase()}`}
           </Typography>
           <Typography className="fam-done-sub">
-            {activity.status === "needs_input"
-              ? activity.error || "Add them and we’ll try again."
-              : "Your other work is safe."}
+            {activity.status === 'needs_input'
+              ? activity.error || 'Add them and we’ll try again.'
+              : 'Your other work is safe.'}
           </Typography>
           {error && <Alert severity="error">{error}</Alert>}
         </section>
@@ -1064,7 +900,7 @@ export default function FamilyLearning({ child }) {
       <footer className="fam-viewer-foot">
         <Button onClick={() => closeViewer(true)}>Back to notebook</Button>
         <span className="fam-grow" />
-        {activity.status === "needs_input" ? (
+        {activity.status === 'needs_input' ? (
           <Button
             variant="contained"
             disabled={busy}
@@ -1077,11 +913,7 @@ export default function FamilyLearning({ child }) {
             Add the missing pages
           </Button>
         ) : (
-          <Button
-            variant="contained"
-            disabled={busy}
-            onClick={() => setConfirmNew(activity.kind)}
-          >
+          <Button variant="contained" disabled={busy} onClick={() => setConfirmNew(activity.kind)}>
             Try again
           </Button>
         )}
@@ -1091,8 +923,7 @@ export default function FamilyLearning({ child }) {
 
   const KindIcon = kindIcon[activity?.kind] || AutoAwesomeRounded;
   const readyCount = history.filter(
-    (row) =>
-      row.status === "completed" && !attemptFor(row) && row.kind === "quiz",
+    (row) => row.status === 'completed' && !attemptFor(row) && row.kind === 'quiz'
   ).length;
   return (
     <div className="fam-body">
@@ -1101,11 +932,8 @@ export default function FamilyLearning({ child }) {
           Could not refresh. Showing what was saved.
         </Alert>
       )}
-      <div
-        className={desktop ? "fam-main" : "fam-main fam-main-phone"}
-        data-panel-closed={desktop && panelClosed}
-      >
-        <div className="fam-pane-chat" hidden={!desktop && pane !== "chat"}>
+      <div className={desktop ? 'fam-main' : 'fam-main fam-main-phone'} data-panel-closed={desktop && panelClosed}>
+        <div className="fam-pane-chat" hidden={!desktop && pane !== 'chat'}>
           {conversation}
         </div>
         {desktop && panelClosed && (
@@ -1115,12 +943,12 @@ export default function FamilyLearning({ child }) {
                 <MenuBookRounded />
               </IconButton>
             </Tooltip>
-            <Tooltip title={`Open activities${readyCount > 0 ? ` (${readyCount} ready)` : ""}`} placement="left">
+            <Tooltip title={`Open activities${readyCount > 0 ? ` (${readyCount} ready)` : ''}`} placement="left">
               <IconButton
-                aria-label={`Open activities${readyCount > 0 ? ` (${readyCount} ready)` : ""}`}
+                aria-label={`Open activities${readyCount > 0 ? ` (${readyCount} ready)` : ''}`}
                 onClick={() => {
                   collapsePanel(false);
-                  setPanelTab("activities");
+                  setPanelTab('activities');
                 }}
               >
                 <Badge badgeContent={readyCount} max={99} color="primary">
@@ -1131,25 +959,18 @@ export default function FamilyLearning({ child }) {
           </nav>
         )}
         <aside
-          hidden={desktop ? panelClosed : pane === "chat"}
+          hidden={desktop ? panelClosed : pane === 'chat'}
           className="fam-panel"
           ref={panelRef}
           aria-label={`${child.displayName}’s materials and activities`}
         >
           {desktop && (
             <>
-              <Button
-                className="fam-collapse-panel"
-                onClick={() => collapsePanel(true)}
-              >
+              <Button className="fam-collapse-panel" onClick={() => collapsePanel(true)}>
                 Collapse panel
               </Button>
-              <div
-                className="fam-panel-tabs"
-                role="tablist"
-                aria-label="Side panel"
-              >
-                {["materials", "activities"].map((id) => (
+              <div className="fam-panel-tabs" role="tablist" aria-label="Side panel">
+                {['materials', 'activities'].map((id) => (
                   <button
                     key={id}
                     type="button"
@@ -1159,22 +980,16 @@ export default function FamilyLearning({ child }) {
                     data-on={tab === id}
                     onClick={() => setPanelTab(id)}
                   >
-                    {id === "materials" ? "Materials" : "Activities"}
+                    {id === 'materials' ? 'Materials' : 'Activities'}
                   </button>
                 ))}
               </div>
             </>
           )}
-          <div
-            className="fam-panel-body"
-            hidden={desktop ? tab !== "materials" : pane !== "topics"}
-          >
+          <div className="fam-panel-body" hidden={desktop ? tab !== 'materials' : pane !== 'topics'}>
             {topicsSection}
           </div>
-          <div
-            className="fam-panel-body"
-            hidden={desktop ? tab !== "activities" : pane !== "activities"}
-          >
+          <div className="fam-panel-body" hidden={desktop ? tab !== 'activities' : pane !== 'activities'}>
             {makeSection}
             {homeworkSection}
             {doneSection}
@@ -1182,28 +997,26 @@ export default function FamilyLearning({ child }) {
         </aside>
       </div>
       {!desktop && (
-        <nav className="fam-bottom" aria-label="Notebook sections">
+        <nav className="fam-bottom" aria-label="Notebook sections" data-mst="family-bottom">
           {[
-            ["chat", "Chat", ChatRounded],
-            ["topics", "Materials", MenuBookRounded],
-            ["activities", "Activities", AutoAwesomeRounded],
+            ['chat', 'Chat', ChatRounded],
+            ['topics', 'Materials', MenuBookRounded],
+            ['activities', 'Activities', AutoAwesomeRounded],
           ].map(([id, label, Icon]) => (
             <button
               key={id}
               type="button"
               className="fam-bottom-btn"
               data-on={pane === id}
-              aria-current={pane === id ? "page" : undefined}
+              aria-current={pane === id ? 'page' : undefined}
               onClick={() => setPane(id)}
             >
-              <span className="fam-bottom-pill">
+              <span className="fam-bottom-pill" data-mst={id}>
                 <Icon />
               </span>
-              <span>
+              <span data-mst={id}>
                 {label}
-                {id === "activities" && readyCount
-                  ? ` (${readyCount} ready)`
-                  : ""}
+                {id === 'activities' && readyCount ? ` (${readyCount} ready)` : ''}
               </span>
             </button>
           ))}
@@ -1225,24 +1038,17 @@ export default function FamilyLearning({ child }) {
           >
             <CloseRounded />
           </IconButton>
-          <span
-            className="fam-viewer-kind"
-            data-kind={activity?.kind}
-            aria-hidden
-          >
+          <span className="fam-viewer-kind" data-kind={activity?.kind} aria-hidden>
             <KindIcon />
           </span>
           <div className="fam-viewer-title">
             <Typography component="h1" className="fam-viewer-name">
-              {activity?.kind === "check" &&
-              /^homework( check)?$/i.test(activity?.title || "")
+              {activity?.kind === 'check' && /^homework( check)?$/i.test(activity?.title || '')
                 ? `${child.displayName}’s homework`
-                : activity?.title || "Activity"}
+                : activity?.title || 'Activity'}
             </Typography>
             {viewerProgress && (
-              <Typography className="fam-small fam-viewer-progress-inline">
-                {viewerProgress}
-              </Typography>
+              <Typography className="fam-small fam-viewer-progress-inline">{viewerProgress}</Typography>
             )}
           </div>
           {viewerProgress && (
@@ -1250,26 +1056,16 @@ export default function FamilyLearning({ child }) {
               {viewerProgress}
             </span>
           )}
-          {viewerAction && (
-            <span className="fam-viewer-action">{viewerAction}</span>
-          )}
+          {viewerAction && <span className="fam-viewer-action">{viewerAction}</span>}
         </header>
         <FamilyEvidence base={base} activity={activity} />
         <div className="fam-viewer-main">{viewerBody}</div>
       </Dialog>
 
-      <Dialog
-        open={stopAsk}
-        onClose={() => setStopAsk(false)}
-        maxWidth="xs"
-        fullWidth
-        className="fam-dialog"
-      >
+      <Dialog open={stopAsk} onClose={() => setStopAsk(false)} maxWidth="xs" fullWidth className="fam-dialog">
         <DialogTitle>Stop for now?</DialogTitle>
         <DialogContent>
-          <Typography>
-            Your answers are kept. You can carry on later.
-          </Typography>
+          <Typography>Your answers are kept. You can carry on later.</Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => closeViewer(true)}>Stop for now</Button>
@@ -1292,23 +1088,14 @@ export default function FamilyLearning({ child }) {
         <DialogTitle>What shall we learn?</DialogTitle>
         <DialogContent>
           {catalogue.isError && (
-            <Alert
-              severity="error"
-              action={
-                <Button onClick={() => catalogue.refetch()}>Try again</Button>
-              }
-            >
+            <Alert severity="error" action={<Button onClick={() => catalogue.refetch()}>Try again</Button>}>
               Topics could not load.
             </Alert>
           )}
-          {catalogue.isPending && (
-            <CircularProgress aria-label="Loading topics" />
-          )}
+          {catalogue.isPending && <CircularProgress aria-label="Loading topics" />}
           {suggested.length > 0 && (
             <>
-              <Typography className="fam-label">
-                {child.gradeLevel} topics
-              </Typography>
+              <Typography className="fam-label">{child.gradeLevel} topics</Typography>
               <div className="fam-topic-list">
                 {suggested.map((topic) => (
                   <TopicCard
@@ -1323,19 +1110,12 @@ export default function FamilyLearning({ child }) {
             </>
           )}
           {otherYears.length > 0 && (
-            <details
-              className="fam-src-group fam-gap-d"
-              open={!suggested.length || undefined}
-            >
+            <details className="fam-src-group fam-gap-d" open={!suggested.length || undefined}>
               <summary>
                 Other years
                 <ExpandMoreRounded className="fam-chev" aria-hidden />
               </summary>
-              <div
-                className="fam-yearchips"
-                role="group"
-                aria-label="Other years"
-              >
+              <div className="fam-yearchips" role="group" aria-label="Other years">
                 {otherYears.map((y) => (
                   <button
                     key={y}
@@ -1366,15 +1146,8 @@ export default function FamilyLearning({ child }) {
               )}
             </details>
           )}
-          <Typography className="fam-label fam-gap">
-            Your own worksheet
-          </Typography>
-          <button
-            type="button"
-            className="fam-topic"
-            onClick={() => newUpload("learning")}
-            disabled={busy}
-          >
+          <Typography className="fam-label fam-gap">Your own worksheet</Typography>
+          <button type="button" className="fam-topic" onClick={() => newUpload('learning')} disabled={busy}>
             <span className="fam-topic-icon" aria-hidden>
               <UploadFileRounded />
             </span>
@@ -1408,75 +1181,57 @@ export default function FamilyLearning({ child }) {
         className="fam-dialog"
       >
         <DialogTitle>
-          {upload?.reason === "missing"
-            ? "Add the missing pages"
-            : upload?.purpose === "work"
+          {upload?.reason === 'missing'
+            ? 'Add the missing pages'
+            : upload?.purpose === 'work'
               ? `Check ${child.displayName}’s homework`
-              : "Add materials"}
+              : 'Add materials'}
         </DialogTitle>
         <DialogContent>
           <div className="fam-form">
             <Typography className="fam-lead-s">
-              {upload?.reason === "missing"
-                ? "Your first pages are already here. Add the pages that were missing, then save."
-                : upload?.purpose === "work"
-                  ? "Photograph each page, questions and answers."
-                  : "Photograph the sheet, or choose a PDF."}
+              {upload?.reason === 'missing'
+                ? 'Your first pages are already here. Add the pages that were missing, then save.'
+                : upload?.purpose === 'work'
+                  ? 'Photograph each page, questions and answers.'
+                  : 'Photograph the sheet, or choose a PDF.'}
             </Typography>
             <div className="fam-drop-row">
-              {["photo", "files"].map((way) => (
-                <Button
-                  key={way}
-                  component="label"
-                  className="fam-drop"
-                  disabled={busy}
-                >
-                  {way === "photo" ? (
-                    <PhotoCameraRounded aria-hidden />
-                  ) : (
-                    <UploadFileRounded aria-hidden />
-                  )}
-                  <span>
-                    {way === "photo" ? "Take a photo" : "Choose files"}
-                  </span>
+              {['photo', 'files'].map((way) => (
+                <Button key={way} component="label" className="fam-drop" disabled={busy}>
+                  {way === 'photo' ? <PhotoCameraRounded aria-hidden /> : <UploadFileRounded aria-hidden />}
+                  <span>{way === 'photo' ? 'Take a photo' : 'Choose files'}</span>
                   <input
                     hidden
                     type="file"
-                    multiple={way === "files"}
-                    accept={
-                      way === "photo"
-                        ? "image/jpeg,image/png"
-                        : ".pdf,.png,.jpg,.jpeg"
-                    }
-                    capture={way === "photo" ? "environment" : undefined}
+                    multiple={way === 'files'}
+                    accept={way === 'photo' ? 'image/jpeg,image/png' : '.pdf,.png,.jpg,.jpeg'}
+                    capture={way === 'photo' ? 'environment' : undefined}
                     onChange={(e) => {
-                      const files = [
-                        ...upload.files,
-                        ...Array.from(e.target.files || []),
-                      ].filter(
+                      const files = [...upload.files, ...Array.from(e.target.files || [])].filter(
                         (file, index, all) =>
                           all.findIndex(
                             (other) =>
                               other.name === file.name &&
                               other.size === file.size &&
-                              other.lastModified === file.lastModified,
-                          ) === index,
+                              other.lastModified === file.lastModified
+                          ) === index
                       );
                       setUpload({
                         ...upload,
                         files,
                         changed: upload.submitted || upload.changed,
                       });
-                      e.target.value = ""; // Allow reselecting a file after removing it.
+                      e.target.value = ''; // Allow reselecting a file after removing it.
                     }}
                   />
                 </Button>
               ))}
             </div>
             <Typography className="fam-small">
-              {upload?.purpose === "work"
-                ? "Up to 20 pages and 20 MB combined."
-                : "Up to 10 files, 100 MB per file, 200 MB combined. PDFs: up to 500 pages each."}
+              {upload?.purpose === 'work'
+                ? 'Up to 20 pages and 20 MB combined.'
+                : 'Up to 10 files, 100 MB per file, 200 MB combined. PDFs: up to 500 pages each.'}
             </Typography>
             {(upload?.files || []).length > 0 && (
               <ul className="fam-files">
@@ -1485,9 +1240,7 @@ export default function FamilyLearning({ child }) {
                     <span className="fam-file-name">
                       {i + 1}. {file.name}
                     </span>
-                    <span className="fam-small">
-                      {Math.ceil(file.size / 1024)} KB
-                    </span>
+                    <span className="fam-small">{Math.ceil(file.size / 1024)} KB</span>
                     <IconButton
                       disabled={busy}
                       aria-label={`Remove ${file.name}`}
@@ -1505,11 +1258,11 @@ export default function FamilyLearning({ child }) {
                 ))}
               </ul>
             )}
-            {upload?.purpose !== "work" && (
+            {upload?.purpose !== 'work' && (
               <TextField
                 label="Name (optional)"
                 placeholder="For example: Times tables sheet"
-                value={upload?.title || ""}
+                value={upload?.title || ''}
                 disabled={busy}
                 onChange={(e) =>
                   setUpload({
@@ -1521,7 +1274,7 @@ export default function FamilyLearning({ child }) {
                 fullWidth
               />
             )}
-            {upload?.purpose === "work" && !upload?.reason && (
+            {upload?.purpose === 'work' && !upload?.reason && (
               <Typography className="fam-small">
                 AI marking takes about a minute. It’s a guide, not a final mark.
               </Typography>
@@ -1559,20 +1312,16 @@ export default function FamilyLearning({ child }) {
           <Button disabled={busy} onClick={() => setUpload(null)}>
             Cancel
           </Button>
-          <Button
-            variant="contained"
-            disabled={busy || upload?.changed || !upload?.files.length}
-            onClick={saveUpload}
-          >
+          <Button variant="contained" disabled={busy || upload?.changed || !upload?.files.length} onClick={saveUpload}>
             {busy
               ? upload?.percent === 100
-                ? "Saving…"
+                ? 'Saving…'
                 : `Uploading ${upload?.percent || 0}%`
-              : upload?.purpose === "work" && !upload?.reason
-                ? "Mark it"
+              : upload?.purpose === 'work' && !upload?.reason
+                ? 'Mark it'
                 : upload?.reason
-                  ? "Save pages"
-                  : "Add files"}
+                  ? 'Save pages'
+                  : 'Add files'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1588,22 +1337,20 @@ export default function FamilyLearning({ child }) {
       >
         <DialogTitle>
           {{
-            quiz: "Make a quiz",
-            flashcards: "Make flashcards",
-            mindmap: "Make a mind map",
-            story: "Make a story",
-          }[actionKind] || "Make something"}
+            quiz: 'Make a quiz',
+            flashcards: 'Make flashcards',
+            mindmap: 'Make a mind map',
+            story: 'Make a story',
+          }[actionKind] || 'Make something'}
         </DialogTitle>
         <DialogContent>
           <div className="fam-form">
             {(() => {
-              const canChat = !!chats.data?.turns.some(
-                (t) => t.activity.status === "completed",
-              );
+              const canChat = !!chats.data?.turns.some((t) => t.activity.status === 'completed');
               const about = [
-                ...(sources.length ? [["materials", "Materials"]] : []),
-                ...(canChat ? [["conversation", "This chat"]] : []),
-                ["topic", "Describe it"],
+                ...(sources.length ? [['materials', 'Materials']] : []),
+                ...(canChat ? [['conversation', 'This chat']] : []),
+                ['topic', 'Describe it'],
               ];
               return (
                 <Segmented
@@ -1613,19 +1360,14 @@ export default function FamilyLearning({ child }) {
                   options={about}
                   onChange={(v) => {
                     setBasis(v);
-                    if (v === "materials" && !actionSources.length)
-                      setActionSources([...selectedIds]);
+                    if (v === 'materials' && !actionSources.length) setActionSources([...selectedIds]);
                   }}
                 />
               );
             })()}
-            {basis === "materials" &&
+            {basis === 'materials' &&
               (sources.length > 0 ? (
-                <div
-                  className="fam-yearchips"
-                  role="group"
-                  aria-label="Which topics"
-                >
+                <div className="fam-yearchips" role="group" aria-label="Which topics">
                   {sources.map((item) => {
                     const on = actionSources.includes(item.id);
                     return (
@@ -1637,9 +1379,7 @@ export default function FamilyLearning({ child }) {
                         aria-pressed={on}
                         onClick={() =>
                           setActionSources(
-                            on
-                              ? actionSources.filter((id) => id !== item.id)
-                              : [...actionSources, item.id],
+                            on ? actionSources.filter((id) => id !== item.id) : [...actionSources, item.id]
                           )
                         }
                       >
@@ -1650,11 +1390,9 @@ export default function FamilyLearning({ child }) {
                   })}
                 </div>
               ) : (
-                <Typography className="fam-small">
-                  {sources[0]?.title}
-                </Typography>
+                <Typography className="fam-small">{sources[0]?.title}</Typography>
               ))}
-            {basis === "topic" && (
+            {basis === 'topic' && (
               <TextField
                 multiline
                 minRows={1}
@@ -1667,64 +1405,48 @@ export default function FamilyLearning({ child }) {
                 fullWidth
               />
             )}
-            {actionKind === "quiz" && (
+            {actionKind === 'quiz' && (
               <ChoiceCards
                 label="Type"
                 id="fam-type"
                 value={quizType}
                 onChange={setQuizType}
                 options={[
-                  [
-                    "mcq",
-                    "Multiple choice",
-                    "Pick from 4 answers",
-                    ListRounded,
-                  ],
-                  [
-                    "boolean",
-                    "True or false",
-                    "Is it true or not?",
-                    ThumbsUpDownRounded,
-                  ],
+                  ['mcq', 'Multiple choice', 'Pick from 4 answers', ListRounded],
+                  ['boolean', 'True or false', 'Is it true or not?', ThumbsUpDownRounded],
                 ]}
               />
             )}
-            {["quiz", "flashcards"].includes(actionKind) && (
+            {['quiz', 'flashcards'].includes(actionKind) && (
               <div>
                 <Segmented
                   id="fam-count"
-                  label={actionKind === "quiz" ? "Questions" : "Cards"}
-                  value={countOther ? "other" : count}
+                  label={actionKind === 'quiz' ? 'Questions' : 'Cards'}
+                  value={countOther ? 'other' : count}
                   onChange={(v) => {
-                    if (v === "other") setCountOther(true);
+                    if (v === 'other') setCountOther(true);
                     else {
                       setCountOther(false);
                       setCount(v);
                     }
                   }}
                   options={[
-                    ["3", "3"],
-                    ["5", "5"],
-                    ["10", "10"],
-                    ["other", "Other"],
+                    ['3', '3'],
+                    ['5', '5'],
+                    ['10', '10'],
+                    ['other', 'Other'],
                   ]}
                 />
                 {countOther && (
                   <div
                     className="fam-stepper"
                     role="group"
-                    aria-label={
-                      actionKind === "quiz"
-                        ? "Number of questions"
-                        : "Number of cards"
-                    }
+                    aria-label={actionKind === 'quiz' ? 'Number of questions' : 'Number of cards'}
                   >
                     <IconButton
                       aria-label="One fewer"
                       disabled={Number(count) <= 1}
-                      onClick={() =>
-                        setCount(String(Math.max(1, (Number(count) || 5) - 1)))
-                      }
+                      onClick={() => setCount(String(Math.max(1, (Number(count) || 5) - 1)))}
                     >
                       <RemoveRounded />
                     </IconButton>
@@ -1734,9 +1456,7 @@ export default function FamilyLearning({ child }) {
                     <IconButton
                       aria-label="One more"
                       disabled={Number(count) >= 10}
-                      onClick={() =>
-                        setCount(String(Math.min(10, (Number(count) || 5) + 1)))
-                      }
+                      onClick={() => setCount(String(Math.min(10, (Number(count) || 5) + 1)))}
                     >
                       <AddRounded />
                     </IconButton>
@@ -1744,7 +1464,7 @@ export default function FamilyLearning({ child }) {
                 )}
               </div>
             )}
-            {actionKind === "quiz" && (
+            {actionKind === 'quiz' && (
               <Segmented
                 id="fam-level"
                 label="Level"
@@ -1753,7 +1473,7 @@ export default function FamilyLearning({ child }) {
                 options={levelWords}
               />
             )}
-            {actionKind === "mindmap" && (
+            {actionKind === 'mindmap' && (
               <Segmented
                 id="fam-size"
                 label="Size"
@@ -1764,13 +1484,13 @@ export default function FamilyLearning({ child }) {
                   setMapBreadth(n + 1);
                 }}
                 options={[
-                  ["2", "Small"],
-                  ["3", "Medium"],
-                  ["4", "Big"],
+                  ['2', 'Small'],
+                  ['3', 'Medium'],
+                  ['4', 'Big'],
                 ]}
               />
             )}
-            {actionKind === "story" && (
+            {actionKind === 'story' && (
               <>
                 <Segmented
                   id="fam-length"
@@ -1778,8 +1498,8 @@ export default function FamilyLearning({ child }) {
                   value={storyLength}
                   onChange={setStoryLength}
                   options={[
-                    ["short", "Short"],
-                    ["standard", "Long"],
+                    ['short', 'Short'],
+                    ['standard', 'Long'],
                   ]}
                 />
                 <TextField
@@ -1793,11 +1513,7 @@ export default function FamilyLearning({ child }) {
               </>
             )}
             <TextField
-              label={
-                longBook
-                  ? "Topic, chapter or page range"
-                  : "Anything to focus on? (optional)"
-              }
+              label={longBook ? 'Topic, chapter or page range' : 'Anything to focus on? (optional)'}
               required={longBook}
               placeholder="For example: tenths and hundredths"
               value={focus}
@@ -1810,40 +1526,35 @@ export default function FamilyLearning({ child }) {
                 size="small"
                 onClick={() => setMoreOptions(!moreOptions)}
                 aria-expanded={moreOptions}
-                endIcon={
-                  <ExpandMoreRounded
-                    className="fam-chev"
-                    data-open={moreOptions}
-                  />
-                }
+                endIcon={<ExpandMoreRounded className="fam-chev" data-open={moreOptions} />}
               >
                 More options
               </Button>
               <Collapse in={moreOptions}>
                 <div className="fam-form fam-more-opts">
-                  {actionKind === "flashcards" && (
+                  {actionKind === 'flashcards' && (
                     <Segmented
                       id="fam-style"
                       label="Card style"
                       value={cardStyle}
                       onChange={setCardStyle}
                       options={[
-                        ["question_answer", "Q & A"],
-                        ["definitions", "Words"],
-                        ["worked_examples", "Examples"],
+                        ['question_answer', 'Q & A'],
+                        ['definitions', 'Words'],
+                        ['worked_examples', 'Examples'],
                       ]}
                     />
                   )}
-                  {actionKind === "story" && (
+                  {actionKind === 'story' && (
                     <Segmented
                       id="fam-tone"
                       label="Tone"
                       value={storyTone}
                       onChange={setStoryTone}
                       options={[
-                        ["calm", "Calm"],
-                        ["playful", "Playful"],
-                        ["adventure", "Adventure"],
+                        ['calm', 'Calm'],
+                        ['playful', 'Playful'],
+                        ['adventure', 'Adventure'],
                       ]}
                     />
                   )}
@@ -1870,9 +1581,7 @@ export default function FamilyLearning({ child }) {
           </div>
         </DialogContent>
         <DialogActions>
-          <Typography className="fam-small fam-grow">
-            Takes about a minute.
-          </Typography>
+          <Typography className="fam-small fam-grow">Takes about a minute.</Typography>
           <Button disabled={busy} onClick={() => setActionKind(null)}>
             Cancel
           </Button>
@@ -1883,21 +1592,21 @@ export default function FamilyLearning({ child }) {
               !Number.isInteger(Number(count)) ||
               Number(count) < 1 ||
               Number(count) > 10 ||
-              (basis === "materials" && !actionSources.length) ||
-              (basis === "topic" && !topicText.trim()) ||
+              (basis === 'materials' && !actionSources.length) ||
+              (basis === 'topic' && !topicText.trim()) ||
               (longBook && !focus.trim())
             }
             onClick={() => start(actionKind)}
             startIcon={<AutoAwesomeRounded />}
           >
             {busy
-              ? "Starting…"
+              ? 'Starting…'
               : {
-                  quiz: "Make quiz",
-                  flashcards: "Make cards",
-                  mindmap: "Make map",
-                  story: "Make story",
-                }[actionKind] || "Make it"}
+                  quiz: 'Make quiz',
+                  flashcards: 'Make cards',
+                  mindmap: 'Make map',
+                  story: 'Make story',
+                }[actionKind] || 'Make it'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1909,14 +1618,12 @@ export default function FamilyLearning({ child }) {
         maxWidth="xs"
         className="fam-dialog"
       >
-        <DialogTitle>
-          {confirmNew === "quiz" ? "Make new questions?" : "Make a new one?"}
-        </DialogTitle>
+        <DialogTitle>{confirmNew === 'quiz' ? 'Make new questions?' : 'Make a new one?'}</DialogTitle>
         <DialogContent>
           <Typography>
-            {activity?.status === "outcome_unknown"
-              ? "The last one may have finished already. Making another uses AI again."
-              : `This uses AI to make a fresh set. Your current ${kindWords[confirmNew]?.label.toLowerCase() || "one"} and scores stay saved.`}
+            {activity?.status === 'outcome_unknown'
+              ? 'The last one may have finished already. Making another uses AI again.'
+              : `This uses AI to make a fresh set. Your current ${kindWords[confirmNew]?.label.toLowerCase() || 'one'} and scores stay saved.`}
           </Typography>
         </DialogContent>
         <DialogActions>
@@ -1929,7 +1636,7 @@ export default function FamilyLearning({ child }) {
               start(kind, true);
             }}
           >
-            {confirmNew === "quiz" ? "Make new questions" : "Make a new one"}
+            {confirmNew === 'quiz' ? 'Make new questions' : 'Make a new one'}
           </Button>
         </DialogActions>
       </Dialog>

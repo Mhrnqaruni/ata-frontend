@@ -1,3 +1,6 @@
+/* Styles the sign-in and register screens: two-panel layout, glass card, form fields and the grading-line drawing. */
+/* Area: identity */
+
 /* =====================================================================================================
    The sign-in surface (AuthFrame + GradingLine). Method and values: the Moby Argus handbook
    (PORTABLE_HANDBOOK.md §9–§17) and the designer's spec of 2026-10-12. Light is MST's default theme.

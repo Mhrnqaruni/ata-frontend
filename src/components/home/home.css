@@ -1,3 +1,7 @@
+/* Styles the teacher Home dashboard: the summary strip, performance gauge and trend chart, and the recent lists. */
+/* The app layout loads it, so it also holds a few sidebar and mobile top-bar rules. */
+/* Area: analytics */
+
 /* Temporary Home concept only. Approved theme/component styles are copied unchanged. */
 .home-preview-label {display:flex;align-items:center;gap:8px;margin-bottom:12px;color:var(--mst-accent-ink);font-size:12px;line-height:16px;font-weight:600;}
 .home-preview-tail {margin-left:auto;color:var(--mst-ink-3);font-weight:400;}

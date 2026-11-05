@@ -1,3 +1,6 @@
+// Builds the Home performance figures (overall average and per-day series) from students' graded results.
+// Area: analytics
+
 // Current finalized assessment scores, weighted equally per stable student entity.
 // No names, display IDs, absent/pending rows or synthetic values enter this calculation.
 export function buildPerformanceSeries(assessments) {
@@ -9,10 +12,12 @@ export function buildPerformanceSeries(assessments) {
     for (const row of job.students || []) {
       if (!['AI_GRADED', 'TEACHER_GRADED'].includes(row.status) || row.isAbsent || !row.entityId) continue;
       if (row.totalScore == null || row.maxTotalScore == null) continue;
-      const score = Number(row.totalScore), maximum = Number(row.maxTotalScore);
-      if (!Number.isFinite(score) || !Number.isFinite(maximum) || maximum <= 0 || score < 0 || score > maximum) continue;
+      const score = Number(row.totalScore),
+        maximum = Number(row.maxTotalScore);
+      if (!Number.isFinite(score) || !Number.isFinite(maximum) || maximum <= 0 || score < 0 || score > maximum)
+        continue;
       const entry = students.get(row.entityId) || { sum: 0, count: 0 };
-      entry.sum += score / maximum * 100;
+      entry.sum += (score / maximum) * 100;
       entry.count += 1;
       students.set(row.entityId, entry);
       added = true;

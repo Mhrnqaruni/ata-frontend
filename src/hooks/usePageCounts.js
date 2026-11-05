@@ -1,8 +1,10 @@
-// /src/hooks/usePageCounts.js
+// Gives a component each chosen file's page count, worked out in the browser (PDFs via pdf.js, images as one).
+// Area: assessments
+
 // Counts the pages of chosen files in the browser: PDFs are read with pdf.js (loaded only when first needed),
 // images count as one page. A file that can't be read simply gets no count.
 
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
 const keyOf = (file) => `${file.name}:${file.size}:${file.lastModified}`;
 const cache = new Map();
@@ -10,18 +12,20 @@ let pdfjsPromise = null;
 
 const loadPdfjs = () => {
   if (!pdfjsPromise) {
-    pdfjsPromise = Promise.all([import("react-pdf"), import("pdfjs-dist/build/pdf.worker.min.js?url")]).then(([mod, worker]) => {
-      mod.pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
-      return mod.pdfjs;
-    });
+    pdfjsPromise = Promise.all([import('react-pdf'), import('pdfjs-dist/build/pdf.worker.min.js?url')]).then(
+      ([mod, worker]) => {
+        mod.pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
+        return mod.pdfjs;
+      }
+    );
   }
   return pdfjsPromise;
 };
 
 const countPages = async (file) => {
-  const name = (file.name || "").toLowerCase();
+  const name = (file.name || '').toLowerCase();
   if (/\.(png|jpe?g|gif|webp|heic)$/.test(name)) return 1;
-  if (!name.endsWith(".pdf")) return null;
+  if (!name.endsWith('.pdf')) return null;
   const pdfjs = await loadPdfjs();
   const task = pdfjs.getDocument({ data: await file.arrayBuffer() });
   try {
@@ -55,6 +59,6 @@ export default function usePageCounts(files = []) {
   }, [files]);
   return (file) => {
     const pages = cache.get(keyOf(file));
-    return typeof pages === "number" ? `${pages} ${pages === 1 ? "page" : "pages"}` : null;
+    return typeof pages === 'number' ? `${pages} ${pages === 1 ? 'page' : 'pages'}` : null;
   };
 }

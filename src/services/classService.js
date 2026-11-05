@@ -1,5 +1,8 @@
+// Wraps the /api/classes endpoints: list, create, edit and delete classes, upload and export rosters.
+// Also adds, edits and removes a class's students, and refreshes cached roster data after each change.
+// Area: academics
+
 import { invalidateAfter, cacheFamilies } from './queryCache';
-// /src/services/classService.js (FINAL, COMPLETE VERSION)
 
 import apiClient from './api';
 
@@ -11,8 +14,8 @@ const classService = {
       // Ensure we always return an array, even if the API response is faulty.
       return response.data || [];
     } catch (error) {
-      console.error("Error fetching classes:", error);
-      const errorMessage = error.response?.data?.detail || "Could not load classes.";
+      console.error('Error fetching classes:', error);
+      const errorMessage = error.response?.data?.detail || 'Could not load classes.';
       throw new Error(errorMessage);
     }
   },
@@ -22,7 +25,7 @@ const classService = {
       return response.data;
     } catch (error) {
       console.error(`Error fetching class details for ID ${classId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Could not load class details.";
+      const errorMessage = error.response?.data?.detail || 'Could not load class details.';
       throw new Error(errorMessage);
     }
   },
@@ -31,8 +34,8 @@ const classService = {
       const response = await apiClient.post('/api/classes', classData);
       return response.data;
     } catch (error) {
-      console.error("Error creating class:", error);
-      const errorMessage = error.response?.data?.detail || "Failed to create the class.";
+      console.error('Error creating class:', error);
+      const errorMessage = error.response?.data?.detail || 'Failed to create the class.';
       throw new Error(errorMessage);
     }
   },
@@ -47,11 +50,11 @@ const classService = {
       });
       return response.data;
     } catch (error) {
-      console.error("Error uploading roster:", error);
+      console.error('Error uploading roster:', error);
       if (error.code === 'ECONNABORTED') {
-        throw new Error("The upload is taking longer than expected and timed out. Please check the file or try again.");
+        throw new Error('The upload is taking longer than expected and timed out. Please check the file or try again.');
       }
-      const errorMessage = error.response?.data?.detail || "Failed to upload and process the roster file.";
+      const errorMessage = error.response?.data?.detail || 'Failed to upload and process the roster file.';
       throw new Error(errorMessage);
     }
   },
@@ -61,7 +64,7 @@ const classService = {
       return response.data;
     } catch (error) {
       console.error(`Error updating class ${classId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Failed to update the class.";
+      const errorMessage = error.response?.data?.detail || 'Failed to update the class.';
       throw new Error(errorMessage);
     }
   },
@@ -70,7 +73,7 @@ const classService = {
       await apiClient.delete(`/api/classes/${classId}`);
     } catch (error) {
       console.error(`Error deleting class ${classId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Failed to delete the class.";
+      const errorMessage = error.response?.data?.detail || 'Failed to delete the class.';
       throw new Error(errorMessage);
     }
   },
@@ -93,7 +96,7 @@ const classService = {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error(`Error exporting roster for class ${classId}:`, error);
-      throw new Error("Failed to export the roster. Please try again.");
+      throw new Error('Failed to export the roster. Please try again.');
     }
   },
   // --- STUDENT CRUD METHODS ---
@@ -103,7 +106,7 @@ const classService = {
       return response.data;
     } catch (error) {
       console.error(`Error adding student to class ${classId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Failed to add the student.";
+      const errorMessage = error.response?.data?.detail || 'Failed to add the student.';
       throw new Error(errorMessage);
     }
   },
@@ -113,7 +116,7 @@ const classService = {
       return response.data;
     } catch (error) {
       console.error(`Error updating student ${studentId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Failed to update student details.";
+      const errorMessage = error.response?.data?.detail || 'Failed to update student details.';
       throw new Error(errorMessage);
     }
   },
@@ -122,9 +125,21 @@ const classService = {
       await apiClient.delete(`/api/classes/${classId}/students/${studentId}`);
     } catch (error) {
       console.error(`Error removing student ${studentId} from class ${classId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Failed to remove the student.";
+      const errorMessage = error.response?.data?.detail || 'Failed to remove the student.';
       throw new Error(errorMessage);
     }
   },
 };
-export default invalidateAfter(classService, ['createClass', 'createClassWithUpload', 'updateClass', 'deleteClass', 'addStudentToClass', 'updateStudent', 'removeStudent'], cacheFamilies.roster);
+export default invalidateAfter(
+  classService,
+  [
+    'createClass',
+    'createClassWithUpload',
+    'updateClass',
+    'deleteClass',
+    'addStudentToClass',
+    'updateStudent',
+    'removeStudent',
+  ],
+  cacheFamilies.roster
+);

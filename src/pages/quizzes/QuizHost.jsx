@@ -1,4 +1,5 @@
-// /src/pages/quizzes/QuizHost.jsx
+// The live quiz host screen: shows the room code and who joined, runs the questions, leaderboard and attendance.
+// Area: quizzes
 
 // --- Core React Imports ---
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -35,7 +36,7 @@ import {
   FormControlLabel,
   TextField,
   Skeleton,
-  Snackbar
+  Snackbar,
 } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
@@ -56,6 +57,7 @@ import useNumberInput from '../../hooks/useNumberInput';
 
 // --- QR Code Import ---
 import { QRCodeSVG } from 'qrcode.react';
+import { config } from '../../config';
 
 /* NEW: Roster Panel Component - Shows expected students with join/absent status */
 const RosterPanel = ({ roster, session, isLoading }) => {
@@ -98,22 +100,9 @@ const RosterPanel = ({ roster, session, isLoading }) => {
           <>
             {/* Stats Summary */}
             <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
-              <Chip
-                icon={<CheckRoundedIcon />}
-                label={`Joined ${roster.total_joined}`}
-                color="success"
-                size="small"
-              />
-              <Chip
-                icon={<HourglassEmptyRoundedIcon />}
-                label={`Not joined ${roster.total_absent}`}
-                size="small"
-              />
-              <Chip
-                label={`Join rate ${Math.round(roster.join_rate * 100)}%`}
-                color="primary"
-                size="small"
-              />
+              <Chip icon={<CheckRoundedIcon />} label={`Joined ${roster.total_joined}`} color="success" size="small" />
+              <Chip icon={<HourglassEmptyRoundedIcon />} label={`Not joined ${roster.total_absent}`} size="small" />
+              <Chip label={`Join rate ${Math.round(roster.join_rate * 100)}%`} color="primary" size="small" />
             </Box>
 
             <Divider sx={{ my: 2 }} />
@@ -122,59 +111,54 @@ const RosterPanel = ({ roster, session, isLoading }) => {
             {roster.entries && roster.entries.length > 0 ? (
               <List dense sx={{ maxHeight: 400, overflow: 'auto' }}>
                 {roster.entries.map((entry) => (
-            <ListItem
-              key={entry.id}
-              sx={{
-                borderRadius: 1,
-                mb: 0.5,
-                backgroundColor: entry.joined ? 'success.lighter' : 'action.hover',
-                border: 1,
-                borderColor: entry.joined ? 'success.main' : 'divider'
-              }}
-            >
-              <ListItemAvatar>
-                <Avatar
-                  sx={{
-                    bgcolor: entry.joined ? 'success.main' : 'grey.400',
-                    width: 36,
-                    height: 36
-                  }}
-                >
-                  {entry.joined ? <CheckRoundedIcon fontSize="small" /> : <HourglassEmptyRoundedIcon fontSize="small" />}
-                </Avatar>
-              </ListItemAvatar>
-              <ListItemText
-                primary={
-                  <Typography variant="body1" sx={{ fontWeight: entry.joined ? 600 : 400 }}>
-                    {entry.student_name}
-                  </Typography>
-                }
-                secondary={
-                  <Typography variant="caption" color="text.secondary">
-                    ID: {entry.student_school_id}
-                    {entry.joined && entry.joined_at && (
-                      <> • Joined {new Date(entry.joined_at).toLocaleTimeString()}</>
-                    )}
-                  </Typography>
-                }
-              />
-              {entry.joined && (
-                <Chip
-                  label="JOINED"
-                  color="success"
-                  size="small"
-                  sx={{ fontWeight: 600 }}
-                />
-              )}
-                </ListItem>
-              ))}
+                  <ListItem
+                    key={entry.id}
+                    sx={{
+                      borderRadius: 1,
+                      mb: 0.5,
+                      backgroundColor: entry.joined ? 'success.lighter' : 'action.hover',
+                      border: 1,
+                      borderColor: entry.joined ? 'success.main' : 'divider',
+                    }}
+                  >
+                    <ListItemAvatar>
+                      <Avatar
+                        sx={{
+                          bgcolor: entry.joined ? 'success.main' : 'grey.400',
+                          width: 36,
+                          height: 36,
+                        }}
+                      >
+                        {entry.joined ? (
+                          <CheckRoundedIcon fontSize="small" />
+                        ) : (
+                          <HourglassEmptyRoundedIcon fontSize="small" />
+                        )}
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={
+                        <Typography variant="body1" sx={{ fontWeight: entry.joined ? 600 : 400 }}>
+                          {entry.student_name}
+                        </Typography>
+                      }
+                      secondary={
+                        <Typography variant="caption" color="text.secondary">
+                          ID: {entry.student_school_id}
+                          {entry.joined && entry.joined_at && (
+                            <> • Joined {new Date(entry.joined_at).toLocaleTimeString()}</>
+                          )}
+                        </Typography>
+                      }
+                    />
+                    {entry.joined && <Chip label="JOINED" color="success" size="small" sx={{ fontWeight: 600 }} />}
+                  </ListItem>
+                ))}
               </List>
             ) : (
               <Box sx={{ textAlign: 'center', py: 4 }}>
                 <PeopleIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 2 }} />
-                <Typography color="text.secondary">
-                  No students found in this class
-                </Typography>
+                <Typography color="text.secondary">No students found in this class</Typography>
                 <Typography variant="caption" color="text.secondary">
                   Add students to the class to track attendance
                 </Typography>
@@ -183,9 +167,7 @@ const RosterPanel = ({ roster, session, isLoading }) => {
           </>
         ) : (
           <Box sx={{ textAlign: 'center', py: 4 }}>
-            <Typography color="text.secondary">
-              No roster data available
-            </Typography>
+            <Typography color="text.secondary">No roster data available</Typography>
           </Box>
         )}
       </CardContent>
@@ -221,11 +203,7 @@ const OutsiderPanel = ({ outsiders, sessionId, onOutsiderUpdate }) => {
     }
 
     try {
-      await quizService.assignOutsiderToStudent(
-        sessionId,
-        outsider.id,
-        assignStudentId.trim()
-      );
+      await quizService.assignOutsiderToStudent(sessionId, outsider.id, assignStudentId.trim());
       setAssigningOutsiderId(null);
       setAssignStudentId('');
       if (onOutsiderUpdate) {
@@ -245,15 +223,12 @@ const OutsiderPanel = ({ outsiders, sessionId, onOutsiderUpdate }) => {
             <Typography variant="h6" sx={{ fontWeight: 600, flex: 1, color: 'warning.dark' }}>
               Students not on the roster
             </Typography>
-            <Chip
-              label={`${outsiders.length} Total`}
-              color="warning"
-              size="small"
-            />
+            <Chip label={`${outsiders.length} Total`} color="warning" size="small" />
           </Box>
 
           <Alert severity="warning" sx={{ mb: 2 }}>
-            These students joined but are NOT in the expected class roster. Assign them to the correct student when needed.
+            These students joined but are NOT in the expected class roster. Assign them to the correct student when
+            needed.
           </Alert>
 
           <List dense>
@@ -265,7 +240,7 @@ const OutsiderPanel = ({ outsiders, sessionId, onOutsiderUpdate }) => {
                     mb: 0.5,
                     backgroundColor: 'warning.lighter',
                     border: 1,
-                    borderColor: 'warning.main'
+                    borderColor: 'warning.main',
                   }}
                   secondaryAction={
                     <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
@@ -292,15 +267,10 @@ const OutsiderPanel = ({ outsiders, sessionId, onOutsiderUpdate }) => {
                           </IconButton>
                         </Box>
                       ) : (
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          onClick={() => handleStartAssign(outsider)}
-                        >
+                        <Button size="small" variant="outlined" onClick={() => handleStartAssign(outsider)}>
                           Assign
                         </Button>
                       )}
-                      
                     </Box>
                   }
                 >
@@ -309,7 +279,7 @@ const OutsiderPanel = ({ outsiders, sessionId, onOutsiderUpdate }) => {
                       sx={{
                         bgcolor: 'warning.main',
                         width: 36,
-                        height: 36
+                        height: 36,
                       }}
                     >
                       {'!'}
@@ -333,16 +303,16 @@ const OutsiderPanel = ({ outsiders, sessionId, onOutsiderUpdate }) => {
                         </Typography>
                       </Box>
                     }
-                  
+
                     primaryTypographyProps={{ component: 'div' }}
                     secondaryTypographyProps={{ component: 'div' }}
-                  /></ListItem>
+                  />
+                </ListItem>
               </Box>
             ))}
           </List>
         </CardContent>
       </Card>
-
     </>
   );
 };
@@ -353,10 +323,14 @@ const OutsiderPanel = ({ outsiders, sessionId, onOutsiderUpdate }) => {
 const Leaderboard = ({ participants }) => {
   const getMedalColor = (rank) => {
     switch (rank) {
-      case 1: return '#FFD700'; // Gold
-      case 2: return '#C0C0C0'; // Silver
-      case 3: return '#CD7F32'; // Bronze
-      default: return 'primary';
+      case 1:
+        return '#FFD700'; // Gold
+      case 2:
+        return '#C0C0C0'; // Silver
+      case 3:
+        return '#CD7F32'; // Bronze
+      default:
+        return 'primary';
     }
   };
 
@@ -370,7 +344,7 @@ const Leaderboard = ({ participants }) => {
               borderRadius: 2,
               backgroundColor: index < 3 ? 'action.hover' : 'transparent',
               border: index < 3 ? 2 : 1,
-              borderColor: index < 3 ? getMedalColor(index + 1) : 'divider'
+              borderColor: index < 3 ? getMedalColor(index + 1) : 'divider',
             }}
           >
             <ListItemAvatar>
@@ -378,7 +352,7 @@ const Leaderboard = ({ participants }) => {
                 sx={{
                   bgcolor: getMedalColor(index + 1),
                   fontWeight: 600,
-                  fontSize: '1.2rem'
+                  fontSize: '1.2rem',
                 }}
               >
                 {index < 3 ? <EmojiEventsIcon /> : index + 1}
@@ -404,11 +378,7 @@ const Leaderboard = ({ participants }) => {
                     color="success"
                     variant="outlined"
                   />
-                  <Chip
-                    label={`${(participant.total_time_ms / 1000).toFixed(1)}s`}
-                    size="small"
-                    variant="outlined"
-                  />
+                  <Chip label={`${(participant.total_time_ms / 1000).toFixed(1)}s`} size="small" variant="outlined" />
                 </Box>
               }
               secondaryTypographyProps={{ component: 'div' }}
@@ -465,7 +435,6 @@ const QuizHost = () => {
 
       if (autoAdvanceEnabled) {
         debounceTimerRef.current = setTimeout(() => {
-          console.log('[QuizHost] Debounced auto-advance update:', newValue);
           handleToggleAutoAdvance(true, newValue);
         }, 500);
       }
@@ -473,7 +442,7 @@ const QuizHost = () => {
     {
       defaultValue: 10,
       min: 1,
-      max: 60
+      max: 60,
     }
   );
 
@@ -490,13 +459,10 @@ const QuizHost = () => {
 
   // Load session data
   useEffect(() => {
-    console.log('[QuizHost] Mounting component, sessionId:', sessionId);
     loadSession();
 
     // FIX #3 & #4: Cleanup function to prevent memory leaks
     return () => {
-      console.log('[QuizHost] Component unmounting, cleaning up WebSocket and timers');
-
       // Close WebSocket connection
       if (wsRef.current && wsRef.current.readyState !== WebSocket.CLOSED) {
         wsRef.current.close();
@@ -520,18 +486,14 @@ const QuizHost = () => {
   // Connect WebSocket - FIX #3: Only reconnect when session.id changes, not entire object
   useEffect(() => {
     if (!session?.id) {
-      console.log('[QuizHost] No session ID, skipping WebSocket connection');
       return;
     }
 
-    console.log('[QuizHost] Session loaded, connecting WebSocket for session:', session.id);
     connectWebSocket();
 
     // FIX #3: Cleanup function to close WebSocket when effect re-runs or unmounts
     return () => {
-      console.log('[QuizHost] WebSocket effect cleanup');
       if (wsRef.current && wsRef.current.readyState !== WebSocket.CLOSED) {
-        console.log('[QuizHost] Closing WebSocket connection');
         wsRef.current.close();
         wsRef.current = null;
       }
@@ -567,20 +529,18 @@ const QuizHost = () => {
 
       // Load initial leaderboard
       const leaderboardData = await quizService.getLeaderboard(sessionId);
-      console.log('[QuizHost] Leaderboard API response:', leaderboardData);
       // FIX: Extract entries array from LeaderboardResponse object
       setLeaderboard(leaderboardData.entries || []);
 
       // NEW: Load roster if session has class_id
-      if ((sessionData.class_id || sessionData.has_roster)) {
-        console.log('[QuizHost] Session has class_id, loading roster...');
+      if (sessionData.class_id || sessionData.has_roster) {
         await loadRosterData(sessionId);
       }
 
       setError(null);
     } catch (err) {
-      console.error("Failed to load session:", err);
-      setError(err.message || "Failed to load quiz session.");
+      console.error('Failed to load session:', err);
+      setError(err.message || 'Failed to load quiz session.');
     } finally {
       setIsLoading(false);
     }
@@ -590,16 +550,12 @@ const QuizHost = () => {
   const loadRosterData = async (sid) => {
     setIsLoadingRoster(true);
     try {
-      console.log('[QuizHost] Fetching roster for session:', sid);
-
       // Use service methods instead of direct fetch
       const rosterData = await quizService.getSessionRoster(sid);
-      console.log('[QuizHost] Roster loaded:', rosterData);
       setRoster(rosterData);
 
       // Load outsiders
       const outsidersData = await quizService.getSessionOutsiders(sid);
-      console.log('[QuizHost] Outsiders loaded:', outsidersData);
       setOutsiders(outsidersData.records || []);
     } catch (err) {
       console.error('[QuizHost] Error loading roster:', err);
@@ -612,7 +568,7 @@ const QuizHost = () => {
   const connectWebSocket = () => {
     const token = localStorage.getItem('authToken');
     if (!token) {
-      setError("Authentication token not found.");
+      setError('Authentication token not found.');
       return;
     }
 
@@ -621,7 +577,6 @@ const QuizHost = () => {
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log('WebSocket connected');
         setWsConnected(true);
       };
 
@@ -636,7 +591,6 @@ const QuizHost = () => {
       };
 
       ws.onclose = () => {
-        console.log('WebSocket disconnected');
         setWsConnected(false);
 
         // FIX #4: Clean up previous reconnection timer before creating new one
@@ -648,71 +602,62 @@ const QuizHost = () => {
         reconnectTimerRef.current = setTimeout(() => {
           // Check if we're still mounted and session is still active
           if (wsRef.current === ws && session && session.status !== 'completed') {
-            console.log('[WebSocket] Attempting to reconnect...');
             connectWebSocket();
-          } else {
-            console.log('[WebSocket] Skipping reconnection (component unmounted or session ended)');
           }
         }, 3000);
       };
     } catch (err) {
-      console.error("Failed to connect WebSocket:", err);
-      setError("Failed to establish real-time connection.");
+      console.error('Failed to connect WebSocket:', err);
+      setError('Failed to establish real-time connection.');
     }
   };
 
   const handleWebSocketMessage = (message) => {
-    console.log('WebSocket message:', message);
-
     switch (message.type) {
       case 'connection_established':
-        console.log('Connection established');
         break;
 
       case 'participant_joined':
         // FIX #3: Update participant count from WebSocket message instead of full reload
-        console.log('[QuizHost] Participant joined:', message);
         if (message.total_participants !== undefined) {
-          setSession(prev => ({
+          setSession((prev) => ({
             ...prev,
-            participant_count: message.total_participants
+            participant_count: message.total_participants,
           }));
         }
         // Reload roster if class-based quiz
-        if ((session?.class_id || session?.has_roster)) {
+        if (session?.class_id || session?.has_roster) {
           loadRosterData(sessionId);
         }
         break;
 
       case 'participant_left':
         // FIX #3: Update participant count from WebSocket message instead of full reload
-        console.log('[QuizHost] Participant left:', message);
         if (message.total_participants !== undefined) {
-          setSession(prev => ({
+          setSession((prev) => ({
             ...prev,
-            participant_count: message.total_participants
+            participant_count: message.total_participants,
           }));
         }
         // Reload roster if class-based quiz
-        if ((session?.class_id || session?.has_roster)) {
+        if (session?.class_id || session?.has_roster) {
           loadRosterData(sessionId);
         }
         break;
 
       case 'participant_answered':
         // Increment answers received
-        setAnswersReceived(prev => prev + 1);
+        setAnswersReceived((prev) => prev + 1);
         break;
 
       case 'stats_update':
         // FIX: Update real-time stats from backend
-        console.log('Stats update received:', message);
         setAnswersReceived(message.answers_received || 0);
         // Optionally update session with new participant count
         if (message.total_participants !== undefined) {
-          setSession(prev => ({
+          setSession((prev) => ({
             ...prev,
-            total_participants: message.total_participants
+            total_participants: message.total_participants,
           }));
         }
         break;
@@ -725,16 +670,14 @@ const QuizHost = () => {
       // NEW: Roster tracking WebSocket handlers
       case 'roster_updated':
         // Real-time roster update when student joins
-        console.log('[QuizHost] Roster updated:', message.roster);
-        if ((session?.class_id || session?.has_roster)) {
+        if (session?.class_id || session?.has_roster) {
           loadRosterData(sessionId); // Refresh roster data
         }
         break;
 
       case 'outsider_detected':
         // Real-time outsider alert
-        console.log('[QuizHost] Outsider detected:', message.outsider);
-        if ((session?.class_id || session?.has_roster)) {
+        if (session?.class_id || session?.has_roster) {
           loadRosterData(sessionId); // Refresh to get updated outsiders list
         }
         break;
@@ -744,9 +687,9 @@ const QuizHost = () => {
         setCurrentQuestion(message.question);
         setAnswersReceived(0);
         // FIX: Update session's current_question_index so counter displays correctly
-        setSession(prev => ({
+        setSession((prev) => ({
           ...prev,
-          current_question_index: message.question.order_index
+          current_question_index: message.question.order_index,
         }));
         // ✅ FIX #3: Pass expires_at timestamp for synchronized timer
         if (message.question.time_limit_seconds) {
@@ -758,30 +701,26 @@ const QuizHost = () => {
         // FIX Issue 2: Auto-advance setting changed
         setAutoAdvanceEnabled(message.enabled);
         setCooldownSeconds(message.cooldown_seconds);
-        console.log('[QuizHost] Auto-advance updated:', message.enabled, message.cooldown_seconds);
         break;
 
       case 'question_ended':
         // FIX BUG #2: Question ended, cooldown starting
-        console.log('[QuizHost] Question ended, cooldown starting:', message.cooldown_seconds);
         setTimeRemaining(0);
         setCooldownRemaining(message.cooldown_seconds);
         break;
 
       case 'cooldown_started':
         // FIX BUG #1: Cooldown started from backend
-        console.log('[QuizHost] Cooldown started:', message.cooldown_seconds);
         setCooldownSeconds(message.cooldown_seconds);
         setCooldownRemaining(message.cooldown_seconds);
         break;
 
       case 'session_ended':
         // FIX BUG #3: Handle session ended (from auto-advance after last question)
-        console.log('[QuizHost] Session ended via websocket:', message.reason);
-        setSession(prev => ({
+        setSession((prev) => ({
           ...prev,
           status: message.final_status || 'completed',
-          ended_at: new Date().toISOString()
+          ended_at: new Date().toISOString(),
         }));
 
         // Clear any pending timers
@@ -791,7 +730,6 @@ const QuizHost = () => {
 
         // Navigate to analytics after 2 seconds
         setTimeout(() => {
-          console.log('[QuizHost] Navigating to analytics...');
           navigate(`/quizzes/${session.quiz_id}/analytics`);
         }, 2000);
         break;
@@ -804,7 +742,6 @@ const QuizHost = () => {
         break;
 
       default:
-        console.log('Unknown message type:', message.type);
     }
   };
 
@@ -815,8 +752,8 @@ const QuizHost = () => {
       await quizService.toggleAutoAdvance(sessionId, enabled, cooldownToUse);
       setAutoAdvanceEnabled(enabled);
     } catch (err) {
-      console.error("Failed to toggle auto-advance:", err);
-      setError(err.message || "Failed to toggle auto-advance.");
+      console.error('Failed to toggle auto-advance:', err);
+      setError(err.message || 'Failed to toggle auto-advance.');
     }
   };
 
@@ -828,8 +765,6 @@ const QuizHost = () => {
    * Uses server timestamp when available, falls back to simple countdown.
    */
   const startTimer = (duration, expiresAt) => {
-    console.log('[QuizHost] Starting timer:', { duration, expiresAt });
-
     if (timerRef.current) {
       clearInterval(timerRef.current);
     }
@@ -857,7 +792,6 @@ const QuizHost = () => {
           setTimeRemaining(remaining);
 
           if (remaining <= 0) {
-            console.log('[QuizHost] Timer expired (timestamp-based)');
             clearInterval(timerRef.current);
             timerRef.current = null;
           }
@@ -878,7 +812,6 @@ const QuizHost = () => {
       setTimeRemaining(remaining);
 
       if (remaining <= 0) {
-        console.log('[QuizHost] Timer expired (countdown)');
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
@@ -888,7 +821,6 @@ const QuizHost = () => {
   // Start cooldown timer when question time expires and auto-advance is enabled
   useEffect(() => {
     if (timeRemaining === 0 && autoAdvanceEnabled && currentQuestion && session?.status === 'active') {
-      console.log('[QuizHost] Starting cooldown countdown:', cooldownSeconds, 'seconds');
       let cooldownLeft = cooldownSeconds;
       setCooldownRemaining(cooldownLeft);
 
@@ -897,7 +829,6 @@ const QuizHost = () => {
         setCooldownRemaining(cooldownLeft);
 
         if (cooldownLeft <= 0) {
-          console.log('[QuizHost] Cooldown finished');
           clearInterval(cooldownInterval);
           setCooldownRemaining(0);
         }
@@ -921,7 +852,6 @@ const QuizHost = () => {
   // FIX Issue 6: Auto-navigate to analytics when quiz ends
   useEffect(() => {
     if (session?.status === 'completed') {
-      console.log('[QuizHost] Quiz completed, navigating to analytics after 3 seconds...');
       const navigateTimer = setTimeout(() => {
         navigate(`/quizzes/${session.quiz_id}/analytics`);
       }, 3000); // Give teacher 3 seconds to see completion message
@@ -935,8 +865,8 @@ const QuizHost = () => {
       await quizService.startSession(sessionId);
       await loadSession();
     } catch (err) {
-      console.error("Failed to start session:", err);
-      setError(err.message || "Failed to start quiz session.");
+      console.error('Failed to start session:', err);
+      setError(err.message || 'Failed to start quiz session.');
     }
   };
 
@@ -945,23 +875,22 @@ const QuizHost = () => {
       await quizService.nextQuestion(sessionId);
       setAnswersReceived(0);
     } catch (err) {
-      console.error("Failed to advance question:", err);
-      setError(err.message || "Failed to advance to next question.");
+      console.error('Failed to advance question:', err);
+      setError(err.message || 'Failed to advance to next question.');
     }
   };
 
   /**
    */
 
-  
   const handleEnd = async () => {
     try {
       await quizService.endSession(sessionId);
       setEndDialog(false);
       navigate('/quizzes');
     } catch (err) {
-      console.error("Failed to end session:", err);
-      setError(err.message || "Failed to end quiz session.");
+      console.error('Failed to end session:', err);
+      setError(err.message || 'Failed to end quiz session.');
       setEndDialog(false);
     }
   };
@@ -972,7 +901,6 @@ const QuizHost = () => {
         await navigator.clipboard.writeText(session.room_code);
         setCopySuccess('Room code copied!');
         setTimeout(() => setCopySuccess(''), 2000);
-        console.log('[QuizHost] Room code copied to clipboard:', session.room_code);
       } catch (err) {
         console.error('[QuizHost] Failed to copy room code:', err);
         setCopySuccess('Failed to copy');
@@ -996,7 +924,6 @@ const QuizHost = () => {
         await navigator.clipboard.writeText(url);
         setCopySuccess('Join link copied!');
         setTimeout(() => setCopySuccess(''), 2000);
-        console.log('[QuizHost] Join URL copied to clipboard:', url);
       } catch (err) {
         console.error('[QuizHost] Failed to copy join URL:', err);
         setCopySuccess('Failed to copy');
@@ -1039,7 +966,7 @@ const QuizHost = () => {
           p: 4,
           mb: 3,
 
-          color: 'text.primary'
+          color: 'text.primary',
         }}
       >
         <Typography component="h1" variant="h1" sx={{ mb: 3, fontWeight: 600, textAlign: 'center' }}>
@@ -1063,8 +990,9 @@ const QuizHost = () => {
                   borderRadius: 2,
                   px: 3,
                   py: 1.5,
-                  border: '1px solid', borderColor: 'divider',
-                  mb: 3
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  mb: 3,
                 }}
               >
                 <Typography
@@ -1075,7 +1003,7 @@ const QuizHost = () => {
                     lineHeight: 1.2,
                     fontVariantNumeric: 'tabular-nums',
                     letterSpacing: { xs: 2, sm: 6 },
-                    fontFamily: 'var(--font-mono)'
+                    fontFamily: 'var(--font-mono)',
                   }}
                 >
                   {session?.room_code}
@@ -1101,7 +1029,7 @@ const QuizHost = () => {
                     borderRadius: 1,
                     px: 2,
                     py: 1,
-                    maxWidth: '100%'
+                    maxWidth: '100%',
                   }}
                 >
                   <Typography
@@ -1109,7 +1037,7 @@ const QuizHost = () => {
                     sx={{
                       fontFamily: 'var(--font-mono)',
                       fontSize: '0.9rem',
-                      wordBreak: 'break-all'
+                      wordBreak: 'break-all',
                     }}
                   >
                     {getJoinUrl()}
@@ -1136,15 +1064,10 @@ const QuizHost = () => {
                   p: 2,
                   backgroundColor: 'white',
                   borderRadius: 2,
-                  boxShadow: 3
+                  boxShadow: 3,
                 }}
               >
-                <QRCodeSVG
-                  value={getJoinUrl()}
-                  size={180}
-                  level="H"
-                  includeMargin={true}
-                />
+                <QRCodeSVG value={getJoinUrl()} size={180} level="H" includeMargin={true} />
               </Box>
               <Typography variant="caption" sx={{ display: 'block', mt: 1, opacity: 0.9 }}>
                 Students can scan this QR code to join
@@ -1157,7 +1080,9 @@ const QuizHost = () => {
           <Chip
             className="mst-status"
             color={wsConnected ? 'success' : 'error'}
-            icon={<span aria-hidden="true" className="mst-dot mst-chip-dot" data-pulse={wsConnected ? 'true' : undefined} />}
+            icon={
+              <span aria-hidden="true" className="mst-dot mst-chip-dot" data-pulse={wsConnected ? 'true' : undefined} />
+            }
             label={wsConnected ? 'Live · connected' : 'Disconnected'}
           />
         </Box>
@@ -1186,16 +1111,21 @@ const QuizHost = () => {
           {currentQuestion && session?.status === 'active' && (
             <Card sx={{ mb: 2 }}>
               <CardContent>
-                <Typography variant="h6" gutterBottom>Question Timer</Typography>
+                <Typography variant="h6" gutterBottom>
+                  Question Timer
+                </Typography>
 
-                {(cooldownRemaining > 0 && autoAdvanceEnabled) ? (
+                {cooldownRemaining > 0 && autoAdvanceEnabled ? (
                   // Cooldown Timer with Skip Button
                   <Box sx={{ textAlign: 'center', py: 2 }}>
                     <Alert severity="info" sx={{ mb: 2, textAlign: 'center' }}>
                       <Typography variant="subtitle2" sx={{ mb: 1, textAlign: 'center' }}>
                         Next Question Starting In
                       </Typography>
-                      <Typography variant="h2" sx={{ fontWeight: 600, color: 'primary.light', textAlign: 'center', mb: 2 }}>
+                      <Typography
+                        variant="h2"
+                        sx={{ fontWeight: 600, color: 'primary.light', textAlign: 'center', mb: 2 }}
+                      >
                         {cooldownRemaining}s
                       </Typography>
                     </Alert>
@@ -1204,7 +1134,13 @@ const QuizHost = () => {
                   // Question Timer
                   <Box sx={{ textAlign: 'center', py: 1 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mb: 2 }}>
-                      <TimerIcon sx={{ mr: 1, color: timeRemaining > 10 ? 'success.main' : timeRemaining > 5 ? 'warning.main' : 'error.main' }} />
+                      <TimerIcon
+                        sx={{
+                          mr: 1,
+                          color:
+                            timeRemaining > 10 ? 'success.main' : timeRemaining > 5 ? 'warning.main' : 'error.main',
+                        }}
+                      />
                       <Typography
                         variant="h3"
                         color={timeRemaining > 10 ? 'success.main' : timeRemaining > 5 ? 'warning.main' : 'error.main'}
@@ -1228,15 +1164,13 @@ const QuizHost = () => {
           {/* Current Question */}
           <Card sx={{ mb: 2 }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom>Current Question</Typography>
+              <Typography variant="h6" gutterBottom>
+                Current Question
+              </Typography>
               <Typography variant="h3" color="primary" sx={{ fontWeight: 600 }}>
-                {session?.current_question_index !== null
-                  ? session.current_question_index + 1
-                  : '-'}
+                {session?.current_question_index !== null ? session.current_question_index + 1 : '-'}
               </Typography>
-              <Typography color="text.secondary">
-                of {session?.questions?.length || 0}
-              </Typography>
+              <Typography color="text.secondary">of {session?.questions?.length || 0}</Typography>
 
               {session?.status === 'active' && (
                 <Box sx={{ mt: 2 }}>
@@ -1260,11 +1194,22 @@ const QuizHost = () => {
           {/* Controls */}
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom>Session Controls</Typography>
+              <Typography variant="h6" gutterBottom>
+                Session Controls
+              </Typography>
 
               {/* FIX Issue 2: Auto-Advance Controls - Only show BEFORE quiz starts */}
               {session?.status === 'waiting' && (
-                <Box sx={{ mb: 2, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1, backgroundColor: 'action.hover' }}>
+                <Box
+                  sx={{
+                    mb: 2,
+                    p: 2,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 1,
+                    backgroundColor: 'action.hover',
+                  }}
+                >
                   <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
                     Auto-advance (set before you start)
                   </Typography>
@@ -1323,7 +1268,8 @@ const QuizHost = () => {
                     onClick={handleNextQuestion}
                     disabled={
                       session.current_question_index === null ||
-                      session.current_question_index >= (session?.questions?.length || 0) - 1 || (autoAdvanceEnabled && cooldownRemaining > 0)
+                      session.current_question_index >= (session?.questions?.length || 0) - 1 ||
+                      (autoAdvanceEnabled && cooldownRemaining > 0)
                     }
                     sx={{ mb: 1 }}
                   >
@@ -1373,13 +1319,13 @@ const QuizHost = () => {
                 {currentQuestion.media_url && (
                   <Box sx={{ mb: 2, textAlign: 'center' }}>
                     <img
-                      src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${currentQuestion.media_url}`}
+                      src={`${config.apiBaseUrl}${currentQuestion.media_url}`}
                       alt="Question visual"
                       style={{
                         maxWidth: '100%',
                         maxHeight: 300,
                         borderRadius: 8,
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                       }}
                     />
                   </Box>
@@ -1393,7 +1339,7 @@ const QuizHost = () => {
                             p: 2,
                             backgroundColor: 'action.hover',
                             border: 1,
-                            borderColor: 'divider'
+                            borderColor: 'divider',
                           }}
                         >
                           <Typography>{option}</Typography>
@@ -1419,9 +1365,7 @@ const QuizHost = () => {
               {leaderboard.length === 0 ? (
                 <Box sx={{ textAlign: 'center', py: 8 }}>
                   <PeopleIcon sx={{ fontSize: 80, color: 'text.disabled', mb: 2 }} />
-                  <Typography color="text.secondary">
-                    Waiting for participants to join...
-                  </Typography>
+                  <Typography color="text.secondary">Waiting for participants to join...</Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                     Share the room code: <strong>{session?.room_code}</strong>
                   </Typography>
@@ -1452,9 +1396,7 @@ const QuizHost = () => {
       <Dialog open={endDialog} onClose={() => setEndDialog(false)}>
         <DialogTitle>End Quiz Session?</DialogTitle>
         <DialogContent>
-          <Typography>
-            Are you sure you want to end this quiz session? This action cannot be undone.
-          </Typography>
+          <Typography>Are you sure you want to end this quiz session? This action cannot be undone.</Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setEndDialog(false)}>Cancel</Button>

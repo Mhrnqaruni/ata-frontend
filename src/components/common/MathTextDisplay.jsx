@@ -1,4 +1,6 @@
-// /src/components/common/MathTextDisplay.jsx
+// Shows text with its maths formulas ($...$ and $$...$$) typeset by KaTeX, and the rest as plain text.
+// Used wherever assessment, quiz or family-page text can contain maths.
+// Area: platform
 
 import React, { useMemo } from 'react';
 import 'katex/dist/katex.min.css';
@@ -21,12 +23,24 @@ const MathTextDisplay = ({ text, component: Component = 'span', ...props }) => {
             <span
               key={idx}
               dangerouslySetInnerHTML={{ __html: part.content }}
-              style={{ display: part.isDisplay ? 'block' : 'inline', maxWidth: '100%', overflowX: part.isDisplay ? 'auto' : undefined }}
+              style={{
+                display: part.isDisplay ? 'block' : 'inline',
+                maxWidth: '100%',
+                overflowX: part.isDisplay ? 'auto' : undefined,
+              }}
             />
           );
         } else if (part.type === 'error') {
           return (
-            <span key={idx} style={{ color: 'var(--mst-error)', background: 'var(--mst-error-surface)', padding: '2px 4px', borderRadius: '2px' }}>
+            <span
+              key={idx}
+              style={{
+                color: 'var(--mst-error)',
+                background: 'var(--mst-error-surface)',
+                padding: '2px 4px',
+                borderRadius: '2px',
+              }}
+            >
               [Math Error: {part.content}]
             </span>
           );

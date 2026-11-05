@@ -1,4 +1,5 @@
-// /src/pages/quizzes/QuizSPParticipant.jsx
+// The student's self-paced quiz screen: join with an access code, answer at their own pace, review and submit.
+// Area: quizzes
 
 import React, { useState, useEffect, useCallback } from 'react';
 import joinLogo from '../../assets/mst_logo_no_bg.png';
@@ -27,7 +28,7 @@ import {
   ListItemButton,
   ListItemText,
   CircularProgress,
-  Fade
+  Fade,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
@@ -42,6 +43,7 @@ import quizSPService from '../../services/quizSPService';
 import { useSnackbar } from '../../hooks/useSnackbar';
 import MathTextDisplay from '../../components/common/MathTextDisplay';
 import MathInputWithPreview from '../../components/common/MathInputWithPreview';
+import { config } from '../../config';
 
 /**
  * Join Screen Component - Student enters access code and info
@@ -64,11 +66,7 @@ const JoinScreen = ({ onJoin }) => {
       setIsJoining(true);
       setError(null);
 
-      const result = await quizSPService.joinSPSession(
-        accessCode.trim(),
-        studentId.trim(),
-        guestName.trim()
-      );
+      const result = await quizSPService.joinSPSession(accessCode.trim(), studentId.trim(), guestName.trim());
 
       onJoin(result);
     } catch (err) {
@@ -105,9 +103,9 @@ const JoinScreen = ({ onJoin }) => {
                   textAlign: 'center',
                   letterSpacing: 8,
                   fontWeight: 600,
-                  fontFamily: 'var(--font-mono)'
+                  fontFamily: 'var(--font-mono)',
                 },
-                maxLength: 6
+                maxLength: 6,
               }}
               autoFocus
             />
@@ -202,7 +200,7 @@ const DeadlineTimer = ({ deadline }) => {
       sx={{
         fontWeight: 600,
         color: isUrgent ? 'error.main' : 'warning.dark',
-        fontFamily: 'var(--font-mono)'
+        fontFamily: 'var(--font-mono)',
       }}
     >
       {timeLeft}
@@ -213,13 +211,7 @@ const DeadlineTimer = ({ deadline }) => {
 /**
  * Question Display Component - Shows one question with answer options
  */
-const QuestionDisplay = ({
-  question,
-  currentAnswer,
-  onAnswerChange,
-  totalQuestions,
-  currentIndex
-}) => {
+const QuestionDisplay = ({ question, currentAnswer, onAnswerChange, totalQuestions, currentIndex }) => {
   const handleSelectOption = (optionIndex) => {
     if (question.question_type === 'multiple_choice') {
       onAnswerChange(optionIndex);
@@ -237,11 +229,7 @@ const QuestionDisplay = ({
   return (
     <Paper sx={{ p: 4, mb: 3 }}>
       <Box sx={{ mb: 3 }}>
-        <Chip
-          label={`Question ${currentIndex + 1} of ${totalQuestions}`}
-          color="primary"
-          sx={{ mb: 2 }}
-        />
+        <Chip label={`Question ${currentIndex + 1} of ${totalQuestions}`} color="primary" sx={{ mb: 2 }} />
         <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }} component="div">
           <MathTextDisplay text={question.question_text} />
         </Typography>
@@ -249,14 +237,14 @@ const QuestionDisplay = ({
         {/* Question Image */}
         {question.media_url && (
           <Box sx={{ my: 2, textAlign: 'center' }}>
-            <img 
-              src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${question.media_url}`}
+            <img
+              src={`${config.apiBaseUrl}${question.media_url}`}
               alt="Question visual"
-              style={{ 
-                maxWidth: '100%', 
-                maxHeight: 400, 
+              style={{
+                maxWidth: '100%',
+                maxHeight: 400,
                 borderRadius: 8,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
               }}
             />
           </Box>
@@ -273,34 +261,35 @@ const QuestionDisplay = ({
       {/* Multiple Choice */}
       {question.question_type === 'multiple_choice' && (
         <Box>
-          {question.options && question.options.map((option, index) => (
-            <Card
-              key={index}
-              sx={{
-                mb: 2,
-                cursor: 'pointer',
-                border: 2,
-                borderColor: currentAnswer === index ? 'primary.main' : 'divider',
-                backgroundColor: currentAnswer === index ? 'action.selected' : 'background.paper',
-                '&:hover': {
-                  borderColor: 'primary.main',
-                  backgroundColor: 'action.hover'
-                }
-              }}
-              onClick={() => handleSelectOption(index)}
-            >
-              <CardContent sx={{ display: 'flex', alignItems: 'center', py: 2 }}>
-                {currentAnswer === index ? (
-                  <CheckCircleIcon color="primary" sx={{ mr: 2 }} />
-                ) : (
-                  <RadioButtonUncheckedIcon color="action" sx={{ mr: 2 }} />
-                )}
-                <Typography variant="h6" component="div">
-                  <MathTextDisplay text={option} />
-                </Typography>
-              </CardContent>
-            </Card>
-          ))}
+          {question.options &&
+            question.options.map((option, index) => (
+              <Card
+                key={index}
+                sx={{
+                  mb: 2,
+                  cursor: 'pointer',
+                  border: 2,
+                  borderColor: currentAnswer === index ? 'primary.main' : 'divider',
+                  backgroundColor: currentAnswer === index ? 'action.selected' : 'background.paper',
+                  '&:hover': {
+                    borderColor: 'primary.main',
+                    backgroundColor: 'action.hover',
+                  },
+                }}
+                onClick={() => handleSelectOption(index)}
+              >
+                <CardContent sx={{ display: 'flex', alignItems: 'center', py: 2 }}>
+                  {currentAnswer === index ? (
+                    <CheckCircleIcon color="primary" sx={{ mr: 2 }} />
+                  ) : (
+                    <RadioButtonUncheckedIcon color="action" sx={{ mr: 2 }} />
+                  )}
+                  <Typography variant="h6" component="div">
+                    <MathTextDisplay text={option} />
+                  </Typography>
+                </CardContent>
+              </Card>
+            ))}
         </Box>
       )}
 
@@ -316,8 +305,8 @@ const QuestionDisplay = ({
               backgroundColor: currentAnswer === true ? 'action.selected' : 'background.paper',
               '&:hover': {
                 borderColor: 'primary.main',
-                backgroundColor: 'action.hover'
-              }
+                backgroundColor: 'action.hover',
+              },
             }}
             onClick={() => handleTrueFalseSelect(true)}
           >
@@ -338,8 +327,8 @@ const QuestionDisplay = ({
               backgroundColor: currentAnswer === false ? 'action.selected' : 'background.paper',
               '&:hover': {
                 borderColor: 'primary.main',
-                backgroundColor: 'action.hover'
-              }
+                backgroundColor: 'action.hover',
+              },
             }}
             onClick={() => handleTrueFalseSelect(false)}
           >
@@ -359,7 +348,7 @@ const QuestionDisplay = ({
           multiline
           rows={4}
           placeholder="Type your answer here... (Use $ for math formulas, e.g., $x^2 + 3$)"
-          value={(typeof currentAnswer === 'string' || typeof currentAnswer === 'number') ? currentAnswer : ''}
+          value={typeof currentAnswer === 'string' || typeof currentAnswer === 'number' ? currentAnswer : ''}
           onChange={handleShortAnswerChange}
           variant="outlined"
           helperText="Tip: Wrap math in $ for formulas (e.g., $sqrt(16)$ or $pi*r^2$)"
@@ -380,8 +369,8 @@ const QuestionDisplay = ({
                 backgroundColor: currentAnswer === index ? 'action.selected' : 'background.paper',
                 '&:hover': {
                   borderColor: 'primary.main',
-                  backgroundColor: 'action.hover'
-                }
+                  backgroundColor: 'action.hover',
+                },
               }}
               onClick={() => handleSelectOption(index)}
             >
@@ -406,23 +395,15 @@ const QuestionDisplay = ({
 /**
  * Question Palette Component - Shows all questions with answered status
  */
-const QuestionPalette = ({
-  questions,
-  currentIndex,
-  answers,
-  onNavigate,
-  open,
-  onClose
-}) => {
+const QuestionPalette = ({ questions, currentIndex, answers, onNavigate, open, onClose }) => {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        Question Overview
-      </DialogTitle>
+      <DialogTitle>Question Overview</DialogTitle>
       <DialogContent>
         <Grid container spacing={1}>
           {questions.map((question, index) => {
-            const isAnswered = answers[question.id] !== undefined && answers[question.id] !== null && answers[question.id] !== '';
+            const isAnswered =
+              answers[question.id] !== undefined && answers[question.id] !== null && answers[question.id] !== '';
             const isCurrent = index === currentIndex;
 
             return (
@@ -434,8 +415,8 @@ const QuestionPalette = ({
                     borderColor: isCurrent ? 'primary.main' : isAnswered ? 'success.main' : 'divider',
                     backgroundColor: isCurrent ? 'action.selected' : isAnswered ? 'success.light' : 'background.paper',
                     '&:hover': {
-                      borderColor: 'primary.main'
-                    }
+                      borderColor: 'primary.main',
+                    },
                   }}
                   onClick={() => {
                     onNavigate(index);
@@ -471,15 +452,9 @@ const QuestionPalette = ({
 /**
  * Review Screen Component - Shows all questions with answers before final submit
  */
-const ReviewScreen = ({
-  questions,
-  answers,
-  onNavigateToQuestion,
-  onFinalSubmit,
-  requireAllAnswers
-}) => {
+const ReviewScreen = ({ questions, answers, onNavigateToQuestion, onFinalSubmit, requireAllAnswers }) => {
   const answeredCount = Object.keys(answers).filter(
-    qId => answers[qId] !== undefined && answers[qId] !== null && answers[qId] !== ''
+    (qId) => answers[qId] !== undefined && answers[qId] !== null && answers[qId] !== ''
   ).length;
 
   const canSubmit = !requireAllAnswers || answeredCount === questions.length;
@@ -514,7 +489,8 @@ const ReviewScreen = ({
 
       <List>
         {questions.map((question, index) => {
-          const isAnswered = answers[question.id] !== undefined && answers[question.id] !== null && answers[question.id] !== '';
+          const isAnswered =
+            answers[question.id] !== undefined && answers[question.id] !== null && answers[question.id] !== '';
 
           return (
             <Card key={question.id} sx={{ mb: 2 }}>
@@ -535,13 +511,16 @@ const ReviewScreen = ({
 
                     {isAnswered ? (
                       <Typography variant="body1" color="primary.light" sx={{ fontWeight: 600 }}>
-                        Answer: {
-                          question.question_type === 'multiple_choice' || question.question_type === 'poll'
-                            ? (question.options?.[answers[question.id]] ?? 'Not selected')
-                            : question.question_type === 'true_false'
-                            ? (answers[question.id] === true ? 'True' : answers[question.id] === false ? 'False' : 'Not selected')
-                            : (answers[question.id] || 'Not answered')
-                        }
+                        Answer:{' '}
+                        {question.question_type === 'multiple_choice' || question.question_type === 'poll'
+                          ? (question.options?.[answers[question.id]] ?? 'Not selected')
+                          : question.question_type === 'true_false'
+                            ? answers[question.id] === true
+                              ? 'True'
+                              : answers[question.id] === false
+                                ? 'False'
+                                : 'Not selected'
+                            : answers[question.id] || 'Not answered'}
                       </Typography>
                     ) : (
                       <Typography variant="body1" color="warning.main">
@@ -549,11 +528,7 @@ const ReviewScreen = ({
                       </Typography>
                     )}
                   </Box>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={() => onNavigateToQuestion(index)}
-                  >
+                  <Button variant="outlined" size="small" onClick={() => onNavigateToQuestion(index)}>
                     {isAnswered ? 'Change' : 'Answer'}
                   </Button>
                 </Box>
@@ -645,7 +620,16 @@ const AnswerReviewDisplaySP = ({ sessionId, studentToken, onBack }) => {
     <Container maxWidth="md">
       <Fade in timeout={800}>
         <Box sx={{ mt: 4 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mb: 4,
+              flexWrap: 'wrap',
+              gap: 2,
+            }}
+          >
             <Typography variant="h3" sx={{ fontWeight: 600 }}>
               Your Results
             </Typography>
@@ -659,11 +643,14 @@ const AnswerReviewDisplaySP = ({ sessionId, studentToken, onBack }) => {
               p: 3,
               mb: 4,
               bgcolor: 'background.paper',
-              border: '1px solid', borderColor: 'divider',
-              color: 'text.primary'
+              border: '1px solid',
+              borderColor: 'divider',
+              color: 'text.primary',
             }}
           >
-            <Typography variant="h5" gutterBottom>Score Summary</Typography>
+            <Typography variant="h5" gutterBottom>
+              Score Summary
+            </Typography>
             <Typography variant="h2" sx={{ fontWeight: 600 }}>
               {reviewData.total_score} / {reviewData.max_possible_score}
             </Typography>
@@ -682,7 +669,13 @@ const AnswerReviewDisplaySP = ({ sessionId, studentToken, onBack }) => {
 
             return (
               <Fade in timeout={200 * (index + 1)} key={`${review.question_number}-${index}`}>
-                <Card sx={{ mb: 3, border: 2, borderColor: isCorrect ? 'success.main' : isIncorrect ? 'error.main' : 'divider' }}>
+                <Card
+                  sx={{
+                    mb: 3,
+                    border: 2,
+                    borderColor: isCorrect ? 'success.main' : isIncorrect ? 'error.main' : 'divider',
+                  }}
+                >
                   <CardContent>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1 }}>
                       <Chip label={`Question ${review.question_number}`} color="primary" size="small" />
@@ -699,13 +692,13 @@ const AnswerReviewDisplaySP = ({ sessionId, studentToken, onBack }) => {
                     {review.media_url && (
                       <Box sx={{ mb: 2, textAlign: 'center' }}>
                         <img
-                          src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${review.media_url}`}
+                          src={`${config.apiBaseUrl}${review.media_url}`}
                           alt="Question visual"
                           style={{
                             maxWidth: '100%',
                             maxHeight: 300,
                             borderRadius: 8,
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                           }}
                         />
                       </Box>
@@ -728,25 +721,21 @@ const AnswerReviewDisplaySP = ({ sessionId, studentToken, onBack }) => {
                                 borderColor: isCorrectAnswer
                                   ? 'success.main'
                                   : isStudentAnswer
-                                  ? 'error.main'
-                                  : 'divider',
+                                    ? 'error.main'
+                                    : 'divider',
                                 backgroundColor: isCorrectAnswer
                                   ? 'success.light'
                                   : isStudentAnswer
-                                  ? 'error.light'
-                                  : 'transparent'
+                                    ? 'error.light'
+                                    : 'transparent',
                               }}
                             >
                               <ListItemText
                                 primary={<MathTextDisplay text={option} />}
                                 secondary={
                                   <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
-                                    {isStudentAnswer && (
-                                      <Chip label="Your Answer" size="small" />
-                                    )}
-                                    {isCorrectAnswer && (
-                                      <Chip label="Correct Answer" size="small" color="success" />
-                                    )}
+                                    {isStudentAnswer && <Chip label="Your Answer" size="small" />}
+                                    {isCorrectAnswer && <Chip label="Correct Answer" size="small" color="success" />}
                                   </Box>
                                 }
                                 secondaryTypographyProps={{ component: 'div' }}
@@ -901,7 +890,7 @@ const QuizSPParticipant = () => {
     if (!sessionData || finalResult) return;
 
     const interval = setInterval(() => {
-      setElapsedSeconds(prev => prev + 1);
+      setElapsedSeconds((prev) => prev + 1);
     }, 1000);
 
     return () => clearInterval(interval);
@@ -921,12 +910,9 @@ const QuizSPParticipant = () => {
         try {
           setIsAutoSubmitting(true);
           showSnackbar('Time limit reached. Auto-submitting your quiz...', 'warning');
-          const result = await quizSPService.submitSPQuiz(
-            sessionData.session_id,
-            studentToken
-          );
+          const result = await quizSPService.submitSPQuiz(sessionData.session_id, studentToken);
           setFinalResult(result);
-          setProgress(prev => ({ ...(prev || {}), status: 'submitted' }));
+          setProgress((prev) => ({ ...(prev || {}), status: 'submitted' }));
         } catch (error) {
           console.error('Error auto-submitting quiz:', error);
           showSnackbar('Auto-submit failed. Please try submitting manually.', 'error');
@@ -962,7 +948,7 @@ const QuizSPParticipant = () => {
       quiz_title: joinResult.quiz_title,
       total_questions: joinResult.total_questions,
       deadline: joinResult.deadline,
-      settings: joinResult.settings || {}
+      settings: joinResult.settings || {},
     });
     setStudentToken(joinResult.student_token);
     setSettings(joinResult.settings || {});
@@ -978,9 +964,9 @@ const QuizSPParticipant = () => {
   // Handle answer change
   const handleAnswerChange = (answer) => {
     const currentQuestion = questions[currentQuestionIndex];
-    setAnswers(prev => ({
+    setAnswers((prev) => ({
       ...prev,
-      [currentQuestion.id]: answer
+      [currentQuestion.id]: answer,
     }));
   };
 
@@ -999,9 +985,9 @@ const QuizSPParticipant = () => {
       return;
     }
 
-    const isShortAnswer = currentQuestion.question_type === "short_answer";
+    const isShortAnswer = currentQuestion.question_type === 'short_answer';
     if (isShortAnswer) {
-      setGradingStatus("ai_grading");
+      setGradingStatus('ai_grading');
     }
 
     try {
@@ -1014,10 +1000,10 @@ const QuizSPParticipant = () => {
       );
 
       // Update progress
-      setProgress(prev => ({
+      setProgress((prev) => ({
         ...prev,
         score: result.current_score,
-        completed_question_ids: [...(prev.completed_question_ids || []), currentQuestion.id]
+        completed_question_ids: [...(prev.completed_question_ids || []), currentQuestion.id],
       }));
 
       if (isShortAnswer) {
@@ -1026,15 +1012,14 @@ const QuizSPParticipant = () => {
           points_earned: result.points_earned,
           ai_feedback: result.ai_feedback,
           marking_basis: result.marking_basis,
-          explanation: result.explanation
+          explanation: result.explanation,
         });
-        setGradingStatus("complete");
+        setGradingStatus('complete');
       }
-
     } catch (error) {
       console.error('Error saving answer:', error);
       if (isShortAnswer) {
-        setGradingStatus("error");
+        setGradingStatus('error');
       }
       showSnackbar(error.message || 'Failed to submit answer', 'error');
     }
@@ -1047,11 +1032,7 @@ const QuizSPParticipant = () => {
 
     // Navigate
     try {
-      await quizSPService.navigateSPQuestion(
-        sessionData.session_id,
-        newIndex,
-        studentToken
-      );
+      await quizSPService.navigateSPQuestion(sessionData.session_id, newIndex, studentToken);
 
       setCurrentQuestionIndex(newIndex);
     } catch (error) {
@@ -1090,10 +1071,7 @@ const QuizSPParticipant = () => {
     try {
       setIsSubmitting(true);
 
-      const result = await quizSPService.submitSPQuiz(
-        sessionData.session_id,
-        studentToken
-      );
+      const result = await quizSPService.submitSPQuiz(sessionData.session_id, studentToken);
 
       setFinalResult(result);
       showSnackbar('Quiz submitted successfully!', 'success');
@@ -1180,12 +1158,7 @@ const QuizSPParticipant = () => {
 
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
             {settings.show_timer && (
-              <Chip
-                icon={<TimerIcon />}
-                label={formatTime(elapsedSeconds)}
-                color="primary"
-                variant="outlined"
-              />
+              <Chip icon={<TimerIcon />} label={formatTime(elapsedSeconds)} color="primary" variant="outlined" />
             )}
             <Chip
               label={`${Object.keys(answers).length} / ${questions.length} answered`}
@@ -1206,7 +1179,7 @@ const QuizSPParticipant = () => {
       />
 
       {/* AI Grading Loading State (Short Answer) */}
-      {gradingStatus === "ai_grading" && (
+      {gradingStatus === 'ai_grading' && (
         <Box
           sx={{
             display: 'flex',
@@ -1216,7 +1189,7 @@ const QuizSPParticipant = () => {
             mt: 3,
             p: 3,
             bgcolor: 'action.selected',
-            borderRadius: 2
+            borderRadius: 2,
           }}
         >
           <CircularProgress sx={{ color: 'primary.light' }} size={50} />
@@ -1230,15 +1203,21 @@ const QuizSPParticipant = () => {
       )}
 
       {/* Answer Feedback (after grading complete) */}
-      {gradingStatus === "complete" && feedback && (
-        <Alert severity={feedback.is_correct ? "success" : "warning"} sx={{ mt: 2 }}>
+      {gradingStatus === 'complete' && feedback && (
+        <Alert severity={feedback.is_correct ? 'success' : 'warning'} sx={{ mt: 2 }}>
           <Typography variant="h6">
-            {feedback.is_correct ? "Correct!" : "Incorrect"} ({feedback.points_earned}/{currentQuestion.points} points)
+            {feedback.is_correct ? 'Correct!' : 'Incorrect'} ({feedback.points_earned}/{currentQuestion.points} points)
           </Typography>
 
-          {feedback.marking_basis && <Typography variant="caption" component="p">
-            {feedback.marking_basis === 'ai' ? 'AI marked against the accepted answer.' : feedback.marking_basis === 'keyword' ? 'Marked using the teacher’s keyword rules.' : 'Marked against the answer key.'}
-          </Typography>}
+          {feedback.marking_basis && (
+            <Typography variant="caption" component="p">
+              {feedback.marking_basis === 'ai'
+                ? 'AI marked against the accepted answer.'
+                : feedback.marking_basis === 'keyword'
+                  ? 'Marked using the teacher’s keyword rules.'
+                  : 'Marked against the answer key.'}
+            </Typography>
+          )}
           {feedback.ai_feedback && (
             <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
               <Typography variant="body2">
@@ -1271,33 +1250,18 @@ const QuizSPParticipant = () => {
           </Grid>
 
           <Grid item xs={12} sm={4}>
-            <Button
-              fullWidth
-              variant="outlined"
-              startIcon={<ListAltIcon />}
-              onClick={() => setPaletteOpen(true)}
-            >
+            <Button fullWidth variant="outlined" startIcon={<ListAltIcon />} onClick={() => setPaletteOpen(true)}>
               Question Overview
             </Button>
           </Grid>
 
           <Grid item xs={12} sm={4}>
             {currentQuestionIndex < questions.length - 1 ? (
-              <Button
-                fullWidth
-                variant="contained"
-                endIcon={<NavigateNextIcon />}
-                onClick={handleNext}
-              >
+              <Button fullWidth variant="contained" endIcon={<NavigateNextIcon />} onClick={handleNext}>
                 Next
               </Button>
             ) : (
-              <Button
-                fullWidth
-                variant="contained"
-                color="success"
-                onClick={handleEnterReview}
-              >
+              <Button fullWidth variant="contained" color="success" onClick={handleEnterReview}>
                 Review & Submit
               </Button>
             )}

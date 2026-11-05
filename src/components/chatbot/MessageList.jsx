@@ -1,4 +1,5 @@
-// /ata-frontend/src/components/chatbot/MessageList.jsx (DEFINITIVELY CORRECTED)
+// The assistant chat transcript: each message as Markdown with maths and inline charts, then the thinking indicator.
+// Area: chat
 
 import { useEffect, useRef, memo, Component } from 'react';
 import { Box, Stack, Typography, Avatar, Alert } from '@mui/material';
@@ -50,10 +51,9 @@ const BlinkingCursor = styled('span')({
   animation: 'blink 1s infinite',
   '@keyframes blink': {
     '0%, 49%': { opacity: 1 },
-    '50%, 100%': { opacity: 0 }
-  }
+    '50%, 100%': { opacity: 0 },
+  },
 });
-
 
 // --- MessageBubble Component (THIS IS WHERE THE FIX IS) ---
 const MessageBubbleComponent = ({ message }) => {
@@ -78,24 +78,15 @@ const MessageBubbleComponent = ({ message }) => {
 
   const hasCharts = Array.isArray(message.charts) && message.charts.length > 0;
 
-  // Debug logging
-  console.log('[MessageBubble] Rendering:', {
-    id: message.id,
-    role: message.role,
-    contentLength: message.content?.length,
-    hasCharts,
-    chartsCount: message.charts?.length || 0,
-    isStreaming: message.isStreaming,
-    hasMath: (message.content?.match(/\$/g) || []).length > 0
-  });
-
   // CRITICAL FIX: Check for incomplete math during streaming
-  const hasIncompleteMath = message.isStreaming && (() => {
-    const singleDollarCount = (message.content.match(/\$/g) || []).length;
-    const doubleDollarCount = (message.content.match(/\$\$/g) || []).length;
-    // If odd number of single $ OR odd number of $$ pairs, math is incomplete
-    return (singleDollarCount - doubleDollarCount * 2) % 2 !== 0 || doubleDollarCount % 2 !== 0;
-  })();
+  const hasIncompleteMath =
+    message.isStreaming &&
+    (() => {
+      const singleDollarCount = (message.content.match(/\$/g) || []).length;
+      const doubleDollarCount = (message.content.match(/\$\$/g) || []).length;
+      // If odd number of single $ OR odd number of $$ pairs, math is incomplete
+      return (singleDollarCount - doubleDollarCount * 2) % 2 !== 0 || doubleDollarCount % 2 !== 0;
+    })();
 
   // CRITICAL FIX: Try-catch wrapper for rendering to prevent blank screen
   let renderContent;
@@ -126,24 +117,26 @@ const MessageBubbleComponent = ({ message }) => {
         </span>
       )}
       <div className="mst-msg-bubble">
-        <Box sx={{
-          overflow: 'visible',  // CRITICAL: Prevent height calculation issues
-          '& p': { margin: '0.25em 0' },
-          '& ul, & ol': { paddingLeft: '1.5em', margin: '0.25em 0' },
-          '& li': { marginBottom: '0.1em' },
-          '& h1, & h2, & h3': { marginTop: '0.5em', marginBottom: '0.25em' },
-          // CRITICAL KaTeX fixes
-          '& .katex': { fontSize: '1em', display: 'inline', maxHeight: 'none' },
-          '& .katex-display': {
-            display: 'block',
-            margin: '0.5em 0',
-            textAlign: 'center',
-            overflow: 'visible'  // Prevent height issues
-          },
-          '& .katex-html': { display: 'inline' },  // Prevent block expansion
-          color: 'inherit',
-          '& *': { maxWidth: '100%' }
-        }}>
+        <Box
+          sx={{
+            overflow: 'visible', // CRITICAL: Prevent height calculation issues
+            '& p': { margin: '0.25em 0' },
+            '& ul, & ol': { paddingLeft: '1.5em', margin: '0.25em 0' },
+            '& li': { marginBottom: '0.1em' },
+            '& h1, & h2, & h3': { marginTop: '0.5em', marginBottom: '0.25em' },
+            // CRITICAL KaTeX fixes
+            '& .katex': { fontSize: '1em', display: 'inline', maxHeight: 'none' },
+            '& .katex-display': {
+              display: 'block',
+              margin: '0.5em 0',
+              textAlign: 'center',
+              overflow: 'visible', // Prevent height issues
+            },
+            '& .katex-html': { display: 'inline' }, // Prevent block expansion
+            color: 'inherit',
+            '& *': { maxWidth: '100%' },
+          }}
+        >
           {hasIncompleteMath ? (
             // Show raw text when math is incomplete during streaming
             <Typography component="span" sx={{ whiteSpace: 'pre-wrap' }}>
@@ -151,48 +144,92 @@ const MessageBubbleComponent = ({ message }) => {
             </Typography>
           ) : (
             <ReactMarkdown
-            key={`markdown-${message.id}`}  // STABLE KEY - only message ID
-            remarkPlugins={[remarkGfm, remarkMath]}
-            rehypePlugins={[
-              [rehypeKatex, {
-                throwOnError: false,
-                errorColor: '#cc0000',
-                strict: false,
-                output: 'html',  // CRITICAL FIX: Use ONLY html, not htmlAndMathml (prevents double rendering)
-                trust: false
-              }]
-            ]}
-            components={{
-              p: ({node, ...props}) => <p style={{whiteSpace:"pre-wrap", margin:"0 0 8px"}} {...props}/>,
-              // Style code blocks (but NOT math - let KaTeX handle it)
-              code: ({node, inline, className, children, ...props}) => {
-                // If this is a math element, return it unchanged (let KaTeX handle it)
-                const isMath = className && (className.includes('language-math') || className.includes('math-inline') || className.includes('math-display'));
-                if (isMath) {
-                  return <code className={className} {...props}>{children}</code>;
-                }
+              key={`markdown-${message.id}`} // STABLE KEY - only message ID
+              remarkPlugins={[remarkGfm, remarkMath]}
+              rehypePlugins={[
+                [
+                  rehypeKatex,
+                  {
+                    throwOnError: false,
+                    errorColor: '#cc0000',
+                    strict: false,
+                    output: 'html', // CRITICAL FIX: Use ONLY html, not htmlAndMathml (prevents double rendering)
+                    trust: false,
+                  },
+                ],
+              ]}
+              components={{
+                p: ({ node, ...props }) => <p style={{ whiteSpace: 'pre-wrap', margin: '0 0 8px' }} {...props} />,
+                // Style code blocks (but NOT math - let KaTeX handle it)
+                code: ({ node, inline, className, children, ...props }) => {
+                  // If this is a math element, return it unchanged (let KaTeX handle it)
+                  const isMath =
+                    className &&
+                    (className.includes('language-math') ||
+                      className.includes('math-inline') ||
+                      className.includes('math-display'));
+                  if (isMath) {
+                    return (
+                      <code className={className} {...props}>
+                        {children}
+                      </code>
+                    );
+                  }
 
-                // Otherwise, apply custom styling for regular code
-                return inline
-                  ? <code style={{backgroundColor: 'var(--mst-canvas)', color: 'var(--mst-ink)', padding: '2px 4px', borderRadius: '3px'}} {...props}>{children}</code>
-                  : <pre style={{backgroundColor: 'var(--mst-canvas)', color: 'var(--mst-ink)', padding: '12px', borderRadius: '4px', overflow: 'auto'}}><code {...props}>{children}</code></pre>;
-              },
-              // Style tables
-              table: ({node, ...props}) => (
-                <table style={{borderCollapse: 'collapse', width: '100%', marginTop: '8px', marginBottom: '8px'}} {...props} />
-              ),
-              th: ({node, ...props}) => (
-                <th style={{border: '1px solid var(--mst-border)', padding: '8px', backgroundColor: 'var(--mst-canvas)', color: 'var(--mst-ink)'}} {...props} />
-              ),
-              td: ({node, ...props}) => (
-                <td style={{border: '1px solid var(--mst-border)', padding: '8px'}} {...props} />
-              ),
-            }}
-          >
-            {/* --- [THE FIX - STEP 2: Use 'content' instead of 'text'] --- */}
-            {renderContent}
-            {/* --- [END OF FIX] --- */}
-          </ReactMarkdown>
+                  // Otherwise, apply custom styling for regular code
+                  return inline ? (
+                    <code
+                      style={{
+                        backgroundColor: 'var(--mst-canvas)',
+                        color: 'var(--mst-ink)',
+                        padding: '2px 4px',
+                        borderRadius: '3px',
+                      }}
+                      {...props}
+                    >
+                      {children}
+                    </code>
+                  ) : (
+                    <pre
+                      style={{
+                        backgroundColor: 'var(--mst-canvas)',
+                        color: 'var(--mst-ink)',
+                        padding: '12px',
+                        borderRadius: '4px',
+                        overflow: 'auto',
+                      }}
+                    >
+                      <code {...props}>{children}</code>
+                    </pre>
+                  );
+                },
+                // Style tables
+                table: ({ node, ...props }) => (
+                  <table
+                    style={{ borderCollapse: 'collapse', width: '100%', marginTop: '8px', marginBottom: '8px' }}
+                    {...props}
+                  />
+                ),
+                th: ({ node, ...props }) => (
+                  <th
+                    style={{
+                      border: '1px solid var(--mst-border)',
+                      padding: '8px',
+                      backgroundColor: 'var(--mst-canvas)',
+                      color: 'var(--mst-ink)',
+                    }}
+                    {...props}
+                  />
+                ),
+                td: ({ node, ...props }) => (
+                  <td style={{ border: '1px solid var(--mst-border)', padding: '8px' }} {...props} />
+                ),
+              }}
+            >
+              {/* --- [THE FIX - STEP 2: Use 'content' instead of 'text'] --- */}
+              {renderContent}
+              {/* --- [END OF FIX] --- */}
+            </ReactMarkdown>
           )}
           {message.isStreaming && <BlinkingCursor />}
         </Box>
@@ -225,30 +262,15 @@ const MessageBubble = memo(MessageBubbleComponent, (prevProps, nextProps) => {
   if (prevCharts.length !== nextCharts.length) return false;
 
   // Charts are equal enough - return true to SKIP re-render
-  console.log(`[MessageBubble ${next.id.slice(-8)}] memo returning TRUE - skipping re-render`);
   return true;
 });
-
 
 // --- Main MessageList Component ---
 const MessageList = ({ messages, isThinking, children }) => {
   const scrollRef = useRef(null);
   const containerRef = useRef(null);
 
-  useEffect(() => {
-    // NOTE: Auto-scroll is now handled by FloatingChatWindow for better control
-    // scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
-
-    // Debug logging
-    if (containerRef.current) {
-      console.log('[MessageList] Container dimensions:', {
-        height: containerRef.current.offsetHeight,
-        scrollHeight: containerRef.current.scrollHeight,
-        messageCount: messages.length,
-        isThinking
-      });
-    }
-  }, [messages, isThinking]);
+  // Auto-scroll is handled by FloatingChatWindow.
 
   return (
     <Box ref={containerRef} className="mst-msgs">
@@ -260,7 +282,7 @@ const MessageList = ({ messages, isThinking, children }) => {
           </MessageErrorBoundary>
         ))}
         {isThinking && <ThinkingIndicator />}
-        <div ref={scrollRef} style={{ height: 0, overflow: 'hidden' }} />  {/* Zero height scrollRef */}
+        <div ref={scrollRef} style={{ height: 0, overflow: 'hidden' }} /> {/* Zero height scrollRef */}
       </Stack>
     </Box>
   );

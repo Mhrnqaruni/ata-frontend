@@ -1,48 +1,42 @@
-import React, { useState } from "react";
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Button,
-  Alert,
-  Divider,
-} from "@mui/material";
-import api from "../../services/api";
-import { useAuth } from "../../hooks/useAuth";
+// The account settings dialog: change the display name or the password; a password change signs the user out.
+// Area: identity
+
+import React, { useState } from 'react';
+import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, Alert, Divider } from '@mui/material';
+import api from '../../services/api';
+import { useAuth } from '../../hooks/useAuth';
 export default function AccountSettings({ open, onClose }) {
   const { user, logout } = useAuth();
-  const [name, setName] = useState(user?.fullName || user?.full_name || ""),
-    [current, setCurrent] = useState(""),
-    [password, setPassword] = useState(""),
+  const [name, setName] = useState(user?.fullName || user?.full_name || ''),
+    [current, setCurrent] = useState(''),
+    [password, setPassword] = useState(''),
     [busy, setBusy] = useState(false),
-    [message, setMessage] = useState("");
+    [message, setMessage] = useState('');
   const save = async (kind) => {
     setBusy(true);
-    setMessage("");
+    setMessage('');
     try {
-      if (kind === "name") {
-        await api.patch("/api/auth/me", { fullName: name });
-        setMessage("Name saved.");
-        window.dispatchEvent(new Event("mst-account-changed"));
-        localStorage.setItem("mst-account-update", String(Date.now()));
+      if (kind === 'name') {
+        await api.patch('/api/auth/me', { fullName: name });
+        setMessage('Name saved.');
+        window.dispatchEvent(new Event('mst-account-changed'));
+        localStorage.setItem('mst-account-update', String(Date.now()));
       } else {
-        await api.post("/api/auth/change-password", {
+        await api.post('/api/auth/change-password', {
           currentPassword: current,
           newPassword: password,
         });
-        setCurrent("");
-        setPassword("");
+        setCurrent('');
+        setPassword('');
         logout();
         onClose();
       }
     } catch (e) {
       setMessage(
         e.response?.data?.detail ||
-          (kind === "password"
-            ? "Confirmation was interrupted. Sign in with your intended new password to check the outcome."
-            : "Could not save your name."),
+          (kind === 'password'
+            ? 'Confirmation was interrupted. Sign in with your intended new password to check the outcome.'
+            : 'Could not save your name.')
       );
     } finally {
       setBusy(false);
@@ -55,19 +49,20 @@ export default function AccountSettings({ open, onClose }) {
         busy
           ? undefined
           : () => {
-              setCurrent("");
-              setPassword("");
+              setCurrent('');
+              setPassword('');
               onClose();
             }
       }
       fullWidth
       maxWidth="xs"
+      PaperProps={{ 'data-mst': 'account-settings' }}
     >
       <DialogTitle>Account settings</DialogTitle>
       <DialogContent>
         {message && (
-          <Alert severity={message === "Name saved." ? "success" : "error"}>
-            {typeof message === "string" ? message : "Check your entries."}
+          <Alert severity={message === 'Name saved.' ? 'success' : 'error'}>
+            {typeof message === 'string' ? message : 'Check your entries.'}
           </Alert>
         )}
         <h3>Personal details</h3>
@@ -79,7 +74,7 @@ export default function AccountSettings({ open, onClose }) {
           onChange={(e) => setName(e.target.value)}
           inputProps={{ maxLength: 120 }}
         />
-        <Button disabled={busy || !name.trim()} onClick={() => save("name")}>
+        <Button data-mst="save-name" disabled={busy || !name.trim()} onClick={() => save('name')}>
           Save name
         </Button>
         <Divider sx={{ my: 2 }} />
@@ -104,22 +99,24 @@ export default function AccountSettings({ open, onClose }) {
           onChange={(e) => setPassword(e.target.value)}
         />
         <p>
-          Use at least 8 characters (maximum 72 UTF-8 bytes). Changing your
-          password signs you out. Sign in again with your new password.
+          Use at least 8 characters (maximum 72 UTF-8 bytes). Changing your password signs you out. Sign in again with
+          your new password.
         </p>
         <Button
+          data-mst="change-password"
           disabled={busy || !current || password.length < 8}
-          onClick={() => save("password")}
+          onClick={() => save('password')}
         >
           Change password
         </Button>
       </DialogContent>
       <DialogActions>
         <Button
+          data-mst="close"
           disabled={busy}
           onClick={() => {
-            setCurrent("");
-            setPassword("");
+            setCurrent('');
+            setPassword('');
             onClose();
           }}
         >

@@ -1,8 +1,14 @@
+// The marking review page for one student: the teacher checks the AI's reading, adjusts marks and feedback, saves.
+// Area: assessments
+
 import { sessionGeneration } from '../../services/queryCache';
 import NumberField from '../../components/common/NumberField';
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
-import { Box, Alert, TextField, Button, Card, Skeleton } from '@mui/material';
+import { useParams, useSearchParams } from 'react-router-dom';
+import { Box, Alert, AlertTitle, TextField, Button, Card, Skeleton } from '@mui/material';
+import ErrorAlert from '../../components/common/ErrorAlert';
+import HeldReason, { reasonFromFeedback } from '../../areas/assessments/HeldReason';
+import AgreementHint from '../../areas/assessments/AgreementHint';
 import MathInputWithPreview from '../../components/common/MathInputWithPreview';
 import MathTextDisplay from '../../components/common/MathTextDisplay';
 import reviewService from '../../services/reviewService';
@@ -14,11 +20,25 @@ import OriginalScriptDialog from '../../components/assessments/OriginalScriptDia
 
 // Tab-memory drafts survive SPA Back/Forward. Never persist or auto-save grades.
 const reviewDrafts = new Map();
-if(typeof window !== 'undefined') window.addEventListener('mst-session-reset',()=>reviewDrafts.clear());
-const questionBasis = q => JSON.stringify([q.questionText,q.maxScore,q.grade,q.feedback,q.status,q.sourceExecutionId,q.studentAnswer,q.readingState,q.evidencePages,q.revisionHash]);
+if (typeof window !== 'undefined') window.addEventListener('mst-session-reset', () => reviewDrafts.clear());
+// Fingerprint of a question's saved grading record; a draft is restored only if the record is unchanged.
+const questionBasis = (q) =>
+  JSON.stringify([
+    q.questionText,
+    q.maxScore,
+    q.grade,
+    q.feedback,
+    q.status,
+    q.sourceExecutionId,
+    q.studentAnswer,
+    q.readingState,
+    q.evidencePages,
+    q.revisionHash,
+  ]);
 
 const AssessmentReviewPage = () => {
   const { job_id, entity_id } = useParams();
+  const question = useSearchParams()[0].get('question'); // the held-questions alert opens a student on one
   const { showSnackbar } = useSnackbar();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -32,47 +52,77 @@ const AssessmentReviewPage = () => {
   const [saved, setSaved] = useState({});
   const requestVersion = useRef(0);
   const draftBasis = useRef({});
-  const [draftNotice,setDraftNotice] = useState("");
+  const [draftNotice, setDraftNotice] = useState('');
   const draftKey = `${sessionGeneration()}:${job_id}:${entity_id}`;
 
   useEffect(() => {
     let active = true;
     requestVersion.current += 1;
-    setLoading(true); setError(null); setDirty({}); setSaved({}); setSaveError({}); setSaving(null);
-    reviewService.getStudentReview(job_id, entity_id).then(value => {
-      if (!active) return;
-      // Restore only after authorization succeeds, and never over newer grading evidence.
-      const cached=reviewDrafts.get(draftKey)||{};
-      const retained={};
-      draftBasis.current=Object.fromEntries((value.perQuestion||[]).map(q=>[q.questionId,questionBasis(q)]));
-      const restored=(value.perQuestion||[]).map(q=>{
-        const draft=cached[q.questionId];
-        if(draft && draft.base===questionBasis(q)) { retained[q.questionId]=draft; return {...q,grade:draft.grade,feedback:draft.feedback}; }
-        return q;
-      });
-      if(Object.keys(retained).length)reviewDrafts.set(draftKey,retained);else reviewDrafts.delete(draftKey);
-      setDirty(Object.fromEntries(Object.keys(retained).map(id=>[id,true])));
-      setDraftNotice(Object.keys(retained).length?'Unsaved draft restored in this tab. Saved grades have not changed.':Object.keys(cached).length?'Previous drafts no longer match the current grading records and were not restored.':'');
-      setData({...value,perQuestion:restored});
-      const firstPending = value.perQuestion?.find(q => q.status === 'PENDING_REVIEW');
-      setSelected((firstPending || value.perQuestion?.[0])?.questionId ?? null);
-      setFilter(firstPending ? 'pending' : 'all');
-    }).catch(err => active && setError(err.message || 'Could not load this review.'))
+    setLoading(true);
+    setError(null);
+    setDirty({});
+    setSaved({});
+    setSaveError({});
+    setSaving(null);
+    reviewService
+      .getStudentReview(job_id, entity_id)
+      .then((value) => {
+        if (!active) return;
+        // Restore only after authorization succeeds, and never over newer grading evidence.
+        const cached = reviewDrafts.get(draftKey) || {};
+        const retained = {};
+        draftBasis.current = Object.fromEntries((value.perQuestion || []).map((q) => [q.questionId, questionBasis(q)]));
+        const restored = (value.perQuestion || []).map((q) => {
+          const draft = cached[q.questionId];
+          if (draft && draft.base === questionBasis(q)) {
+            retained[q.questionId] = draft;
+            return { ...q, grade: draft.grade, feedback: draft.feedback };
+          }
+          // A held answer's reason once went into its feedback (TODO #106): the box starts empty (design §3.5), and an
+          // older result's reason goes on the reason line instead.
+          return q.status === 'PENDING_REVIEW' ? { ...q, feedback: '', oldReason: reasonFromFeedback(q.feedback) } : q;
+        });
+        if (Object.keys(retained).length) reviewDrafts.set(draftKey, retained);
+        else reviewDrafts.delete(draftKey);
+        setDirty(Object.fromEntries(Object.keys(retained).map((id) => [id, true])));
+        setDraftNotice(
+          Object.keys(retained).length
+            ? 'Unsaved draft restored in this tab. Saved grades have not changed.'
+            : Object.keys(cached).length
+              ? 'Previous drafts no longer match the current grading records and were not restored.'
+              : ''
+        );
+        setData({ ...value, perQuestion: restored });
+        const asked = value.perQuestion?.find((q) => q.questionId === question);
+        const firstPending = value.perQuestion?.find((q) => q.status === 'PENDING_REVIEW');
+        setSelected((asked || firstPending || value.perQuestion?.[0])?.questionId ?? null);
+        setFilter((asked ? asked.status === 'PENDING_REVIEW' : firstPending) ? 'pending' : 'all');
+      })
+      .catch((err) => active && setError(err))
       .finally(() => active && setLoading(false));
-    return () => { active = false; };
-  }, [job_id, entity_id]);
+    return () => {
+      active = false;
+    };
+  }, [job_id, entity_id, question]);
 
   // Switching questions keeps drafts in page state; leaving the page must not silently discard them.
   const hasDrafts = Object.values(dirty).some(Boolean);
   useEffect(() => {
     if (!hasDrafts) return undefined;
-    const unload = event => { event.preventDefault(); event.returnValue = ''; };
-    const leave = event => {
+    const unload = (event) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    const leave = (event) => {
       const anchor = event.target.closest?.('a[href]');
       const back = event.target.closest?.('button[aria-label="Back to results"]');
-      if ((anchor && anchor.origin === window.location.origin && anchor.pathname !== window.location.pathname) || back) {
+      if (
+        (anchor && anchor.origin === window.location.origin && anchor.pathname !== window.location.pathname) ||
+        back
+      ) {
         if (!window.confirm('Leave this review? Unsaved drafts stay in this tab until you reload or close it.')) {
-          event.preventDefault(); event.stopPropagation();
+          event.preventDefault();
+          event.stopPropagation();
         }
       }
     };
@@ -85,109 +135,248 @@ const AssessmentReviewPage = () => {
   }, [hasDrafts]);
 
   const change = (id, field, value) => {
-    const question=data.perQuestion.find(q=>q.questionId===id);
-    reviewDrafts.set(draftKey,{...(reviewDrafts.get(draftKey)||{}),[id]:{
-      base:draftBasis.current[id],grade:field==='grade'?value:question.grade,feedback:field==='feedback'?value:question.feedback,
-    }});
-    setData(previous => ({ ...previous, perQuestion: previous.perQuestion.map(q => q.questionId === id ? { ...q, [field]: value } : q) }));
-    setDirty(previous => ({ ...previous, [id]: true }));
-    setSaved(previous => ({ ...previous, [id]: false }));
-    setSaveError(previous => ({ ...previous, [id]: null }));
+    const question = data.perQuestion.find((q) => q.questionId === id);
+    reviewDrafts.set(draftKey, {
+      ...(reviewDrafts.get(draftKey) || {}),
+      [id]: {
+        base: draftBasis.current[id],
+        grade: field === 'grade' ? value : question.grade,
+        feedback: field === 'feedback' ? value : question.feedback,
+      },
+    });
+    setData((previous) => ({
+      ...previous,
+      perQuestion: previous.perQuestion.map((q) => (q.questionId === id ? { ...q, [field]: value } : q)),
+    }));
+    setDirty((previous) => ({ ...previous, [id]: true }));
+    setSaved((previous) => ({ ...previous, [id]: false }));
+    setSaveError((previous) => ({ ...previous, [id]: null }));
   };
-  const save = async q => {
+  const save = async (q) => {
     const version = requestVersion.current;
     const maximum = q.maxScore ?? 100;
     const grade = Number(q.grade);
     if (q.grade == null || q.grade === '' || !Number.isFinite(grade) || grade < 0 || grade > maximum) {
-      setSaveError(previous => ({ ...previous, [q.questionId]: `Enter a mark from 0 to ${maximum}.` }));
+      setSaveError((previous) => ({ ...previous, [q.questionId]: `Enter a mark from 0 to ${maximum}.` }));
       return;
     }
     setSaving(q.questionId);
-    setSaveError(previous => ({ ...previous, [q.questionId]: null }));
+    setSaveError((previous) => ({ ...previous, [q.questionId]: null }));
     try {
-      const confirmation = await reviewService.saveQuestion(job_id, entity_id, q.questionId, { grade, feedback: q.feedback ?? '', expectedRevision:q.revisionHash });
+      const confirmation = await reviewService.saveQuestion(job_id, entity_id, q.questionId, {
+        grade,
+        feedback: q.feedback ?? '',
+        expectedRevision: q.revisionHash,
+      });
       if (version !== requestVersion.current) return;
-      setData(previous => ({ ...previous, perQuestion: previous.perQuestion.map(item =>
-        item.questionId === q.questionId ? { ...item, status: 'TEACHER_GRADED', revisionHash:confirmation.resultRevision } : item) }));
-      const cached={...(reviewDrafts.get(draftKey)||{})};delete cached[q.questionId];
-      if(Object.keys(cached).length)reviewDrafts.set(draftKey,cached);else {reviewDrafts.delete(draftKey);setDraftNotice('');}
-      draftBasis.current[q.questionId]=questionBasis({...q,grade,status:'TEACHER_GRADED',revisionHash:confirmation.resultRevision});
-      setDirty(previous => ({ ...previous, [q.questionId]: false }));
-      setSaved(previous => ({ ...previous, [q.questionId]: true }));
+      setData((previous) => ({
+        ...previous,
+        perQuestion: previous.perQuestion.map((item) =>
+          item.questionId === q.questionId
+            ? { ...item, status: 'TEACHER_GRADED', revisionHash: confirmation.resultRevision }
+            : item
+        ),
+      }));
+      const cached = { ...(reviewDrafts.get(draftKey) || {}) };
+      delete cached[q.questionId];
+      if (Object.keys(cached).length) reviewDrafts.set(draftKey, cached);
+      else {
+        reviewDrafts.delete(draftKey);
+        setDraftNotice('');
+      }
+      draftBasis.current[q.questionId] = questionBasis({
+        ...q,
+        grade,
+        status: 'TEACHER_GRADED',
+        revisionHash: confirmation.resultRevision,
+      });
+      setDirty((previous) => ({ ...previous, [q.questionId]: false }));
+      setSaved((previous) => ({ ...previous, [q.questionId]: true }));
       showSnackbar('Question saved.', 'success');
     } catch (err) {
-      if (version === requestVersion.current) setSaveError(previous => ({ ...previous, [q.questionId]: err.message || 'Could not save. Your edits are still here.' }));
-    } finally { if (version === requestVersion.current) setSaving(null); }
+      if (version === requestVersion.current) setSaveError((previous) => ({ ...previous, [q.questionId]: err }));
+    } finally {
+      if (version === requestVersion.current) setSaving(null);
+    }
   };
   const questions = data?.perQuestion ?? [];
-  const pending = questions.filter(q => q.status === 'PENDING_REVIEW');
+  const pending = questions.filter((q) => q.status === 'PENDING_REVIEW');
   const visible = filter === 'pending' ? pending : questions;
-  const current = visible.find(q => q.questionId === selected) || visible[0];
-  const number = current ? questions.findIndex(q => q.questionId === current.questionId) + 1 : 0;
-  const items = visible.map(q => ({
-    id: q.questionId, label:q.printedLabel, number: questions.indexOf(q) + 1, title: q.questionText?.slice(0, 80),
+  const current = visible.find((q) => q.questionId === selected) || visible[0];
+  const number = current ? questions.findIndex((q) => q.questionId === current.questionId) + 1 : 0;
+  const held = current?.status === 'PENDING_REVIEW'; // no AI mark: the teacher types one (design §3.5)
+  const reason = held && (current.reviewReason || current.oldReason); // results graded before 1.33 have no reviewReason
+  const noMark = current?.grade == null || current?.grade === '';
+  const failure = current ? saveError[current.questionId] : null; // a check's words, or the save's error
+  // The 2-of-3 note, only while the mark shown is still the AI's.
+  const agreement = current?.status === 'AI_GRADED' && !dirty[current.questionId] && current.agreement;
+  const items = visible.map((q) => ({
+    id: q.questionId,
+    label: q.printedLabel,
+    number: questions.indexOf(q) + 1,
+    title: q.questionText?.slice(0, 80),
     state: dirty[q.questionId] ? 'Unsaved' : q.status === 'PENDING_REVIEW' ? 'Needs review' : 'Marked',
   }));
 
-  if (loading) return <Box><Skeleton height={80} /><Skeleton height={420} /></Box>;
-  if (error) return <Alert severity="error">{error}</Alert>;
+  if (loading)
+    return (
+      <Box>
+        <Skeleton height={80} />
+        <Skeleton height={420} />
+      </Box>
+    );
+  if (error) return <ErrorAlert error={error}>{error.message || 'Could not load this review.'}</ErrorAlert>;
   if (!data) return <Alert severity="info">No review data found.</Alert>;
   return (
     <Box className="mst-review-workspace" sx={{ maxWidth: 1240, mx: 'auto', minWidth: 0 }}>
-      {sourceOpen && current && <OriginalScriptDialog key={`${job_id}:${entity_id}:${current.questionId}:${current.sourceExecutionId}`}
-        jobId={job_id} studentId={entity_id} question={current} studentName={data.studentName} onClose={()=>setSourceOpen(false)} /> }
-      <PageHeader backLabel="Back to results" backTo={`/assessments/${job_id}/results`}
-        breadcrumbs={[{ label: 'Assessments', to: '/assessments' }, { label: 'Results', to: `/assessments/${job_id}/results` }, { label: 'Review' }]}
+      {sourceOpen && current && (
+        <OriginalScriptDialog
+          key={`${job_id}:${entity_id}:${current.questionId}:${current.sourceExecutionId}`}
+          jobId={job_id}
+          studentId={entity_id}
+          question={current}
+          studentName={data.studentName}
+          onClose={() => setSourceOpen(false)}
+        />
+      )}
+      <PageHeader
+        backLabel="Back to results"
+        backTo={`/assessments/${job_id}/results`}
+        breadcrumbs={[
+          { label: 'Assessments', to: '/assessments' },
+          { label: 'Results', to: `/assessments/${job_id}/results` },
+          { label: 'Review' },
+        ]}
         title={data.studentName || 'Review'}
-        subtitle={`${data.assessmentName} · ${questions.length} questions · ${pending.length} need review`} />
-      {draftNotice && <Alert severity="info" sx={{mb:1}}>{draftNotice}</Alert>}
+        subtitle={`${data.assessmentName} · ${questions.length} questions · ${pending.length} need review`}
+      />
+      {data.isOutsider && data.matchNote && (
+        <Alert
+          severity="warning"
+          sx={{ mb: 1 }}
+          action={
+            <Button size="small" onClick={() => setSourceOpen(true)}>
+              View submitted script
+            </Button>
+          }
+        >
+          <AlertTitle>Not matched to the student list</AlertTitle>
+          {data.matchNote}
+        </Alert>
+      )}
+      {draftNotice && (
+        <Alert severity="info" sx={{ mb: 1 }}>
+          {draftNotice}
+        </Alert>
+      )}
       <div className="mst-review-overview">
         <p>Check the answer, adjust the mark or feedback, then save this question.</p>
-        {Object.values(dirty).some(Boolean) && <span aria-live="polite">{Object.values(dirty).filter(Boolean).length} unsaved drafts. Switching questions keeps them here; refresh does not.</span>}
+        {Object.values(dirty).some(Boolean) && (
+          <span aria-live="polite">
+            {Object.values(dirty).filter(Boolean).length} unsaved drafts. Switching questions keeps them here; refresh
+            does not.
+          </span>
+        )}
       </div>
       <div className="mst-question-workspace">
         <QuestionNavigator items={items} selected={current?.questionId} onSelect={setSelected} label="Review questions">
           <div className="mst-review-filters" role="group" aria-label="Filter review questions">
-            <Button size="small" aria-pressed={filter === 'all'} onClick={() => setFilter('all')}>All ({questions.length})</Button>
-            <Button size="small" aria-pressed={filter === 'pending'} onClick={() => setFilter('pending')}>Needs review ({pending.length})</Button>
+            <Button size="small" aria-pressed={filter === 'all'} onClick={() => setFilter('all')}>
+              All ({questions.length})
+            </Button>
+            <Button size="small" aria-pressed={filter === 'pending'} onClick={() => setFilter('pending')}>
+              Needs review ({pending.length})
+            </Button>
           </div>
           <p className="mst-question-nav-hint">Dot: needs review · ring: unsaved edit</p>
         </QuestionNavigator>
         <div className="mst-focused-question">
-          {!current ? <Alert severity="success">Nothing needs review. Choose All to inspect marked answers.</Alert> : (
+          {!current ? (
+            <Alert severity="success">Nothing needs review. Choose All to inspect marked answers.</Alert>
+          ) : (
             <Card className="mst-rim mst-review-q" key={current.questionId}>
               <div className="mst-review-q-head">
-                <h2 className="mst-review-q-title">{current.printedLabel || `Question ${number}`} <span className="mst-hint">({number} of {questions.length})</span></h2>
+                <h2 className="mst-review-q-title">
+                  {current.printedLabel || `Question ${number}`}{' '}
+                  <span className="mst-hint">
+                    ({number} of {questions.length})
+                  </span>
+                </h2>
                 <StatusChip status={current.status} />
               </div>
-              <p className="mst-review-q-text"><MathTextDisplay text={current.questionText} /></p>
+              <p className="mst-review-q-text">
+                <MathTextDisplay text={current.questionText} />
+              </p>
+              {reason && <HeldReason reason={reason} />}
               <div className="mst-review-answer">
-                <Box sx={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:1, flexWrap:'wrap'}}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 1,
+                    flexWrap: 'wrap',
+                  }}
+                >
                   <span className="mst-review-answer-label">AI reading of the answer</span>
-                  <Button size="small" sx={{minHeight:44}} onClick={()=>setSourceOpen(true)}>View submitted script</Button>
+                  <Button size="small" sx={{ minHeight: 44 }} onClick={() => setSourceOpen(true)}>
+                    View submitted script
+                  </Button>
                 </Box>
-                <p className="mst-hint">{current.readingState === 'blank' ? 'The AI readings report a blank response.' :
-                  ['unclear','missing_source'].includes(current.readingState) ? 'Some evidence could not be read. Compare the submitted script.' :
-                  'Compare with the script when checking accuracy. Saving a mark does not verify this transcription.'}</p>
-                <span className="mst-review-answer-text"><MathTextDisplay text={current.studentAnswer || 'No answer was read from the sheet.'} /></span>
+                <p className="mst-hint">
+                  {current.readingState === 'blank'
+                    ? 'The AI readings report a blank response.'
+                    : current.readingState === 'described_work'
+                      ? 'Check the submitted script.' // the reason line says why
+                      : ['unclear', 'missing_source'].includes(current.readingState)
+                        ? 'Some evidence could not be read. Compare the submitted script.'
+                        : 'Compare with the script when checking accuracy. Saving a mark does not verify this transcription.'}
+                </p>
+                <span className="mst-review-answer-text">
+                  <MathTextDisplay text={current.studentAnswer || 'No answer was read from the sheet.'} />
+                </span>
               </div>
               <div className="mst-review-fields">
-                <NumberField label={`Mark (out of ${current.maxScore})`} type="number"
-                  value={current.grade ?? ''} disabled={saving === current.questionId}
-                  onChange={event => change(current.questionId, 'grade', event.target.value)}
-                  inputProps={{ min: 0, max: current.maxScore }} />
-                <MathInputWithPreview fullWidth label="Feedback for the student" multiline minRows={3}
-                  value={current.feedback ?? ''} disabled={saving === current.questionId}
-                  onChange={event => change(current.questionId, 'feedback', event.target.value)} />
+                <Box sx={{ display: 'grid', gap: '4px', minWidth: 0 }}>
+                  <NumberField
+                    label={`Mark (out of ${current.maxScore})`}
+                    type="number"
+                    value={current.grade ?? ''}
+                    disabled={saving === current.questionId}
+                    onChange={(event) => change(current.questionId, 'grade', event.target.value)}
+                    inputProps={{ min: 0, max: current.maxScore }}
+                  />
+                  {agreement && <AgreementHint agreement={agreement} grade={current.grade} />}
+                </Box>
+                <MathInputWithPreview
+                  fullWidth
+                  label="Feedback for the student"
+                  multiline
+                  minRows={3}
+                  value={current.feedback ?? ''}
+                  disabled={saving === current.questionId}
+                  onChange={(event) => change(current.questionId, 'feedback', event.target.value)}
+                />
               </div>
-              {saveError[current.questionId] && <Alert severity="error">{saveError[current.questionId]}</Alert>}
+              {failure && <ErrorAlert reference={failure.reference}>{failure.message ?? failure}</ErrorAlert>}
               <div className="mst-review-q-foot">
-                <span role="status">{saving === current.questionId ? 'Saving…' : dirty[current.questionId] ? 'Unsaved changes' : saved[current.questionId] ? 'Saved' : 'Mark and feedback shown above'}</span>
+                <span role="status">
+                  {saving === current.questionId
+                    ? 'Saving…'
+                    : dirty[current.questionId]
+                      ? 'Unsaved changes'
+                      : saved[current.questionId]
+                        ? 'Saved'
+                        : 'Mark and feedback shown above'}
+                </span>
                 <div className="mst-review-save-actions">
-                  <Button variant="contained" disabled={saving !== null || (!dirty[current.questionId] && current.status !== 'PENDING_REVIEW')} onClick={() => save(current)}>
-                    {saving === current.questionId ? 'Saving…' : current.status === 'PENDING_REVIEW' && !dirty[current.questionId] ? 'Confirm mark' : 'Save changes'}
+                  <Button
+                    variant="contained"
+                    disabled={saving !== null || (held ? noMark : !dirty[current.questionId])}
+                    onClick={() => save(current)}
+                  >
+                    {saving === current.questionId ? 'Saving…' : held ? 'Save mark' : 'Save changes'}
                   </Button>
-
                 </div>
               </div>
             </Card>

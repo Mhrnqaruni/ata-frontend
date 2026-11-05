@@ -1,7 +1,10 @@
-import { invalidateAfter, cacheFamilies } from './queryCache';
-// /src/services/quizService.js
+// Wraps the quiz endpoints: quizzes, questions and images, AI document import, live sessions (/api/quiz-sessions).
+// Also covers joining and answering, leaderboard, results and reports, session rosters, and the live WebSocket.
+// Area: quizzes
 
-import apiClient from './api';
+import { invalidateAfter, cacheFamilies } from './queryCache';
+
+import apiClient, { apiError } from './api';
 
 const quizService = {
   // ==================== QUIZ CRUD OPERATIONS ====================
@@ -14,8 +17,8 @@ const quizService = {
       const response = await apiClient.get('/api/quizzes');
       return response.data || [];
     } catch (error) {
-      console.error("Error fetching quizzes:", error);
-      const errorMessage = error.response?.data?.detail || "Could not load quizzes.";
+      console.error('Error fetching quizzes:', error);
+      const errorMessage = error.response?.data?.detail || 'Could not load quizzes.';
       throw new Error(errorMessage);
     }
   },
@@ -33,12 +36,12 @@ const quizService = {
         params.include_all_classes = true;
       }
       const response = await apiClient.get('/api/quizzes/finished-pre-quizzes', {
-        params
+        params,
       });
       return response.data || [];
     } catch (error) {
-      console.error("Error fetching finished pre quizzes:", error);
-      const errorMessage = error.response?.data?.detail || "Could not load pre quizzes.";
+      console.error('Error fetching finished pre quizzes:', error);
+      const errorMessage = error.response?.data?.detail || 'Could not load pre quizzes.';
       throw new Error(errorMessage);
     }
   },
@@ -52,7 +55,7 @@ const quizService = {
       return response.data;
     } catch (error) {
       console.error(`Error fetching quiz ${quizId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Could not load quiz details.";
+      const errorMessage = error.response?.data?.detail || 'Could not load quiz details.';
       throw new Error(errorMessage);
     }
   },
@@ -65,8 +68,8 @@ const quizService = {
       const response = await apiClient.post('/api/quizzes', quizData);
       return response.data;
     } catch (error) {
-      console.error("Error creating quiz:", error);
-      const errorMessage = error.response?.data?.detail || "Failed to create quiz.";
+      console.error('Error creating quiz:', error);
+      const errorMessage = error.response?.data?.detail || 'Failed to create quiz.';
       throw new Error(errorMessage);
     }
   },
@@ -80,7 +83,7 @@ const quizService = {
       return response.data;
     } catch (error) {
       console.error(`Error updating quiz ${quizId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Failed to update quiz.";
+      const errorMessage = error.response?.data?.detail || 'Failed to update quiz.';
       throw new Error(errorMessage);
     }
   },
@@ -93,7 +96,7 @@ const quizService = {
       await apiClient.delete(`/api/quizzes/${quizId}`);
     } catch (error) {
       console.error(`Error deleting quiz ${quizId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Failed to delete quiz.";
+      const errorMessage = error.response?.data?.detail || 'Failed to delete quiz.';
       throw new Error(errorMessage);
     }
   },
@@ -107,7 +110,7 @@ const quizService = {
       return response.data;
     } catch (error) {
       console.error(`Error duplicating quiz ${quizId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Failed to duplicate quiz.";
+      const errorMessage = error.response?.data?.detail || 'Failed to duplicate quiz.';
       throw new Error(errorMessage);
     }
   },
@@ -121,7 +124,7 @@ const quizService = {
       return response.data;
     } catch (error) {
       console.error(`Error publishing quiz ${quizId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Failed to publish quiz.";
+      const errorMessage = error.response?.data?.detail || 'Failed to publish quiz.';
       throw new Error(errorMessage);
     }
   },
@@ -137,7 +140,7 @@ const quizService = {
       return response.data;
     } catch (error) {
       console.error(`Error adding question to quiz ${quizId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Failed to add question.";
+      const errorMessage = error.response?.data?.detail || 'Failed to add question.';
       throw new Error(errorMessage);
     }
   },
@@ -151,7 +154,7 @@ const quizService = {
       return response.data;
     } catch (error) {
       console.error(`Error updating question ${questionId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Failed to update question.";
+      const errorMessage = error.response?.data?.detail || 'Failed to update question.';
       throw new Error(errorMessage);
     }
   },
@@ -164,7 +167,7 @@ const quizService = {
       await apiClient.delete(`/api/quizzes/${quizId}/questions/${questionId}`);
     } catch (error) {
       console.error(`Error deleting question ${questionId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Failed to delete question.";
+      const errorMessage = error.response?.data?.detail || 'Failed to delete question.';
       throw new Error(errorMessage);
     }
   },
@@ -174,11 +177,13 @@ const quizService = {
    */
   reorderQuestions: async (quizId, questionOrder) => {
     try {
-      const response = await apiClient.put(`/api/quizzes/${quizId}/questions/reorder`, { question_order: questionOrder });
+      const response = await apiClient.put(`/api/quizzes/${quizId}/questions/reorder`, {
+        question_order: questionOrder,
+      });
       return response.data;
     } catch (error) {
       console.error(`Error reordering questions for quiz ${quizId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Failed to reorder questions.";
+      const errorMessage = error.response?.data?.detail || 'Failed to reorder questions.';
       throw new Error(errorMessage);
     }
   },
@@ -194,7 +199,7 @@ const quizService = {
       return response.data;
     } catch (error) {
       console.error(`Error creating session for quiz ${quizId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Failed to create quiz session.";
+      const errorMessage = error.response?.data?.detail || 'Failed to create quiz session.';
       throw new Error(errorMessage);
     }
   },
@@ -208,7 +213,7 @@ const quizService = {
       return response.data;
     } catch (error) {
       console.error(`Error fetching session ${sessionId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Could not load session details.";
+      const errorMessage = error.response?.data?.detail || 'Could not load session details.';
       throw new Error(errorMessage);
     }
   },
@@ -222,7 +227,7 @@ const quizService = {
       return response.data;
     } catch (error) {
       console.error(`Error starting session ${sessionId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Failed to start session.";
+      const errorMessage = error.response?.data?.detail || 'Failed to start session.';
       throw new Error(errorMessage);
     }
   },
@@ -234,26 +239,12 @@ const quizService = {
     try {
       // FIX: Send request body to match backend Pydantic model
       const response = await apiClient.post(`/api/quiz-sessions/${sessionId}/end`, {
-        reason: "completed"
+        reason: 'completed',
       });
       return response.data;
     } catch (error) {
       console.error(`Error ending session ${sessionId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Failed to end session.";
-      throw new Error(errorMessage);
-    }
-  },
-
-  /**
-   * Cancel a session
-   */
-  cancelSession: async (sessionId) => {
-    try {
-      const response = await apiClient.post(`/api/quiz-sessions/${sessionId}/cancel`);
-      return response.data;
-    } catch (error) {
-      console.error(`Error cancelling session ${sessionId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Failed to cancel session.";
+      const errorMessage = error.response?.data?.detail || 'Failed to end session.';
       throw new Error(errorMessage);
     }
   },
@@ -267,7 +258,7 @@ const quizService = {
       return response.data;
     } catch (error) {
       console.error(`Error advancing to next question in session ${sessionId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Failed to advance to next question.";
+      const errorMessage = error.response?.data?.detail || 'Failed to advance to next question.';
       throw new Error(errorMessage);
     }
   },
@@ -281,7 +272,7 @@ const quizService = {
       return response.data;
     } catch (error) {
       console.error(`Error skipping cooldown in session ${sessionId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Failed to skip cooldown period.";
+      const errorMessage = error.response?.data?.detail || 'Failed to skip cooldown period.';
       throw new Error(errorMessage);
     }
   },
@@ -291,20 +282,16 @@ const quizService = {
    */
   toggleAutoAdvance: async (sessionId, enabled, cooldownSeconds = 10) => {
     try {
-      const response = await apiClient.post(
-        `/api/quiz-sessions/${sessionId}/toggle-auto-advance`,
-        null,
-        {
-          params: {
-            enabled,
-            cooldown_seconds: cooldownSeconds
-          }
-        }
-      );
+      const response = await apiClient.post(`/api/quiz-sessions/${sessionId}/toggle-auto-advance`, null, {
+        params: {
+          enabled,
+          cooldown_seconds: cooldownSeconds,
+        },
+      });
       return response.data;
     } catch (error) {
       console.error(`Error toggling auto-advance for session ${sessionId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Failed to toggle auto-advance.";
+      const errorMessage = error.response?.data?.detail || 'Failed to toggle auto-advance.';
       throw new Error(errorMessage);
     }
   },
@@ -317,8 +304,8 @@ const quizService = {
       const response = await apiClient.get('/api/quiz-sessions');
       return response.data || [];
     } catch (error) {
-      console.error("Error fetching sessions:", error);
-      const errorMessage = error.response?.data?.detail || "Could not load sessions.";
+      console.error('Error fetching sessions:', error);
+      const errorMessage = error.response?.data?.detail || 'Could not load sessions.';
       throw new Error(errorMessage);
     }
   },
@@ -360,7 +347,7 @@ const quizService = {
       return response.data; // Returns { participant_id, session_id, display_name, guest_token, is_guest, session_status, current_question_index }
     } catch (error) {
       console.error(`Error joining session:`, error);
-      const errorMessage = error.response?.data?.detail || "Failed to join quiz session.";
+      const errorMessage = error.response?.data?.detail || 'Failed to join quiz session.';
       throw new Error(errorMessage);
     }
   },
@@ -370,19 +357,15 @@ const quizService = {
    */
   submitAnswer: async (sessionId, answerData, guestToken) => {
     try {
-      const response = await apiClient.post(
-        `/api/quiz-sessions/${sessionId}/submit-answer`,
-        answerData,
-        {
-          headers: {
-            'X-Guest-Token': guestToken
-          }
-        }
-      );
+      const response = await apiClient.post(`/api/quiz-sessions/${sessionId}/submit-answer`, answerData, {
+        headers: {
+          'X-Guest-Token': guestToken,
+        },
+      });
       return response.data;
     } catch (error) {
       console.error(`Error submitting answer for session ${sessionId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Failed to submit answer.";
+      const errorMessage = error.response?.data?.detail || 'Failed to submit answer.';
       throw new Error(errorMessage);
     }
   },
@@ -397,7 +380,7 @@ const quizService = {
       return response.data;
     } catch (error) {
       console.error(`Error fetching leaderboard for session ${sessionId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Could not load leaderboard.";
+      const errorMessage = error.response?.data?.detail || 'Could not load leaderboard.';
       throw new Error(errorMessage);
     }
   },
@@ -411,7 +394,7 @@ const quizService = {
       return response.data;
     } catch (error) {
       console.error(`Error fetching answer review for session ${sessionId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Could not load answer review.";
+      const errorMessage = error.response?.data?.detail || 'Could not load answer review.';
       throw new Error(errorMessage);
     }
   },
@@ -422,14 +405,11 @@ const quizService = {
   getMyResponse: async (sessionId, questionId, guestToken = null) => {
     try {
       const headers = guestToken ? { 'X-Guest-Token': guestToken } : {};
-      const response = await apiClient.get(
-        `/api/quiz-sessions/${sessionId}/my-response/${questionId}`,
-        { headers }
-      );
+      const response = await apiClient.get(`/api/quiz-sessions/${sessionId}/my-response/${questionId}`, { headers });
       return response.data;
     } catch (error) {
       console.error(`Error fetching response for session ${sessionId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Could not load response.";
+      const errorMessage = error.response?.data?.detail || 'Could not load response.';
       throw new Error(errorMessage);
     }
   },
@@ -446,7 +426,7 @@ const quizService = {
       return response.data;
     } catch (error) {
       console.error(`Error fetching analytics for session ${sessionId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Could not load analytics.";
+      const errorMessage = error.response?.data?.detail || 'Could not load analytics.';
       throw new Error(errorMessage);
     }
   },
@@ -461,7 +441,7 @@ const quizService = {
       return response.data;
     } catch (error) {
       console.error(`Error fetching participant analytics for session ${sessionId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Could not load participant analytics.";
+      const errorMessage = error.response?.data?.detail || 'Could not load participant analytics.';
       throw new Error(errorMessage);
     }
   },
@@ -476,7 +456,7 @@ const quizService = {
       return response.data;
     } catch (error) {
       console.error(`Error fetching analytics for participant ${participantId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Could not load participant details.";
+      const errorMessage = error.response?.data?.detail || 'Could not load participant details.';
       throw new Error(errorMessage);
     }
   },
@@ -488,7 +468,7 @@ const quizService = {
   exportSessionCSV: async (sessionId) => {
     try {
       const response = await apiClient.get(`/api/quiz-sessions/${sessionId}/export/csv`, {
-        responseType: 'blob'
+        responseType: 'blob',
       });
 
       // Create download link
@@ -510,11 +490,9 @@ const quizService = {
       link.click();
       link.parentNode.removeChild(link);
       window.URL.revokeObjectURL(url);
-
-      console.log(`✅ CSV exported successfully: ${fileName}`);
     } catch (error) {
       console.error(`Error exporting CSV for session ${sessionId}:`, error);
-      throw new Error("Failed to export quiz results. Please try again.");
+      throw new Error('Failed to export quiz results. Please try again.');
     }
   },
 
@@ -528,7 +506,7 @@ const quizService = {
       return response.data;
     } catch (error) {
       console.error(`Error fetching enhanced analytics for session ${sessionId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Could not load enhanced analytics.";
+      const errorMessage = error.response?.data?.detail || 'Could not load enhanced analytics.';
       throw new Error(errorMessage);
     }
   },
@@ -563,11 +541,9 @@ const quizService = {
       link.click();
       link.parentNode.removeChild(link);
       window.URL.revokeObjectURL(url);
-
-      console.log(`✅ Report downloaded successfully: ${fileName}`);
     } catch (error) {
       console.error(`Error downloading report for participant ${participantId}:`, error);
-      throw new Error("Failed to download quiz report. Please try again.");
+      throw new Error('Failed to download quiz report. Please try again.');
     }
   },
 
@@ -577,19 +553,16 @@ const quizService = {
    */
   downloadAllReports: async (sessionId) => {
     try {
-      const response = await apiClient.get(
-        `/api/quiz-sessions/${sessionId}/download-all-reports`,
-        {
-          responseType: 'blob',
-          validateStatus: function (status) {
-            return status >= 200 && status < 300; // Only accept 2xx status codes
-          }
-        }
-      );
+      const response = await apiClient.get(`/api/quiz-sessions/${sessionId}/download-all-reports`, {
+        responseType: 'blob',
+        validateStatus: function (status) {
+          return status >= 200 && status < 300; // Only accept 2xx status codes
+        },
+      });
 
       // Verify we actually got a blob
       if (!response.data || !(response.data instanceof Blob)) {
-        throw new Error("Invalid response format");
+        throw new Error('Invalid response format');
       }
 
       // Create download link
@@ -616,20 +589,19 @@ const quizService = {
         window.URL.revokeObjectURL(url);
       }, 100);
 
-      console.log(`✅ All reports downloaded successfully: ${fileName}`);
       return { success: true, fileName };
     } catch (error) {
       console.error(`Error downloading all reports for session ${sessionId}:`, error);
       if (error.response) {
         // The request was made and the server responded with a status code
         // that falls out of the range of 2xx
-        throw new Error(error.response.data?.detail || "Failed to download all reports. Please try again.");
+        throw apiError(error, 'Failed to download all reports. Please try again.');
       } else if (error.request) {
         // The request was made but no response was received
-        throw new Error("No response from server. Please check your connection.");
+        throw new Error('No response from server. Please check your connection.');
       } else {
         // Something happened in setting up the request that triggered an Error
-        throw new Error(error.message || "Failed to download all reports. Please try again.");
+        throw new Error(error.message || 'Failed to download all reports. Please try again.');
       }
     }
   },
@@ -646,7 +618,7 @@ const quizService = {
       return response.data;
     } catch (error) {
       console.error(`Error fetching attendance for session ${sessionId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Could not load attendance data.";
+      const errorMessage = error.response?.data?.detail || 'Could not load attendance data.';
       throw new Error(errorMessage);
     }
   },
@@ -661,7 +633,7 @@ const quizService = {
       return response.data;
     } catch (error) {
       console.error(`Error fetching roster for session ${sessionId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Could not load roster.";
+      const errorMessage = error.response?.data?.detail || 'Could not load roster.';
       throw new Error(errorMessage);
     }
   },
@@ -676,7 +648,7 @@ const quizService = {
       return response.data;
     } catch (error) {
       console.error(`Error fetching outsiders for session ${sessionId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Could not load outsider data.";
+      const errorMessage = error.response?.data?.detail || 'Could not load outsider data.';
       throw new Error(errorMessage);
     }
   },
@@ -690,17 +662,14 @@ const quizService = {
    */
   flagOutsiderStudent: async (sessionId, outsiderId, flagged, teacherNotes = null) => {
     try {
-      const response = await apiClient.put(
-        `/api/quiz-sessions/${sessionId}/outsiders/${outsiderId}/flag`,
-        {
-          flagged: flagged,
-          teacher_notes: teacherNotes
-        }
-      );
+      const response = await apiClient.put(`/api/quiz-sessions/${sessionId}/outsiders/${outsiderId}/flag`, {
+        flagged: flagged,
+        teacher_notes: teacherNotes,
+      });
       return response.data;
     } catch (error) {
       console.error(`Error flagging outsider ${outsiderId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Could not flag outsider.";
+      const errorMessage = error.response?.data?.detail || 'Could not flag outsider.';
       throw new Error(errorMessage);
     }
   },
@@ -715,10 +684,9 @@ const quizService = {
    */
   assignOutsiderToStudent: async (sessionId, outsiderId, targetStudentSchoolId) => {
     try {
-      const response = await apiClient.post(
-        `/api/quiz-sessions/${sessionId}/outsiders/${outsiderId}/assign`,
-        { target_student_school_id: targetStudentSchoolId }
-      );
+      const response = await apiClient.post(`/api/quiz-sessions/${sessionId}/outsiders/${outsiderId}/assign`, {
+        target_student_school_id: targetStudentSchoolId,
+      });
       return response.data;
     } catch (error) {
       console.error('Error assigning outsider:', error);
@@ -737,7 +705,7 @@ const quizService = {
       return response.data;
     } catch (error) {
       console.error(`Error syncing roster for session ${sessionId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Could not sync roster.";
+      const errorMessage = error.response?.data?.detail || 'Could not sync roster.';
       throw new Error(errorMessage);
     }
   },
@@ -758,19 +726,19 @@ const quizService = {
     try {
       const response = await apiClient.post('/api/quizzes/ai/parse', formData, {
         headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+          'Content-Type': 'multipart/form-data',
+        },
       });
       return response.data;
     } catch (error) {
-      console.error("Error parsing quiz document:", error);
-      const errorMessage = error.response?.data?.detail || "Failed to parse quiz document. Please try again.";
+      console.error('Error parsing quiz document:', error);
+      const errorMessage = error.response?.data?.detail || 'Failed to parse quiz document. Please try again.';
       throw new Error(errorMessage);
     }
   },
 
   // ==================== QUESTION IMAGE UPLOAD ====================
-  
+
   /**
    * Upload an image for a question
    * @param {string} questionId - Question ID
@@ -781,13 +749,13 @@ const quizService = {
     try {
       const response = await apiClient.post(`/api/quizzes/questions/${questionId}/upload-image`, formData, {
         headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+          'Content-Type': 'multipart/form-data',
+        },
       });
       return response.data;
     } catch (error) {
       console.error('Error uploading question image:', error);
-      throw new Error(error.response?.data?.detail || 'Failed to upload image');
+      throw apiError(error, 'Failed to upload image');
     }
   },
 
@@ -800,7 +768,7 @@ const quizService = {
       await apiClient.delete(`/api/quizzes/questions/${questionId}/image`);
     } catch (error) {
       console.error('Error deleting question image:', error);
-      throw new Error(error.response?.data?.detail || 'Failed to delete image');
+      throw apiError(error, 'Failed to delete image');
     }
   },
 
@@ -810,7 +778,8 @@ const quizService = {
    * Create WebSocket connection for real-time updates
    *
    * @param {string} sessionId - Session ID
-   * @param {string} token - JWT token for host OR guest token for participant
+   * @param {string} token - JWT token for host OR guest token for participant,
+   *   sent as the first message, never in the URL
    * @param {boolean} isHost - Whether this is a host connection
    * @returns {WebSocket} WebSocket connection
    */
@@ -819,7 +788,7 @@ const quizService = {
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
     if (!apiBaseUrl) {
-      const error = new Error("VITE_API_BASE_URL is not set. Please check your .env.local file.");
+      const error = new Error('VITE_API_BASE_URL is not set. Please check your .env.local file.');
       console.error('[WebSocket] Configuration error:', error.message);
       throw error;
     }
@@ -830,19 +799,16 @@ const quizService = {
       return match === 'https' ? 'wss' : 'ws';
     });
 
-    const queryParam = isHost ? `token=${token}` : `guest_token=${token}`;
-    const wsUrl = `${wsBaseUrl}/api/ws/quiz-sessions/${sessionId}?${queryParam}`;
-
-    // Log connection attempt (without exposing token)
-    const safeUrl = `${wsBaseUrl}/api/ws/quiz-sessions/${sessionId}?${isHost ? 'token' : 'guest_token'}=***`;
-    console.log(`[WebSocket] Connecting as ${isHost ? 'HOST' : 'PARTICIPANT'} to:`, safeUrl);
+    const wsUrl = `${wsBaseUrl}/api/ws/quiz-sessions/${sessionId}`;
 
     const ws = new WebSocket(wsUrl);
 
-    ws.onopen = () => {
-      console.log(`[WebSocket] ✅ Connected successfully to session: ${sessionId}`);
-      console.log(`[WebSocket] Protocol: ${ws.protocol}, Ready state: ${ws.readyState}`);
-    };
+    // The token goes in the first message, never in the URL, which servers log.
+    // A listener rather than onopen, because the host page replaces onopen; added
+    // first, it runs before any onopen handler.
+    ws.addEventListener('open', () => {
+      ws.send(JSON.stringify({ type: 'auth', [isHost ? 'token' : 'guest_token']: token }));
+    });
 
     ws.onerror = (error) => {
       console.error('[WebSocket] ❌ Connection error:', error);
@@ -850,14 +816,30 @@ const quizService = {
       console.error('[WebSocket] Role:', isHost ? 'HOST' : 'PARTICIPANT');
     };
 
-    ws.onclose = (event) => {
-      console.log(`[WebSocket] 🔌 Disconnected from session: ${sessionId}`);
-      console.log(`[WebSocket] Close code: ${event.code}, reason: ${event.reason || 'None'}`);
-      console.log(`[WebSocket] Clean closure: ${event.wasClean}`);
-    };
-
     return ws;
-  }
+  },
 };
 
-export default invalidateAfter(quizService, ['createQuiz', 'updateQuiz', 'deleteQuiz', 'duplicateQuiz', 'publishQuiz', 'addQuestion', 'updateQuestion', 'deleteQuestion', 'reorderQuestions', 'createSession', 'startSession', 'endSession', 'cancelSession', 'flagOutsiderStudent', 'assignOutsiderToStudent', 'syncSessionRoster', 'uploadQuestionImage', 'deleteQuestionImage'], cacheFamilies.quiz);
+export default invalidateAfter(
+  quizService,
+  [
+    'createQuiz',
+    'updateQuiz',
+    'deleteQuiz',
+    'duplicateQuiz',
+    'publishQuiz',
+    'addQuestion',
+    'updateQuestion',
+    'deleteQuestion',
+    'reorderQuestions',
+    'createSession',
+    'startSession',
+    'endSession',
+    'flagOutsiderStudent',
+    'assignOutsiderToStudent',
+    'syncSessionRoster',
+    'uploadQuestionImage',
+    'deleteQuestionImage',
+  ],
+  cacheFamilies.quiz
+);

@@ -1,7 +1,9 @@
+// The live quiz results page: summary, per-student and per-question results, pre/post comparison and downloads.
+// Area: quizzes
+
 import PendingQuizMarks from './PendingQuizMarks';
 import TagAnalytics from '../../components/tags/TagAnalytics';
 import ComparisonTableContainer from '../../components/common/ComparisonTableContainer';
-// /src/pages/quizzes/QuizAnalytics.jsx - ENHANCED VERSION
 
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -35,7 +37,7 @@ import {
   CircularProgress,
   DialogContentText,
   Snackbar,
-  TextField
+  TextField,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -57,6 +59,7 @@ import useTableSort from '../../hooks/useTableSort';
 import PageHeader from '../../components/common/PageHeader';
 import InfoCard from '../../components/home/InfoCard';
 import FloatingChatWindow from '../../components/chatbot/FloatingChatWindow';
+import { config } from '../../config';
 
 /**
  * Summary stat cards component
@@ -67,26 +70,26 @@ const SessionSummaryCards = ({ analytics }) => {
       title: 'Participants',
       value: analytics.total_participants,
       icon: <PeopleIcon sx={{ fontSize: 24 }} />,
-      color: 'primary.light'
+      color: 'primary.light',
     },
     {
       title: 'Average score',
       value: analytics.average_score == null ? 'Not yet marked' : `${analytics.average_score.toFixed(1)} pts`,
       icon: <ScoreIcon sx={{ fontSize: 24 }} />,
-      color: 'success.main'
+      color: 'success.main',
     },
     {
       title: 'Questions completed',
       value: `${analytics.questions_completed}/${analytics.total_questions}`,
       icon: <QuizIcon sx={{ fontSize: 24 }} />,
-      color: 'info.main'
+      color: 'info.main',
     },
     {
       title: 'Duration',
       value: analytics.duration_minutes ? `${analytics.duration_minutes.toFixed(1)} min` : 'N/A',
       icon: <TimerIcon sx={{ fontSize: 24 }} />,
-      color: 'warning.main'
-    }
+      color: 'warning.main',
+    },
   ];
 
   return (
@@ -111,8 +114,7 @@ const PrePostComparisonSection = ({ comparison }) => {
     );
   }
 
-  const formatMetricLabel = (key) =>
-    key.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+  const formatMetricLabel = (key) => key.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 
   const formatMetricValue = (key, value) => {
     if (value === null || value === undefined) return 'N/A';
@@ -161,10 +163,7 @@ const PrePostComparisonSection = ({ comparison }) => {
                   <TableCell
                     align="right"
                     sx={{
-                      color:
-                        values?.delta > 0 ? 'success.main' :
-                        values?.delta < 0 ? 'error.main' :
-                        'text.secondary'
+                      color: values?.delta > 0 ? 'success.main' : values?.delta < 0 ? 'error.main' : 'text.secondary',
                     }}
                   >
                     {formatDeltaValue(key, values?.delta)}
@@ -189,7 +188,7 @@ const ClassStudentsTable = ({ students, sessionId, onDownloadReport }) => {
     name: { type: 'string' },
     score: { type: 'number' },
     correct_answers: { type: 'number' },
-    accuracy: { type: 'percentage' }
+    accuracy: { type: 'percentage' },
   };
 
   // Use sorting hook - default sort by rank ascending
@@ -263,7 +262,9 @@ const ClassStudentsTable = ({ students, sessionId, onDownloadReport }) => {
                     Accuracy
                   </TableSortLabel>
                 </TableCell>
-                <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Status</TableCell>
+                <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+                  Status
+                </TableCell>
                 <TableCell align="center">Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -278,23 +279,21 @@ const ClassStudentsTable = ({ students, sessionId, onDownloadReport }) => {
                         size="small"
                       />
                     ) : (
-                      <Typography variant="body2" color="text.secondary">-</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        -
+                      </Typography>
                     )}
                   </TableCell>
                   <TableCell>
                     <Box>
-                      <Typography variant="body1" sx={{ fontWeight: 500 }}>{student.name}</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                        {student.name}
+                      </Typography>
                       {/* Show status on mobile as subtitle */}
                       <Box sx={{ display: { xs: 'block', sm: 'none' }, mt: 0.5 }}>
-                        {student.status === 'GRADED' && (
-                          <Chip label="Graded" color="success" size="small" />
-                        )}
-                        {student.status === 'ABSENT' && (
-                          <Chip label="Absent" color="default" size="small" />
-                        )}
-                        {student.status === 'PENDING_REVIEW' && (
-                          <Chip label="Pending" color="warning" size="small" />
-                        )}
+                        {student.status === 'GRADED' && <Chip label="Graded" color="success" size="small" />}
+                        {student.status === 'ABSENT' && <Chip label="Absent" color="default" size="small" />}
+                        {student.status === 'PENDING_REVIEW' && <Chip label="Pending" color="warning" size="small" />}
                       </Box>
                     </Box>
                   </TableCell>
@@ -309,45 +308,52 @@ const ClassStudentsTable = ({ students, sessionId, onDownloadReport }) => {
                         <Typography variant="body1" fontWeight={600}>
                           {student.score}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary" sx={{ display: { xs: 'block', sm: 'none' } }}>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ display: { xs: 'block', sm: 'none' } }}
+                        >
                           / {student.max_score}
                         </Typography>
                       </Box>
                     ) : (
-                      <Typography variant="body2" color="text.secondary">-</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        -
+                      </Typography>
                     )}
                   </TableCell>
                   <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
                     {student.correct_answers !== null ? (
                       `${student.correct_answers} / ${student.total_questions}`
                     ) : (
-                      <Typography variant="body2" color="text.secondary">-</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        -
+                      </Typography>
                     )}
                   </TableCell>
                   <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                     {student.accuracy !== null ? (
                       <Typography
                         color={
-                          student.accuracy >= 0.7 ? 'success.main' :
-                          student.accuracy >= 0.4 ? 'warning.main' : 'error.main'
+                          student.accuracy >= 0.7
+                            ? 'success.main'
+                            : student.accuracy >= 0.4
+                              ? 'warning.main'
+                              : 'error.main'
                         }
                       >
                         {(student.accuracy * 100).toFixed(1)}%
                       </Typography>
                     ) : (
-                      <Typography variant="body2" color="text.secondary">-</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        -
+                      </Typography>
                     )}
                   </TableCell>
                   <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
-                    {student.status === 'GRADED' && (
-                      <Chip label="Graded" color="success" size="small" />
-                    )}
-                    {student.status === 'ABSENT' && (
-                      <Chip label="Absent" color="default" size="small" />
-                    )}
-                    {student.status === 'PENDING_REVIEW' && (
-                      <Chip label="Pending" color="warning" size="small" />
-                    )}
+                    {student.status === 'GRADED' && <Chip label="Graded" color="success" size="small" />}
+                    {student.status === 'ABSENT' && <Chip label="Absent" color="default" size="small" />}
+                    {student.status === 'PENDING_REVIEW' && <Chip label="Pending" color="warning" size="small" />}
                   </TableCell>
                   <TableCell align="center">
                     {student.status === 'GRADED' && student.participant_id && (
@@ -355,14 +361,20 @@ const ClassStudentsTable = ({ students, sessionId, onDownloadReport }) => {
                         <IconButton
                           size="small"
                           onClick={() => onDownloadReport(sessionId, student.participant_id, student.name)}
-                          sx={{ color: 'primary.light', '&:hover': { bgcolor: 'action.selected' }, '&:focus-visible': { outline: '3px solid', outlineColor: 'primary.light' } }}
+                          sx={{
+                            color: 'primary.light',
+                            '&:hover': { bgcolor: 'action.selected' },
+                            '&:focus-visible': { outline: '3px solid', outlineColor: 'primary.light' },
+                          }}
                         >
                           <DownloadIcon />
                         </IconButton>
                       </Tooltip>
                     )}
                     {student.status === 'ABSENT' && (
-                      <Typography variant="body2" color="text.secondary">-</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        -
+                      </Typography>
                     )}
                   </TableCell>
                 </TableRow>
@@ -404,11 +416,7 @@ const OutsidersTable = ({ outsiders, sessionId, onDownloadReport }) => {
 
     try {
       const outsiderId = outsider.outsider_id || outsider.participant_id;
-      const result = await quizService.assignOutsiderToStudent(
-        sessionId,
-        outsiderId,
-        assignStudentId.trim()
-      );
+      const result = await quizService.assignOutsiderToStudent(sessionId, outsiderId, assignStudentId.trim());
       alert(`Successfully assigned to ${result.assigned_to.name}`);
       setAssigningOutsiderId(null);
       setAssignStudentId('');
@@ -436,9 +444,15 @@ const OutsidersTable = ({ outsiders, sessionId, onDownloadReport }) => {
                 <TableCell>Name</TableCell>
                 <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>ID</TableCell>
                 <TableCell align="right">Score</TableCell>
-                <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Correct</TableCell>
-                <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' } }}>Accuracy</TableCell>
-                <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Status</TableCell>
+                <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+                  Correct
+                </TableCell>
+                <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
+                  Accuracy
+                </TableCell>
+                <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+                  Status
+                </TableCell>
                 <TableCell align="center">Assign</TableCell>
                 <TableCell align="center">Actions</TableCell>
               </TableRow>
@@ -454,20 +468,20 @@ const OutsidersTable = ({ outsiders, sessionId, onDownloadReport }) => {
                         size="small"
                       />
                     ) : (
-                      <Typography variant="body2" color="text.secondary">-</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        -
+                      </Typography>
                     )}
                   </TableCell>
                   <TableCell>
                     <Box>
-                      <Typography variant="body1" sx={{ fontWeight: 500 }}>{outsider.display_name}</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                        {outsider.display_name}
+                      </Typography>
                       {/* Show status on mobile as subtitle */}
                       <Box sx={{ display: { xs: 'block', sm: 'none' }, mt: 0.5 }}>
-                        {outsider.status === 'GRADED' && (
-                          <Chip label="Graded" color="success" size="small" />
-                        )}
-                        {outsider.status === 'PENDING_REVIEW' && (
-                          <Chip label="Pending" color="warning" size="small" />
-                        )}
+                        {outsider.status === 'GRADED' && <Chip label="Graded" color="success" size="small" />}
+                        {outsider.status === 'PENDING_REVIEW' && <Chip label="Pending" color="warning" size="small" />}
                       </Box>
                     </Box>
                   </TableCell>
@@ -482,51 +496,55 @@ const OutsidersTable = ({ outsiders, sessionId, onDownloadReport }) => {
                         <Typography variant="body1" fontWeight={600}>
                           {outsider.score}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary" sx={{ display: { xs: 'block', sm: 'none' } }}>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ display: { xs: 'block', sm: 'none' } }}
+                        >
                           / {outsider.max_score}
                         </Typography>
                       </Box>
                     ) : (
-                      <Typography variant="body2" color="text.secondary">-</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        -
+                      </Typography>
                     )}
                   </TableCell>
                   <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
                     {outsider.correct_answers !== null ? (
                       `${outsider.correct_answers} / ${outsider.total_questions}`
                     ) : (
-                      <Typography variant="body2" color="text.secondary">-</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        -
+                      </Typography>
                     )}
                   </TableCell>
                   <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                     {outsider.accuracy !== null ? (
                       <Typography
                         color={
-                          outsider.accuracy >= 0.7 ? 'success.main' :
-                          outsider.accuracy >= 0.4 ? 'warning.main' : 'error.main'
+                          outsider.accuracy >= 0.7
+                            ? 'success.main'
+                            : outsider.accuracy >= 0.4
+                              ? 'warning.main'
+                              : 'error.main'
                         }
                       >
                         {(outsider.accuracy * 100).toFixed(1)}%
                       </Typography>
                     ) : (
-                      <Typography variant="body2" color="text.secondary">-</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        -
+                      </Typography>
                     )}
                   </TableCell>
                   <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
-                    {outsider.status === 'GRADED' && (
-                      <Chip label="Graded" color="success" size="small" />
-                    )}
-                    {outsider.status === 'PENDING_REVIEW' && (
-                      <Chip label="Pending" color="warning" size="small" />
-                    )}
+                    {outsider.status === 'GRADED' && <Chip label="Graded" color="success" size="small" />}
+                    {outsider.status === 'PENDING_REVIEW' && <Chip label="Pending" color="warning" size="small" />}
                   </TableCell>
                   <TableCell align="center">
                     {outsider.assigned_student_id ? (
-                      <Chip
-                        label="Assigned"
-                        color="success"
-                        size="small"
-                        icon={<CheckCircleIcon />}
-                      />
+                      <Chip label="Assigned" color="success" size="small" icon={<CheckCircleIcon />} />
                     ) : assigningOutsiderId === (outsider.outsider_id || outsider.participant_id) ? (
                       <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', justifyContent: 'center' }}>
                         <TextField
@@ -541,11 +559,7 @@ const OutsidersTable = ({ outsiders, sessionId, onDownloadReport }) => {
                             }
                           }}
                         />
-                        <IconButton
-                          size="small"
-                          color="primary"
-                          onClick={() => handleConfirmAssign(outsider)}
-                        >
+                        <IconButton size="small" color="primary" onClick={() => handleConfirmAssign(outsider)}>
                           <CheckIcon />
                         </IconButton>
                         <IconButton size="small" onClick={handleCancelAssign}>
@@ -553,11 +567,7 @@ const OutsidersTable = ({ outsiders, sessionId, onDownloadReport }) => {
                         </IconButton>
                       </Box>
                     ) : (
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => handleStartAssign(outsider)}
-                      >
+                      <Button size="small" variant="outlined" onClick={() => handleStartAssign(outsider)}>
                         Assign
                       </Button>
                     )}
@@ -568,7 +578,11 @@ const OutsidersTable = ({ outsiders, sessionId, onDownloadReport }) => {
                         <IconButton
                           size="small"
                           onClick={() => onDownloadReport(sessionId, outsider.participant_id, outsider.display_name)}
-                          sx={{ color: 'primary.light', '&:hover': { bgcolor: 'action.selected' }, '&:focus-visible': { outline: '3px solid', outlineColor: 'primary.light' } }}
+                          sx={{
+                            color: 'primary.light',
+                            '&:hover': { bgcolor: 'action.selected' },
+                            '&:focus-visible': { outline: '3px solid', outlineColor: 'primary.light' },
+                          }}
                         >
                           <DownloadIcon />
                         </IconButton>
@@ -606,10 +620,16 @@ const QuestionBreakdown = ({ questions }) => {
                 <TableCell>#</TableCell>
                 <TableCell>Question</TableCell>
                 <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Type</TableCell>
-                <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Responses</TableCell>
-                <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Correct</TableCell>
+                <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+                  Responses
+                </TableCell>
+                <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+                  Correct
+                </TableCell>
                 <TableCell align="right">Accuracy</TableCell>
-                <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' } }}>Avg Time</TableCell>
+                <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
+                  Avg Time
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -618,7 +638,10 @@ const QuestionBreakdown = ({ questions }) => {
                   <TableCell>{index + 1}</TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography variant="body2" sx={{ maxWidth: { xs: 150, sm: 300 }, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ maxWidth: { xs: 150, sm: 300 }, overflow: 'hidden', textOverflow: 'ellipsis' }}
+                      >
                         {q.question_text}
                       </Typography>
                       {q.media_url && (
@@ -633,7 +656,7 @@ const QuestionBreakdown = ({ questions }) => {
                                   <div style="background: white; padding: 24px; border-radius: 8px; max-width: 90%; max-height: 90%; overflow: auto;" onclick="event.stopPropagation()">
                                     <h3 style="margin-top: 0;">Question ${index + 1}</h3>
                                     <p style="margin: 16px 0;">${q.question_text}</p>
-                                    <img src="${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${q.media_url}" alt="Question" style="max-width: 100%; border-radius: 8px;" />
+                                    <img src="${config.apiBaseUrl}${q.media_url}" alt="Question" style="max-width: 100%; border-radius: 8px;" />
                                     <button onclick="this.closest('[style*=fixed]').remove()" style="margin-top: 16px; padding: 8px 16px; cursor: pointer;">Close</button>
                                   </div>
                                 </div>
@@ -651,22 +674,37 @@ const QuestionBreakdown = ({ questions }) => {
                   <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                     <Chip label={q.question_type} size="small" variant="outlined" />
                   </TableCell>
-                  <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{q.total_responses}</TableCell>
-                  <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{q.correct_responses}</TableCell>
+                  <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+                    {q.total_responses}
+                  </TableCell>
+                  <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+                    {q.correct_responses}
+                  </TableCell>
                   <TableCell align="right">
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flexDirection: { xs: 'column', sm: 'row' } }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'flex-end',
+                        flexDirection: { xs: 'column', sm: 'row' },
+                      }}
+                    >
                       <Typography variant="body2" sx={{ mr: { xs: 0, sm: 1 }, mb: { xs: 0.5, sm: 0 } }}>
                         {q.accuracy_rate == null ? 'Pending' : `${(q.accuracy_rate * 100).toFixed(1)}%`}
                       </Typography>
-                      {q.accuracy_rate != null && <LinearProgress
-                        variant="determinate"
-                        value={q.accuracy_rate * 100}
-                        sx={{ width: { xs: 40, sm: 60 } }}
-                        color={q.accuracy_rate >= 0.7 ? 'success' : q.accuracy_rate >= 0.4 ? 'warning' : 'error'}
-                      />}
+                      {q.accuracy_rate != null && (
+                        <LinearProgress
+                          variant="determinate"
+                          value={q.accuracy_rate * 100}
+                          sx={{ width: { xs: 40, sm: 60 } }}
+                          color={q.accuracy_rate >= 0.7 ? 'success' : q.accuracy_rate >= 0.4 ? 'warning' : 'error'}
+                        />
+                      )}
                     </Box>
                   </TableCell>
-                  <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' } }}>{(q.average_time_ms / 1000).toFixed(1)}s</TableCell>
+                  <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
+                    {(q.average_time_ms / 1000).toFixed(1)}s
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -686,10 +724,9 @@ const DownloadProgressDialog = ({ open, onClose, downloading }) => {
       <DialogTitle>Downloading All Reports</DialogTitle>
       <DialogContent>
         <DialogContentText sx={{ mb: 2 }}>
-          {downloading ?
-            'Generating reports with AI feedback for all participants. This may take a minute...' :
-            'All reports have been downloaded successfully!'
-          }
+          {downloading
+            ? 'Generating reports with AI feedback for all participants. This may take a minute...'
+            : 'All reports have been downloaded successfully!'}
         </DialogContentText>
         {downloading && (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
@@ -739,7 +776,7 @@ const QuizAnalytics = () => {
     try {
       // Get all sessions for this quiz
       const allSessions = await quizService.getAllSessions();
-      const quizSessions = allSessions.filter(s => s.quiz_id === quizId && s.status === 'completed');
+      const quizSessions = allSessions.filter((s) => s.quiz_id === quizId && s.status === 'completed' && s.started_at);
 
       if (quizSessions.length === 0) {
         setError('No completed sessions found for this quiz.');
@@ -747,18 +784,15 @@ const QuizAnalytics = () => {
       }
 
       // Get the most recent completed session
-      const latestSession = quizSessions.sort((a, b) =>
-        new Date(b.ended_at) - new Date(a.ended_at)
-      )[0];
+      const latestSession = quizSessions.sort((a, b) => new Date(b.ended_at) - new Date(a.ended_at))[0];
 
       // Fetch enhanced analytics (includes class students, outsiders, and standard analytics)
       const enhancedAnalytics = await quizService.getEnhancedAnalytics(latestSession.id);
 
       setEnhancedData({
         sessionId: latestSession.id,
-        ...enhancedAnalytics
+        ...enhancedAnalytics,
       });
-
     } catch (err) {
       console.error('Error loading enhanced analytics:', err);
       setError(err.message || 'Failed to load analytics');
@@ -827,7 +861,11 @@ const QuizAnalytics = () => {
     return (
       <Box>
         <Skeleton variant="rounded" width={360} height={64} sx={{ mb: 3.5 }} />
-        <div className="mst-grid mst-grid-4">{[0, 1, 2, 3].map((i) => <Skeleton key={i} variant="rectangular" height={104} />)}</div>
+        <div className="mst-grid mst-grid-4">
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} variant="rectangular" height={104} />
+          ))}
+        </div>
         <Skeleton variant="rectangular" height={320} sx={{ mt: 4 }} />
       </Box>
     );
@@ -836,7 +874,12 @@ const QuizAnalytics = () => {
   if (error) {
     return (
       <Box>
-        <PageHeader backLabel="Back to quizzes" backTo="/quizzes" breadcrumbs={[{ label: 'Quizzes', to: '/quizzes' }, { label: 'Analytics' }]} title="Quiz analytics" />
+        <PageHeader
+          backLabel="Back to quizzes"
+          backTo="/quizzes"
+          breadcrumbs={[{ label: 'Quizzes', to: '/quizzes' }, { label: 'Analytics' }]}
+          title="Quiz analytics"
+        />
         <Alert severity="info">
           <AlertTitle>No analytics yet</AlertTitle>
           {error}
@@ -850,8 +893,8 @@ const QuizAnalytics = () => {
   }
 
   // Calculate total graded participants
-  const gradedClassStudents = enhancedData.class_students?.filter(s => s.status === 'GRADED').length || 0;
-  const gradedOutsiders = enhancedData.outsiders?.filter(o => o.status === 'GRADED').length || 0;
+  const gradedClassStudents = enhancedData.class_students?.filter((s) => s.status === 'GRADED').length || 0;
+  const gradedOutsiders = enhancedData.outsiders?.filter((o) => o.status === 'GRADED').length || 0;
   const totalGradedParticipants = gradedClassStudents + gradedOutsiders;
 
   return (
@@ -859,13 +902,24 @@ const QuizAnalytics = () => {
       <PageHeader
         actions={
           <>
-            {enhancedData.analytics.pending_answer_count > 0 && <PendingQuizMarks sessionId={enhancedData.sessionId} count={enhancedData.analytics.pending_answer_count} onSaved={fetchEnhancedAnalyticsData} />}
+            {enhancedData.analytics.pending_answer_count > 0 && (
+              <PendingQuizMarks
+                sessionId={enhancedData.sessionId}
+                count={enhancedData.analytics.pending_answer_count}
+                onSaved={fetchEnhancedAnalyticsData}
+              />
+            )}
             {totalGradedParticipants > 0 && (
               <Button variant="contained" startIcon={<CloudDownloadIcon />} onClick={handleDownloadAllReports}>
                 Download all ({totalGradedParticipants})
               </Button>
             )}
-            <Button className="mst-ai" variant="contained" startIcon={<AutoAwesomeIcon />} onClick={() => setChatOpen(true)}>
+            <Button
+              className="mst-ai"
+              variant="contained"
+              startIcon={<AutoAwesomeIcon />}
+              onClick={() => setChatOpen(true)}
+            >
               Analytics with AI
             </Button>
             <Button variant="outlined" startIcon={<DownloadIcon fontSize="small" />} onClick={handleExportCSV}>
@@ -878,10 +932,25 @@ const QuizAnalytics = () => {
         breadcrumbs={[{ label: 'Quizzes', to: '/quizzes' }, { label: 'Analytics' }]}
         subtitle={[
           `Room ${enhancedData.analytics.room_code}`,
-          enhancedData.analytics.started_at ? new Date(enhancedData.analytics.started_at).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : null,
-        ].filter(Boolean).join(' · ')}
+          enhancedData.analytics.started_at
+            ? new Date(enhancedData.analytics.started_at).toLocaleString(undefined, {
+                day: 'numeric',
+                month: 'short',
+                hour: 'numeric',
+                minute: '2-digit',
+              })
+            : null,
+        ]
+          .filter(Boolean)
+          .join(' · ')}
         title={enhancedData.analytics.quiz_title || 'Quiz analytics'}
-        titleAdornment={<Chip color={enhancedData.analytics.status === 'completed' ? 'success' : 'primary'} label={String(enhancedData.analytics.status || '').replace(/^./, (c) => c.toUpperCase())} size="small" />}
+        titleAdornment={
+          <Chip
+            color={enhancedData.analytics.status === 'completed' ? 'success' : 'primary'}
+            label={String(enhancedData.analytics.status || '').replace(/^./, (c) => c.toUpperCase())}
+            size="small"
+          />
+        }
       />
 
       {/* Summary Cards */}
@@ -913,29 +982,39 @@ const QuizAnalytics = () => {
 
       {/* No participants message */}
       {(!enhancedData.class_students || enhancedData.class_students.length === 0) &&
-       (!enhancedData.outsiders || enhancedData.outsiders.length === 0) && (
-        <Alert severity="info" sx={{ mb: 4 }}>
-          No participants found for this session.
-        </Alert>
-      )}
+        (!enhancedData.outsiders || enhancedData.outsiders.length === 0) && (
+          <Alert severity="info" sx={{ mb: 4 }}>
+            No participants found for this session.
+          </Alert>
+        )}
 
       {/* Additional Stats */}
       <Grid container spacing={2.5} sx={{ mb: 1, mt: 0 }}>
         <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
-              <Typography variant="h6" component="h2" gutterBottom>Score spread</Typography>
+              <Typography variant="h6" component="h2" gutterBottom>
+                Score spread
+              </Typography>
               <Grid container spacing={2}>
                 <Grid item xs={4}>
-                  <Typography variant="body2" color="text.secondary">Highest</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Highest
+                  </Typography>
                   <Typography variant="h5">{enhancedData.analytics.highest_score ?? '—'}</Typography>
                 </Grid>
                 <Grid item xs={4}>
-                  <Typography variant="body2" color="text.secondary">Median</Typography>
-                  <Typography variant="h5">{enhancedData.analytics.median_score == null ? '—' : enhancedData.analytics.median_score.toFixed(1)}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Median
+                  </Typography>
+                  <Typography variant="h5">
+                    {enhancedData.analytics.median_score == null ? '—' : enhancedData.analytics.median_score.toFixed(1)}
+                  </Typography>
                 </Grid>
                 <Grid item xs={4}>
-                  <Typography variant="body2" color="text.secondary">Lowest</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Lowest
+                  </Typography>
                   <Typography variant="h5">{enhancedData.analytics.lowest_score ?? '—'}</Typography>
                 </Grid>
               </Grid>
@@ -945,15 +1024,27 @@ const QuizAnalytics = () => {
         <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
-              <Typography variant="h6" component="h2" gutterBottom>Overall performance</Typography>
+              <Typography variant="h6" component="h2" gutterBottom>
+                Overall performance
+              </Typography>
               <Grid container spacing={2}>
                 <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">Average accuracy</Typography>
-                  <Typography variant="h5">{enhancedData.analytics.average_accuracy_rate == null ? '—' : `${(enhancedData.analytics.average_accuracy_rate * 100).toFixed(1)}%`}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Average accuracy
+                  </Typography>
+                  <Typography variant="h5">
+                    {enhancedData.analytics.average_accuracy_rate == null
+                      ? '—'
+                      : `${(enhancedData.analytics.average_accuracy_rate * 100).toFixed(1)}%`}
+                  </Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">Active participants</Typography>
-                  <Typography variant="h5">{enhancedData.analytics.active_participants}/{enhancedData.analytics.total_participants}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Active participants
+                  </Typography>
+                  <Typography variant="h5">
+                    {enhancedData.analytics.active_participants}/{enhancedData.analytics.total_participants}
+                  </Typography>
                 </Grid>
               </Grid>
             </CardContent>
@@ -967,7 +1058,7 @@ const QuizAnalytics = () => {
         <QuestionBreakdown questions={enhancedData.analytics.question_analytics} />
       )}
 
-      <TagAnalytics activityId={enhancedData.sessionId}/>
+      <TagAnalytics activityId={enhancedData.sessionId} />
       {/* Floating Chat Window */}
       <FloatingChatWindow
         open={chatOpen}

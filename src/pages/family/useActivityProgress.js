@@ -1,13 +1,16 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import api from "../../services/api";
-import { sessionGeneration } from "../../services/queryCache";
+// Loads and autosaves a child's progress in one activity (quiz answers, card ratings) through the family API.
+// Area: family
+
+import { useCallback, useEffect, useRef, useState } from 'react';
+import api from '../../services/api';
+import { sessionGeneration } from '../../services/queryCache';
 
 /** Serial saves preserve edits made during a request; conflicts never overwrite another tab. */
 export default function useActivityProgress(activity, initial) {
   const path = `/api/family/children/${activity.childId}/activities/${activity.id}/progress`;
   const [value, setValue] = useState(initial),
     [ready, setReady] = useState(false),
-    [error, setError] = useState(""),
+    [error, setError] = useState(''),
     [saving, setSaving] = useState(false),
     [conflict, setConflict] = useState(false);
   const current = useRef(initial),
@@ -18,15 +21,12 @@ export default function useActivityProgress(activity, initial) {
     timer = useRef(null),
     blocked = useRef(false);
   const generation = sessionGeneration();
+  // Sends queued saves one at a time with the revision; a conflict or failure stops it until retry or reload.
   const flush = useCallback(async () => {
     if (running.current || blocked.current || !queued.current) return;
     running.current = true;
     if (alive.current) setSaving(true);
-    while (
-      queued.current &&
-      !blocked.current &&
-      generation === sessionGeneration()
-    ) {
+    while (queued.current && !blocked.current && generation === sessionGeneration()) {
       const data = queued.current;
       queued.current = null;
       try {
@@ -43,8 +43,8 @@ export default function useActivityProgress(activity, initial) {
           setConflict(e.response?.status === 409);
           setError(
             e.response?.status === 409
-              ? "This was changed on another screen."
-              : "Can’t save right now. Check your internet.",
+              ? 'This was changed on another screen.'
+              : 'Can’t save right now. Check your internet.'
           );
         }
         break;
@@ -61,18 +61,13 @@ export default function useActivityProgress(activity, initial) {
       .then(({ data }) => {
         if (!alive.current) return;
         revision.current = data.revision;
-        const saved = Object.keys(data.data).length
-          ? { ...initial, ...data.data }
-          : initial;
+        const saved = Object.keys(data.data).length ? { ...initial, ...data.data } : initial;
         current.current = saved;
         setValue(saved);
         setReady(true);
       })
       .catch((e) => {
-        if (alive.current && e.code !== "ERR_CANCELED")
-          setError(
-            "Couldn’t load your place. Close and reopen this.",
-          );
+        if (alive.current && e.code !== 'ERR_CANCELED') setError('Couldn’t load your place. Close and reopen this.');
       });
     return () => {
       alive.current = false;
@@ -85,11 +80,11 @@ export default function useActivityProgress(activity, initial) {
     const warn = (event) => {
       if (queued.current || running.current) {
         event.preventDefault();
-        event.returnValue = "";
+        event.returnValue = '';
       }
     };
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
   }, []);
   const update = (patch) => {
     if (!ready || blocked.current) return;
@@ -104,7 +99,10 @@ export default function useActivityProgress(activity, initial) {
   /** After a network failure: try the same save again (nothing typed since is lost; it is in the queue). */
   const retry = () => {
     blocked.current = false;
-    if (alive.current) { setError(""); setConflict(false); }
+    if (alive.current) {
+      setError('');
+      setConflict(false);
+    }
     if (!queued.current) queued.current = current.current;
     void flush();
   };
@@ -117,9 +115,13 @@ export default function useActivityProgress(activity, initial) {
       blocked.current = false;
       const saved = Object.keys(data.data).length ? { ...initial, ...data.data } : initial;
       current.current = saved;
-      if (alive.current) { setValue(saved); setError(""); setConflict(false); }
+      if (alive.current) {
+        setValue(saved);
+        setError('');
+        setConflict(false);
+      }
     } catch {
-      if (alive.current) setError("Can’t load the latest right now. Check your internet.");
+      if (alive.current) setError('Can’t load the latest right now. Check your internet.');
     }
   };
   return { value, update, ready, error, saving, conflict, retry, reload };

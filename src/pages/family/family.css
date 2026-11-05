@@ -1,3 +1,6 @@
+/* Styles the whole /family parent space: its solid theme, chat, side panel, quiz, mind map and homework views. */
+/* Area: family */
+
 /* =====================================================================================================
    Parent mode ("/family"): a calm, solid look for parents. Designer spec 2026-10-29.
    Scoped by <html data-space="family"> (set while FamilyHome is mounted) so portalled dialogs and menus follow.

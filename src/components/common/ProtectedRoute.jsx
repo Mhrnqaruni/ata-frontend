@@ -1,4 +1,5 @@
-// /src/components/common/ProtectedRoute.jsx
+// Guards private routes: waits for the session, sends signed-out users to sign in, checks the required role.
+// Area: identity
 
 // --- Core React & Router Imports ---
 import React from 'react';
@@ -30,7 +31,7 @@ const ProtectedRoute = ({ children, requiredRole, redirectTo }) => {
   // --- Consume Global Authentication State ---
   // We get both the authentication status and the initial loading status from our context.
   const { isAuthenticated, isAuthLoading, user } = useAuth();
-  
+
   // The `useLocation` hook from React Router gives us information about the current URL.
   // We need this to remember where the user was trying to go before we redirected them.
   const location = useLocation();
@@ -74,12 +75,7 @@ const ProtectedRoute = ({ children, requiredRole, redirectTo }) => {
 
   if (requiredRole && !hasMode(user, requiredRole)) {
     const fallbackPath =
-      redirectTo ??
-      (user?.role === 'admin'
-        ? '/admin'
-        : user?.role === 'parent'
-          ? '/family'
-          : '/login');
+      redirectTo ?? (user?.role === 'admin' ? '/admin' : user?.role === 'parent' ? '/family' : '/login');
     return <Navigate to={fallbackPath} replace />;
   }
 

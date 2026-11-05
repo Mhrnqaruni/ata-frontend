@@ -1,4 +1,5 @@
-// /src/services/dashboardService.js
+// Wraps the dashboard summary endpoint (GET /api/dashboard/summary), which returns the class and student counts.
+// Area: analytics
 
 // --- Core Imports ---
 // Import the single, configured apiClient instance.
@@ -19,19 +20,19 @@ const dashboardService = {
   getSummary: async () => {
     try {
       // Use the apiClient to make a GET request to the specific endpoint.
-      // The base URL ('http://localhost:8000') is already configured in apiClient.
+      // The base URL is already configured in apiClient (VITE_API_BASE_URL).
       const response = await apiClient.get('/api/dashboard/summary');
-      
+
       // Axios automatically parses the JSON, so we can directly return the data.
       return response.data;
     } catch (error) {
       // Log the technical error for developer debugging.
-      console.error("Error fetching dashboard summary:", error);
+      console.error('Error fetching dashboard summary:', error);
 
       // Extract a user-friendly message from the backend's structured error response.
       // If none is available, provide a generic fallback message.
-      const errorMessage = error.response?.data?.detail || "Could not connect to the server. Please try again later.";
-      
+      const errorMessage = error.response?.data?.detail || 'Could not connect to the server. Please try again later.';
+
       // CRITICAL: Re-throw the error with the user-friendly message so the calling
       // page component can catch it and update the UI state accordingly.
       throw new Error(errorMessage);

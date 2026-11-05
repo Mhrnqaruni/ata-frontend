@@ -1,26 +1,26 @@
-import React, { useEffect, useState } from "react";
-import { Alert, Box, Button, Skeleton, Menu, MenuItem } from "@mui/material";
-import EmojiEventsOutlined from "@mui/icons-material/EmojiEventsOutlined";
-import RefreshRounded from "@mui/icons-material/RefreshRounded";
-import DownloadRounded from "@mui/icons-material/DownloadRounded";
-import ArrowDropDownRounded from "@mui/icons-material/ArrowDropDownRounded";
-import { Link } from "react-router-dom";
-import MathTextDisplay from "../common/MathTextDisplay";
-import {
-  getAssessmentAnalytics,
-  downloadAssessmentAnalytics,
-} from "../../services/assessmentAnalyticsService";
-import "./assessment-analytics.css";
-const percent = (value) => (value == null ? "—" : `${value.toFixed(1)}%`);
-const marks = (value) => (value == null ? "—" : Number(value.toFixed(1)));
+// The analytics tab of one assessment: averages, marks per question, student leaderboard and a PDF or Word export.
+// Area: assessments
+
+import React, { useEffect, useState } from 'react';
+import { Alert, Box, Button, Skeleton, Menu, MenuItem } from '@mui/material';
+import EmojiEventsOutlined from '@mui/icons-material/EmojiEventsOutlined';
+import RefreshRounded from '@mui/icons-material/RefreshRounded';
+import DownloadRounded from '@mui/icons-material/DownloadRounded';
+import ArrowDropDownRounded from '@mui/icons-material/ArrowDropDownRounded';
+import { Link } from 'react-router-dom';
+import MathTextDisplay from '../common/MathTextDisplay';
+import { getAssessmentAnalytics, downloadAssessmentAnalytics } from '../../services/assessmentAnalyticsService';
+import './assessment-analytics.css';
+const percent = (value) => (value == null ? '—' : `${value.toFixed(1)}%`);
+const marks = (value) => (value == null ? '—' : Number(value.toFixed(1)));
 
 export default function AssessmentAnalytics({ jobId, assessmentOnly = false }) {
   const [data, setData] = useState(null),
-    [error, setError] = useState(""),
+    [error, setError] = useState(''),
     [loading, setLoading] = useState(true);
   const [revision, setRevision] = useState(0),
-    [exporting, setExporting] = useState(""),
-    [exportError, setExportError] = useState("");
+    [exporting, setExporting] = useState(''),
+    [exportError, setExportError] = useState('');
   const [showAll, setShowAll] = useState(false);
   const [showQuestions, setShowQuestions] = useState(false);
   const [selectedKey, setSelectedKey] = useState(null);
@@ -28,7 +28,7 @@ export default function AssessmentAnalytics({ jobId, assessmentOnly = false }) {
   useEffect(() => {
     let alive = true;
     setLoading(true);
-    setError("");
+    setError('');
     getAssessmentAnalytics(jobId)
       .then((value) => {
         if (alive) setData(value);
@@ -36,9 +36,9 @@ export default function AssessmentAnalytics({ jobId, assessmentOnly = false }) {
       .catch((failure) => {
         if (alive)
           setError(
-            typeof failure.response?.data?.detail === "string"
+            typeof failure.response?.data?.detail === 'string'
               ? failure.response.data.detail
-              : "Could not load analytics. Try again.",
+              : 'Could not load analytics. Try again.'
           );
       })
       .finally(() => {
@@ -51,15 +51,13 @@ export default function AssessmentAnalytics({ jobId, assessmentOnly = false }) {
   const download = async (format) => {
     if (exporting) return;
     setExporting(format);
-    setExportError("");
+    setExportError('');
     try {
       await downloadAssessmentAnalytics(jobId, format);
     } catch {
-      setExportError(
-        "The report could not be downloaded. Try again, or choose Word if PDF is unavailable.",
-      );
+      setExportError('The report could not be downloaded. Try again, or choose Word if PDF is unavailable.');
     } finally {
-      setExporting("");
+      setExporting('');
     }
   };
   if (loading)
@@ -71,12 +69,7 @@ export default function AssessmentAnalytics({ jobId, assessmentOnly = false }) {
     );
   if (error)
     return (
-      <Alert
-        severity="warning"
-        action={
-          <Button onClick={() => setRevision((v) => v + 1)}>Retry</Button>
-        }
-      >
+      <Alert severity="warning" action={<Button onClick={() => setRevision((v) => v + 1)}>Retry</Button>}>
         {error}
       </Alert>
     );
@@ -85,27 +78,21 @@ export default function AssessmentAnalytics({ jobId, assessmentOnly = false }) {
   const ranked = s.comparable
     ? [...data.students]
         .filter((student) => student.percentage != null)
-        .sort(
-          (a, b) => b.percentage - a.percentage || a.name.localeCompare(b.name),
-        )
+        .sort((a, b) => b.percentage - a.percentage || a.name.localeCompare(b.name))
     : [];
   const others = data.students
     .filter((student) => !ranked.includes(student))
     .sort((a, b) => a.name.localeCompare(b.name));
-  const students = showAll
-    ? [...ranked, ...others]
-    : (ranked.length ? ranked : others).slice(0, 5);
-  const selected = data.questions.find(
-    (question) => question.key === selectedKey,
-  );
+  const students = showAll ? [...ranked, ...others] : (ranked.length ? ranked : others).slice(0, 5);
+  const selected = data.questions.find((question) => question.key === selectedKey);
   return (
     <div className="mst-assessment-analytics">
       <div className="aa-toolbar">
         <p>
-          Updated{" "}
+          Updated{' '}
           {new Date(data.generated_at).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
+            hour: '2-digit',
+            minute: '2-digit',
           })}
         </p>
         <div className="aa-actions">
@@ -123,16 +110,12 @@ export default function AssessmentAnalytics({ jobId, assessmentOnly = false }) {
             endIcon={<ArrowDropDownRounded />}
             variant="contained"
             aria-haspopup="menu"
-            aria-controls={
-              downloadAnchor ? "assessment-download-menu" : undefined
-            }
+            aria-controls={downloadAnchor ? 'assessment-download-menu' : undefined}
             aria-expanded={Boolean(downloadAnchor)}
             onClick={(event) => setDownloadAnchor(event.currentTarget)}
             disabled={Boolean(exporting)}
           >
-            {exporting
-              ? `Preparing ${exporting === "pdf" ? "PDF" : "Word"}…`
-              : "Download"}
+            {exporting ? `Preparing ${exporting === 'pdf' ? 'PDF' : 'Word'}…` : 'Download'}
           </Button>
           <Menu
             id="assessment-download-menu"
@@ -143,7 +126,7 @@ export default function AssessmentAnalytics({ jobId, assessmentOnly = false }) {
             <MenuItem
               onClick={() => {
                 setDownloadAnchor(null);
-                download("pdf");
+                download('pdf');
               }}
             >
               PDF (.pdf)
@@ -151,7 +134,7 @@ export default function AssessmentAnalytics({ jobId, assessmentOnly = false }) {
             <MenuItem
               onClick={() => {
                 setDownloadAnchor(null);
-                download("docx");
+                download('docx');
               }}
             >
               Word (.docx)
@@ -162,25 +145,20 @@ export default function AssessmentAnalytics({ jobId, assessmentOnly = false }) {
       {exportError && <Alert severity="error">{exportError}</Alert>}
       {!s.comparable && (
         <Alert severity="warning">
-          Different marking versions are present. Scores remain visible, but
-          students are not ranked against each other.
+          Different marking versions are present. Scores remain visible, but students are not ranked against each other.
         </Alert>
       )}
-      <section
-        className="aa-surface aa-overview"
-        aria-labelledby="aa-overview-title"
-      >
+      <section className="aa-surface aa-overview" aria-labelledby="aa-overview-title">
         <div className="aa-section-heading">
           <h2 id="aa-overview-title">At a glance</h2>
-          <span>{s.graded < 5 ? "Small sample" : "Finalized results"}</span>
+          <span>{s.graded < 5 ? 'Small sample' : 'Finalized results'}</span>
         </div>
         <dl className="aa-metrics">
           <div>
             <dt>Average score</dt>
             <dd>{percent(s.average)}</dd>
             <small>
-              Based on {s.graded} graded{" "}
-              {s.graded === 1 ? "submission" : "submissions"}
+              Based on {s.graded} graded {s.graded === 1 ? 'submission' : 'submissions'}
             </small>
           </div>
           <div>
@@ -188,17 +166,21 @@ export default function AssessmentAnalytics({ jobId, assessmentOnly = false }) {
             <dd className="aa-count-value">
               {s.graded} of {s.submitted}
             </dd>
-            <small>
-              received submissions graded · {s.incomplete} unfinished
-            </small>
+            <small>received submissions graded · {s.incomplete} unfinished</small>
           </div>
         </dl>
         <div className="aa-summary-line">
           <span>
-            {assessmentOnly ? "Students in this assessment; no class is assigned." : <>
-              {s.expected == null ? "Assigned group unavailable." : `${s.no_submission} of ${s.expected} assigned students have no submission.`}{" "}
-              {s.outsiders} {s.outsiders === 1 ? "submission is" : "submissions are"} outside the assigned group.
-            </>}
+            {assessmentOnly ? (
+              'Students in this assessment; no class is assigned.'
+            ) : (
+              <>
+                {s.expected == null
+                  ? 'Assigned group unavailable.'
+                  : `${s.no_submission} of ${s.expected} assigned students have no submission.`}{' '}
+                {s.outsiders} {s.outsiders === 1 ? 'submission is' : 'submissions are'} not matched to the student list.
+              </>
+            )}
           </span>
         </div>
         <details className="aa-more-stats">
@@ -216,60 +198,40 @@ export default function AssessmentAnalytics({ jobId, assessmentOnly = false }) {
         </details>
       </section>
       <div className="aa-main-grid">
-        <section
-          className="aa-surface aa-questions"
-          aria-labelledby="aa-questions-title"
-        >
+        <section className="aa-surface aa-questions" aria-labelledby="aa-questions-title">
           <div className="aa-section-heading">
             <h2 id="aa-questions-title">Average marks by question</h2>
             <span>{data.questions.length} questions</span>
           </div>
-          <p className="aa-description">
-            Percentage of possible marks. Select a question for details.
-          </p>
+          <p className="aa-description">Percentage of possible marks. Select a question for details.</p>
           <div className="aa-question-grid">
-            {(showQuestions ? data.questions : data.questions.slice(0, 6)).map(
-              (q) => (
-                <button
-                  type="button"
-                  className="aa-question-tile"
-                  key={q.key}
-                  aria-pressed={selectedKey === q.key}
-                  aria-controls="aa-question-detail"
-                  onClick={() =>
-                    setSelectedKey(selectedKey === q.key ? null : q.key)
-                  }
-                >
-                  <span className="aa-tile-label">{q.label}</span>
-                  <strong>{percent(q.percentage)}</strong>
-                  <span className="aa-mini-track" aria-hidden="true">
-                    <span style={{ width: `${q.percentage ?? 0}%` }} />
-                  </span>
-                  <span className="aa-tile-caption">
-                    {q.graded} graded
-                    {q.unresolved ? ` · ${q.unresolved} pending` : ""}
-                  </span>
-                </button>
-              ),
-            )}
+            {(showQuestions ? data.questions : data.questions.slice(0, 6)).map((q) => (
+              <button
+                type="button"
+                className="aa-question-tile"
+                key={q.key}
+                aria-pressed={selectedKey === q.key}
+                aria-controls="aa-question-detail"
+                onClick={() => setSelectedKey(selectedKey === q.key ? null : q.key)}
+              >
+                <span className="aa-tile-label">{q.label}</span>
+                <strong>{percent(q.percentage)}</strong>
+                <span className="aa-mini-track" aria-hidden="true">
+                  <span style={{ width: `${q.percentage ?? 0}%` }} />
+                </span>
+                <span className="aa-tile-caption">
+                  {q.graded} graded
+                  {q.unresolved ? ` · ${q.unresolved} pending` : ''}
+                </span>
+              </button>
+            ))}
           </div>
           {data.questions.length > 6 && (
-            <Button
-              size="small"
-              onClick={() => setShowQuestions((v) => !v)}
-              sx={{ mt: 1 }}
-            >
-              {showQuestions
-                ? "Show fewer"
-                : `Show all ${data.questions.length} questions`}
+            <Button size="small" onClick={() => setShowQuestions((v) => !v)} sx={{ mt: 1 }}>
+              {showQuestions ? 'Show fewer' : `Show all ${data.questions.length} questions`}
             </Button>
           )}
-          <div
-            id="aa-question-detail"
-            className={
-              selected ? "aa-question-detail" : "aa-detail-placeholder"
-            }
-          >
+          <div id="aa-question-detail" className={selected ? 'aa-question-detail' : 'aa-detail-placeholder'}>
             {selected ? (
               <>
                 <div className="aa-section-heading">
@@ -291,49 +253,33 @@ export default function AssessmentAnalytics({ jobId, assessmentOnly = false }) {
                   </span>
                 </div>
                 <p className="aa-footnote">
-                  {selected.unresolved} unresolved. Zero marks do not
-                  necessarily mean a blank answer.
+                  {selected.unresolved} unresolved. Zero marks do not necessarily mean a blank answer.
                 </p>
               </>
             ) : (
-              <p>
-                Select a question above to see the paper and mark breakdown.
-              </p>
+              <p>Select a question above to see the paper and mark breakdown.</p>
             )}
           </div>
         </section>
-        <section
-          className="aa-surface aa-leaderboard"
-          aria-labelledby="aa-leaderboard-title"
-        >
+        <section className="aa-surface aa-leaderboard" aria-labelledby="aa-leaderboard-title">
           <div className="aa-section-heading">
             <h2 id="aa-leaderboard-title">
               <EmojiEventsOutlined aria-hidden="true" /> Student leaderboard
             </h2>
             <span>{ranked.length} ranked</span>
           </div>
-          <p className="aa-description">
-            Finalized scores. Equal scores share a rank.
-          </p>
+          <p className="aa-description">Finalized scores. Equal scores share a rank.</p>
           <ol className="aa-student-list">
             {students.map((student) => {
               // Competition ranks keep ties equal, independent of name ordering.
               const rank =
                 s.comparable && student.percentage != null
-                  ? ranked.findIndex(
-                      (p) => Math.abs(p.percentage - student.percentage) < 1e-8,
-                    ) + 1
+                  ? ranked.findIndex((p) => Math.abs(p.percentage - student.percentage) < 1e-8) + 1
                   : null;
               return (
-                <li
-                  key={`${student.kind}-${student.id}`}
-                  className={rank === 1 ? "aa-first-place" : ""}
-                >
-                  <span
-                    className="aa-rank"
-                    aria-label={rank ? `Rank ${rank}` : "Not ranked"}
-                  >
-                    {rank ?? "—"}
+                <li key={`${student.kind}-${student.id}`} className={rank === 1 ? 'aa-first-place' : ''}>
+                  <span className="aa-rank" aria-label={rank ? `Rank ${rank}` : 'Not ranked'}>
+                    {rank ?? '—'}
                   </span>
                   <div className="aa-student-name">
                     <strong>{student.name}</strong>
@@ -341,16 +287,13 @@ export default function AssessmentAnalytics({ jobId, assessmentOnly = false }) {
                       {student.percentage == null
                         ? `Not ranked · ${student.status}`
                         : `${marks(student.total)} / ${marks(student.maximum)} marks`}
-                      {student.kind === "outsider" && !assessmentOnly ? " · Outsider" : ""}
+                      {student.kind === 'outsider' && !assessmentOnly ? ' · Not matched' : ''}
                     </span>
                   </div>
                   <div className="aa-student-score">
                     <strong>{percent(student.percentage)}</strong>
                     {student.submitted && (
-                      <Link
-                        to={`/assessments/${jobId}/review/${student.id}`}
-                        aria-label={`Review ${student.name}`}
-                      >
+                      <Link to={`/assessments/${jobId}/review/${student.id}`} aria-label={`Review ${student.name}`}>
                         Review
                       </Link>
                     )}
@@ -359,35 +302,22 @@ export default function AssessmentAnalytics({ jobId, assessmentOnly = false }) {
               );
             })}
           </ol>
-          {!students.length && (
-            <p className="aa-description">No recorded submissions yet.</p>
-          )}
+          {!students.length && <p className="aa-description">No recorded submissions yet.</p>}
           {(showAll || data.students.length > students.length) && (
-            <Button
-              fullWidth
-              size="small"
-              onClick={() => setShowAll((v) => !v)}
-              sx={{ mt: 1 }}
-            >
-              {showAll
-                ? "Show top students"
-                : `View all ${data.students.length} students`}
+            <Button fullWidth size="small" onClick={() => setShowAll((v) => !v)} sx={{ mt: 1 }}>
+              {showAll ? 'Show top students' : `View all ${data.students.length} students`}
             </Button>
           )}
-          {s.incomplete > 0 && (
-            <p className="aa-footnote">
-              {s.incomplete} unfinished submissions are not ranked.
-            </p>
-          )}
+          {s.incomplete > 0 && <p className="aa-footnote">{s.incomplete} unfinished submissions are not ranked.</p>}
         </section>
       </div>
       <div className="aa-secondary-grid">
         {s.comparable && s.graded > 0 && (
           <details className="aa-surface aa-details">
             <summary>
-              Score distribution{" "}
+              Score distribution{' '}
               <span>
-                {s.graded} graded {s.graded === 1 ? "student" : "students"}
+                {s.graded} graded {s.graded === 1 ? 'student' : 'students'}
               </span>
             </summary>
             <div className="aa-distribution">
@@ -395,9 +325,7 @@ export default function AssessmentAnalytics({ jobId, assessmentOnly = false }) {
                 <div key={bin.label}>
                   <span>{bin.label}</span>
                   <span className="aa-mini-track" aria-hidden="true">
-                    <span
-                      style={{ width: `${(bin.count / s.graded) * 100}%` }}
-                    />
+                    <span style={{ width: `${(bin.count / s.graded) * 100}%` }} />
                   </span>
                   <b>{bin.count}</b>
                 </div>
@@ -424,20 +352,17 @@ export default function AssessmentAnalytics({ jobId, assessmentOnly = false }) {
               ))}
             </div>
             {data.overlapping_classes && (
-              <p className="aa-footnote">
-                Class membership overlaps. Overall totals count each student
-                once.
-              </p>
+              <p className="aa-footnote">Class membership overlaps. Overall totals count each student once.</p>
             )}
           </details>
         )}
         <details className="aa-surface aa-details">
           <summary>
-            About these results{" "}
+            About these results{' '}
             <span>
               {data.warnings.length
-                ? `${data.warnings.length} ${data.warnings.length === 1 ? "note" : "notes"}`
-                : "How scores are calculated"}
+                ? `${data.warnings.length} ${data.warnings.length === 1 ? 'note' : 'notes'}`
+                : 'How scores are calculated'}
             </span>
           </summary>
           <div className="aa-notes">

@@ -1,5 +1,6 @@
-// /ata-frontend/src/components/chatbot/ThinkingIndicator.jsx
-// While the assistant works: its star, three soft dots and a short line that changes every 3 seconds.
+// The assistant's waiting indicator: its star, animated dots and a status phrase that changes every 3 seconds.
+// Area: chat
+
 import React, { useEffect, useState } from 'react';
 import AutoAwesome from '@mui/icons-material/AutoAwesome';
 
@@ -8,7 +9,7 @@ const PHRASES = [
   'Looking for trends…',
   'Finding the key points…',
   'Checking performance patterns…',
-  'Writing the answer…'
+  'Writing the answer…',
 ];
 
 const ThinkingIndicator = () => {
@@ -19,9 +20,15 @@ const ThinkingIndicator = () => {
   }, []);
   return (
     <div className="mst-msg" data-role="bot" role="status">
-      <span aria-hidden="true" className="mst-msg-avatar"><AutoAwesome /></span>
+      <span aria-hidden="true" className="mst-msg-avatar">
+        <AutoAwesome />
+      </span>
       <div className="mst-thinking">
-        <span aria-hidden="true" className="mst-thinking-dots"><span /><span /><span /></span>
+        <span aria-hidden="true" className="mst-thinking-dots">
+          <span />
+          <span />
+          <span />
+        </span>
         <span>{PHRASES[index]}</span>
       </div>
     </div>
