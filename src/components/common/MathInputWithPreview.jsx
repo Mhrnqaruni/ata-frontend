@@ -1,4 +1,6 @@
-// /src/components/common/MathInputWithPreview.jsx
+// A text field that shows a live rendered preview underneath when the text contains a maths formula.
+// Used for question and answer text in the assessment and quiz screens.
+// Area: platform
 
 import React from 'react';
 import { TextField, Box, Typography } from '@mui/material';
@@ -9,19 +11,12 @@ import { normalizeMathText } from '../../utils/mathRenderer';
  * TextField with live math formula preview
  * Shows rendered preview when $ or $$ is detected
  */
-const MathInputWithPreview = ({ 
-  value, 
-  onChange, 
-  label, 
-  placeholder, 
-  helperText,
-  ...props 
-}) => {
+const MathInputWithPreview = ({ value, onChange, label, placeholder, helperText, ...props }) => {
   const sourceValue = typeof value === 'string' ? value : value == null ? '' : JSON.stringify(value);
   const showPreview = /\$|\\\(|\\\[/.test(sourceValue) || normalizeMathText(sourceValue) !== sourceValue;
 
   return (
-    <Box sx={{ minWidth: 0, maxWidth: "100%" }}>
+    <Box sx={{ minWidth: 0, maxWidth: '100%' }}>
       <TextField
         fullWidth
         value={sourceValue}
@@ -32,14 +27,17 @@ const MathInputWithPreview = ({
         {...props}
       />
       {showPreview && (
-        <Box 
-          sx={{ 
-            minWidth: 0, maxWidth: "100%", overflowX: "auto",
-            mt: 1, 
-            p: 2, 
-            border: '1px solid', borderColor: 'divider',
-            borderRadius: 1, 
-            bgcolor: 'action.hover'
+        <Box
+          sx={{
+            minWidth: 0,
+            maxWidth: '100%',
+            overflowX: 'auto',
+            mt: 1,
+            p: 2,
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 1,
+            bgcolor: 'action.hover',
           }}
         >
           <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>

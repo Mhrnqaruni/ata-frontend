@@ -1,6 +1,8 @@
+// The quiz builder: create or edit questions, settings and audience, import questions with AI, save or publish.
+// Area: quizzes
+
 import tagService from '../../services/tagService';
 import AudienceSelector from '../../components/tags/AudienceSelector';
-// /src/pages/quizzes/QuizBuilder.jsx
 
 // --- Core React Imports ---
 import React, { useState, useEffect, useCallback } from 'react';
@@ -40,7 +42,7 @@ import {
   Radio,
   RadioGroup,
   ToggleButton,
-  ToggleButtonGroup
+  ToggleButtonGroup,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -76,6 +78,7 @@ import { useSnackbar } from '../../hooks/useSnackbar';
 import useNumberInput from '../../hooks/useNumberInput';
 import MathInputWithPreview from '../../components/common/MathInputWithPreview';
 import MathTextDisplay from '../../components/common/MathTextDisplay';
+import { config } from '../../config';
 
 /**
  * Question type options
@@ -84,13 +87,25 @@ const QUESTION_TYPES = [
   { value: 'multiple_choice', label: 'Multiple choice', short: 'Multiple choice', Icon: RadioButtonCheckedRounded },
   { value: 'true_false', label: 'True or false', short: 'True / false', Icon: ThumbsUpDownOutlined },
   { value: 'short_answer', label: 'Short answer', short: 'Short answer', Icon: ShortTextRounded },
-  { value: 'poll', label: 'Poll (no correct answer)', short: 'Poll', Icon: PollOutlined }
+  { value: 'poll', label: 'Poll (no correct answer)', short: 'Poll', Icon: PollOutlined },
 ];
 
 /**
  * Question Editor Component
  */
-const QuestionEditor = ({ question, index, onChange, onDelete, onDuplicate, handleImageUpload, handleImageDelete, uploadingImages, expanded, onToggle, isLive }) => {
+const QuestionEditor = ({
+  question,
+  index,
+  onChange,
+  onDelete,
+  onDuplicate,
+  handleImageUpload,
+  handleImageDelete,
+  uploadingImages,
+  expanded,
+  onToggle,
+  isLive,
+}) => {
   const [localQuestion, setLocalQuestion] = useState(question);
   const [shortAnswerText, setShortAnswerText] = useState('');
 
@@ -104,12 +119,12 @@ const QuestionEditor = ({ question, index, onChange, onDelete, onDuplicate, hand
 
   // Number input hooks for Points and Time Limit fields
   const pointsInputProps = useNumberInput(
-    localQuestion.points !== undefined ? localQuestion.points : (localQuestion.question_type === 'poll' ? 0 : 10),
+    localQuestion.points !== undefined ? localQuestion.points : localQuestion.question_type === 'poll' ? 0 : 10,
     (num) => handleChange('points', num),
     {
       defaultValue: localQuestion.question_type === 'poll' ? 0 : 10,
       min: 0,
-      max: 100
+      max: 100,
     }
   );
 
@@ -119,7 +134,7 @@ const QuestionEditor = ({ question, index, onChange, onDelete, onDuplicate, hand
     {
       defaultValue: 30,
       min: 5,
-      max: 300
+      max: 300,
     }
   );
 
@@ -131,33 +146,32 @@ const QuestionEditor = ({ question, index, onChange, onDelete, onDuplicate, hand
       const previousType = localQuestion.question_type;
 
       if (value === 'poll') {
-        updated.correct_answer = [];  // Polls have no correct answer
-        updated.points = 0;  // Polls default to 0 points
-        updated.options = ['', ''];  // Initialize with 2 empty options for polls
+        updated.correct_answer = []; // Polls have no correct answer
+        updated.points = 0; // Polls default to 0 points
+        updated.options = ['', '']; // Initialize with 2 empty options for polls
       } else if (value === 'true_false') {
-        updated.correct_answer = [true];  // Default to true
-        updated.options = [];  // True/false has no options (just true/false buttons)
+        updated.correct_answer = [true]; // Default to true
+        updated.options = []; // True/false has no options (just true/false buttons)
         // If coming from poll (0 points), restore to 10
         if (previousType === 'poll' && updated.points === 0) {
           updated.points = 10;
         }
       } else if (value === 'multiple_choice') {
-        updated.correct_answer = [];  // Will be set when user selects
-        updated.options = ['', '', '', ''];  // Initialize with 4 empty options
+        updated.correct_answer = []; // Will be set when user selects
+        updated.options = ['', '', '', '']; // Initialize with 4 empty options
         // If coming from poll (0 points), restore to 10
         if (previousType === 'poll' && updated.points === 0) {
           updated.points = 10;
         }
       } else if (value === 'short_answer') {
-        updated.correct_answer = [];  // Will be set when user enters keywords
-        updated.options = [];  // Short answer has no options (free text input)
-        setShortAnswerText('');  // Reset the local text buffer
+        updated.correct_answer = []; // Will be set when user enters keywords
+        updated.options = []; // Short answer has no options (free text input)
+        setShortAnswerText(''); // Reset the local text buffer
         // If coming from poll (0 points), restore to 10
         if (previousType === 'poll' && updated.points === 0) {
           updated.points = 10;
         }
       }
-      console.log('[QuestionEditor] Question type changed to:', value, 'Reset correct_answer to:', updated.correct_answer, 'Options:', updated.options, 'Points:', updated.points);
     }
 
     setLocalQuestion(updated);
@@ -208,8 +222,12 @@ const QuestionEditor = ({ question, index, onChange, onDelete, onDuplicate, hand
     <Card className="mst-rim mst-question" data-open={expanded ? 'true' : 'false'}>
       <div className="mst-question-head">
         <h3 className="mst-question-toggle">
-          <span aria-hidden="true" className="mst-question-num">{index + 1}</span>
-          <span className="mst-question-preview" data-empty={preview ? undefined : 'true'}><MathTextDisplay text={preview || 'Untitled question'} /></span>
+          <span aria-hidden="true" className="mst-question-num">
+            {index + 1}
+          </span>
+          <span className="mst-question-preview" data-empty={preview ? undefined : 'true'}>
+            <MathTextDisplay text={preview || 'Untitled question'} />
+          </span>
         </h3>
         <span className="mst-question-facts">
           <Chip icon={<TypeIcon />} label={typeInfo.short} size="small" />
@@ -222,11 +240,14 @@ const QuestionEditor = ({ question, index, onChange, onDelete, onDuplicate, hand
           </IconButton>
         </Tooltip>
         <Tooltip title="Delete question">
-          <IconButton aria-label={`Delete question ${index + 1}`} className="mst-danger-icon" onClick={() => onDelete(index)}>
+          <IconButton
+            aria-label={`Delete question ${index + 1}`}
+            className="mst-danger-icon"
+            onClick={() => onDelete(index)}
+          >
             <DeleteIcon fontSize="small" />
           </IconButton>
         </Tooltip>
-
       </div>
 
       {expanded ? (
@@ -256,9 +277,11 @@ const QuestionEditor = ({ question, index, onChange, onDelete, onDuplicate, hand
                 value={localQuestion.question_text || ''}
                 onChange={(e) => handleChange('question_text', e.target.value)}
                 placeholder="Write your question"
-
               />
-              <details className="mst-math-help"><summary>Formatting maths</summary><p>Use $x^2 + 3$ for inline maths or $$x^2 + 3$$ on its own line. Check the preview before saving.</p></details>
+              <details className="mst-math-help">
+                <summary>Formatting maths</summary>
+                <p>Use $x^2 + 3$ for inline maths or $$x^2 + 3$$ on its own line. Check the preview before saving.</p>
+              </details>
             </div>
             <div className="mst-question-numbers">
               <TextField
@@ -279,14 +302,23 @@ const QuestionEditor = ({ question, index, onChange, onDelete, onDuplicate, hand
 
           {localQuestion.media_url ? (
             <div className="mst-question-image">
-              <img alt="" src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${localQuestion.media_url}`} />
+              <img alt="" src={`${config.apiBaseUrl}${localQuestion.media_url}`} />
               <span className="mst-question-image-text">
                 <span>Question image</span>
                 <span className="mst-hint">Shown to students with the question.</span>
               </span>
               <Button component="label" disabled={uploadingImages[index]} size="small" variant="outlined">
                 {uploadingImages[index] ? 'Uploading…' : 'Replace'}
-                <input accept="image/png,image/jpeg,image/jpg,image/gif" hidden onChange={(e) => { const file = e.target.files?.[0]; if (file) handleImageUpload(index, file); e.target.value = ''; }} type="file" />
+                <input
+                  accept="image/png,image/jpeg,image/jpg,image/gif"
+                  hidden
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleImageUpload(index, file);
+                    e.target.value = '';
+                  }}
+                  type="file"
+                />
               </Button>
               <Tooltip title="Remove image">
                 <IconButton aria-label="Remove the question image" onClick={() => handleImageDelete(index)}>
@@ -296,13 +328,24 @@ const QuestionEditor = ({ question, index, onChange, onDelete, onDuplicate, hand
             </div>
           ) : (
             <div className="mst-question-image-action">
-              <Button component="label" size="small" variant="text" startIcon={<ImageIcon />} disabled={uploadingImages[index]}>
+              <Button
+                component="label"
+                size="small"
+                variant="text"
+                startIcon={<ImageIcon />}
+                disabled={uploadingImages[index]}
+              >
                 {uploadingImages[index] ? 'Uploading…' : 'Add image'}
-                <input hidden type="file" accept="image/png,image/jpeg,image/jpg,image/gif" onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleImageUpload(index, file);
-                  e.target.value = '';
-                }} />
+                <input
+                  hidden
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg,image/gif"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleImageUpload(index, file);
+                    e.target.value = '';
+                  }}
+                />
               </Button>
               <span className="mst-hint">Optional · up to 5 MB</span>
             </div>
@@ -311,40 +354,51 @@ const QuestionEditor = ({ question, index, onChange, onDelete, onDuplicate, hand
           {(localQuestion.question_type === 'multiple_choice' || localQuestion.question_type === 'poll') && (
             <div className="mst-options">
               <div className="mst-field-label-row">
-                {localQuestion.question_type === 'poll' ? 'Options (no correct answer)' : 'Answers · switch on the correct one'}
+                {localQuestion.question_type === 'poll'
+                  ? 'Options (no correct answer)'
+                  : 'Answers · switch on the correct one'}
               </div>
-              {(localQuestion.options || (localQuestion.question_type === 'poll' ? ['', ''] : ['', '', '', ''])).map((option, optionIndex) => {
-                const correct = localQuestion.question_type === 'multiple_choice' && localQuestion.correct_answer?.[0] === optionIndex;
-                return (
-                  <div className="mst-option" data-correct={correct ? 'true' : undefined} key={optionIndex}>
-                    {localQuestion.question_type === 'multiple_choice' ? (
-                      <Tooltip title={correct ? 'Correct answer' : 'Mark as correct'}>
-                        <Switch
-                          checked={correct}
-                          inputProps={{ 'aria-label': `Option ${optionLetter(optionIndex)} is the correct answer` }}
-                          onChange={() => handleCorrectAnswerChange(optionIndex)}
+              {(localQuestion.options || (localQuestion.question_type === 'poll' ? ['', ''] : ['', '', '', ''])).map(
+                (option, optionIndex) => {
+                  const correct =
+                    localQuestion.question_type === 'multiple_choice' &&
+                    localQuestion.correct_answer?.[0] === optionIndex;
+                  return (
+                    <div className="mst-option" data-correct={correct ? 'true' : undefined} key={optionIndex}>
+                      {localQuestion.question_type === 'multiple_choice' ? (
+                        <Tooltip title={correct ? 'Correct answer' : 'Mark as correct'}>
+                          <Switch
+                            checked={correct}
+                            inputProps={{ 'aria-label': `Option ${optionLetter(optionIndex)} is the correct answer` }}
+                            onChange={() => handleCorrectAnswerChange(optionIndex)}
+                          />
+                        </Tooltip>
+                      ) : null}
+                      <span aria-hidden="true" className="mst-option-letter">
+                        {optionLetter(optionIndex)}
+                      </span>
+                      <div className="mst-option-field">
+                        <MathInputWithPreview
+                          size="small"
+                          label={`Option ${optionLetter(optionIndex)}`}
+                          value={option}
+                          onChange={(e) => handleOptionChange(optionIndex, e.target.value)}
                         />
-                      </Tooltip>
-                    ) : null}
-                    <span aria-hidden="true" className="mst-option-letter">{optionLetter(optionIndex)}</span>
-                    <div className="mst-option-field">
-                      <MathInputWithPreview
-                        size="small"
-                        label={`Option ${optionLetter(optionIndex)}`}
-                        value={option}
-                        onChange={(e) => handleOptionChange(optionIndex, e.target.value)}
-                      />
+                      </div>
+                      {localQuestion.options.length > 2 && (
+                        <Tooltip title="Remove option">
+                          <IconButton
+                            aria-label={`Remove option ${optionLetter(optionIndex)}`}
+                            onClick={() => removeOption(optionIndex)}
+                          >
+                            <CloseIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
                     </div>
-                    {localQuestion.options.length > 2 && (
-                      <Tooltip title="Remove option">
-                        <IconButton aria-label={`Remove option ${optionLetter(optionIndex)}`} onClick={() => removeOption(optionIndex)}>
-                          <CloseIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    )}
-                  </div>
-                );
-              })}
+                  );
+                }
+              )}
               {localQuestion.options.length < 6 && (
                 <Button onClick={addOption} size="small" startIcon={<AddIcon />} variant="text">
                   Add option
@@ -362,8 +416,12 @@ const QuestionEditor = ({ question, index, onChange, onDelete, onDuplicate, hand
                 onChange={(e, value) => value && handleCorrectAnswerChange(value)}
                 value={localQuestion.correct_answer?.[0] === true ? 'true' : 'false'}
               >
-                <ToggleButton value="true"><CheckRounded fontSize="small" /> True</ToggleButton>
-                <ToggleButton value="false"><CloseIcon fontSize="small" /> False</ToggleButton>
+                <ToggleButton value="true">
+                  <CheckRounded fontSize="small" /> True
+                </ToggleButton>
+                <ToggleButton value="false">
+                  <CloseIcon fontSize="small" /> False
+                </ToggleButton>
               </ToggleButtonGroup>
             </div>
           )}
@@ -371,7 +429,8 @@ const QuestionEditor = ({ question, index, onChange, onDelete, onDuplicate, hand
           {localQuestion.question_type === 'short_answer' && (
             <div className="mst-options">
               <Alert severity="info" sx={{ mb: 2 }}>
-                <strong>Marked by keywords, not AI.</strong> A student gets full credit when their answer contains every keyword below (capital letters don't matter). Students can type maths with $ … $.
+                <strong>Marked by keywords, not AI.</strong> A student gets full credit when their answer contains every
+                keyword below (capital letters don't matter). Students can type maths with $ … $.
               </Alert>
               <TextField
                 fullWidth
@@ -383,8 +442,8 @@ const QuestionEditor = ({ question, index, onChange, onDelete, onDuplicate, hand
                 onBlur={() => {
                   const keywords = shortAnswerText
                     .split(/[\n,]/)
-                    .map(s => s.trim())
-                    .filter(s => s.length > 0);
+                    .map((s) => s.trim())
+                    .filter((s) => s.length > 0);
                   handleChange('correct_answer', keywords);
                 }}
                 placeholder={'One per line or separated by commas, e.g.\nParis\nFrance'}
@@ -433,13 +492,13 @@ const QuizBuilder = () => {
     show_correct_answer_during_cooldown: true, // NEW: Default to true for better learning outcomes
     show_final_score_to_students: true,
     show_result_feedback_to_students: true,
-    show_leaderboard_to_students: true
+    show_leaderboard_to_students: true,
   });
 
   // Class selection for roster tracking
   const [selectedClassId, setSelectedClassId] = useState('');
-  const [audience,setAudience]=useState(null);
-  const [audiencePreview,setAudiencePreview]=useState(null);
+  const [audience, setAudience] = useState(null);
+  const [audiencePreview, setAudiencePreview] = useState(null);
   const [classList, setClassList] = useState([]);
   const [classesLoading, setClassesLoading] = useState(true);
 
@@ -461,8 +520,8 @@ const QuizBuilder = () => {
       correct_answer: [],
       points: 10,
       time_limit_seconds: 30,
-      order_index: 0
-    }
+      order_index: 0,
+    },
   ]);
 
   // Dialogs
@@ -485,25 +544,17 @@ const QuizBuilder = () => {
   const [uploadingImages, setUploadingImages] = useState({});
 
   // Number input hooks for deadline duration and AI questions count
-  const deadlineDurationInputProps = useNumberInput(
-    deadlineDuration,
-    setDeadlineDuration,
-    {
-      defaultValue: 60,
-      min: 1,
-      max: 1440
-    }
-  );
+  const deadlineDurationInputProps = useNumberInput(deadlineDuration, setDeadlineDuration, {
+    defaultValue: 60,
+    min: 1,
+    max: 1440,
+  });
 
-  const numQuestionsInputProps = useNumberInput(
-    numQuestions,
-    setNumQuestions,
-    {
-      defaultValue: 10,
-      min: 1,
-      max: 50
-    }
-  );
+  const numQuestionsInputProps = useNumberInput(numQuestions, setNumQuestions, {
+    defaultValue: 10,
+    min: 1,
+    max: 50,
+  });
 
   // NEW: Fetch classes on component mount
   useEffect(() => {
@@ -522,7 +573,6 @@ const QuizBuilder = () => {
       setClassesLoading(true);
       const fetchedClasses = await classService.getAllClasses();
       setClassList(fetchedClasses || []);
-      console.log('[QuizBuilder] Loaded classes:', fetchedClasses.length);
     } catch (err) {
       console.error('[QuizBuilder] Failed to load classes:', err);
       // Don't show error to user - class selection is optional
@@ -553,7 +603,7 @@ const QuizBuilder = () => {
         setDeadlineEnabled(false);
         setDeadlineDuration(60);
       }
-      setAudience(quiz.audience || (quiz.class_id ? {class_ids:[quiz.class_id],tag_ids:[],mode:'union'} : null));
+      setAudience(quiz.audience || (quiz.class_id ? { class_ids: [quiz.class_id], tag_ids: [], mode: 'union' } : null));
       setSelectedClassId(quiz.class_id || ''); // NEW: Load class_id
       setQuizPhase(quiz.quiz_phase || 'normal');
       setLinkedPreQuizId(quiz.linked_quiz_id || null);
@@ -573,8 +623,8 @@ const QuizBuilder = () => {
       }
       setError(null);
     } catch (err) {
-      console.error("Failed to load quiz:", err);
-      setError(err.message || "Failed to load quiz.");
+      console.error('Failed to load quiz:', err);
+      setError(err.message || 'Failed to load quiz.');
     } finally {
       setIsLoading(false);
     }
@@ -609,7 +659,7 @@ const QuizBuilder = () => {
       const preQuizzes = await quizService.getFinishedPreQuizzes({
         class_id: classParam,
         mode: modeParam,
-        include_all_classes: includeAllClasses
+        include_all_classes: includeAllClasses,
       });
 
       if (preQuizzes && preQuizzes.length > 0) {
@@ -621,11 +671,11 @@ const QuizBuilder = () => {
       const altPreQuizzes = await quizService.getFinishedPreQuizzes({
         class_id: classParam,
         mode: altMode,
-        include_all_classes: includeAllClasses
+        include_all_classes: includeAllClasses,
       });
 
       if (altPreQuizzes && altPreQuizzes.length > 0) {
-        setQuizSettings(prev => ({ ...(prev || {}), mode: altMode }));
+        setQuizSettings((prev) => ({ ...(prev || {}), mode: altMode }));
         setPreQuizList(altPreQuizzes);
         showSnackbar(
           `No ${formatModeLabel(modeParam)} pre-quizzes found. Switched to ${formatModeLabel(altMode)} to match available pre-quizzes.`,
@@ -637,7 +687,7 @@ const QuizBuilder = () => {
       setPreQuizList([]);
       setPreQuizError(
         `No eligible pre-quizzes for ${getSelectedClassLabel()} (${formatModeLabel(modeParam)}). ` +
-        'Make sure the pre-quiz is completed, and the class/mode match.'
+          'Make sure the pre-quiz is completed, and the class/mode match.'
       );
     } catch (error) {
       console.error('[QuizBuilder] Failed to load pre quizzes:', error);
@@ -663,7 +713,7 @@ const QuizBuilder = () => {
   const handleSelectPreQuiz = (quiz) => {
     setLinkedPreQuizId(quiz.id);
     setLinkedPreQuiz(quiz);
-    setAudience(quiz.audience || (quiz.class_id ? {class_ids:[quiz.class_id],tag_ids:[],mode:'union'} : null));
+    setAudience(quiz.audience || (quiz.class_id ? { class_ids: [quiz.class_id], tag_ids: [], mode: 'union' } : null));
     if ((quiz.class_id || '') !== selectedClassId) {
       setSelectedClassId(quiz.class_id || '');
     }
@@ -685,9 +735,9 @@ const QuizBuilder = () => {
   };
 
   const handleModeChange = (value) => {
-    setQuizSettings(prev => ({
+    setQuizSettings((prev) => ({
       ...(prev || {}),
-      mode: value
+      mode: value,
     }));
 
     if (quizPhase === 'post' || linkedPreQuizId) {
@@ -713,13 +763,12 @@ const QuizBuilder = () => {
       question_type: 'multiple_choice',
       question_text: '',
       options: ['', '', '', ''],
-      correct_answer: [],  // Start with empty array
+      correct_answer: [], // Start with empty array
       points: 10,
       time_limit_seconds: 30,
-      order_index: questions.length
+      order_index: questions.length,
     };
 
-    console.log('[QuizBuilder] Adding new question:', newQuestion);
     setQuestions([...questions, newQuestion]);
   };
 
@@ -732,7 +781,7 @@ const QuizBuilder = () => {
     const newQuestions = [...questions];
     newQuestions.splice(index + 1, 0, {
       ...questionToDuplicate,
-      order_index: index + 1
+      order_index: index + 1,
     });
     setQuestions(newQuestions);
   };
@@ -745,39 +794,39 @@ const QuizBuilder = () => {
     }
 
     try {
-      setUploadingImages(prev => ({ ...prev, [questionIndex]: true }));
+      setUploadingImages((prev) => ({ ...prev, [questionIndex]: true }));
 
       // Check if question has an ID
       let question = questions[questionIndex];
-      
+
       if (!question.id) {
         // Quiz not saved yet - auto-save first
         showSnackbar('Saving quiz...', 'info');
-        
+
         const savedQuizId = await handleSave();
-        
+
         if (!savedQuizId) {
           showSnackbar('Failed to save quiz. Please fix validation errors first.', 'error');
-          setUploadingImages(prev => ({ ...prev, [questionIndex]: false }));
+          setUploadingImages((prev) => ({ ...prev, [questionIndex]: false }));
           return;
         }
-        
+
         // After save in CREATE mode, navigation happens which remounts component
         // We can't continue in the old component context
         // So we need to tell the user to click upload again
         if (!isEditMode) {
           showSnackbar('Quiz saved! Please click the upload button again to add the image.', 'info');
-          setUploadingImages(prev => ({ ...prev, [questionIndex]: false }));
+          setUploadingImages((prev) => ({ ...prev, [questionIndex]: false }));
           return;
         }
-        
+
         // In EDIT mode, no navigation happens, so we can proceed
         // But we need to get the updated question from state
         question = questions[questionIndex];
-        
+
         if (!question.id) {
           showSnackbar('Please try uploading the image again', 'warning');
-          setUploadingImages(prev => ({ ...prev, [questionIndex]: false }));
+          setUploadingImages((prev) => ({ ...prev, [questionIndex]: false }));
           return;
         }
       }
@@ -793,7 +842,7 @@ const QuizBuilder = () => {
       const newQuestions = [...questions];
       newQuestions[questionIndex] = {
         ...newQuestions[questionIndex],
-        media_url: response.media_url
+        media_url: response.media_url,
       };
       setQuestions(newQuestions);
 
@@ -802,7 +851,7 @@ const QuizBuilder = () => {
       console.error('Failed to upload image:', error);
       showSnackbar(error.message || 'Failed to upload image', 'error');
     } finally {
-      setUploadingImages(prev => ({ ...prev, [questionIndex]: false }));
+      setUploadingImages((prev) => ({ ...prev, [questionIndex]: false }));
     }
   };
 
@@ -817,7 +866,7 @@ const QuizBuilder = () => {
       const newQuestions = [...questions];
       newQuestions[questionIndex] = {
         ...newQuestions[questionIndex],
-        media_url: null
+        media_url: null,
       };
       setQuestions(newQuestions);
 
@@ -830,16 +879,16 @@ const QuizBuilder = () => {
 
   const validateQuiz = () => {
     if (!quizTitle.trim()) {
-      return "Quiz title is required.";
+      return 'Quiz title is required.';
     }
     if (quizPhase === 'post' && !linkedPreQuizId) {
-      return "Post quizzes must link to a completed pre quiz.";
+      return 'Post quizzes must link to a completed pre quiz.';
     }
     if (quizPhase !== 'post' && linkedPreQuizId) {
-      return "Linked pre quiz is only allowed for post quizzes.";
+      return 'Linked pre quiz is only allowed for post quizzes.';
     }
     if (questions.length === 0) {
-      return "At least one question is required.";
+      return 'At least one question is required.';
     }
     for (let i = 0; i < questions.length; i++) {
       const q = questions[i];
@@ -850,7 +899,7 @@ const QuizBuilder = () => {
         if (!q.options || q.options.length < 2) {
           return `Question ${i + 1}: At least 2 options are required.`;
         }
-        if (q.options.some(opt => !opt.trim())) {
+        if (q.options.some((opt) => !opt.trim())) {
           return `Question ${i + 1}: All options must have text.`;
         }
         if (!q.correct_answer || q.correct_answer.length === 0) {
@@ -876,6 +925,39 @@ const QuizBuilder = () => {
     return null;
   };
 
+  // The save request alone (#61): no busy state, message or navigation, so
+  // handlePublish can save inside its own busy state.
+  const saveQuizRequest = async () => {
+    if (audience && !(await tagService.preview(audience)).count)
+      throw new Error('The selected audience is empty. Choose enrolled students before saving.');
+    const quizData = {
+      title: quizTitle,
+      description: quizDescription,
+      quiz_phase: quizPhase,
+      linked_quiz_id: quizPhase === 'post' ? linkedPreQuizId : null,
+      settings: {
+        ...quizSettings,
+        deadline_enabled: quizSettings?.mode === 'self_paced' ? deadlineEnabled : false,
+        deadline_minutes: quizSettings?.mode === 'self_paced' && deadlineEnabled ? deadlineDuration : null,
+      },
+      audience,
+      class_id: selectedClassId || null, // NEW: Include class_id for roster tracking
+      questions: questions.map((q, index) => ({
+        ...q,
+        order_index: index,
+        // FIX: Ensure poll questions have empty correct_answer array
+        correct_answer: q.question_type === 'poll' ? [] : q.correct_answer,
+      })),
+    };
+
+    if (isEditMode) {
+      await quizService.updateQuiz(quizId, quizData);
+      return quizId;
+    }
+    const created = await quizService.createQuiz(quizData);
+    return created.id;
+  };
+
   const handleSave = async () => {
     const validationError = validateQuiz();
     if (validationError) {
@@ -887,45 +969,18 @@ const QuizBuilder = () => {
       setIsSaving(true);
       setError(null);
 
-      if (audience && !(await tagService.preview(audience)).count) throw new Error('The selected audience is empty. Choose enrolled students before saving.');
-      const quizData = {
-        title: quizTitle,
-        description: quizDescription,
-        quiz_phase: quizPhase,
-        linked_quiz_id: quizPhase === 'post' ? linkedPreQuizId : null,
-        settings: {
-          ...quizSettings,
-          deadline_enabled: quizSettings?.mode === 'self_paced' ? deadlineEnabled : false,
-          deadline_minutes: quizSettings?.mode === 'self_paced' && deadlineEnabled ? deadlineDuration : null
-        },
-        audience,
-        class_id: selectedClassId || null, // NEW: Include class_id for roster tracking
-        questions: questions.map((q, index) => ({
-          ...q,
-          order_index: index,
-          // FIX: Ensure poll questions have empty correct_answer array
-          correct_answer: q.question_type === 'poll' ? [] : q.correct_answer
-        }))
-      };
-
-      console.log('[QuizBuilder] Saving quiz:', quizData);
-
+      const savedId = await saveQuizRequest();
       if (isEditMode) {
-        await quizService.updateQuiz(quizId, quizData);
-        console.log('[QuizBuilder] Quiz updated successfully');
         showSnackbar('Quiz saved successfully!', 'success');
-        return quizId; // Return the current quiz ID
       } else {
-        const created = await quizService.createQuiz(quizData);
-        console.log('[QuizBuilder] Quiz created successfully:', created.id);
         showSnackbar('Quiz created successfully!', 'success');
-        navigate(`/quizzes/${created.id}/edit`);
-        return created.id; // Return the new quiz ID
+        navigate(`/quizzes/${savedId}/edit`);
       }
+      return savedId;
     } catch (err) {
-      console.error("[QuizBuilder] Failed to save quiz:", err);
-      console.error("[QuizBuilder] Error details:", err.response?.data);
-      setError(err.message || "Failed to save quiz.");
+      console.error('[QuizBuilder] Failed to save quiz:', err);
+      console.error('[QuizBuilder] Error details:', err.response?.data);
+      setError(err.message || 'Failed to save quiz.');
       return null; // Return null to indicate failure
     } finally {
       setIsSaving(false);
@@ -946,11 +1001,7 @@ const QuizBuilder = () => {
       if (uploadedFile) {
         formData.append('document', uploadedFile);
       } else {
-        const instructionsFile = new File(
-          [customInstructions.trim()],
-          'instructions.txt',
-          { type: 'text/plain' }
-        );
+        const instructionsFile = new File([customInstructions.trim()], 'instructions.txt', { type: 'text/plain' });
         formData.append('document', instructionsFile);
       }
       formData.append('document_type', documentType);
@@ -966,29 +1017,17 @@ const QuizBuilder = () => {
         formData.append('custom_instructions', customInstructions.trim());
       }
 
-      console.log('[QuizBuilder] Parsing document with AI:', {
-        fileName: uploadedFile ? uploadedFile.name : 'instructions.txt',
-        fileType: uploadedFile ? uploadedFile.type : 'text/plain',
-        documentType,
-        gradeLevel,
-        numQuestions,
-        questionTypes: documentType === 'lecture_material' ? questionTypes : 'N/A',
-        difficulty: documentType === 'lecture_material' ? difficulty : 'N/A',
-        customInstructions: customInstructions.trim() || 'N/A'
-      });
-
       const response = await quizService.parseQuizDocument(formData);
-
-      console.log('[QuizBuilder] AI parsing response:', response);
 
       if (!response.success || !response.questions || response.questions.length === 0) {
         throw new Error('No questions were extracted from the document');
       }
 
       // Check if first question is empty and should be removed
-      const isFirstQuestionEmpty = questions.length === 1 &&
+      const isFirstQuestionEmpty =
+        questions.length === 1 &&
         !questions[0].question_text.trim() &&
-        questions[0].options.every(opt => !opt.trim());
+        questions[0].options.every((opt) => !opt.trim());
 
       let baseIndex = 0;
       let existingQuestions = [...questions];
@@ -996,7 +1035,6 @@ const QuizBuilder = () => {
       if (isFirstQuestionEmpty) {
         // Remove the empty first question
         existingQuestions = [];
-        console.log('[QuizBuilder] Removed empty first question');
       } else {
         baseIndex = questions.length;
       }
@@ -1011,7 +1049,7 @@ const QuizBuilder = () => {
         time_limit_seconds: q.time_limit_seconds,
         explanation: q.explanation,
         order_index: baseIndex + idx,
-        media_url: null
+        media_url: null,
       }));
 
       setQuestions([...existingQuestions, ...newQuestions]);
@@ -1023,15 +1061,13 @@ const QuizBuilder = () => {
         `Successfully imported ${newQuestions.length} question${newQuestions.length > 1 ? 's' : ''}!`,
         'success'
       );
-
-      console.log('[QuizBuilder] Added AI-generated questions:', newQuestions.length);
-
     } catch (error) {
       console.error('[QuizBuilder] AI parsing failed:', error);
       const rawMessage = error.response?.data?.detail || error.message || '';
-      const friendlyMessage = (rawMessage.includes('RESOURCE_EXHAUSTED') || rawMessage.includes('429'))
-        ? 'AI model is temporarily unavailable. Please try again later or contact support.'
-        : (rawMessage || 'Failed to parse document. Please try again.');
+      const friendlyMessage =
+        rawMessage.includes('RESOURCE_EXHAUSTED') || rawMessage.includes('429')
+          ? 'AI model is temporarily unavailable. Please try again later or contact support.'
+          : rawMessage || 'Failed to parse document. Please try again.';
       showSnackbar(friendlyMessage, 'error');
     } finally {
       setAiParsing(false);
@@ -1065,7 +1101,7 @@ const QuizBuilder = () => {
       'Correct Answer',
       'Points',
       'Time Limit (seconds)',
-      'Explanation'
+      'Explanation',
     ];
 
     const escapeCSV = (field) => {
@@ -1079,9 +1115,7 @@ const QuizBuilder = () => {
 
     const formatQuestionType = (questionType) => {
       if (!questionType) return '';
-      return questionType
-        .replace(/_/g, ' ')
-        .replace(/\b\w/g, (char) => char.toUpperCase());
+      return questionType.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
     };
 
     const formatCorrectAnswer = (question) => {
@@ -1100,16 +1134,18 @@ const QuizBuilder = () => {
       }
 
       if (question.question_type === 'multiple_choice') {
-        return answers.map((answer) => {
-          if (typeof answer === 'number') {
-            return `Option ${answer + 1}`;
-          }
-          if (typeof answer === 'string') {
-            const index = (question.options || []).indexOf(answer);
-            return index >= 0 ? `Option ${index + 1}` : answer;
-          }
-          return String(answer);
-        }).join('; ');
+        return answers
+          .map((answer) => {
+            if (typeof answer === 'number') {
+              return `Option ${answer + 1}`;
+            }
+            if (typeof answer === 'string') {
+              const index = (question.options || []).indexOf(answer);
+              return index >= 0 ? `Option ${index + 1}` : answer;
+            }
+            return String(answer);
+          })
+          .join('; ');
       }
 
       if (question.question_type === 'short_answer') {
@@ -1134,7 +1170,7 @@ const QuizBuilder = () => {
         escapeCSV(formatCorrectAnswer(question)),
         question.points ?? 10,
         question.time_limit_seconds ?? '',
-        escapeCSV(question.explanation || '')
+        escapeCSV(question.explanation || ''),
       ];
       return row.join(',');
     });
@@ -1169,29 +1205,26 @@ const QuizBuilder = () => {
       setIsSaving(true);
       setError(null);
 
-      let quizIdToPublish = quizId;
-
-      // Save first if needed (creating new quiz)
-      if (!isEditMode) {
-        console.log('[QuizBuilder] Creating quiz before publishing...');
-        const createdQuizId = await handleSave();
-        if (!createdQuizId) {
-          throw new Error('Failed to create quiz before publishing');
-        }
-        quizIdToPublish = createdQuizId;
-        console.log('[QuizBuilder] Quiz created, now publishing:', quizIdToPublish);
+      // Save first, in edit mode too, so a rename survives Publish (#61). The
+      // busy state stays on across the save and the publish.
+      let quizIdToPublish;
+      try {
+        quizIdToPublish = await saveQuizRequest();
+      } catch (err) {
+        console.error('[QuizBuilder] Failed to save before publishing:', err);
+        setError("Your changes couldn't be saved, so the quiz wasn't published. Try again.");
+        setPublishDialog(false);
+        return;
       }
 
       // Then publish
-      console.log('[QuizBuilder] Publishing quiz:', quizIdToPublish);
       await quizService.publishQuiz(quizIdToPublish);
-      console.log('[QuizBuilder] Quiz published successfully');
       setPublishDialog(false);
       navigate('/quizzes');
     } catch (err) {
-      console.error("[QuizBuilder] Failed to publish quiz:", err);
-      console.error("[QuizBuilder] Error details:", err.response?.data);
-      setError(err.message || "Failed to publish quiz.");
+      console.error('[QuizBuilder] Failed to publish quiz:', err);
+      console.error('[QuizBuilder] Error details:', err.response?.data);
+      setError(err.message || 'Failed to publish quiz.');
       setPublishDialog(false);
     } finally {
       setIsSaving(false);
@@ -1223,7 +1256,9 @@ const QuizBuilder = () => {
         </Alert>
       )}
 
-      <p className="mst-mobile-step-label">Step {activeStep+1} of 3 · {["Details","Questions","Settings"][activeStep]}</p>
+      <p className="mst-mobile-step-label">
+        Step {activeStep + 1} of 3 · {['Details', 'Questions', 'Settings'][activeStep]}
+      </p>
       <Paper className="mst-rim mst-builder-stepper" data-enter="">
         <Stepper activeStep={activeStep} alternativeLabel>
           {['Details', 'Questions', 'Settings'].map((label, i) => (
@@ -1235,372 +1270,464 @@ const QuizBuilder = () => {
       </Paper>
 
       <div className="mst-step" data-dir={stepDir} key={activeStep}>
-      {/* Step Content */}
-      {activeStep === 0 && (
-        <>
-          <Paper className="mst-rim mst-builder-card">
-            <h2 className="mst-card-title">About the quiz</h2>
-            <div className="mst-builder-fields">
-              <TextField
-                fullWidth
-                label="Title"
-                value={quizTitle}
-                onChange={(e) => setQuizTitle(e.target.value)}
-                placeholder="e.g. Cells and tissues · check-in"
-                required
-              />
-              <TextField
-                fullWidth
-                multiline
-                rows={3}
-                label="Description (optional)"
-                value={quizDescription}
-                onChange={(e) => setQuizDescription(e.target.value)}
-                placeholder="What is this quiz about?"
-              />
-              <AudienceSelector value={audience} allowOpen disabled={classesLoading || quizPhase==='post'}
-                onPreview={setAudiencePreview} onChange={spec=>{setAudience(spec.class_ids.length||spec.tag_ids.length?spec:null);handleClassChange(spec.class_ids[0]||'');}} />
-
-            </div>
-          </Paper>
-
-          <Paper className="mst-rim mst-builder-card">
-            <h2 className="mst-card-title">How will students take it?</h2>
-            <p className="mst-card-sub">You can change this until you publish.</p>
-            <ChoiceCards
-              disabled={quizPhase === 'post'}
-              name="quiz-mode"
-              onChange={(value) => { handleModeChange(value); playLight(); }}
-              options={[
-                { value: 'live', label: 'Live quiz', icon: <BoltRounded />, facts: ['Everyone answers together', 'A timer on each question', 'A live leaderboard'] },
-                { value: 'self_paced', label: 'Self-paced', icon: <SelfImprovementRounded />, facts: ['Students go at their own pace', 'No timer per question', 'An optional deadline'] },
-              ]}
-              size="sm"
-              value={quizSettings?.mode || 'live'}
-            />
-            {quizPhase === 'post' ? <p className="mst-hint" style={{ marginTop: 12 }}>Mode and class follow the linked pre-quiz.</p> : null}
-          </Paper>
-
-          <Paper className="mst-rim mst-builder-card">
-            <details className="mst-optional-quiz-phase" open={quizPhase !== "normal" || undefined}>
-            <summary>Pre-quiz / post-quiz options</summary>
-            <p className="mst-card-sub">A normal quiz, or one half of a pre-quiz / post-quiz pair that measures progress.</p>
-            <ToggleButtonGroup
-              aria-label="Quiz phase"
-              className="mst-phase-switch"
-              exclusive
-              onChange={(e, value) => value && handleQuizPhaseChange(value)}
-              value={quizPhase}
-            >
-              <ToggleButton value="normal">Normal</ToggleButton>
-              <ToggleButton value="pre">Pre-quiz</ToggleButton>
-              <ToggleButton value="post">Post-quiz</ToggleButton>
-            </ToggleButtonGroup>
-            <p className="mst-hint" style={{ marginTop: 10 }}>
-              {quizPhase === 'pre' ? 'Run it before teaching; a post-quiz can be linked to it later.' : quizPhase === 'post' ? 'Linked to a completed pre-quiz, so you can compare the two.' : 'A stand-alone quiz.'}
-            </p>
-
-            {quizPhase === 'post' && (
-              <Box sx={{ mt: 2 }}>
-                {linkedPreQuiz ? (
-                  <Alert severity="info" sx={{ mb: 2 }}>
-                    Linked pre-quiz: {linkedPreQuiz.display_title || linkedPreQuiz.title || 'Pre-quiz'}
-                  </Alert>
-                ) : (
-                  <Alert severity="warning" sx={{ mb: 2 }}>
-                    Choose a completed pre-quiz to link this post-quiz to.
-                  </Alert>
-                )}
-                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-                  <Button variant="outlined" onClick={handleOpenPreQuizDialog}>
-                    {linkedPreQuiz ? 'Change linked pre-quiz' : 'Choose a pre-quiz'}
-                  </Button>
-                </Box>
-              </Box>
-            )}
-            </details>
-          </Paper>
-
-
-
-          <div className="mst-builder-foot">
-            <span />
-            <Button size="large" variant="contained" onClick={() => goStep(1)}>
-              Next: questions
-            </Button>
-          </div>
-        </>
-      )}
-
-      {activeStep === 1 && (
-        <Box>
-          <div className="mst-builder-toolbar">
-            <h2 className="mst-card-title">Questions <span className="mst-count">{questions.length}</span></h2>
-            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-              <Button startIcon={<DownloadIcon />} aria-label="Download questions as CSV" onClick={downloadQuestionsCSV} disabled={questions.length === 0}>Export CSV</Button>
-              <Button className="mst-ai" variant="outlined" startIcon={<AutoAwesomeIcon />} onClick={() => setShowAIDialog(true)}>
-                Import with AI
-              </Button>
-              <Button variant="contained" startIcon={<AddIcon />} onClick={() => { addQuestion(); setOpenQuestion(questions.length); }}>
-                Add question
-              </Button>
-            </Box>
-          </div>
-
-          <div className="mst-question-workspace">
-            <QuestionNavigator label="Quiz questions"
-              items={questions.map((q, i) => ({ id: String(i), number: i + 1, title: q.question_text?.slice(0, 80) }))}
-              selected={showAllQuestions ? null : questions.length ? String(Math.min(openQuestion ?? 0, questions.length - 1)) : ''}
-              onSelect={(id) => { setShowAllQuestions(false); setOpenQuestion(Number(id)); }}>
-              {questions.length > 1 && <Button fullWidth variant={showAllQuestions ? "contained" : "outlined"} aria-pressed={showAllQuestions} onClick={() => setShowAllQuestions(!showAllQuestions)}>{showAllQuestions ? "Show one question" : "Show all questions"}</Button>}
-              <p className="mst-question-nav-hint">Your edits stay when you switch questions. Save draft to keep them.</p>
-            </QuestionNavigator>
-            <div className="mst-focused-question">
-              {questions.length === 0 && <Alert severity="info">Add your first question, or import questions with AI.</Alert>}
-              {questions.map((question, index) => (showAllQuestions || index === Math.min(openQuestion ?? 0, questions.length - 1)) ? (
-                <QuestionEditor
-                  key={index}
-                  question={question}
-                  index={index}
-                  expanded={true}
-                  isLive={(quizSettings?.mode || 'live') === 'live'}
-                  onToggle={() => {}}
-                  onChange={handleQuestionChange}
-                  onDelete={(i) => { deleteQuestion(i); setOpenQuestion(Math.max(0, Math.min(i, questions.length - 2))); }}
-                  onDuplicate={(i) => { duplicateQuestion(i); setOpenQuestion(i + 1); }}
-                  handleImageUpload={handleImageUpload}
-                  handleImageDelete={handleImageDelete}
-                  uploadingImages={uploadingImages}
+        {/* Step Content */}
+        {activeStep === 0 && (
+          <>
+            <Paper className="mst-rim mst-builder-card">
+              <h2 className="mst-card-title">About the quiz</h2>
+              <div className="mst-builder-fields">
+                <TextField
+                  fullWidth
+                  label="Title"
+                  value={quizTitle}
+                  onChange={(e) => setQuizTitle(e.target.value)}
+                  placeholder="e.g. Cells and tissues · check-in"
+                  required
                 />
-              ) : null)}
-            </div>
-          </div>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={3}
+                  label="Description (optional)"
+                  value={quizDescription}
+                  onChange={(e) => setQuizDescription(e.target.value)}
+                  placeholder="What is this quiz about?"
+                />
+                <AudienceSelector
+                  value={audience}
+                  allowOpen
+                  disabled={classesLoading || quizPhase === 'post'}
+                  onPreview={setAudiencePreview}
+                  onChange={(spec) => {
+                    setAudience(spec.class_ids.length || spec.tag_ids.length ? spec : null);
+                    handleClassChange(spec.class_ids[0] || '');
+                  }}
+                />
+              </div>
+            </Paper>
 
-          <div className="mst-builder-foot mst-quiz-edit-footer">
-            <Button onClick={() => goStep(0)} variant="text">
-              Back
-            </Button>
-            <Button variant="outlined" onClick={handleSave} disabled={isSaving}>Save draft</Button>
-            <Button size="large" variant="contained" onClick={() => goStep(2)}>
-              Next: settings
-            </Button>
-          </div>
-        </Box>
-      )}
-
-      {activeStep === 2 && (
-        <Paper className="mst-rim mst-builder-card">
-          <h2 className="mst-card-title">{quizSettings?.mode === 'self_paced' ? 'Self-paced settings' : 'Live quiz settings'}</h2>
-          <p className="mst-card-sub">What students see during and after the quiz.</p>
-          <div className="mst-settings">
-
-          {quizSettings?.mode === 'live' && (
-            <Box className="mst-setting">
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={quizSettings.show_correct_answer_during_cooldown ?? true}
-                    onChange={(e) => setQuizSettings({
-                      ...quizSettings,
-                      show_correct_answer_during_cooldown: e.target.checked
-                    })}
-                    color="primary"
-                  />
-                }
-                label={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography>Show right / wrong between questions</Typography>
-                    <Tooltip
-                      title="When enabled, students will see if their answer was correct or incorrect during the cooldown period between questions. Recommended for practice quizzes and formative assessments."
-                      arrow
-                    >
-                      <InfoIcon fontSize="small" color="action" />
-                    </Tooltip>
-                  </Box>
-                }
-                labelPlacement="start"
-                className="mst-setting-label"
+            <Paper className="mst-rim mst-builder-card">
+              <h2 className="mst-card-title">How will students take it?</h2>
+              <p className="mst-card-sub">You can change this until you publish.</p>
+              <ChoiceCards
+                disabled={quizPhase === 'post'}
+                name="quiz-mode"
+                onChange={(value) => {
+                  handleModeChange(value);
+                  playLight();
+                }}
+                options={[
+                  {
+                    value: 'live',
+                    label: 'Live quiz',
+                    icon: <BoltRounded />,
+                    facts: ['Everyone answers together', 'A timer on each question', 'A live leaderboard'],
+                  },
+                  {
+                    value: 'self_paced',
+                    label: 'Self-paced',
+                    icon: <SelfImprovementRounded />,
+                    facts: ['Students go at their own pace', 'No timer per question', 'An optional deadline'],
+                  },
+                ]}
+                size="sm"
+                value={quizSettings?.mode || 'live'}
               />
-              <Typography className="mst-setting-help" variant="body2" color="text.secondary">
-                {quizSettings.show_correct_answer_during_cooldown ?? true
-                  ? "Students will see immediate feedback (best for learning and practice)"
-                  : "Feedback hidden until quiz ends (best for graded assessments)"}
-              </Typography>
-            </Box>
-          )}
+              {quizPhase === 'post' ? (
+                <p className="mst-hint" style={{ marginTop: 12 }}>
+                  Mode and class follow the linked pre-quiz.
+                </p>
+              ) : null}
+            </Paper>
 
-          {quizSettings?.mode === 'live' && (
-            <Box className="mst-setting">
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={quizSettings.show_result_feedback_to_students ?? true}
-                    onChange={(e) => {
-                      const newValue = e.target.checked;
-                      setQuizSettings({
-                        ...quizSettings,
-                        show_result_feedback_to_students: newValue,
-                        show_leaderboard_to_students: newValue
-                          ? quizSettings.show_leaderboard_to_students
-                          : false
-                      });
-                    }}
-                    color="primary"
-                  />
-                }
-                label={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography>Let students review their answers afterwards</Typography>
-                    <Tooltip
-                      title="When enabled, students can view detailed answer review showing their responses, correct answers, and explanations after the quiz ends. When disabled, students only see a completion message."
-                      arrow
-                    >
-                      <InfoIcon fontSize="small" color="action" />
-                    </Tooltip>
-                  </Box>
-                }
-                labelPlacement="start"
-                className="mst-setting-label"
-              />
-              <Typography className="mst-setting-help" variant="body2" color="text.secondary">
-                {quizSettings.show_result_feedback_to_students ?? true
-                  ? "Students can review their answers and see explanations"
-                  : "Students only see submission confirmation (no detailed feedback)"}
-              </Typography>
-            </Box>
-          )}
+            <Paper className="mst-rim mst-builder-card">
+              <details className="mst-optional-quiz-phase" open={quizPhase !== 'normal' || undefined}>
+                <summary>Pre-quiz / post-quiz options</summary>
+                <p className="mst-card-sub">
+                  A normal quiz, or one half of a pre-quiz / post-quiz pair that measures progress.
+                </p>
+                <ToggleButtonGroup
+                  aria-label="Quiz phase"
+                  className="mst-phase-switch"
+                  exclusive
+                  onChange={(e, value) => value && handleQuizPhaseChange(value)}
+                  value={quizPhase}
+                >
+                  <ToggleButton value="normal">Normal</ToggleButton>
+                  <ToggleButton value="pre">Pre-quiz</ToggleButton>
+                  <ToggleButton value="post">Post-quiz</ToggleButton>
+                </ToggleButtonGroup>
+                <p className="mst-hint" style={{ marginTop: 10 }}>
+                  {quizPhase === 'pre'
+                    ? 'Run it before teaching; a post-quiz can be linked to it later.'
+                    : quizPhase === 'post'
+                      ? 'Linked to a completed pre-quiz, so you can compare the two.'
+                      : 'A stand-alone quiz.'}
+                </p>
 
-          {quizSettings?.mode === 'live' && (
-            <Box className="mst-setting">
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={quizSettings.show_leaderboard_to_students ?? true}
-                    onChange={(e) => setQuizSettings({
-                      ...quizSettings,
-                      show_leaderboard_to_students: e.target.checked
-                    })}
-                    color="primary"
-                    disabled={!(quizSettings.show_result_feedback_to_students ?? true)}
-                  />
-                }
-                label={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography>Show the leaderboard afterwards</Typography>
-                    <Tooltip
-                      title="When enabled, students see the leaderboard with rankings and scores. Requires result feedback to be enabled."
-                      arrow
-                    >
-                      <InfoIcon fontSize="small" color="action" />
-                    </Tooltip>
-                  </Box>
-                }
-                labelPlacement="start"
-                className="mst-setting-label"
-              />
-              <Typography className="mst-setting-help" variant="body2" color="text.secondary">
-                {!(quizSettings.show_result_feedback_to_students ?? true)
-                  ? "Disabled (result feedback must be enabled first)"
-                  : (quizSettings.show_leaderboard_to_students ?? true)
-                    ? "Students will see rankings and scores"
-                    : "Leaderboard hidden (students only see their own results)"}
-              </Typography>
-            </Box>
-          )}
-
-          {quizSettings?.mode === 'self_paced' && (
-            <Box className="mst-setting">
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={quizSettings.show_final_score_to_students ?? true}
-                    onChange={(e) => setQuizSettings({
-                      ...quizSettings,
-                      show_final_score_to_students: e.target.checked
-                    })}
-                    color="primary"
-                  />
-                }
-                label={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography>Show students their final score</Typography>
-                    <Tooltip
-                      title="When enabled, students will see their final score and percentage after submitting the quiz. When disabled, students only see a confirmation message without score details."
-                      arrow
-                    >
-                      <InfoIcon fontSize="small" color="action" />
-                    </Tooltip>
-                  </Box>
-                }
-                labelPlacement="start"
-                className="mst-setting-label"
-              />
-              <Typography className="mst-setting-help" variant="body2" color="text.secondary">
-                {quizSettings.show_final_score_to_students ?? true
-                  ? "Students will see their score and percentage after submission"
-                  : "Students will only see submission confirmation (score hidden)"}
-              </Typography>
-            </Box>
-          )}
-
-          {quizSettings?.mode === 'self_paced' && (
-            <Box className="mst-setting">
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={deadlineEnabled}
-                    onChange={(e) => setDeadlineEnabled(e.target.checked)}
-                    color="primary"
-                  />
-                }
-                label={(
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography>Set a time limit</Typography>
-                    <Tooltip
-                      title="When enabled, the quiz will automatically end and submit all student answers when the time limit is reached."
-                      arrow
-                    >
-                      <InfoIcon fontSize="small" color="action" />
-                    </Tooltip>
+                {quizPhase === 'post' && (
+                  <Box sx={{ mt: 2 }}>
+                    {linkedPreQuiz ? (
+                      <Alert severity="info" sx={{ mb: 2 }}>
+                        Linked pre-quiz: {linkedPreQuiz.display_title || linkedPreQuiz.title || 'Pre-quiz'}
+                      </Alert>
+                    ) : (
+                      <Alert severity="warning" sx={{ mb: 2 }}>
+                        Choose a completed pre-quiz to link this post-quiz to.
+                      </Alert>
+                    )}
+                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <Button variant="outlined" onClick={handleOpenPreQuizDialog}>
+                        {linkedPreQuiz ? 'Change linked pre-quiz' : 'Choose a pre-quiz'}
+                      </Button>
+                    </Box>
                   </Box>
                 )}
-                labelPlacement="start"
-                className="mst-setting-label"
-              />
+              </details>
+            </Paper>
 
-              {deadlineEnabled && (
-                <Box sx={{ mt: 2 }}>
-                  <TextField
-                    type="number"
-                    label="Time limit (minutes)"
-                    {...deadlineDurationInputProps}
-                    InputProps={{
-                      inputProps: { min: 1, max: 1440 }
-                    }}
-                    sx={{ width: 220 }}
-                    helperText="Quiz will auto-end after this duration from start"
+            <div className="mst-builder-foot">
+              <span />
+              <Button size="large" variant="contained" onClick={() => goStep(1)}>
+                Next: questions
+              </Button>
+            </div>
+          </>
+        )}
+
+        {activeStep === 1 && (
+          <Box>
+            <div className="mst-builder-toolbar">
+              <h2 className="mst-card-title">
+                Questions <span className="mst-count">{questions.length}</span>
+              </h2>
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                <Button
+                  startIcon={<DownloadIcon />}
+                  aria-label="Download questions as CSV"
+                  onClick={downloadQuestionsCSV}
+                  disabled={questions.length === 0}
+                >
+                  Export CSV
+                </Button>
+                <Button
+                  className="mst-ai"
+                  variant="outlined"
+                  startIcon={<AutoAwesomeIcon />}
+                  onClick={() => setShowAIDialog(true)}
+                >
+                  Import with AI
+                </Button>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => {
+                    addQuestion();
+                    setOpenQuestion(questions.length);
+                  }}
+                >
+                  Add question
+                </Button>
+              </Box>
+            </div>
+
+            <div className="mst-question-workspace">
+              <QuestionNavigator
+                label="Quiz questions"
+                items={questions.map((q, i) => ({
+                  id: String(i),
+                  number: i + 1,
+                  title: q.question_text?.slice(0, 80),
+                }))}
+                selected={
+                  showAllQuestions
+                    ? null
+                    : questions.length
+                      ? String(Math.min(openQuestion ?? 0, questions.length - 1))
+                      : ''
+                }
+                onSelect={(id) => {
+                  setShowAllQuestions(false);
+                  setOpenQuestion(Number(id));
+                }}
+              >
+                {questions.length > 1 && (
+                  <Button
+                    fullWidth
+                    variant={showAllQuestions ? 'contained' : 'outlined'}
+                    aria-pressed={showAllQuestions}
+                    onClick={() => setShowAllQuestions(!showAllQuestions)}
+                  >
+                    {showAllQuestions ? 'Show one question' : 'Show all questions'}
+                  </Button>
+                )}
+                <p className="mst-question-nav-hint">
+                  Your edits stay when you switch questions. Save draft to keep them.
+                </p>
+              </QuestionNavigator>
+              <div className="mst-focused-question">
+                {questions.length === 0 && (
+                  <Alert severity="info">Add your first question, or import questions with AI.</Alert>
+                )}
+                {questions.map((question, index) =>
+                  showAllQuestions || index === Math.min(openQuestion ?? 0, questions.length - 1) ? (
+                    <QuestionEditor
+                      key={index}
+                      question={question}
+                      index={index}
+                      expanded={true}
+                      isLive={(quizSettings?.mode || 'live') === 'live'}
+                      onToggle={() => {}}
+                      onChange={handleQuestionChange}
+                      onDelete={(i) => {
+                        deleteQuestion(i);
+                        setOpenQuestion(Math.max(0, Math.min(i, questions.length - 2)));
+                      }}
+                      onDuplicate={(i) => {
+                        duplicateQuestion(i);
+                        setOpenQuestion(i + 1);
+                      }}
+                      handleImageUpload={handleImageUpload}
+                      handleImageDelete={handleImageDelete}
+                      uploadingImages={uploadingImages}
+                    />
+                  ) : null
+                )}
+              </div>
+            </div>
+
+            <div className="mst-builder-foot mst-quiz-edit-footer">
+              <Button onClick={() => goStep(0)} variant="text">
+                Back
+              </Button>
+              <Button variant="outlined" onClick={handleSave} disabled={isSaving}>
+                Save draft
+              </Button>
+              <Button size="large" variant="contained" onClick={() => goStep(2)}>
+                Next: settings
+              </Button>
+            </div>
+          </Box>
+        )}
+
+        {activeStep === 2 && (
+          <Paper className="mst-rim mst-builder-card">
+            <h2 className="mst-card-title">
+              {quizSettings?.mode === 'self_paced' ? 'Self-paced settings' : 'Live quiz settings'}
+            </h2>
+            <p className="mst-card-sub">What students see during and after the quiz.</p>
+            <div className="mst-settings">
+              {quizSettings?.mode === 'live' && (
+                <Box className="mst-setting">
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={quizSettings.show_correct_answer_during_cooldown ?? true}
+                        onChange={(e) =>
+                          setQuizSettings({
+                            ...quizSettings,
+                            show_correct_answer_during_cooldown: e.target.checked,
+                          })
+                        }
+                        color="primary"
+                      />
+                    }
+                    label={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography>Show right / wrong between questions</Typography>
+                        <Tooltip
+                          title="When enabled, students will see if their answer was correct or incorrect during the cooldown period between questions. Recommended for practice quizzes and formative assessments."
+                          arrow
+                        >
+                          <InfoIcon fontSize="small" color="action" />
+                        </Tooltip>
+                      </Box>
+                    }
+                    labelPlacement="start"
+                    className="mst-setting-label"
                   />
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                    The session will end {deadlineDuration} minute{deadlineDuration !== 1 ? 's' : ''} after start.
+                  <Typography className="mst-setting-help" variant="body2" color="text.secondary">
+                    {(quizSettings.show_correct_answer_during_cooldown ?? true)
+                      ? 'Students will see immediate feedback (best for learning and practice)'
+                      : 'Feedback hidden until quiz ends (best for graded assessments)'}
                   </Typography>
                 </Box>
               )}
 
-              <Typography className="mst-setting-help" variant="body2" color="text.secondary">
-                {deadlineEnabled
-                  ? 'Students will be automatically submitted when time expires.'
-                  : 'No time limit enabled for this quiz.'}
-              </Typography>
-            </Box>
-          )}
+              {quizSettings?.mode === 'live' && (
+                <Box className="mst-setting">
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={quizSettings.show_result_feedback_to_students ?? true}
+                        onChange={(e) => {
+                          const newValue = e.target.checked;
+                          setQuizSettings({
+                            ...quizSettings,
+                            show_result_feedback_to_students: newValue,
+                            show_leaderboard_to_students: newValue ? quizSettings.show_leaderboard_to_students : false,
+                          });
+                        }}
+                        color="primary"
+                      />
+                    }
+                    label={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography>Let students review their answers afterwards</Typography>
+                        <Tooltip
+                          title="When enabled, students can view detailed answer review showing their responses, correct answers, and explanations after the quiz ends. When disabled, students only see a completion message."
+                          arrow
+                        >
+                          <InfoIcon fontSize="small" color="action" />
+                        </Tooltip>
+                      </Box>
+                    }
+                    labelPlacement="start"
+                    className="mst-setting-label"
+                  />
+                  <Typography className="mst-setting-help" variant="body2" color="text.secondary">
+                    {(quizSettings.show_result_feedback_to_students ?? true)
+                      ? 'Students can review their answers and see explanations'
+                      : 'Students only see submission confirmation (no detailed feedback)'}
+                  </Typography>
+                </Box>
+              )}
 
-          </div>
-          <Alert severity="info" sx={{ mt: 3 }}>
-            Publish to make the quiz available, or save it as a draft for later. Once it's published you can start a session for students to join.
-          </Alert>
-        </Paper>
-      )}
-      {activeStep === 2 && (
+              {quizSettings?.mode === 'live' && (
+                <Box className="mst-setting">
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={quizSettings.show_leaderboard_to_students ?? true}
+                        onChange={(e) =>
+                          setQuizSettings({
+                            ...quizSettings,
+                            show_leaderboard_to_students: e.target.checked,
+                          })
+                        }
+                        color="primary"
+                        disabled={!(quizSettings.show_result_feedback_to_students ?? true)}
+                      />
+                    }
+                    label={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography>Show the leaderboard afterwards</Typography>
+                        <Tooltip
+                          title="When enabled, students see the leaderboard with rankings and scores. Requires result feedback to be enabled."
+                          arrow
+                        >
+                          <InfoIcon fontSize="small" color="action" />
+                        </Tooltip>
+                      </Box>
+                    }
+                    labelPlacement="start"
+                    className="mst-setting-label"
+                  />
+                  <Typography className="mst-setting-help" variant="body2" color="text.secondary">
+                    {!(quizSettings.show_result_feedback_to_students ?? true)
+                      ? 'Disabled (result feedback must be enabled first)'
+                      : (quizSettings.show_leaderboard_to_students ?? true)
+                        ? 'Students will see rankings and scores'
+                        : 'Leaderboard hidden (students only see their own results)'}
+                  </Typography>
+                </Box>
+              )}
+
+              {quizSettings?.mode === 'self_paced' && (
+                <Box className="mst-setting">
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={quizSettings.show_final_score_to_students ?? true}
+                        onChange={(e) =>
+                          setQuizSettings({
+                            ...quizSettings,
+                            show_final_score_to_students: e.target.checked,
+                          })
+                        }
+                        color="primary"
+                      />
+                    }
+                    label={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography>Show students their final score</Typography>
+                        <Tooltip
+                          title="When enabled, students will see their final score and percentage after submitting the quiz. When disabled, students only see a confirmation message without score details."
+                          arrow
+                        >
+                          <InfoIcon fontSize="small" color="action" />
+                        </Tooltip>
+                      </Box>
+                    }
+                    labelPlacement="start"
+                    className="mst-setting-label"
+                  />
+                  <Typography className="mst-setting-help" variant="body2" color="text.secondary">
+                    {(quizSettings.show_final_score_to_students ?? true)
+                      ? 'Students will see their score and percentage after submission'
+                      : 'Students will only see submission confirmation (score hidden)'}
+                  </Typography>
+                </Box>
+              )}
+
+              {quizSettings?.mode === 'self_paced' && (
+                <Box className="mst-setting">
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={deadlineEnabled}
+                        onChange={(e) => setDeadlineEnabled(e.target.checked)}
+                        color="primary"
+                      />
+                    }
+                    label={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography>Set a time limit</Typography>
+                        <Tooltip
+                          title="When enabled, the quiz will automatically end and submit all student answers when the time limit is reached."
+                          arrow
+                        >
+                          <InfoIcon fontSize="small" color="action" />
+                        </Tooltip>
+                      </Box>
+                    }
+                    labelPlacement="start"
+                    className="mst-setting-label"
+                  />
+
+                  {deadlineEnabled && (
+                    <Box sx={{ mt: 2 }}>
+                      <TextField
+                        type="number"
+                        label="Time limit (minutes)"
+                        {...deadlineDurationInputProps}
+                        InputProps={{
+                          inputProps: { min: 1, max: 1440 },
+                        }}
+                        sx={{ width: 220 }}
+                        helperText="Quiz will auto-end after this duration from start"
+                      />
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                        The session will end {deadlineDuration} minute{deadlineDuration !== 1 ? 's' : ''} after start.
+                      </Typography>
+                    </Box>
+                  )}
+
+                  <Typography className="mst-setting-help" variant="body2" color="text.secondary">
+                    {deadlineEnabled
+                      ? 'Students will be automatically submitted when time expires.'
+                      : 'No time limit enabled for this quiz.'}
+                  </Typography>
+                </Box>
+              )}
+            </div>
+            <Alert severity="info" sx={{ mt: 3 }}>
+              Publish to make the quiz available, or save it as a draft for later. Once it's published you can start a
+              session for students to join.
+            </Alert>
+          </Paper>
+        )}
+        {activeStep === 2 && (
           <div className="mst-builder-foot">
             <Button onClick={() => goStep(1)} variant="text">
               Back
@@ -1609,12 +1736,18 @@ const QuizBuilder = () => {
               <Button size="large" variant="outlined" onClick={handleSave} disabled={isSaving}>
                 Save as draft
               </Button>
-              <Button size="large" variant="contained" startIcon={<PublishIcon />} onClick={() => setPublishDialog(true)} disabled={isSaving}>
+              <Button
+                size="large"
+                variant="contained"
+                startIcon={<PublishIcon />}
+                onClick={() => setPublishDialog(true)}
+                disabled={isSaving}
+              >
                 Publish quiz
               </Button>
             </Box>
           </div>
-      )}
+        )}
       </div>
 
       {/* Publish Confirmation Dialog */}
@@ -1622,8 +1755,8 @@ const QuizBuilder = () => {
         <DialogTitle>Publish this quiz?</DialogTitle>
         <DialogContent>
           <Typography>
-            Once published, you can start live quiz sessions with your students.
-            You can still edit the quiz after publishing, but changes won't affect active sessions.
+            Once published, you can start live quiz sessions with your students. You can still edit the quiz after
+            publishing, but changes won't affect active sessions.
           </Typography>
         </DialogContent>
         <DialogActions>
@@ -1642,7 +1775,8 @@ const QuizBuilder = () => {
             Only completed pre-quizzes with the same class and mode are available.
           </Typography>
           <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
-            Current filter: {getSelectedClassLabel()} • {formatModeLabel(quizSettings?.mode === 'self_paced' ? 'self_paced' : 'live')}
+            Current filter: {getSelectedClassLabel()} •{' '}
+            {formatModeLabel(quizSettings?.mode === 'self_paced' ? 'self_paced' : 'live')}
           </Typography>
 
           {preQuizLoading && (
@@ -1658,9 +1792,7 @@ const QuizBuilder = () => {
           )}
 
           {!preQuizLoading && !preQuizError && preQuizList.length === 0 && (
-            <Alert severity="info">
-              No eligible pre-quizzes found. Complete a pre-quiz session first.
-            </Alert>
+            <Alert severity="info">No eligible pre-quizzes found. Complete a pre-quiz session first.</Alert>
           )}
 
           {!preQuizLoading && !preQuizError && preQuizList.length > 0 && (
@@ -1676,7 +1808,7 @@ const QuizBuilder = () => {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    gap: 2
+                    gap: 2,
                   }}
                 >
                   <Box>
@@ -1684,8 +1816,9 @@ const QuizBuilder = () => {
                       {quiz.display_title || quiz.title}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      {quiz.question_count || 0} questions • {quiz.class_id
-                        ? (classList.find((cls) => cls.id === quiz.class_id)?.name || 'Unknown class')
+                      {quiz.question_count || 0} questions •{' '}
+                      {quiz.class_id
+                        ? classList.find((cls) => cls.id === quiz.class_id)?.name || 'Unknown class'
                         : 'No class'}
                     </Typography>
                   </Box>
@@ -1703,71 +1836,146 @@ const QuizBuilder = () => {
       </Dialog>
 
       {/* Keep the existing import contract; only the presentation changes. */}
-      <Dialog open={showAIDialog} onClose={handleCloseAIDialog} maxWidth="sm" fullWidth PaperProps={{ className: 'mst-quiz-import' }}>
+      <Dialog
+        open={showAIDialog}
+        onClose={handleCloseAIDialog}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ className: 'mst-quiz-import' }}
+      >
         <DialogTitle>Import with AI</DialogTitle>
         <DialogContent>
           <Box className="mst-import-grid">
             <FormControl size="small" fullWidth className="mst-import-wide">
               <InputLabel id="import-source-label">Start from</InputLabel>
-              <Select labelId="import-source-label" label="Start from" value={documentType} onChange={(e) => setDocumentType(e.target.value)} disabled={aiParsing}>
+              <Select
+                labelId="import-source-label"
+                label="Start from"
+                value={documentType}
+                onChange={(e) => setDocumentType(e.target.value)}
+                disabled={aiParsing}
+              >
                 <MenuItem value="questions_only">Questions only · add answers yourself</MenuItem>
                 <MenuItem value="questions_and_answers">Questions with answers</MenuItem>
                 <MenuItem value="lecture_material">Study material · generate questions</MenuItem>
               </Select>
             </FormControl>
             <div className="mst-import-wide">
-            {/* File Upload Area */}
-            {!aiParsing ? (
-              <UploadDropzone
-                accept={{
-                  'application/pdf': ['.pdf'],
-                  'image/jpeg': ['.jpg', '.jpeg'],
-                  'image/png': ['.png'],
-                  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-                  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-                  'text/csv': ['.csv'],
-                  'text/plain': ['.txt'],
-                }}
-                files={uploadedFile ? [uploadedFile] : []}
-                hint="PDF, JPG, PNG, Word, Excel, CSV or text"
-                onDrop={(files) => setUploadedFile(files[0])}
-                onRemove={() => setUploadedFile(null)}
-                size="compact"
-                title={uploadedFile ? 'Choose a different file' : 'Choose file'}
-              />
-            ) : (
-              <div className="mst-ai-progress" role="status" style={{ padding: '24px 0' }}>
-                <div className="mst-ai-bar" />
-                <span>AI is reading your document… this can take a minute. Keep this window open.</span>
-              </div>
-            )}
+              {/* File Upload Area */}
+              {!aiParsing ? (
+                <UploadDropzone
+                  accept={{
+                    'application/pdf': ['.pdf'],
+                    'image/jpeg': ['.jpg', '.jpeg'],
+                    'image/png': ['.png'],
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+                    'text/csv': ['.csv'],
+                    'text/plain': ['.txt'],
+                  }}
+                  files={uploadedFile ? [uploadedFile] : []}
+                  hint="PDF, JPG, PNG, Word, Excel, CSV or text"
+                  onDrop={(files) => setUploadedFile(files[0])}
+                  onRemove={() => setUploadedFile(null)}
+                  size="compact"
+                  title={uploadedFile ? 'Choose a different file' : 'Choose file'}
+                />
+              ) : (
+                <div className="mst-ai-progress" role="status" style={{ padding: '24px 0' }}>
+                  <div className="mst-ai-bar" />
+                  <span>AI is reading your document… this can take a minute. Keep this window open.</span>
+                </div>
+              )}
             </div>
-            <TextField size="small" label="Grade level (optional)" value={gradeLevel} onChange={(e) => setGradeLevel(e.target.value)} placeholder="e.g. Grade 9" disabled={aiParsing} />
-            {documentType === 'lecture_material' && <>
-              <TextField size="small" type="number" label="Questions" {...numQuestionsInputProps} disabled={aiParsing} inputProps={{ min: 1, max: 50 }} />
-              <FormControl size="small" fullWidth>
-                <InputLabel id="import-types-label">Question types</InputLabel>
-                <Select labelId="import-types-label" multiple value={questionTypes} label="Question types" onChange={(e) => setQuestionTypes(e.target.value)} disabled={aiParsing}
-                  renderValue={(values) => values.map(value => QUESTION_TYPES.find(type => type.value === value)?.short).join(', ')}>
-                  {QUESTION_TYPES.filter(type => type.value !== 'poll').map(type => <MenuItem key={type.value} value={type.value}><Checkbox checked={questionTypes.includes(type.value)} size="small" />{type.short}</MenuItem>)}
-                </Select>
-              </FormControl>
-              <FormControl size="small" fullWidth>
-                <InputLabel id="import-difficulty-label">Difficulty</InputLabel>
-                <Select labelId="import-difficulty-label" label="Difficulty" value={difficulty} onChange={(e) => setDifficulty(e.target.value)} disabled={aiParsing}>
-                  <MenuItem value="easy">Easy</MenuItem><MenuItem value="medium">Medium</MenuItem><MenuItem value="hard">Hard</MenuItem>
-                </Select>
-              </FormControl>
-            </>}
-            <TextField className="mst-import-wide" size="small" fullWidth multiline minRows={2} maxRows={4} label="Instructions or pasted material (optional)"
-              value={customInstructions} onChange={(e) => setCustomInstructions(e.target.value)} disabled={aiParsing}
-              placeholder="Paste material here, or tell AI what to focus on." />
-            <Typography className="mst-import-wide" variant="caption" color="text.secondary">Upload a file or paste material, then review the imported questions and answers before saving.</Typography>
+            <TextField
+              size="small"
+              label="Grade level (optional)"
+              value={gradeLevel}
+              onChange={(e) => setGradeLevel(e.target.value)}
+              placeholder="e.g. Grade 9"
+              disabled={aiParsing}
+            />
+            {documentType === 'lecture_material' && (
+              <>
+                <TextField
+                  size="small"
+                  type="number"
+                  label="Questions"
+                  {...numQuestionsInputProps}
+                  disabled={aiParsing}
+                  inputProps={{ min: 1, max: 50 }}
+                />
+                <FormControl size="small" fullWidth>
+                  <InputLabel id="import-types-label">Question types</InputLabel>
+                  <Select
+                    labelId="import-types-label"
+                    multiple
+                    value={questionTypes}
+                    label="Question types"
+                    onChange={(e) => setQuestionTypes(e.target.value)}
+                    disabled={aiParsing}
+                    renderValue={(values) =>
+                      values.map((value) => QUESTION_TYPES.find((type) => type.value === value)?.short).join(', ')
+                    }
+                  >
+                    {QUESTION_TYPES.filter((type) => type.value !== 'poll').map((type) => (
+                      <MenuItem key={type.value} value={type.value}>
+                        <Checkbox checked={questionTypes.includes(type.value)} size="small" />
+                        {type.short}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <FormControl size="small" fullWidth>
+                  <InputLabel id="import-difficulty-label">Difficulty</InputLabel>
+                  <Select
+                    labelId="import-difficulty-label"
+                    label="Difficulty"
+                    value={difficulty}
+                    onChange={(e) => setDifficulty(e.target.value)}
+                    disabled={aiParsing}
+                  >
+                    <MenuItem value="easy">Easy</MenuItem>
+                    <MenuItem value="medium">Medium</MenuItem>
+                    <MenuItem value="hard">Hard</MenuItem>
+                  </Select>
+                </FormControl>
+              </>
+            )}
+            <TextField
+              className="mst-import-wide"
+              size="small"
+              fullWidth
+              multiline
+              minRows={2}
+              maxRows={4}
+              label="Instructions or pasted material (optional)"
+              value={customInstructions}
+              onChange={(e) => setCustomInstructions(e.target.value)}
+              disabled={aiParsing}
+              placeholder="Paste material here, or tell AI what to focus on."
+            />
+            <Typography className="mst-import-wide" variant="caption" color="text.secondary">
+              Upload a file or paste material, then review the imported questions and answers before saving.
+            </Typography>
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseAIDialog} disabled={aiParsing}>Cancel</Button>
-          <Button onClick={handleAIParse} variant="contained" disabled={(!uploadedFile && !customInstructions.trim()) || aiParsing || (documentType === 'lecture_material' && !questionTypes.length)} startIcon={<AutoAwesomeIcon />}>Import questions</Button>
+          <Button onClick={handleCloseAIDialog} disabled={aiParsing}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleAIParse}
+            variant="contained"
+            disabled={
+              (!uploadedFile && !customInstructions.trim()) ||
+              aiParsing ||
+              (documentType === 'lecture_material' && !questionTypes.length)
+            }
+            startIcon={<AutoAwesomeIcon />}
+          >
+            Import questions
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

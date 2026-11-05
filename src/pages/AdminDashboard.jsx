@@ -1,5 +1,8 @@
+// The admin-only dashboard (/admin): database totals and expandable tables of users, classes, students and more.
+// Read-only: everything loads from a single call to the admin service.
+// Area: platform
+
 import ComparisonTableContainer from '../components/common/ComparisonTableContainer';
-// /src/pages/AdminDashboard.jsx
 
 import React, { useEffect, useState } from 'react';
 import {
@@ -63,7 +66,18 @@ const AdminDashboard = () => {
     );
   }
 
-  const { summary, users, classes, students, assessments, results, outsider_students, chat_sessions, generations, ai_runs } = data;
+  const {
+    summary,
+    users,
+    classes,
+    students,
+    assessments,
+    results,
+    outsider_students,
+    chat_sessions,
+    generations,
+    ai_runs,
+  } = data;
 
   return (
     <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
@@ -72,7 +86,17 @@ const AdminDashboard = () => {
       </Typography>
 
       {/* SUMMARY STATISTICS - BOLD AND PROMINENT */}
-      <Paper elevation={3} sx={{ p: 3, mb: 4, bgcolor: 'background.paper', color: 'text.primary', border: '1px solid', borderColor: 'divider' }}>
+      <Paper
+        elevation={3}
+        sx={{
+          p: 3,
+          mb: 4,
+          bgcolor: 'background.paper',
+          color: 'text.primary',
+          border: '1px solid',
+          borderColor: 'divider',
+        }}
+      >
         <Typography variant="h5" gutterBottom fontWeight={600}>
           Database summary
         </Typography>
@@ -190,13 +214,27 @@ const AdminDashboard = () => {
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell><strong>Email</strong></TableCell>
-                  <TableCell><strong>Full Name</strong></TableCell>
-                  <TableCell><strong>Active</strong></TableCell>
-                  <TableCell><strong>Classes</strong></TableCell>
-                  <TableCell><strong>Assessments</strong></TableCell>
-                  <TableCell><strong>Chat Sessions</strong></TableCell>
-                  <TableCell><strong>Created</strong></TableCell>
+                  <TableCell>
+                    <strong>Email</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Full Name</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Active</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Classes</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Assessments</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Chat Sessions</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Created</strong>
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -205,7 +243,11 @@ const AdminDashboard = () => {
                     <TableCell>{user.email}</TableCell>
                     <TableCell>{user.full_name || 'N/A'}</TableCell>
                     <TableCell>
-                      <Chip label={user.is_active ? 'Yes' : 'No'} color={user.is_active ? 'success' : 'error'} size="small" />
+                      <Chip
+                        label={user.is_active ? 'Yes' : 'No'}
+                        color={user.is_active ? 'success' : 'error'}
+                        size="small"
+                      />
                     </TableCell>
                     <TableCell>{user.classes_count}</TableCell>
                     <TableCell>{user.assessments_count}</TableCell>
@@ -231,10 +273,18 @@ const AdminDashboard = () => {
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell><strong>Name</strong></TableCell>
-                  <TableCell><strong>Description</strong></TableCell>
-                  <TableCell><strong>Owner</strong></TableCell>
-                  <TableCell><strong>Students</strong></TableCell>
+                  <TableCell>
+                    <strong>Name</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Description</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Owner</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Students</strong>
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -264,11 +314,21 @@ const AdminDashboard = () => {
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell><strong>Name</strong></TableCell>
-                  <TableCell><strong>Student ID</strong></TableCell>
-                  <TableCell><strong>Overall Grade</strong></TableCell>
-                  <TableCell><strong>Classes</strong></TableCell>
-                  <TableCell><strong>Class Names</strong></TableCell>
+                  <TableCell>
+                    <strong>Name</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Student ID</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Overall Grade</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Classes</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Class Names</strong>
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -299,12 +359,24 @@ const AdminDashboard = () => {
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell><strong>ID</strong></TableCell>
-                  <TableCell><strong>Status</strong></TableCell>
-                  <TableCell><strong>Owner</strong></TableCell>
-                  <TableCell><strong>Total Pages</strong></TableCell>
-                  <TableCell><strong>Results</strong></TableCell>
-                  <TableCell><strong>Created</strong></TableCell>
+                  <TableCell>
+                    <strong>ID</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Status</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Owner</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Total Pages</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Results</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Created</strong>
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -317,7 +389,9 @@ const AdminDashboard = () => {
                     <TableCell>{assessment.owner_email}</TableCell>
                     <TableCell>{assessment.total_pages || 'N/A'}</TableCell>
                     <TableCell>{assessment.results_count}</TableCell>
-                    <TableCell>{assessment.created_at ? new Date(assessment.created_at).toLocaleDateString() : 'N/A'}</TableCell>
+                    <TableCell>
+                      {assessment.created_at ? new Date(assessment.created_at).toLocaleDateString() : 'N/A'}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -338,11 +412,21 @@ const AdminDashboard = () => {
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell><strong>Student</strong></TableCell>
-                  <TableCell><strong>Question ID</strong></TableCell>
-                  <TableCell><strong>Grade</strong></TableCell>
-                  <TableCell><strong>Status</strong></TableCell>
-                  <TableCell><strong>Finalized By</strong></TableCell>
+                  <TableCell>
+                    <strong>Student</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Question ID</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Grade</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Status</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Finalized By</strong>
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -375,9 +459,15 @@ const AdminDashboard = () => {
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell><strong>Name</strong></TableCell>
-                  <TableCell><strong>Job ID</strong></TableCell>
-                  <TableCell><strong>Results Count</strong></TableCell>
+                  <TableCell>
+                    <strong>Name</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Job ID</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Results Count</strong>
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -406,10 +496,18 @@ const AdminDashboard = () => {
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell><strong>Title</strong></TableCell>
-                  <TableCell><strong>Owner</strong></TableCell>
-                  <TableCell><strong>Messages</strong></TableCell>
-                  <TableCell><strong>Created</strong></TableCell>
+                  <TableCell>
+                    <strong>Title</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Owner</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Messages</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Created</strong>
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -418,7 +516,9 @@ const AdminDashboard = () => {
                     <TableCell>{session.title || 'Untitled'}</TableCell>
                     <TableCell>{session.owner_email}</TableCell>
                     <TableCell>{session.messages_count}</TableCell>
-                    <TableCell>{session.created_at ? new Date(session.created_at).toLocaleDateString() : 'N/A'}</TableCell>
+                    <TableCell>
+                      {session.created_at ? new Date(session.created_at).toLocaleDateString() : 'N/A'}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -439,9 +539,15 @@ const AdminDashboard = () => {
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell><strong>Tool Type</strong></TableCell>
-                  <TableCell><strong>Owner</strong></TableCell>
-                  <TableCell><strong>Created</strong></TableCell>
+                  <TableCell>
+                    <strong>Tool Type</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Owner</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Created</strong>
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -470,11 +576,21 @@ const AdminDashboard = () => {
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell><strong>Job ID</strong></TableCell>
-                  <TableCell><strong>Question ID</strong></TableCell>
-                  <TableCell><strong>Run Index</strong></TableCell>
-                  <TableCell><strong>Grade</strong></TableCell>
-                  <TableCell><strong>Created</strong></TableCell>
+                  <TableCell>
+                    <strong>Job ID</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Question ID</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Run Index</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Grade</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Created</strong>
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>

@@ -1,6 +1,8 @@
+// The self-paced quiz results page: summary, each student's result and report download, and question performance.
+// Area: quizzes
+
 import TagAnalytics from '../../components/tags/TagAnalytics';
 import ComparisonTableContainer from '../../components/common/ComparisonTableContainer';
-// /src/pages/quizzes/QuizSPAnalytics.jsx
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -25,7 +27,7 @@ import {
   Chip,
   LinearProgress,
   IconButton,
-  Tooltip
+  Tooltip,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PeopleIcon from '@mui/icons-material/People';
@@ -41,6 +43,7 @@ import { useSnackbar } from '../../hooks/useSnackbar';
 import useTableSort from '../../hooks/useTableSort';
 import PageHeader from '../../components/common/PageHeader';
 import FloatingChatWindow from '../../components/chatbot/FloatingChatWindow';
+import { config } from '../../config';
 
 const PrePostComparisonSection = ({ comparison }) => {
   if (!comparison) {
@@ -55,8 +58,7 @@ const PrePostComparisonSection = ({ comparison }) => {
     );
   }
 
-  const formatMetricLabel = (key) =>
-    key.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+  const formatMetricLabel = (key) => key.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 
   const formatMetricValue = (key, value) => {
     if (value === null || value === undefined) return 'N/A';
@@ -106,10 +108,7 @@ const PrePostComparisonSection = ({ comparison }) => {
                 <TableCell
                   align="right"
                   sx={{
-                    color:
-                      values?.delta > 0 ? 'success.main' :
-                      values?.delta < 0 ? 'error.main' :
-                      'text.secondary'
+                    color: values?.delta > 0 ? 'success.main' : values?.delta < 0 ? 'error.main' : 'text.secondary',
                   }}
                 >
                   {formatDeltaValue(key, values?.delta)}
@@ -131,51 +130,41 @@ const QuizSPAnalytics = () => {
   const [analytics, setAnalytics] = useState(null);
   const [session, setSession] = useState(null);
   const [participants, setParticipants] = useState([]);
-  const [classStudents, setClassStudents] = useState([]);  // NEW
-  const [outsiders, setOutsiders] = useState([]);  // NEW
-  const [absentStudents, setAbsentStudents] = useState([]);  // NEW
+  const [classStudents, setClassStudents] = useState([]); // NEW
+  const [outsiders, setOutsiders] = useState([]); // NEW
+  const [absentStudents, setAbsentStudents] = useState([]); // NEW
   const [isLoading, setIsLoading] = useState(true);
-  const [chatOpen, setChatOpen] = useState(false);  // NEW: For floating chat window
+  const [chatOpen, setChatOpen] = useState(false); // NEW: For floating chat window
 
   // Sorting configuration for Question Performance table
   const questionColumnConfig = {
     total_responses: { type: 'number' },
     correct_count: { type: 'number' },
     incorrect_count: { type: 'number' },
-    accuracy_rate: { type: 'percentage' }
+    accuracy_rate: { type: 'percentage' },
   };
 
   const {
     sortedData: sortedQuestions,
     requestSort: requestQuestionSort,
     sortColumn: questionSortColumn,
-    sortDirection: questionSortDirection
-  } = useTableSort(
-    analytics?.question_analytics || [],
-    questionColumnConfig,
-    null,
-    'asc'
-  );
+    sortDirection: questionSortDirection,
+  } = useTableSort(analytics?.question_analytics || [], questionColumnConfig, null, 'asc');
 
   // Sorting configuration for Expected students table
   const studentColumnConfig = {
     student_name: { type: 'string' },
     score: { type: 'number' },
     score_percentage: { type: 'percentage' },
-    time_spent_seconds: { type: 'number' }
+    time_spent_seconds: { type: 'number' },
   };
 
   const {
     sortedData: sortedClassStudents,
     requestSort: requestStudentSort,
     sortColumn: studentSortColumn,
-    sortDirection: studentSortDirection
-  } = useTableSort(
-    classStudents,
-    studentColumnConfig,
-    'score',
-    'desc'
-  );
+    sortDirection: studentSortDirection,
+  } = useTableSort(classStudents, studentColumnConfig, 'score', 'desc');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -185,7 +174,7 @@ const QuizSPAnalytics = () => {
         const [analyticsData, sessionData, participantsData] = await Promise.all([
           quizSPService.getSPAnalytics(sessionId),
           quizSPService.getSPSession(sessionId),
-          quizSPService.getSPParticipants(sessionId)
+          quizSPService.getSPParticipants(sessionId),
         ]);
         setAnalytics(analyticsData);
         setSession(sessionData);
@@ -195,7 +184,7 @@ const QuizSPAnalytics = () => {
         const outsidersList = [];
         const absentList = [];
 
-        participantsData.forEach(p => {
+        participantsData.forEach((p) => {
           if (p.is_outsider) {
             outsidersList.push(p);
           } else {
@@ -276,11 +265,7 @@ const QuizSPAnalytics = () => {
       <Container maxWidth="lg">
         <Box sx={{ mt: 8 }}>
           <Alert severity="error">Failed to load analytics</Alert>
-          <Button
-            startIcon={<ArrowBackIcon />}
-            onClick={() => navigate(-1)}
-            sx={{ mt: 2 }}
-          >
+          <Button startIcon={<ArrowBackIcon />} onClick={() => navigate(-1)} sx={{ mt: 2 }}>
             Go Back
           </Button>
         </Box>
@@ -301,7 +286,12 @@ const QuizSPAnalytics = () => {
             >
               Download all reports ({participants.filter((p) => p.status === 'submitted').length})
             </Button>
-            <Button className="mst-ai" variant="contained" startIcon={<AutoAwesomeIcon />} onClick={() => setChatOpen(true)}>
+            <Button
+              className="mst-ai"
+              variant="contained"
+              startIcon={<AutoAwesomeIcon />}
+              onClick={() => setChatOpen(true)}
+            >
               Analytics with AI
             </Button>
           </>
@@ -404,9 +394,7 @@ const QuizSPAnalytics = () => {
                 </Typography>
               </Box>
               <Typography variant="h3" sx={{ fontWeight: 600 }}>
-                {typeof analytics.average_percentage === 'number'
-                  ? `${analytics.average_percentage.toFixed(1)}%`
-                  : '—'}
+                {typeof analytics.average_percentage === 'number' ? `${analytics.average_percentage.toFixed(1)}%` : '—'}
               </Typography>
             </CardContent>
           </Card>
@@ -430,9 +418,7 @@ const QuizSPAnalytics = () => {
       </Grid>
 
       {/* Pre/Post Comparison */}
-      {analytics.pre_post_comparison && (
-        <PrePostComparisonSection comparison={analytics.pre_post_comparison} />
-      )}
+      {analytics.pre_post_comparison && <PrePostComparisonSection comparison={analytics.pre_post_comparison} />}
 
       {/* Question Performance */}
       <Paper sx={{ mb: 3 }}>
@@ -501,7 +487,7 @@ const QuizSPAnalytics = () => {
                                 <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 9999;" onclick="this.remove()">
                                   <div style="background: white; padding: 24px; border-radius: 8px; max-width: 90%; max-height: 90%; overflow: auto;" onclick="event.stopPropagation()">
                                     <h3 style="margin-top: 0;">Question ${index + 1}</h3>
-                                    <img src="${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${q.media_url}" alt="Question" style="max-width: 100%; border-radius: 8px;" />
+                                    <img src="${config.apiBaseUrl}${q.media_url}" alt="Question" style="max-width: 100%; border-radius: 8px;" />
                                     <button onclick="this.closest('[style*=fixed]').remove()" style="margin-top: 16px; padding: 8px 16px; cursor: pointer;">Close</button>
                                   </div>
                                 </div>
@@ -518,20 +504,10 @@ const QuizSPAnalytics = () => {
                   </TableCell>
                   <TableCell align="right">{q.total_responses}</TableCell>
                   <TableCell align="right">
-                    <Chip
-                      label={q.correct_count}
-                      color="success"
-                      size="small"
-                      variant="outlined"
-                    />
+                    <Chip label={q.correct_count} color="success" size="small" variant="outlined" />
                   </TableCell>
                   <TableCell align="right">
-                    <Chip
-                      label={q.incorrect_count}
-                      color="error"
-                      size="small"
-                      variant="outlined"
-                    />
+                    <Chip label={q.incorrect_count} color="error" size="small" variant="outlined" />
                   </TableCell>
                   <TableCell align="right">
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1 }}>
@@ -626,12 +602,8 @@ const QuizSPAnalytics = () => {
                       </Typography>
                     </TableCell>
                     <TableCell align="center">
-                      {student.status === 'submitted' && (
-                        <Chip label="Submitted" color="success" size="small" />
-                      )}
-                      {student.status === 'in_progress' && (
-                        <Chip label="In Progress" color="warning" size="small" />
-                      )}
+                      {student.status === 'submitted' && <Chip label="Submitted" color="success" size="small" />}
+                      {student.status === 'in_progress' && <Chip label="In Progress" color="warning" size="small" />}
                     </TableCell>
                     <TableCell align="right">
                       {Math.floor(student.time_spent_seconds / 60)}m {student.time_spent_seconds % 60}s
@@ -642,7 +614,11 @@ const QuizSPAnalytics = () => {
                           <IconButton
                             size="small"
                             onClick={() => handleDownloadReport(student.student_id, student.student_name)}
-                            sx={{ color: 'primary.light', '&:hover': { bgcolor: 'action.selected' }, '&:focus-visible': { outline: '3px solid', outlineColor: 'primary.light' } }}
+                            sx={{
+                              color: 'primary.light',
+                              '&:hover': { bgcolor: 'action.selected' },
+                              '&:focus-visible': { outline: '3px solid', outlineColor: 'primary.light' },
+                            }}
                           >
                             <DownloadIcon />
                           </IconButton>
@@ -700,12 +676,8 @@ const QuizSPAnalytics = () => {
                       </Typography>
                     </TableCell>
                     <TableCell align="center">
-                      {student.status === 'submitted' && (
-                        <Chip label="Submitted" color="success" size="small" />
-                      )}
-                      {student.status === 'in_progress' && (
-                        <Chip label="In Progress" color="warning" size="small" />
-                      )}
+                      {student.status === 'submitted' && <Chip label="Submitted" color="success" size="small" />}
+                      {student.status === 'in_progress' && <Chip label="In Progress" color="warning" size="small" />}
                     </TableCell>
                     <TableCell align="center">
                       <Button
@@ -740,9 +712,7 @@ const QuizSPAnalytics = () => {
         </Box>
         {participants.length === 0 ? (
           <Box sx={{ p: 4, textAlign: 'center' }}>
-            <Typography color="text.secondary">
-              No students have joined yet
-            </Typography>
+            <Typography color="text.secondary">No students have joined yet</Typography>
           </Box>
         ) : (
           <ComparisonTableContainer>
@@ -791,7 +761,11 @@ const QuizSPAnalytics = () => {
                           <IconButton
                             size="small"
                             onClick={() => handleDownloadReport(student.student_id, student.student_name)}
-                            sx={{ color: 'primary.light', '&:hover': { bgcolor: 'action.selected' }, '&:focus-visible': { outline: '3px solid', outlineColor: 'primary.light' } }}
+                            sx={{
+                              color: 'primary.light',
+                              '&:hover': { bgcolor: 'action.selected' },
+                              '&:focus-visible': { outline: '3px solid', outlineColor: 'primary.light' },
+                            }}
                           >
                             <DownloadIcon />
                           </IconButton>
@@ -806,7 +780,7 @@ const QuizSPAnalytics = () => {
         )}
       </Paper>
 
-      <TagAnalytics activityId={sessionId}/>
+      <TagAnalytics activityId={sessionId} />
       {/* Floating Chat Window */}
       <FloatingChatWindow
         open={chatOpen}

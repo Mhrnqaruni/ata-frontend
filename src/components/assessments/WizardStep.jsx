@@ -1,3 +1,6 @@
+// The heading block of a wizard step: its title, a one-line hint and the step's content.
+// Area: assessments
+
 import React from 'react';
 
 // A wizard step's heading: its name and one line on what to do here.

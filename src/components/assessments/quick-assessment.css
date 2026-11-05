@@ -1,3 +1,6 @@
+/* Styles for the quick assessment page: upload panel, options, progress, student page review and scheme editor. */
+/* Area: assessments */
+
 /* Quick Assessment uses MST tokens and shared uploads; styles stay inside this flow. */
 .qa-page {
   max-width: 920px;

@@ -1,7 +1,10 @@
-import { mergeDictation } from "./familyPresentation";
-import FamilyDictation from "./FamilyDictation";
-import FamilyEvidence from "./FamilyEvidence";
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+// The parent's chat with the AI helper for one child: messages, activity cards, chat history, rename and dictation.
+// Area: family
+
+import { mergeDictation } from './familyPresentation';
+import FamilyDictation from './FamilyDictation';
+import FamilyEvidence from './FamilyEvidence';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   Alert,
   Button,
@@ -17,75 +20,71 @@ import {
   TextField,
   Typography,
   useMediaQuery,
-} from "@mui/material";
-import MoreHorizRounded from "@mui/icons-material/MoreHorizRounded";
-import ExpandMoreRounded from "@mui/icons-material/ExpandMoreRounded";
-import CheckRounded from "@mui/icons-material/CheckRounded";
-import HistoryRounded from "@mui/icons-material/HistoryRounded";
-import ChatBubbleOutlineRounded from "@mui/icons-material/ChatBubbleOutlineRounded";
-import ArrowUpwardRounded from "@mui/icons-material/ArrowUpwardRounded";
-import AutoAwesomeRounded from "@mui/icons-material/AutoAwesomeRounded";
-import AttachFileRounded from "@mui/icons-material/AttachFileRounded";
-import MenuBookRounded from "@mui/icons-material/MenuBookRounded";
-import CloseRounded from "@mui/icons-material/CloseRounded";
-import AddRounded from "@mui/icons-material/AddRounded";
-import TuneRounded from "@mui/icons-material/TuneRounded";
-import QuizRounded from "@mui/icons-material/QuizRounded";
-import LightbulbOutlined from "@mui/icons-material/LightbulbOutlined";
-import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "../../hooks/useAuth";
-import { queryClient, sessionGeneration } from "../../services/queryCache";
-import FamilyMarkdown from "./FamilyMarkdown";
-import api from "../../services/api";
-import { isRunning as running, kindWords, levelWords } from "./familyWords";
-import { StatusChip, kindIcon } from "./FamilyParts";
+} from '@mui/material';
+import MoreHorizRounded from '@mui/icons-material/MoreHorizRounded';
+import ExpandMoreRounded from '@mui/icons-material/ExpandMoreRounded';
+import CheckRounded from '@mui/icons-material/CheckRounded';
+import HistoryRounded from '@mui/icons-material/HistoryRounded';
+import ChatBubbleOutlineRounded from '@mui/icons-material/ChatBubbleOutlineRounded';
+import ArrowUpwardRounded from '@mui/icons-material/ArrowUpwardRounded';
+import AutoAwesomeRounded from '@mui/icons-material/AutoAwesomeRounded';
+import AttachFileRounded from '@mui/icons-material/AttachFileRounded';
+import MenuBookRounded from '@mui/icons-material/MenuBookRounded';
+import CloseRounded from '@mui/icons-material/CloseRounded';
+import AddRounded from '@mui/icons-material/AddRounded';
+import TuneRounded from '@mui/icons-material/TuneRounded';
+import QuizRounded from '@mui/icons-material/QuizRounded';
+import LightbulbOutlined from '@mui/icons-material/LightbulbOutlined';
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '../../hooks/useAuth';
+import { queryClient, sessionGeneration } from '../../services/queryCache';
+import FamilyMarkdown from './FamilyMarkdown';
+import api from '../../services/api';
+import { isRunning as running, kindWords, levelWords } from './familyWords';
+import { StatusChip, kindIcon } from './FamilyParts';
 
 const ukDay = (iso) => {
   try {
-    return new Date(iso).toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "short",
+    return new Date(iso).toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'short',
     });
   } catch {
-    return "";
+    return '';
   }
 };
-const levelName = (value) =>
-  (levelWords.find(([v]) => v === value) || [, value])[1];
+const levelName = (value) => (levelWords.find(([v]) => v === value) || [, value])[1];
 
 /** The card a parent acts on in the chat; it reads the same state as "Done so far", so the two never disagree. */
 function ActivityCard({ row, attempt, onOpen }) {
   const Icon = kindIcon[row.kind] || AutoAwesomeRounded;
   const words = kindWords[row.kind] || {
-    label: "Activity",
-    making: "Getting it ready",
-    ready: "It’s ready",
+    label: 'Activity',
+    making: 'Getting it ready',
+    ready: 'It’s ready',
   };
-  const ready = row.status === "completed";
+  const ready = row.status === 'completed';
   const busy = running(row);
   const what =
-    row.kind === "quiz" || row.kind === "flashcards"
-      ? `${words.label} · ${row.count} ${row.kind === "quiz" ? "questions" : "cards"}`
+    row.kind === 'quiz' || row.kind === 'flashcards'
+      ? `${words.label} · ${row.count} ${row.kind === 'quiz' ? 'questions' : 'cards'}`
       : words.label;
   const action = !ready
     ? busy
       ? null
-      : "See what happened"
-    : row.kind === "quiz"
+      : 'See what happened'
+    : row.kind === 'quiz'
       ? attempt
-        ? "See results"
-        : "Start quiz"
+        ? 'See results'
+        : 'Start quiz'
       : {
-          flashcards: "Open cards",
-          mindmap: "Open map",
-          story: "Read story",
-          check: "See marking",
-        }[row.kind] || "Open";
+          flashcards: 'Open cards',
+          mindmap: 'Open map',
+          story: 'Read story',
+          check: 'See marking',
+        }[row.kind] || 'Open';
   return (
-    <article
-      className="fam-card-act"
-      data-state={busy ? "busy" : ready ? "ready" : "other"}
-    >
+    <article className="fam-card-act" data-state={busy ? 'busy' : ready ? 'ready' : 'other'}>
       <span className="fam-act-icon" data-kind={row.kind} aria-hidden>
         <Icon />
       </span>
@@ -95,21 +94,16 @@ function ActivityCard({ row, attempt, onOpen }) {
         </Typography>
         <Typography className="fam-small">
           {busy
-            ? "About a minute"
+            ? 'About a minute'
             : row.title === words.label
               ? ukDay(row.createdAt)
-              : `${what}${row.kind === "quiz" && row.difficulty ? ` · ${levelName(row.difficulty)}` : ""}`}
+              : `${what}${row.kind === 'quiz' && row.difficulty ? ` · ${levelName(row.difficulty)}` : ''}`}
         </Typography>
         {busy && <LinearProgress className="fam-making-bar" />}
       </div>
-      {!busy && !(ready && !attempt) && (
-        <StatusChip row={row} attempt={attempt} />
-      )}
+      {!busy && !(ready && !attempt) && <StatusChip row={row} attempt={attempt} />}
       {action && (
-        <Button
-          variant={ready && !attempt ? "contained" : "outlined"}
-          onClick={() => onOpen(row)}
-        >
+        <Button variant={ready && !attempt ? 'contained' : 'outlined'} onClick={() => onOpen(row)}>
           {action}
         </Button>
       )}
@@ -121,23 +115,22 @@ function ActivityCard({ row, attempt, onOpen }) {
 function dayLabel(ms) {
   const d = new Date(ms);
   const today = new Date();
-  const start = (x) =>
-    new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const start = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
   const diff = Math.round((start(today) - start(d)) / 86400000);
   return diff === 0
-    ? "Today"
+    ? 'Today'
     : diff === 1
-      ? "Yesterday"
-      : d.toLocaleDateString("en-GB", {
-          day: "numeric",
-          month: "short",
-          year: d.getFullYear() === today.getFullYear() ? undefined : "numeric",
+      ? 'Yesterday'
+      : d.toLocaleDateString('en-GB', {
+          day: 'numeric',
+          month: 'short',
+          year: d.getFullYear() === today.getFullYear() ? undefined : 'numeric',
         });
 }
 const clock = (ms) =>
-  new Date(ms).toLocaleTimeString("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
+  new Date(ms).toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
   });
 
 /** The assistant is working: three soft dots and words that change with the wait (honest, never a fake percentage). */
@@ -148,16 +141,9 @@ function Thinking({ since, topic, stage }) {
     return () => clearInterval(t);
   }, []);
   const s = Math.max(0, Math.floor((now - since) / 1000));
-  const words =
-    s < 45
-      ? stage || "Preparing your reply…"
-      : "Still working on it. You can leave and come back.";
+  const words = s < 45 ? stage || 'Preparing your reply…' : 'Still working on it. You can leave and come back.';
   return (
-    <div
-      className="fam-msg fam-msg-ai fam-thinking"
-      role="status"
-      aria-live="polite"
-    >
+    <div className="fam-msg fam-msg-ai fam-thinking" role="status" aria-live="polite">
       <span className="fam-msg-avatar fam-avatar-busy" aria-hidden>
         <AutoAwesomeRounded />
       </span>
@@ -198,23 +184,21 @@ export default function FamilyConversation({
   const { user } = useAuth(),
     generation = sessionGeneration();
   const key = chat.key;
-  const draftKey = [...key, "draft"];
-  const storageKey = `mst.family.draft.${user.id}.${child.id}.${chat.id || "latest"}`;
-  const pendingKey = storageKey + ".request";
+  const draftKey = [...key, 'draft'];
+  const storageKey = `mst.family.draft.${user.id}.${child.id}.${chat.id || 'latest'}`;
+  const pendingKey = storageKey + '.request';
   const readPending = () => {
     try {
-      return JSON.parse(sessionStorage.getItem(pendingKey) || "null");
+      return JSON.parse(sessionStorage.getItem(pendingKey) || 'null');
     } catch {
       return null;
     }
   };
   const readDraft = () => {
     try {
-      return (
-        sessionStorage.getItem(storageKey) || readPending()?.payload?.text || ""
-      );
+      return sessionStorage.getItem(storageKey) || readPending()?.payload?.text || '';
     } catch {
-      return "";
+      return '';
     }
   };
   const base = `/api/family/children/${child.id}/conversation`;
@@ -228,17 +212,13 @@ export default function FamilyConversation({
   const attach = useRef(null),
     dictationInsertion = useRef(null);
   const [dictationUndo, setDictationUndo] = useState(null);
-  const [text, setText] = useState(
-    () => queryClient.getQueryData(draftKey) || readDraft(),
-  );
-  const [pending, setPendingState] = useState(
-      () => queryClient.getQueryData([...key, "pending"]) || readPending(),
-    ),
+  const [text, setText] = useState(() => queryClient.getQueryData(draftKey) || readDraft());
+  const [pending, setPendingState] = useState(() => queryClient.getQueryData([...key, 'pending']) || readPending()),
     [busy, setBusy] = useState(false),
-    [error, setError] = useState("");
+    [error, setError] = useState('');
   const setPending = (value) => {
     setPendingState(value);
-    queryClient.setQueryData([...key, "pending"], value);
+    queryClient.setQueryData([...key, 'pending'], value);
     try {
       if (value) sessionStorage.setItem(pendingKey, JSON.stringify(value));
       else sessionStorage.removeItem(pendingKey);
@@ -249,7 +229,7 @@ export default function FamilyConversation({
   const [outgoing, setOutgoing] = useState(null);
   const [makeMenu, setMakeMenu] = useState(null);
   const [context, setContext] = useState(false),
-    [preference, setPreference] = useState(""),
+    [preference, setPreference] = useState(''),
     [newDialog, setNewDialog] = useState(false),
     [menu, setMenu] = useState(null);
   const alive = useRef(true),
@@ -280,33 +260,24 @@ export default function FamilyConversation({
     if (pending && data?.turns.some((turn) => turn.id === pending.id)) {
       const sent = pending.payload.text;
       setPending(null);
-      if (text === sent) change("");
+      if (text === sent) change('');
     }
   }, [data?.turns, pending?.id]);
-  const topicName =
-    materials.length === 1
-      ? materials[0].title
-      : materials.length
-        ? `${materials.length} topics`
-        : "";
+  const topicName = materials.length === 1 ? materials[0].title : materials.length ? `${materials.length} topics` : '';
 
   // One timeline: messages and activity cards stay where they happened; new things arrive at the bottom.
   const items = [
     ...(data?.turns || []).map((turn) => ({
-      kind: "turn",
+      kind: 'turn',
       key: `t${turn.id}`,
       at: Date.parse(turn.activity?.createdAt) || 0,
       turn,
     })),
     ...activities
-      .filter(
-        (row) =>
-          row.conversationId === data?.id ||
-          (!row.conversationId && chat.items[0]?.id === data?.id),
-      )
+      .filter((row) => row.conversationId === data?.id || (!row.conversationId && chat.items[0]?.id === data?.id))
       .slice(0, 12)
       .map((row) => ({
-        kind: "act",
+        kind: 'act',
         key: `a${row.id}`,
         at: Date.parse(row.createdAt) || 0,
         row,
@@ -315,10 +286,10 @@ export default function FamilyConversation({
   const tail = items.at(-1);
   // Changes when something is added at the end or the newest item changes state; waits until the chat itself has loaded.
   const tailSignature = !data
-    ? ""
+    ? ''
     : outgoing
       ? `out:${outgoing.at}`
-      : `${items.length}:${tail ? `${tail.key}:${tail.kind === "turn" ? tail.turn.activity.status : tail.row.status}` : ""}`;
+      : `${items.length}:${tail ? `${tail.key}:${tail.kind === 'turn' ? tail.turn.activity.status : tail.row.status}` : ''}`;
 
   // Follow the conversation only when the parent is already at the bottom (or has just sent something).
   useLayoutEffect(() => {
@@ -328,8 +299,7 @@ export default function FamilyConversation({
     lastSeen.current = tailSignature;
     if (!first && !nearBottom.current) return;
     const answer = el.querySelector('[data-fresh-answer="true"]');
-    if (answer && answer.offsetHeight > el.clientHeight * 0.6)
-      answer.scrollIntoView({ block: "start" });
+    if (answer && answer.offsetHeight > el.clientHeight * 0.6) answer.scrollIntoView({ block: 'start' });
     else el.scrollTop = el.scrollHeight;
   }, [tailSignature]);
   // A suggestion fills the box; one marked `send` (e.g. "Explain this" on a marked question) is sent straight away when the chat is free.
@@ -345,12 +315,7 @@ export default function FamilyConversation({
 
   function insertDictation(transcript, automatic = false) {
     const current = queryClient.getQueryData(draftKey) ?? text;
-    const next = mergeDictation(
-      current,
-      transcript,
-      dictationInsertion.current,
-      automatic,
-    );
+    const next = mergeDictation(current, transcript, dictationInsertion.current, automatic);
     if (next === null) return false;
     setDictationUndo({ before: current, after: next });
     change(next);
@@ -363,22 +328,20 @@ export default function FamilyConversation({
     nearBottom.current = false;
     await chat.loadOlder();
     requestAnimationFrame(() => {
-      if (element && alive.current)
-        element.scrollTop = top + element.scrollHeight - height;
+      if (element && alive.current) element.scrollTop = top + element.scrollHeight - height;
     });
   }
+  // Sends a message (or an explain-more request) under a client-made ID that a retry reuses, so it never sends twice.
   async function send(expandTurn = null, forced = null) {
     const typed = forced ?? text;
     if ((!typed.trim() && !expandTurn) || !data || busy || waiting) return;
-    const sent = expandTurn
-      ? "Please explain that answer in more detail, with a simple example."
-      : typed.trim();
+    const sent = expandTurn ? 'Please explain that answer in more detail, with a simple example.' : typed.trim();
     const payload = {
       conversationId: data.id,
       revision: data.revision,
       text: sent,
       materialIds,
-      detail: expandTurn ? "expanded" : "brief",
+      detail: expandTurn ? 'expanded' : 'brief',
       targetMessageId: expandTurn?.id || null,
     };
     const signature = JSON.stringify({
@@ -388,16 +351,13 @@ export default function FamilyConversation({
       detail: payload.detail,
       targetMessageId: payload.targetMessageId,
     });
-    const request =
-      pending?.signature === signature
-        ? pending
-        : { id: crypto.randomUUID(), signature, payload };
+    const request = pending?.signature === signature ? pending : { id: crypto.randomUUID(), signature, payload };
     setPending(request);
     setBusy(true);
-    setError("");
+    setError('');
     nearBottom.current = true;
     setOutgoing({ text: sent, at: Date.now() });
-    if (!expandTurn && !forced) change("");
+    if (!expandTurn && !forced) change('');
     try {
       await api.put(`${base}/messages/${request.id}`, request.payload);
       if (valid()) {
@@ -410,15 +370,15 @@ export default function FamilyConversation({
         setOutgoing(null);
         if (!queryClient.getQueryData(draftKey) && !expandTurn) change(sent); // Preserve anything typed while the request was in flight.
         setError(
-          typeof e.response?.data?.detail === "string"
+          typeof e.response?.data?.detail === 'string'
             ? e.response.data.detail
-            : "The message may not have sent. Tap send again: it won’t be sent twice.",
+            : 'The message may not have sent. Tap send again: it won’t be sent twice.'
         );
         if (e.response?.status === 409) {
           setPending(null);
           await conversation.refetch();
           await queryClient.invalidateQueries({
-            queryKey: ["family", generation, user.id, child.id, "home"],
+            queryKey: ['family', generation, user.id, child.id, 'home'],
           });
         }
       }
@@ -428,7 +388,7 @@ export default function FamilyConversation({
   }
   async function saveContext() {
     setBusy(true);
-    setError("");
+    setError('');
     try {
       await api.patch(`${base}/${data.id}`, { preference });
       if (valid()) {
@@ -436,7 +396,7 @@ export default function FamilyConversation({
         setContext(false);
       }
     } catch {
-      if (valid()) setError("Could not save. Please try again.");
+      if (valid()) setError('Could not save. Please try again.');
     } finally {
       if (valid()) setBusy(false);
     }
@@ -445,7 +405,7 @@ export default function FamilyConversation({
     if (await chat.create()) setNewDialog(false);
   }
   const canSend = !!data && !busy && !waiting && !!text.trim();
-  let lastDay = "";
+  let lastDay = '';
   const dayRow = (at) => {
     if (!at) return null;
     const label = dayLabel(at);
@@ -462,16 +422,14 @@ export default function FamilyConversation({
       <header className="fam-chat-head">
         <Button
           className="fam-chat-title-button"
-          aria-label={`${data?.title || "New chat"}: chat menu`}
+          aria-label={`${data?.title || 'New chat'}: chat menu`}
           endIcon={<ExpandMoreRounded />}
           aria-haspopup="menu"
           aria-expanded={!!menu}
           onClick={(e) => setMenu(e.currentTarget)}
           disabled={!data}
         >
-          <span className="fam-chat-title-text">
-            {data?.title || "New chat"}
-          </span>
+          <span className="fam-chat-title-text">{data?.title || 'New chat'}</span>
         </Button>
       </header>
 
@@ -479,8 +437,8 @@ export default function FamilyConversation({
         open={!!menu}
         anchorEl={menu}
         onClose={() => setMenu(null)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-        transformOrigin={{ vertical: "top", horizontal: "right" }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
         <MenuItem
           disabled={chat.busy}
@@ -500,8 +458,8 @@ export default function FamilyConversation({
               setMenu(null);
             }}
           >
-            {item.title || "New chat"}
-            {item.id === data?.id ? " · Current" : ""}
+            {item.title || 'New chat'}
+            {item.id === data?.id ? ' · Current' : ''}
           </MenuItem>
         ))}
         <MenuItem
@@ -516,7 +474,7 @@ export default function FamilyConversation({
         <MenuItem
           onClick={() => {
             setMenu(null);
-            setRename(data?.title || "");
+            setRename(data?.title || '');
           }}
         >
           Rename chat
@@ -524,7 +482,7 @@ export default function FamilyConversation({
         <MenuItem
           onClick={() => {
             setMenu(null);
-            setPreference(data?.preference || "");
+            setPreference(data?.preference || '');
             setContext(true);
           }}
         >
@@ -540,8 +498,7 @@ export default function FamilyConversation({
         aria-relevant="additions text"
         onScroll={(e) => {
           const el = e.currentTarget;
-          nearBottom.current =
-            el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+          nearBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
         }}
       >
         <div className="fam-log-inner">
@@ -550,9 +507,7 @@ export default function FamilyConversation({
               <Typography component="h2" className="fam-bubble-title">
                 What shall we work on?
               </Typography>
-              {materialIds.length > 0 && (
-                <Typography className="fam-small">With {topicName}</Typography>
-              )}
+              {materialIds.length > 0 && <Typography className="fam-small">With {topicName}</Typography>}
             </div>
           )}
           {!data?.turns.length && !outgoing && starter}
@@ -561,35 +516,19 @@ export default function FamilyConversation({
               Load older messages
             </Button>
           )}
-          {!data?.turns.length &&
-            !outgoing &&
-            !materialIds.length &&
-            available.length > 0 && (
-              <div
-                className="fam-suggest"
-                role="group"
-                aria-label="Your topics"
-              >
-                {available.slice(0, 3).map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className="fam-suggest-chip"
-                    onClick={() => onUseMaterial(item.id)}
-                  >
-                    <MenuBookRounded aria-hidden />
-                    Use {item.title}
-                  </button>
-                ))}
-              </div>
-            )}
+          {!data?.turns.length && !outgoing && !materialIds.length && available.length > 0 && (
+            <div className="fam-suggest" role="group" aria-label="Your topics">
+              {available.slice(0, 3).map((item) => (
+                <button key={item.id} type="button" className="fam-suggest-chip" onClick={() => onUseMaterial(item.id)}>
+                  <MenuBookRounded aria-hidden />
+                  Use {item.title}
+                </button>
+              ))}
+            </div>
+          )}
           {!data?.turns.length && !outgoing && materialIds.length > 0 && (
             <div className="fam-suggest" role="group" aria-label="Ideas">
-              <button
-                type="button"
-                className="fam-suggest-chip"
-                onClick={() => onCreate("quiz")}
-              >
+              <button type="button" className="fam-suggest-chip" onClick={() => onCreate('quiz')}>
                 <QuizRounded aria-hidden />
                 Quiz on {topicName}
               </button>
@@ -604,35 +543,22 @@ export default function FamilyConversation({
                 <LightbulbOutlined aria-hidden />
                 Explain {topicName} with an example
               </button>
-              <button
-                type="button"
-                className="fam-suggest-chip"
-                onClick={() => onCreate("flashcards")}
-              >
+              <button type="button" className="fam-suggest-chip" onClick={() => onCreate('flashcards')}>
                 {React.createElement(kindIcon.flashcards, {
-                  "aria-hidden": true,
+                  'aria-hidden': true,
                 })}
                 Flashcards for {topicName}
               </button>
             </div>
           )}
-          {conversation.isPending && (
-            <CircularProgress size={24} aria-label="Loading the chat" />
-          )}
+          {conversation.isPending && <CircularProgress size={24} aria-label="Loading the chat" />}
           {conversation.isError && (
-            <Alert
-              severity="error"
-              action={
-                <Button onClick={() => conversation.refetch()}>
-                  Try again
-                </Button>
-              }
-            >
+            <Alert severity="error" action={<Button onClick={() => conversation.refetch()}>Try again</Button>}>
               Could not load the chat.
             </Alert>
           )}
           {items.map((item, index) => {
-            if (item.kind === "act")
+            if (item.kind === 'act')
               return (
                 <React.Fragment key={item.key}>
                   {dayRow(item.at)}
@@ -652,21 +578,11 @@ export default function FamilyConversation({
                 <div className="fam-msg fam-msg-me">
                   <div className="fam-bubble">{turn.text}</div>
                 </div>
-                <span className="fam-time fam-time-me">
-                  {item.at ? clock(item.at) : ""}
-                </span>
+                <span className="fam-time fam-time-me">{item.at ? clock(item.at) : ''}</span>
                 {running(turn.activity) ? (
-                  <Thinking
-                    stage={turn.activity.stage}
-                    since={item.at || Date.now()}
-                    topic={topicName}
-                  />
+                  <Thinking stage={turn.activity.stage} since={item.at || Date.now()} topic={topicName} />
                 ) : (
-                  <div
-                    className="fam-msg fam-msg-ai"
-                    key={`${turn.id}:${status}`}
-                    data-fresh-answer={latest}
-                  >
+                  <div className="fam-msg fam-msg-ai" key={`${turn.id}:${status}`} data-fresh-answer={latest}>
                     <span className="fam-msg-avatar" aria-hidden>
                       <AutoAwesomeRounded />
                     </span>
@@ -674,19 +590,11 @@ export default function FamilyConversation({
                       {turn.activity.result ? (
                         <>
                           <div className="fam-prose">
-                            <FamilyMarkdown
-                              text={
-                                turn.activity.result.explanation ||
-                                turn.activity.result.message
-                              }
-                            />
+                            <FamilyMarkdown text={turn.activity.result.explanation || turn.activity.result.message} />
                           </div>
-                          <FamilyEvidence
-                            base={`/api/family/children/${child.id}`}
-                            activity={turn.activity}
-                          />
+                          <FamilyEvidence base={`/api/family/children/${child.id}`} activity={turn.activity} />
                           {latest &&
-                            turn.activity.status === "completed" &&
+                            turn.activity.status === 'completed' &&
                             turn.activity.result.explanation?.length > 60 && (
                               <button
                                 type="button"
@@ -701,7 +609,7 @@ export default function FamilyConversation({
                       ) : (
                         <Alert severity="warning">
                           {turn.activity.error ||
-                            "This reply couldn’t finish. Your message is saved. Check its status before deliberately trying again."}
+                            'This reply couldn’t finish. Your message is saved. Check its status before deliberately trying again.'}
                         </Alert>
                       )}
                     </div>
@@ -735,7 +643,7 @@ export default function FamilyConversation({
           </Button>
         )}
         {error && (
-          <Alert severity="error" onClose={() => setError("")} sx={{ mb: 1 }}>
+          <Alert severity="error" onClose={() => setError('')} sx={{ mb: 1 }}>
             {error}
           </Alert>
         )}
@@ -744,21 +652,17 @@ export default function FamilyConversation({
             <Typography role="status" className="fam-small">
               {uploadState.submitted
                 ? uploadState.percent === 100
-                  ? "Saving…"
+                  ? 'Saving…'
                   : `Uploading ${uploadState.percent || 0}%`
-                : `${uploadState.files.length} file${uploadState.files.length === 1 ? "" : "s"} ready`}
+                : `${uploadState.files.length} file${uploadState.files.length === 1 ? '' : 's'} ready`}
             </Typography>
           )}
           {
-            <button
-              type="button"
-              className="fam-source-context"
-              onClick={onMaterials}
-            >
+            <button type="button" className="fam-source-context" onClick={onMaterials}>
               <MenuBookRounded aria-hidden />
               {materialIds.length
-                ? `Using ${materialIds.length} ${materialIds.length === 1 ? "material" : "materials"} · Change`
-                : "General help · Add materials"}
+                ? `Using ${materialIds.length} ${materialIds.length === 1 ? 'material' : 'materials'} · Change`
+                : 'General help · Add materials'}
             </button>
           }
           <div className="fam-compose-row">
@@ -778,7 +682,7 @@ export default function FamilyConversation({
               accept=".pdf,.png,.jpg,.jpeg"
               onChange={(e) => {
                 const files = Array.from(e.target.files || []);
-                e.target.value = "";
+                e.target.value = '';
                 if (files.length) onUpload(files);
               }}
             />
@@ -790,17 +694,13 @@ export default function FamilyConversation({
               maxRows={4}
               variant="standard"
               className="fam-compose-input"
-              placeholder={waiting || outgoing ? "Answering…" : "Ask anything…"}
+              placeholder={waiting || outgoing ? 'Answering…' : 'Ask anything…'}
               value={text}
               onChange={(e) => change(e.target.value)}
               InputProps={{ disableUnderline: true }}
-              inputProps={{ maxLength: 4000, "aria-label": "Message" }}
+              inputProps={{ maxLength: 4000, 'aria-label': 'Message' }}
               onKeyDown={(e) => {
-                if (
-                  e.key === "Enter" &&
-                  !e.shiftKey &&
-                  !e.nativeEvent.isComposing
-                ) {
+                if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
                   e.preventDefault();
                   void send();
                 }
@@ -823,7 +723,7 @@ export default function FamilyConversation({
             />
             <IconButton
               className="fam-send"
-              aria-label={waiting || outgoing ? "Answering" : "Send"}
+              aria-label={waiting || outgoing ? 'Answering' : 'Send'}
               disabled={!canSend}
               onClick={() => send()}
             >
@@ -869,27 +769,19 @@ export default function FamilyConversation({
                     type="button"
                     className="fam-chat-row"
                     data-on={on}
-                    aria-current={on ? "true" : undefined}
+                    aria-current={on ? 'true' : undefined}
                     onClick={() => {
                       chat.select(item.id);
                       setHistoryOpen(false);
                     }}
                   >
-                    <ChatBubbleOutlineRounded
-                      className="fam-chat-row-icon"
-                      aria-hidden
-                    />
+                    <ChatBubbleOutlineRounded className="fam-chat-row-icon" aria-hidden />
                     <span className="fam-chat-row-text">
-                      <span className="fam-chat-row-title">
-                        {item.title || "New chat"}
-                      </span>
+                      <span className="fam-chat-row-title">{item.title || 'New chat'}</span>
                       {at ? (
                         <span className="fam-small">
                           {dayLabel(at)}
-                          {dayLabel(at) === "Today" ||
-                          dayLabel(at) === "Yesterday"
-                            ? ` · ${clock(at)}`
-                            : ""}
+                          {dayLabel(at) === 'Today' || dayLabel(at) === 'Yesterday' ? ` · ${clock(at)}` : ''}
                         </span>
                       ) : null}
                     </span>
@@ -915,17 +807,13 @@ export default function FamilyConversation({
           <Button onClick={() => setHistoryOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
-      <Dialog
-        open={rename !== null}
-        onClose={() => setRename(null)}
-        className="fam-dialog"
-      >
+      <Dialog open={rename !== null} onClose={() => setRename(null)} className="fam-dialog">
         <DialogTitle>Rename chat</DialogTitle>
         <DialogContent>
           {chat.error && <Alert severity="error">{chat.error}</Alert>}
           <TextField
             label="Chat name"
-            value={rename || ""}
+            value={rename || ''}
             onChange={(e) => setRename(e.target.value)}
             inputProps={{ maxLength: 120 }}
           />
@@ -942,19 +830,12 @@ export default function FamilyConversation({
           </Button>
         </DialogActions>
       </Dialog>
-      <Dialog
-        open={context}
-        onClose={() => !busy && setContext(false)}
-        fullWidth
-        maxWidth="sm"
-        className="fam-dialog"
-      >
+      <Dialog open={context} onClose={() => !busy && setContext(false)} fullWidth maxWidth="sm" className="fam-dialog">
         <DialogTitle>Explanation style</DialogTitle>
         <DialogContent>
           <div className="fam-form">
             <Typography className="fam-lead-s">
-              Tell us what works for {child.displayName}. We only use the topics
-              you pick and this chat.
+              Tell us what works for {child.displayName}. We only use the topics you pick and this chat.
             </Typography>
             <TextField
               fullWidth
@@ -973,7 +854,7 @@ export default function FamilyConversation({
             Cancel
           </Button>
           <Button variant="contained" disabled={busy} onClick={saveContext}>
-            {busy ? "Saving…" : "Save"}
+            {busy ? 'Saving…' : 'Save'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -988,18 +869,14 @@ export default function FamilyConversation({
         <DialogContent>
           {chat.error && <Alert severity="error">{chat.error}</Alert>}
           <Typography>
-            Nothing is deleted. Your topics, quizzes and scores stay, and the
-            old messages are kept. The new chat simply starts fresh.
+            Nothing is deleted. Your topics, quizzes and scores stay, and the old messages are kept. The new chat simply
+            starts fresh.
           </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setNewDialog(false)}>Cancel</Button>
-          <Button
-            variant="contained"
-            disabled={busy || waiting}
-            onClick={newConversation}
-          >
-            {busy ? "Starting…" : "Start a new chat"}
+          <Button variant="contained" disabled={busy || waiting} onClick={newConversation}>
+            {busy ? 'Starting…' : 'Start a new chat'}
           </Button>
         </DialogActions>
       </Dialog>

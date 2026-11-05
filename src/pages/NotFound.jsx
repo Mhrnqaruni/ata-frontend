@@ -1,5 +1,7 @@
-// /src/pages/NotFound.jsx
-// A missing page: a small glass card with a way home and a way back.
+// The page-not-found screen: a small card with buttons to go home or go back.
+// Shown for any unknown address inside the signed-in shell.
+// Area: platform
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@mui/material';
@@ -13,8 +15,12 @@ export default function NotFound() {
       <EmptyState
         action={
           <div className="mst-notfound-actions">
-            <Button onClick={() => navigate('/')} variant="contained">Go to Home</Button>
-            <Button onClick={() => navigate(-1)} variant="outlined">Back</Button>
+            <Button onClick={() => navigate('/')} variant="contained">
+              Go to Home
+            </Button>
+            <Button onClick={() => navigate(-1)} variant="outlined">
+              Back
+            </Button>
           </div>
         }
         icon={<ExploreOffOutlined />}

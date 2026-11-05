@@ -1,5 +1,6 @@
-// /ata-frontend/src/components/chatbot/ChatWelcome.jsx
-// The empty conversation: the assistant's star, one line on what to ask, and a suggestion to start with.
+// The welcome for an empty assistant chat, with a button that asks for an overview of all data or of one item.
+// Area: chat
+
 import React from 'react';
 import { Button } from '@mui/material';
 import InsightsIcon from '@mui/icons-material/Insights';
@@ -14,7 +15,9 @@ const ChatWelcome = ({ onSend, entityName }) => {
   };
   return (
     <div className="mst-chat-welcome">
-      <span aria-hidden="true" className="mst-chat-star"><AutoAwesome /></span>
+      <span aria-hidden="true" className="mst-chat-star">
+        <AutoAwesome />
+      </span>
       <h2 className="mst-chat-welcome-title">
         {entityName ? `Ask about ${entityName}` : 'Ask about your classes, students and quizzes'}
       </h2>

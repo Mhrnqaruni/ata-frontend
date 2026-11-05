@@ -1,14 +1,33 @@
+// The slide generator page: takes a topic or source, slide count and style, shows the outline, and can save it.
+// Area: ai_tools
+
 import EducationSelector, { educationLabel } from '../../components/common/EducationSelector';
 import NumberField from '../../components/common/NumberField';
-// /src/pages/tools/SlideGenerator.jsx
 
 import React, { useState, useEffect, useMemo } from 'react';
 
 // MUI Component Imports
 import {
-  Card, CardContent, CardHeader, Divider, Box, Button, Stack, TextField,
-  FormControl, InputLabel, Select, MenuItem, CircularProgress, CardActions,
-  Typography, Tabs, Tab, Autocomplete, Switch, FormControlLabel
+  Card,
+  CardContent,
+  CardHeader,
+  Divider,
+  Box,
+  Button,
+  Stack,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  CircularProgress,
+  CardActions,
+  Typography,
+  Tabs,
+  Tab,
+  Autocomplete,
+  Switch,
+  FormControlLabel,
 } from '@mui/material';
 
 // Custom Component Imports
@@ -30,143 +49,226 @@ import historyService from '../../services/historyService';
 import { useSnackbar } from '../../hooks/useSnackbar';
 
 // --- Sub-Component: The specialized SettingsPanel for the Slide Generator ---
-const SettingsPanel = ({
-    formState, setFormState, onSubmit, isLoading, libraryTree, libraryLoading
-}) => {
-    const [activeTab, setActiveTab] = useState(0);
+const SettingsPanel = ({ formState, setFormState, onSubmit, isLoading, libraryTree, libraryLoading }) => {
+  const [activeTab, setActiveTab] = useState(0);
 
-    // Generic handler for form inputs, including text, select, and switches/checkboxes
-    const handleInputChange = (event) => {
-        const { name, value, checked, type } = event.target;
-        setFormState(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
-    };
-    
-    // Handler for the cascading dropdowns in the Library tab
-    const handleLibraryChange = (field, value) => {
-        const newState = { ...formState, [field]: value };
-        
-        // When a parent dropdown changes, reset all children to prevent invalid state
-        if (field === 'selected_level') {
-            newState.selected_year = null;
-            newState.selected_subject = null;
-            newState.selected_book = null;
-            newState.selected_chapters = [];
-            // Auto-update the main Grade Level dropdown for convenience
-            // Source level never changes the teacher’s chosen learning context.
-        }
-        if (field === 'selected_year') {
-            newState.selected_subject = null;
-            newState.selected_book = null;
-            newState.selected_chapters = [];
-        }
-        if (field === 'selected_subject') {
-            newState.selected_book = null;
-            newState.selected_chapters = [];
-        }
-        if (field === 'selected_book') {
-            newState.selected_chapters = [];
-        }
-        setFormState(newState);
-    };
+  // Generic handler for form inputs, including text, select, and switches/checkboxes
+  const handleInputChange = (event) => {
+    const { name, value, checked, type } = event.target;
+    setFormState((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+  };
 
-    // Memoized selectors to optimize performance of the cascading dropdowns
-    const yearOptions = useMemo(() => formState.selected_level?.children || [], [formState.selected_level]);
-    const subjectOptions = useMemo(() => formState.selected_year?.children || [], [formState.selected_year]);
-    const bookOptions = useMemo(() => formState.selected_subject?.children || [], [formState.selected_subject]);
-    const chapterOptions = useMemo(() => formState.selected_book?.children || [], [formState.selected_book]);
+  // Handler for the cascading dropdowns in the Library tab
+  const handleLibraryChange = (field, value) => {
+    const newState = { ...formState, [field]: value };
 
-    // Handler for switching between source material tabs
-    const handleTabChange = (event, newValue) => {
-        setActiveTab(newValue);
-        // Clear state from other tabs to ensure only one source type is used
-        setFormState(prev => ({ 
-            ...prev, 
-            source_text: '', 
-            source_file: null, 
-            selected_level: null, 
-            selected_year: null, 
-            selected_subject: null, 
-            selected_book: null, 
-            selected_chapters: [], 
-        }));
-    };
-    
-    // Callback for the FileUploadZone component to update state
-    const setFile = (file) => setFormState(prev => ({...prev, source_file: file}));
+    // When a parent dropdown changes, reset all children to prevent invalid state
+    if (field === 'selected_level') {
+      newState.selected_year = null;
+      newState.selected_subject = null;
+      newState.selected_book = null;
+      newState.selected_chapters = [];
+      // Auto-update the main Grade Level dropdown for convenience
+      // Source level never changes the teacher’s chosen learning context.
+    }
+    if (field === 'selected_year') {
+      newState.selected_subject = null;
+      newState.selected_book = null;
+      newState.selected_chapters = [];
+    }
+    if (field === 'selected_subject') {
+      newState.selected_book = null;
+      newState.selected_chapters = [];
+    }
+    if (field === 'selected_book') {
+      newState.selected_chapters = [];
+    }
+    setFormState(newState);
+  };
 
-    // Form is valid if at least one source material has been provided
-    const isFormValid = (formState.source_text.trim().length > 10 || formState.source_file !== null || formState.selected_chapters.length > 0);
+  // Memoized selectors to optimize performance of the cascading dropdowns
+  const yearOptions = useMemo(() => formState.selected_level?.children || [], [formState.selected_level]);
+  const subjectOptions = useMemo(() => formState.selected_year?.children || [], [formState.selected_year]);
+  const bookOptions = useMemo(() => formState.selected_subject?.children || [], [formState.selected_subject]);
+  const chapterOptions = useMemo(() => formState.selected_book?.children || [], [formState.selected_book]);
 
-    return (
-        <Card className="mst-rim mst-tool-settings">
-            <form onSubmit={onSubmit}>
-                <CardHeader avatar={<span aria-hidden="true" className="mst-tile" data-size="sm"><TuneOutlined /></span>} title="Settings" titleTypographyProps={{ variant: 'h3', component: 'h2' }} />
-                <Divider />
-                <CardContent>
-                    <Stack spacing={3}>
-                        {/* --- SLIDE-SPECIFIC SETTINGS --- */}
-                        <EducationSelector value={formState.education} legacy={formState.grade_level} disabled={isLoading} onChange={education=>handleInputChange({target:{name:'education',value:education}})} />
-                        
-                        <NumberField
-                            name="num_slides"
-                            type="number"
-                            label="Number of slides (3–20)"
-                            value={formState.num_slides}
-                            onChange={handleInputChange}
-                            disabled={isLoading}
-                            InputProps={{ inputProps: { min: 3, max: 20 } }}
-                        />
+  // Handler for switching between source material tabs
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+    // Clear state from other tabs to ensure only one source type is used
+    setFormState((prev) => ({
+      ...prev,
+      source_text: '',
+      source_file: null,
+      selected_level: null,
+      selected_year: null,
+      selected_subject: null,
+      selected_book: null,
+      selected_chapters: [],
+    }));
+  };
 
-                        <FormControl fullWidth disabled={isLoading}>
-                            <InputLabel id="slide-style-label">Slide style</InputLabel>
-                            <Select name="slide_style" value={formState.slide_style} label="Slide style" onChange={handleInputChange}>
-                                <MenuItem value="informative">Informative</MenuItem>
-                                <MenuItem value="engaging">Engaging</MenuItem>
-                                <MenuItem value="professional">Professional</MenuItem>
-                            </Select>
-                        </FormControl>
+  // Callback for the FileUploadZone component to update state
+  const setFile = (file) => setFormState((prev) => ({ ...prev, source_file: file }));
 
-                        <FormControlLabel
-                            control={<Switch checked={formState.include_speaker_notes} onChange={handleInputChange} name="include_speaker_notes" />}
-                            label="Include speaker notes"
-                            disabled={isLoading}
-                        />
-                        {/* --- END SLIDE-SPECIFIC SETTINGS --- */}
+  // Form is valid if at least one source material has been provided
+  const isFormValid =
+    formState.source_text.trim().length > 10 ||
+    formState.source_file !== null ||
+    formState.selected_chapters.length > 0;
 
-                        <Box>
-                            <Typography className="mst-field-group" component="div" variant="overline">Source material</Typography>
-                            <Tabs value={activeTab} onChange={handleTabChange} variant="fullWidth" sx={{ width: '100%' }}>
-                                <Tab label="Text" disabled={isLoading} />
-                                <Tab label="File" disabled={isLoading} />
-                                <Tab label="Library" disabled={isLoading || libraryLoading} />
-                            </Tabs>
-                            {/* --- CORRECTED AND COMPLETED TAB CONTENT --- */}
-                            <Box sx={{ pt: 2, minHeight: 290 }}>
-                                {activeTab === 0 && <TextField name="source_text" label="Topic or source text" multiline rows={10} fullWidth value={formState.source_text} onChange={handleInputChange} disabled={isLoading} />}
-                                {activeTab === 1 && <FileUploadZone file={formState.source_file} setFile={setFile} isLoading={isLoading} />}
-                                {activeTab === 2 && (
-                                    libraryLoading ? <Box sx={{display: 'flex', justifyContent: 'center', pt: 4}}><CircularProgress /></Box> :
-                                    <Stack spacing={2}>
-                                        <Autocomplete options={libraryTree} getOptionLabel={(option) => option.name} value={formState.selected_level} onChange={(e, val) => handleLibraryChange('selected_level', val)} renderInput={(params) => <TextField {...params} label="Level" />} />
-                                        <Autocomplete options={yearOptions} getOptionLabel={(option) => option.name} value={formState.selected_year} onChange={(e, val) => handleLibraryChange('selected_year', val)} disabled={!formState.selected_level} renderInput={(params) => <TextField {...params} label="Year" />} />
-                                        <Autocomplete options={subjectOptions} getOptionLabel={(option) => option.name} value={formState.selected_subject} onChange={(e, val) => handleLibraryChange('selected_subject', val)} disabled={!formState.selected_year} renderInput={(params) => <TextField {...params} label="Subject" />} />
-                                        <Autocomplete options={bookOptions} getOptionLabel={(option) => option.name} value={formState.selected_book} onChange={(e, val) => handleLibraryChange('selected_book', val)} disabled={!formState.selected_subject} renderInput={(params) => <TextField {...params} label="Book" />} />
-                                        <Autocomplete multiple options={chapterOptions} getOptionLabel={(option) => option.name} value={formState.selected_chapters} onChange={(e, val) => handleLibraryChange('selected_chapters', val)} disabled={!formState.selected_book} renderInput={(params) => <TextField {...params} label="Chapters (up to 5)" />} limitTags={3} />
-                                    </Stack>
-                                )}
-                            </Box>
-                        </Box>
+  return (
+    <Card className="mst-rim mst-tool-settings">
+      <form onSubmit={onSubmit}>
+        <CardHeader
+          avatar={
+            <span aria-hidden="true" className="mst-tile" data-size="sm">
+              <TuneOutlined />
+            </span>
+          }
+          title="Settings"
+          titleTypographyProps={{ variant: 'h3', component: 'h2' }}
+        />
+        <Divider />
+        <CardContent>
+          <Stack spacing={3}>
+            {/* --- SLIDE-SPECIFIC SETTINGS --- */}
+            <EducationSelector
+              value={formState.education}
+              legacy={formState.grade_level}
+              disabled={isLoading}
+              onChange={(education) => handleInputChange({ target: { name: 'education', value: education } })}
+            />
+
+            <NumberField
+              name="num_slides"
+              type="number"
+              label="Number of slides (3–20)"
+              value={formState.num_slides}
+              onChange={handleInputChange}
+              disabled={isLoading}
+              InputProps={{ inputProps: { min: 3, max: 20 } }}
+            />
+
+            <FormControl fullWidth disabled={isLoading}>
+              <InputLabel id="slide-style-label">Slide style</InputLabel>
+              <Select name="slide_style" value={formState.slide_style} label="Slide style" onChange={handleInputChange}>
+                <MenuItem value="informative">Informative</MenuItem>
+                <MenuItem value="engaging">Engaging</MenuItem>
+                <MenuItem value="professional">Professional</MenuItem>
+              </Select>
+            </FormControl>
+
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={formState.include_speaker_notes}
+                  onChange={handleInputChange}
+                  name="include_speaker_notes"
+                />
+              }
+              label="Include speaker notes"
+              disabled={isLoading}
+            />
+            {/* --- END SLIDE-SPECIFIC SETTINGS --- */}
+
+            <Box>
+              <Typography className="mst-field-group" component="div" variant="overline">
+                Source material
+              </Typography>
+              <Tabs value={activeTab} onChange={handleTabChange} variant="fullWidth" sx={{ width: '100%' }}>
+                <Tab label="Text" disabled={isLoading} />
+                <Tab label="File" disabled={isLoading} />
+                <Tab label="Library" disabled={isLoading || libraryLoading} />
+              </Tabs>
+              {/* --- CORRECTED AND COMPLETED TAB CONTENT --- */}
+              <Box sx={{ pt: 2, minHeight: 290 }}>
+                {activeTab === 0 && (
+                  <TextField
+                    name="source_text"
+                    label="Topic or source text"
+                    multiline
+                    rows={10}
+                    fullWidth
+                    value={formState.source_text}
+                    onChange={handleInputChange}
+                    disabled={isLoading}
+                  />
+                )}
+                {activeTab === 1 && (
+                  <FileUploadZone file={formState.source_file} setFile={setFile} isLoading={isLoading} />
+                )}
+                {activeTab === 2 &&
+                  (libraryLoading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', pt: 4 }}>
+                      <CircularProgress />
+                    </Box>
+                  ) : (
+                    <Stack spacing={2}>
+                      <Autocomplete
+                        options={libraryTree}
+                        getOptionLabel={(option) => option.name}
+                        value={formState.selected_level}
+                        onChange={(e, val) => handleLibraryChange('selected_level', val)}
+                        renderInput={(params) => <TextField {...params} label="Level" />}
+                      />
+                      <Autocomplete
+                        options={yearOptions}
+                        getOptionLabel={(option) => option.name}
+                        value={formState.selected_year}
+                        onChange={(e, val) => handleLibraryChange('selected_year', val)}
+                        disabled={!formState.selected_level}
+                        renderInput={(params) => <TextField {...params} label="Year" />}
+                      />
+                      <Autocomplete
+                        options={subjectOptions}
+                        getOptionLabel={(option) => option.name}
+                        value={formState.selected_subject}
+                        onChange={(e, val) => handleLibraryChange('selected_subject', val)}
+                        disabled={!formState.selected_year}
+                        renderInput={(params) => <TextField {...params} label="Subject" />}
+                      />
+                      <Autocomplete
+                        options={bookOptions}
+                        getOptionLabel={(option) => option.name}
+                        value={formState.selected_book}
+                        onChange={(e, val) => handleLibraryChange('selected_book', val)}
+                        disabled={!formState.selected_subject}
+                        renderInput={(params) => <TextField {...params} label="Book" />}
+                      />
+                      <Autocomplete
+                        multiple
+                        options={chapterOptions}
+                        getOptionLabel={(option) => option.name}
+                        value={formState.selected_chapters}
+                        onChange={(e, val) => handleLibraryChange('selected_chapters', val)}
+                        disabled={!formState.selected_book}
+                        renderInput={(params) => <TextField {...params} label="Chapters (up to 5)" />}
+                        limitTags={3}
+                      />
                     </Stack>
-                </CardContent>
-                <Divider />
-                <CardActions className="mst-tool-actions">
-                    <Button className="mst-ai" fullWidth size="large" type="submit" variant="contained" disabled={!isFormValid || isLoading} startIcon={isLoading ? <CircularProgress size={18} color="inherit" /> : <AutoAwesomeRounded />}>
-                        {isLoading ? 'Generating…' : 'Generate slides'}
-                    </Button>
-                </CardActions>
-            </form>
-        </Card>
-    );
+                  ))}
+              </Box>
+            </Box>
+          </Stack>
+        </CardContent>
+        <Divider />
+        <CardActions className="mst-tool-actions">
+          <Button
+            className="mst-ai"
+            fullWidth
+            size="large"
+            type="submit"
+            variant="contained"
+            disabled={!isFormValid || isLoading}
+            startIcon={isLoading ? <CircularProgress size={18} color="inherit" /> : <AutoAwesomeRounded />}
+          >
+            {isLoading ? 'Generating…' : 'Generate slides'}
+          </Button>
+        </CardActions>
+      </form>
+    </Card>
+  );
 };
 
 // --- Main Page Component ---
@@ -176,14 +278,15 @@ const SlideGenerator = () => {
   // State for the fetched library data
   const [libraryTree, setLibraryTree] = useState([]);
   const [libraryLoading, setLibraryLoading] = useState(true);
-  
+
   // Effect to fetch the library tree data once on component mount
   useEffect(() => {
-    libraryService.getTree()
-      .then(data => setLibraryTree(data))
-      .catch(err => {
-        console.error("Failed to load library tree", err);
-        showSnackbar("Could not load curriculum library.", "error");
+    libraryService
+      .getTree()
+      .then((data) => setLibraryTree(data))
+      .catch((err) => {
+        console.error('Failed to load library tree', err);
+        showSnackbar('Could not load curriculum library.', 'error');
       })
       .finally(() => setLibraryLoading(false));
   }, [showSnackbar]);
@@ -226,7 +329,7 @@ const SlideGenerator = () => {
       grade_level: educationLabel(formState.education, formState.grade_level),
       education: formState.education,
       source_text: formState.source_text,
-      selected_chapter_paths: formState.selected_chapters.map(c => c.path),
+      selected_chapter_paths: formState.selected_chapters.map((c) => c.path),
       num_slides: Number(formState.num_slides),
       slide_style: formState.slide_style,
       include_speaker_notes: formState.include_speaker_notes,
@@ -242,41 +345,41 @@ const SlideGenerator = () => {
       const response = await toolService.generateContent(requestPayload, formState.source_file);
       setGeneratedContent(response.content);
     } catch (err) {
-      console.error("Failed to generate slides:", err);
-      const errorMessage = err.message || "An unexpected error occurred. Please try again.";
+      console.error('Failed to generate slides:', err);
+      const errorMessage = err.message || 'An unexpected error occurred. Please try again.';
       setError(errorMessage);
-      showSnackbar(errorMessage, "error"); // Use snackbar for user feedback
+      showSnackbar(errorMessage, 'error'); // Use snackbar for user feedback
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   // Handler for the "Save" button in the output panel
   const handleSave = async () => {
     // Guard against trying to save nothing or saving multiple times
     if (!generatedContent || !lastUsedSettings) {
-        showSnackbar("There is no content to save.", 'warning');
-        return;
+      showSnackbar('There is no content to save.', 'warning');
+      return;
     }
     if (savedGenerationId) {
-        showSnackbar("This generation has already been saved.", 'info');
-        return;
+      showSnackbar('This generation has already been saved.', 'info');
+      return;
     }
 
     setIsSaving(true);
     try {
-        const payload = {
-            tool_id: 'slide-generator', // CRITICAL: Associates the save with the correct tool
-            settings: lastUsedSettings,
-            generated_content: generatedContent,
-        };
-        const savedRecord = await historyService.saveGeneration(payload);
-        setSavedGenerationId(savedRecord.id); // Store ID to prevent re-saving
-        showSnackbar('Generation saved successfully!', 'success');
+      const payload = {
+        tool_id: 'slide-generator', // CRITICAL: Associates the save with the correct tool
+        settings: lastUsedSettings,
+        generated_content: generatedContent,
+      };
+      const savedRecord = await historyService.saveGeneration(payload);
+      setSavedGenerationId(savedRecord.id); // Store ID to prevent re-saving
+      showSnackbar('Generation saved successfully!', 'success');
     } catch (err) {
-        showSnackbar(err.message, 'error');
+      showSnackbar(err.message, 'error');
     } finally {
-        setIsSaving(false);
+      setIsSaving(false);
     }
   };
 

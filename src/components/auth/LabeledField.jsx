@@ -1,5 +1,8 @@
-import React from "react";
-import { FormHelperText, FormLabel, OutlinedInput } from "@mui/material";
+// A text field with its label above the box and optional help or error text; used in sign-in and register.
+// Area: identity
+
+import React from 'react';
+import { FormHelperText, FormLabel, OutlinedInput } from '@mui/material';
 
 /**
  * A field with its label ABOVE the box (no floating label, no notch in the border), and an optional line of

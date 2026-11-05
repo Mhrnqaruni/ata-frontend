@@ -1,13 +1,28 @@
+// The rubric generator page: takes what is graded, criteria and levels, shows the rubric, and can save it.
+// Area: ai_tools
+
 import EducationSelector, { educationLabel } from '../../components/common/EducationSelector';
-// /src/pages/tools/RubricGenerator.jsx
 
 import React, { useState, useEffect, useMemo } from 'react';
 
 // MUI Component Imports
 import {
-  Card, CardContent, CardHeader, Divider, Box, Button, Stack, TextField,
-  FormControl, InputLabel, Select, MenuItem, CircularProgress, CardActions,
-  Typography, Chip
+  Card,
+  CardContent,
+  CardHeader,
+  Divider,
+  Box,
+  Button,
+  Stack,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  CircularProgress,
+  CardActions,
+  Typography,
+  Chip,
 } from '@mui/material';
 
 // Custom Component Imports
@@ -52,117 +67,143 @@ const ChipInput = ({ label, items, setItems, disabled }) => {
 
   return (
     <Box>
-        <Typography variant="overline" color="text.secondary">{label}</Typography>
-        <Stack direction="row" spacing={1}>
-            <TextField
-                fullWidth
-                size="small"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder={`Type and press Enter to add...`}
-                disabled={disabled}
-            />
-            <Button variant="outlined" onClick={handleAdd} disabled={disabled}>Add</Button>
-        </Stack>
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1, minHeight: '40px' }}>
-            {items.map((item) => (
-                <Chip
-                    key={item}
-                    label={item}
-                    onDelete={() => handleDelete(item)}
-                    disabled={disabled}
-                />
-            ))}
-        </Box>
+      <Typography variant="overline" color="text.secondary">
+        {label}
+      </Typography>
+      <Stack direction="row" spacing={1}>
+        <TextField
+          fullWidth
+          size="small"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder={`Type and press Enter to add...`}
+          disabled={disabled}
+        />
+        <Button variant="outlined" onClick={handleAdd} disabled={disabled}>
+          Add
+        </Button>
+      </Stack>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1, minHeight: '40px' }}>
+        {items.map((item) => (
+          <Chip key={item} label={item} onDelete={() => handleDelete(item)} disabled={disabled} />
+        ))}
+      </Box>
     </Box>
   );
 };
 
-
 // --- Sub-Component: The specialized SettingsPanel for the Rubric Generator ---
-const SettingsPanel = ({
-    formState, setFormState, onSubmit, isLoading, libraryTree, libraryLoading
-}) => {
-    
-    // --- Handlers for the Dual Source Input Blocks ---
-    const handleAssignmentText = (value) => setFormState(prev => ({...prev, assignment_text: value}));
-    const handleAssignmentFile = (file) => setFormState(prev => ({...prev, assignment_file: file}));
-    const handleAssignmentLibrary = (field, value) => {
-        const newState = { ...formState, assignment_library: {...formState.assignment_library, [field]: value }};
-        // Reset child dropdowns on parent change
-        if (field === 'selected_level') { newState.assignment_library.selected_year = null; /* etc. */ }
-        setFormState(newState);
-    };
-    
-    // For the second source block, we need separate handlers
-    const handleGuidanceText = (value) => setFormState(prev => ({...prev, guidance_text: value}));
-    // Note: In V1, we will not implement file/library for the guidance source to simplify the UI and backend logic.
-    // This can be added later by creating guidance_file and guidance_library state.
+const SettingsPanel = ({ formState, setFormState, onSubmit, isLoading, libraryTree, libraryLoading }) => {
+  // --- Handlers for the Dual Source Input Blocks ---
+  const handleAssignmentText = (value) => setFormState((prev) => ({ ...prev, assignment_text: value }));
+  const handleAssignmentFile = (file) => setFormState((prev) => ({ ...prev, assignment_file: file }));
+  const handleAssignmentLibrary = (field, value) => {
+    const newState = { ...formState, assignment_library: { ...formState.assignment_library, [field]: value } };
+    // Reset child dropdowns on parent change
+    if (field === 'selected_level') {
+      newState.assignment_library.selected_year = null; /* etc. */
+    }
+    setFormState(newState);
+  };
 
-    // --- Handlers for Chip Inputs ---
-    const setCriteria = (newCriteria) => setFormState(prev => ({ ...prev, criteria: newCriteria }));
-    const setLevels = (newLevels) => setFormState(prev => ({ ...prev, levels: newLevels }));
+  // For the second source block, we need separate handlers
+  const handleGuidanceText = (value) => setFormState((prev) => ({ ...prev, guidance_text: value }));
+  // Note: In V1, we will not implement file/library for the guidance source to simplify the UI and backend logic.
+  // This can be added later by creating guidance_file and guidance_library state.
 
-    // Form is valid if the primary source is provided and there are criteria/levels.
-    const isFormValid = (formState.assignment_text.trim().length > 10 || formState.assignment_file !== null || formState.assignment_library.selected_chapters.length > 0) && formState.criteria.length > 1 && formState.levels.length > 1;
+  // --- Handlers for Chip Inputs ---
+  const setCriteria = (newCriteria) => setFormState((prev) => ({ ...prev, criteria: newCriteria }));
+  const setLevels = (newLevels) => setFormState((prev) => ({ ...prev, levels: newLevels }));
 
-    return (
-        <Card className="mst-rim mst-tool-settings">
-            <form onSubmit={onSubmit}>
-                <CardHeader avatar={<span aria-hidden="true" className="mst-tile" data-size="sm"><TuneOutlined /></span>} title="Settings" titleTypographyProps={{ variant: 'h3', component: 'h2' }} />
-                <Divider />
-                <CardContent>
-                    <Stack spacing={4}>
-                        <EducationSelector value={formState.education} legacy={formState.grade_level} disabled={isLoading} onChange={education=>handleInputChange({target:{name:'education',value:education}})} />
-                        
-                        {/* --- Render the first SourceInputBlock for the Assignment Context --- */}
-                        <SourceInputBlock
-                            label="What's being graded"
-                            textValue={formState.assignment_text}
-                            fileValue={formState.assignment_file}
-                            librarySelection={formState.assignment_library}
-                            onTextChange={handleAssignmentText}
-                            onFileChange={handleAssignmentFile}
-                            onLibraryChange={handleAssignmentLibrary}
-                            libraryTree={libraryTree}
-                            libraryLoading={libraryLoading}
-                            disabled={isLoading}
-                        />
+  // Form is valid if the primary source is provided and there are criteria/levels.
+  const isFormValid =
+    (formState.assignment_text.trim().length > 10 ||
+      formState.assignment_file !== null ||
+      formState.assignment_library.selected_chapters.length > 0) &&
+    formState.criteria.length > 1 &&
+    formState.levels.length > 1;
 
-                        {/* --- Render a simplified input for the Rubric Guidance --- */}
-                        <Box>
-                            <Typography variant="overline" color="text.secondary">
-                                Rubric guidance (optional)
-                            </Typography>
-                            <TextField
-                                label="Sample rubric or grading notes"
-                                multiline
-                                rows={6}
-                                fullWidth
-                                value={formState.guidance_text}
-                                onChange={(e) => handleGuidanceText(e.target.value)}
-                                disabled={isLoading}
-                            />
-                        </Box>
+  return (
+    <Card className="mst-rim mst-tool-settings">
+      <form onSubmit={onSubmit}>
+        <CardHeader
+          avatar={
+            <span aria-hidden="true" className="mst-tile" data-size="sm">
+              <TuneOutlined />
+            </span>
+          }
+          title="Settings"
+          titleTypographyProps={{ variant: 'h3', component: 'h2' }}
+        />
+        <Divider />
+        <CardContent>
+          <Stack spacing={4}>
+            <EducationSelector
+              value={formState.education}
+              legacy={formState.grade_level}
+              disabled={isLoading}
+              onChange={(education) => handleInputChange({ target: { name: 'education', value: education } })}
+            />
 
-                        {/* --- Render Chip Inputs for Criteria and Levels --- */}
-                        <ChipInput label="Criteria (rows)" items={formState.criteria} setItems={setCriteria} disabled={isLoading} />
-                        <ChipInput label="Performance levels (columns)" items={formState.levels} setItems={setLevels} disabled={isLoading} />
-                        
-                    </Stack>
-                </CardContent>
-                <Divider />
-                <CardActions className="mst-tool-actions">
-                    <Button className="mst-ai" fullWidth size="large" type="submit" variant="contained" disabled={!isFormValid || isLoading} startIcon={isLoading ? <CircularProgress size={18} color="inherit" /> : <AutoAwesomeRounded />}>
-                        {isLoading ? 'Generating…' : 'Generate rubric'}
-                    </Button>
-                </CardActions>
-            </form>
-        </Card>
-    );
+            {/* --- Render the first SourceInputBlock for the Assignment Context --- */}
+            <SourceInputBlock
+              label="What's being graded"
+              textValue={formState.assignment_text}
+              fileValue={formState.assignment_file}
+              librarySelection={formState.assignment_library}
+              onTextChange={handleAssignmentText}
+              onFileChange={handleAssignmentFile}
+              onLibraryChange={handleAssignmentLibrary}
+              libraryTree={libraryTree}
+              libraryLoading={libraryLoading}
+              disabled={isLoading}
+            />
+
+            {/* --- Render a simplified input for the Rubric Guidance --- */}
+            <Box>
+              <Typography variant="overline" color="text.secondary">
+                Rubric guidance (optional)
+              </Typography>
+              <TextField
+                label="Sample rubric or grading notes"
+                multiline
+                rows={6}
+                fullWidth
+                value={formState.guidance_text}
+                onChange={(e) => handleGuidanceText(e.target.value)}
+                disabled={isLoading}
+              />
+            </Box>
+
+            {/* --- Render Chip Inputs for Criteria and Levels --- */}
+            <ChipInput label="Criteria (rows)" items={formState.criteria} setItems={setCriteria} disabled={isLoading} />
+            <ChipInput
+              label="Performance levels (columns)"
+              items={formState.levels}
+              setItems={setLevels}
+              disabled={isLoading}
+            />
+          </Stack>
+        </CardContent>
+        <Divider />
+        <CardActions className="mst-tool-actions">
+          <Button
+            className="mst-ai"
+            fullWidth
+            size="large"
+            type="submit"
+            variant="contained"
+            disabled={!isFormValid || isLoading}
+            startIcon={isLoading ? <CircularProgress size={18} color="inherit" /> : <AutoAwesomeRounded />}
+          >
+            {isLoading ? 'Generating…' : 'Generate rubric'}
+          </Button>
+        </CardActions>
+      </form>
+    </Card>
+  );
 };
-
 
 // --- The Main Page Component ---
 const RubricGenerator = () => {
@@ -172,9 +213,13 @@ const RubricGenerator = () => {
   const [libraryTree, setLibraryTree] = useState([]);
   const [libraryLoading, setLibraryLoading] = useState(true);
   useEffect(() => {
-    libraryService.getTree().then(data => setLibraryTree(data)).catch(err => {
-        showSnackbar("Could not load curriculum library.", "error");
-    }).finally(() => setLibraryLoading(false));
+    libraryService
+      .getTree()
+      .then((data) => setLibraryTree(data))
+      .catch((err) => {
+        showSnackbar('Could not load curriculum library.', 'error');
+      })
+      .finally(() => setLibraryLoading(false));
   }, [showSnackbar]);
 
   // --- The Comprehensive Form State for this Tool ---
@@ -184,8 +229,11 @@ const RubricGenerator = () => {
     assignment_text: '',
     assignment_file: null,
     assignment_library: {
-      selected_level: null, selected_year: null, selected_subject: null,
-      selected_book: null, selected_chapters: [],
+      selected_level: null,
+      selected_year: null,
+      selected_subject: null,
+      selected_book: null,
+      selected_chapters: [],
     },
     // State for the secondary (Guidance) source
     guidance_text: '',
@@ -198,7 +246,7 @@ const RubricGenerator = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [generatedContent, setGeneratedContent] = useState(null);
-  
+
   // State for save/history logic
   const [isSaving, setIsSaving] = useState(false);
   const [lastUsedSettings, setLastUsedSettings] = useState(null);
@@ -217,7 +265,7 @@ const RubricGenerator = () => {
       grade_level: educationLabel(formState.education, formState.grade_level),
       education: formState.education,
       assignment_text: formState.assignment_text,
-      assignment_chapter_paths: formState.assignment_library.selected_chapters.map(c => c.path),
+      assignment_chapter_paths: formState.assignment_library.selected_chapters.map((c) => c.path),
       guidance_text: formState.guidance_text,
       criteria: formState.criteria,
       levels: formState.levels,
@@ -229,12 +277,12 @@ const RubricGenerator = () => {
         tool_id: 'rubric-generator', // <<< CRITICAL CHANGE
         settings: settingsForApi,
       };
-      
+
       // The assignment_file is the primary file for this tool
       const response = await toolService.generateContent(requestPayload, formState.assignment_file);
       setGeneratedContent(response.content);
     } catch (err) {
-      setError(err.message || "An unexpected error occurred.");
+      setError(err.message || 'An unexpected error occurred.');
     } finally {
       setIsLoading(false);
     }
@@ -244,26 +292,26 @@ const RubricGenerator = () => {
   const handleSave = async () => {
     if (!generatedContent || !lastUsedSettings) return;
     if (savedGenerationId) {
-        showSnackbar("This generation has already been saved.", 'info');
-        return;
+      showSnackbar('This generation has already been saved.', 'info');
+      return;
     }
     setIsSaving(true);
     try {
-        const payload = {
-            tool_id: 'rubric-generator', // <<< CRITICAL CHANGE
-            settings: lastUsedSettings,
-            generated_content: generatedContent,
-        };
-        const savedRecord = await historyService.saveGeneration(payload);
-        setSavedGenerationId(savedRecord.id);
-        showSnackbar('Generation saved successfully!', 'success');
+      const payload = {
+        tool_id: 'rubric-generator', // <<< CRITICAL CHANGE
+        settings: lastUsedSettings,
+        generated_content: generatedContent,
+      };
+      const savedRecord = await historyService.saveGeneration(payload);
+      setSavedGenerationId(savedRecord.id);
+      showSnackbar('Generation saved successfully!', 'success');
     } catch (err) {
-        showSnackbar(err.message, 'error');
+      showSnackbar(err.message, 'error');
     } finally {
-        setIsSaving(false);
+      setIsSaving(false);
     }
   };
-  
+
   // --- Clear Handler (identical pattern) ---
   const handleClear = () => {
     setGeneratedContent(null);

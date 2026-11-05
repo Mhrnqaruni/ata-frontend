@@ -1,4 +1,6 @@
-// /ata-frontend/src/config.js
+// The backend URL from VITE_API_BASE_URL (default localhost:8000) and the matching WebSocket URL.
+// Used for the assistant's WebSocket and for quiz question images.
+// Area: platform
 
 // 1. Get the base HTTP URL from the environment variables set by Vercel/Vite
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
@@ -14,11 +16,8 @@ const WS_BASE_URL = IS_PRODUCTION
   ? `wss://${API_BASE_URL.replace(/^https?:\/\//, '')}`
   : `ws://${API_BASE_URL.replace(/^https?:\/\//, '')}`;
 
-const PARENT_PORTAL_URL = import.meta.env.VITE_PARENT_PORTAL_URL || '';
-
 // 4. Export the configured URLs for the rest of the app to use
 export const config = {
   apiBaseUrl: API_BASE_URL,
   wsBaseUrl: WS_BASE_URL,
-  parentPortalUrl: PARENT_PORTAL_URL,
 };

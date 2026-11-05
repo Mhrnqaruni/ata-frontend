@@ -1,4 +1,5 @@
-// /src/pages/assessments/NewAssessmentV2.state.js
+// State and reducer of the new-assessment wizard: its fields, stage and every edit to questions and files.
+// Area: assessments
 
 // This helper creates a blank V2 question object for the review UI.
 export const initialQuestionV2 = () => ({
@@ -32,20 +33,37 @@ export const initialStateV2 = {
 export function wizardReducerV2(state, action) {
   switch (action.type) {
     case 'RESTORE_ANALYSIS':
-      return {...state, ...action.payload, status:'parsing', error:null};
+      return { ...state, ...action.payload, status: 'parsing', error: null };
 
     case 'RESTORE_RETRY':
-      return { ...initialStateV2, config: action.payload.config, status: 'reviewing',
-        assessmentName: action.payload.config.assessmentName, classId: action.payload.config.classId,
+      return {
+        ...initialStateV2,
+        config: action.payload.config,
+        status: 'reviewing',
+        assessmentName: action.payload.config.assessmentName,
+        classId: action.payload.config.classId,
         audienceStudents: action.payload.audience?.students || null,
         uploadMode: action.payload.uploadMode,
-        outsiders: action.payload.files.filter(file => file.entityKind === 'outsider').map(file => ({ id: file.entityId, name: file.name })) };
+        outsiders: action.payload.files
+          .filter((file) => file.entityKind === 'outsider')
+          .map((file) => ({ id: file.entityId, name: file.name })),
+      };
 
     // --- [NEW ACTIONS] ---
     case 'SET_QUESTION_FILES':
-      return { ...state, questionFiles: typeof action.payload === 'function' ? action.payload(state.questionFiles) : action.payload, config: null, error: null }; // Reset config on new file
+      return {
+        ...state,
+        questionFiles: typeof action.payload === 'function' ? action.payload(state.questionFiles) : action.payload,
+        config: null,
+        error: null,
+      }; // Reset config on new file
     case 'SET_ANSWER_KEY_FILES':
-      return { ...state, answerKeyFiles: typeof action.payload === 'function' ? action.payload(state.answerKeyFiles) : action.payload, config: null, error: null };
+      return {
+        ...state,
+        answerKeyFiles: typeof action.payload === 'function' ? action.payload(state.answerKeyFiles) : action.payload,
+        config: null,
+        error: null,
+      };
     // --- [END NEW ACTIONS] ---
 
     case 'UPDATE_FIELD':
@@ -72,14 +90,16 @@ export function wizardReducerV2(state, action) {
       return { ...state, status: 'submitting', error: null };
     case 'SUBMIT_FAILURE':
       return { ...state, status: 'reviewing', error: action.payload };
-    
+
     // Actions for managing the student answer sheets
     case 'ADD_ANSWER_SHEETS':
-      const newFiles = action.payload.filter(nf => !state.answerSheetFiles.some(ef => ef.name === nf.name && ef.size === nf.size));
+      const newFiles = action.payload.filter(
+        (nf) => !state.answerSheetFiles.some((ef) => ef.name === nf.name && ef.size === nf.size)
+      );
       return { ...state, answerSheetFiles: [...state.answerSheetFiles, ...newFiles] };
     case 'REMOVE_ANSWER_SHEET':
-      return { ...state, answerSheetFiles: state.answerSheetFiles.filter(f => f.name !== action.payload) };
-    
+      return { ...state, answerSheetFiles: state.answerSheetFiles.filter((f) => f.name !== action.payload) };
+
     // --- Actions for manual per-student uploads ---
     case 'ADD_OUTSIDER': {
       const newOutsider = {
@@ -91,57 +111,57 @@ export function wizardReducerV2(state, action) {
     case 'STAGE_MANUAL_FILES': {
       const { entityId, files } = action.payload;
       const existingFiles = state.manualStudentFiles[entityId] || [];
-      const newFiles = files.filter(nf => !existingFiles.some(ef => ef.name === nf.name && ef.size === nf.size));
+      const newFiles = files.filter((nf) => !existingFiles.some((ef) => ef.name === nf.name && ef.size === nf.size));
       return {
         ...state,
         manualStudentFiles: {
           ...state.manualStudentFiles,
-          [entityId]: [...existingFiles, ...newFiles]
-        }
+          [entityId]: [...existingFiles, ...newFiles],
+        },
       };
     }
 
     // --- New V2-specific actions for editing the config ---
     case 'UPDATE_CONFIG_FIELD': {
-        const { field, value } = action.payload;
-        if (!state.config) return state;
-        return { ...state, config: { ...state.config, [field]: value } };
+      const { field, value } = action.payload;
+      if (!state.config) return state;
+      return { ...state, config: { ...state.config, [field]: value } };
     }
     case 'UPDATE_SECTION_FIELD': {
       if (!state.config) return state;
       const { sectionId, field, value } = action.payload;
-      const newSections = state.config.sections.map(s => s.id === sectionId ? { ...s, [field]: value } : s);
+      const newSections = state.config.sections.map((s) => (s.id === sectionId ? { ...s, [field]: value } : s));
       return { ...state, config: { ...state.config, sections: newSections } };
     }
     case 'UPDATE_QUESTION_FIELD': {
       if (!state.config) return state;
       const { sectionId, questionId, field, value } = action.payload;
-      const newSections = state.config.sections.map(s => {
+      const newSections = state.config.sections.map((s) => {
         if (s.id !== sectionId) return s;
-        const newQuestions = s.questions.map(q => q.id === questionId ? { ...q, [field]: value } : q);
+        const newQuestions = s.questions.map((q) => (q.id === questionId ? { ...q, [field]: value } : q));
         return { ...s, questions: newQuestions };
       });
       return { ...state, config: { ...state.config, sections: newSections } };
     }
     case 'ADD_QUESTION': {
-        if (!state.config) return state;
-        const { sectionId } = action.payload;
-        const newSections = state.config.sections.map(s => {
-            if (s.id !== sectionId) return s;
-            return { ...s, questions: [...s.questions, initialQuestionV2()] };
-        });
-        return { ...state, config: { ...state.config, sections: newSections } };
+      if (!state.config) return state;
+      const { sectionId } = action.payload;
+      const newSections = state.config.sections.map((s) => {
+        if (s.id !== sectionId) return s;
+        return { ...s, questions: [...s.questions, initialQuestionV2()] };
+      });
+      return { ...state, config: { ...state.config, sections: newSections } };
     }
     case 'REMOVE_QUESTION': {
-        if (!state.config) return state;
-        const { sectionId, questionId } = action.payload;
-        const newSections = state.config.sections.map(s => {
-            if (s.id !== sectionId) return s;
-            if (s.questions.length <= 1) return s; // Prevent removing the last question
-            const newQuestions = s.questions.filter(q => q.id !== questionId);
-            return { ...s, questions: newQuestions };
-        });
-        return { ...state, config: { ...state.config, sections: newSections } };
+      if (!state.config) return state;
+      const { sectionId, questionId } = action.payload;
+      const newSections = state.config.sections.map((s) => {
+        if (s.id !== sectionId) return s;
+        if (s.questions.length <= 1) return s; // Prevent removing the last question
+        const newQuestions = s.questions.filter((q) => q.id !== questionId);
+        return { ...s, questions: newQuestions };
+      });
+      return { ...state, config: { ...state.config, sections: newSections } };
     }
     default:
       throw new Error(`Unhandled action type: ${action.type}`);

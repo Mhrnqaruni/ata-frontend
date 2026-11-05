@@ -1,4 +1,5 @@
-// /ata-frontend/src/components/chatbot/FloatingChatWindow.jsx
+// The floating assistant on class, student and quiz pages: asks about that item, with history and a Word report.
+// Area: chat
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
@@ -11,7 +12,7 @@ import {
   LinearProgress,
   Chip,
   CircularProgress,
-  Button
+  Button,
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -21,7 +22,7 @@ import {
   History as HistoryIcon,
   Download as DownloadIcon,
   AutoAwesome as ChatIcon,
-  BarChart as BarChartIcon
+  BarChart as BarChartIcon,
 } from '@mui/icons-material';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -49,8 +50,8 @@ const FloatingChatWindow = ({
   entityId,
   entityType,
   entityName,
-  autoSendMessage = null,  // NEW: Message to auto-send
-  onMessageSent = null  // NEW: Callback after message is sent
+  autoSendMessage = null, // NEW: Message to auto-send
+  onMessageSent = null, // NEW: Callback after message is sent
 }) => {
   const { showSnackbar } = useSnackbar();
 
@@ -75,10 +76,7 @@ const FloatingChatWindow = ({
   const lastMessageCount = useRef(0);
 
   // WebSocket hook with inline charts enabled
-  const { isThinking, isResponding, connect, sendMessage } = useChatWebSocket(
-    setMessages,
-    { inlineCharts: true }
-  );
+  const { isThinking, isResponding, connect, sendMessage } = useChatWebSocket(setMessages, { inlineCharts: true });
 
   // Listen for stage updates via global event bus
   useEffect(() => {
@@ -113,11 +111,6 @@ const FloatingChatWindow = ({
 
     // If user is more than 100px from bottom, they've scrolled up intentionally
     userHasScrolledUp.current = distanceFromBottom > 100;
-
-    console.log('[FloatingChatWindow] Scroll detection:', {
-      distanceFromBottom,
-      userHasScrolledUp: userHasScrolledUp.current
-    });
   }, []);
 
   // Smart scroll: auto-scroll to bottom only when appropriate
@@ -135,106 +128,102 @@ const FloatingChatWindow = ({
       userHasScrolledUp.current = false;
       messagesBoxRef.current.scrollTo({
         top: messagesBoxRef.current.scrollHeight,
-        behavior: 'smooth'
+        behavior: 'smooth',
       });
-      console.log('[FloatingChatWindow] New message - scrolling to bottom');
     } else if (!userHasScrolledUp.current && (isResponding || isThinking)) {
       // Streaming update - only scroll if user is at bottom
       messagesBoxRef.current.scrollTo({
         top: messagesBoxRef.current.scrollHeight,
-        behavior: 'smooth'
+        behavior: 'smooth',
       });
-      console.log('[FloatingChatWindow] Streaming update - auto-scrolling');
-    } else {
-      console.log('[FloatingChatWindow] User scrolled up - NOT auto-scrolling');
     }
   }, [messages, isResponding, isThinking]);
 
   // Handle sending first message (creates session)
-  const handleSendFirstMessage = useCallback(async (messageText, fileId = null) => {
-    // CRITICAL FIX: Add user message IMMEDIATELY (before session creation)
-    const userMessage = {
-      id: `msg_user_${uuidv4()}`,
-      role: 'user',
-      content: messageText,
-      file_id: fileId
-    };
-    setMessages(prev => [...prev, userMessage]);
-
-    // Now start session creation and show thinking
-    setIsCreatingSession(true);
-
-    try {
-      // Create context object
-      const context = {
-        pageContext,
-        entityType,
-        entityId,
-        entityName
-      };
-
-      // DEBUG: Log context to verify values
-      console.log('[FloatingChatWindow] Creating session with context:', context);
-      console.log('[FloatingChatWindow] Props:', { pageContext, entityType, entityId, entityName });
-
-      // Create new session
-      const { sessionId: newSessionId } = await chatService.createNewChatSession(
-        messageText,
-        fileId,
-        context
-      );
-
-      setSessionId(newSessionId);
-
-      // Connect WebSocket and send
-      connect(newSessionId);
-      sendMessage(messageText, fileId);
-
-      // CRITICAL FIX: Keep isCreatingSession true until WebSocket starts responding
-      // The WebSocket hook will set isThinking=true when stream_start arrives
-      // We delay clearing isCreatingSession to bridge the gap
-      setTimeout(() => {
-        setIsCreatingSession(false);
-      }, 1000);  // 1 second should be enough for WebSocket to connect and start responding
-
-    } catch (error) {
-      showSnackbar(error.message, 'error');
-      setIsCreatingSession(false);  // Clear immediately on error
-    }
-  }, [pageContext, entityType, entityId, entityName, connect, sendMessage, showSnackbar]);
-
-  // Handle sending subsequent messages
-  const handleSendMessage = useCallback(async (messageText, fileId = null) => {
-    if (!sessionId) {
-      // First message
-      await handleSendFirstMessage(messageText, fileId);
-    } else {
-      // Subsequent messages
+  const handleSendFirstMessage = useCallback(
+    async (messageText, fileId = null) => {
+      // CRITICAL FIX: Add user message IMMEDIATELY (before session creation)
       const userMessage = {
         id: `msg_user_${uuidv4()}`,
         role: 'user',
         content: messageText,
-        file_id: fileId
+        file_id: fileId,
       };
-      setMessages(prev => [...prev, userMessage]);
-      sendMessage(messageText, fileId);
-    }
-  }, [sessionId, handleSendFirstMessage, sendMessage]);
+      setMessages((prev) => [...prev, userMessage]);
+
+      // Now start session creation and show thinking
+      setIsCreatingSession(true);
+
+      try {
+        // Create context object
+        const context = {
+          pageContext,
+          entityType,
+          entityId,
+          entityName,
+        };
+
+        // Create new session
+        const { sessionId: newSessionId } = await chatService.createNewChatSession(messageText, fileId, context);
+
+        setSessionId(newSessionId);
+
+        // Connect WebSocket and send
+        connect(newSessionId);
+        sendMessage(messageText, fileId);
+
+        // CRITICAL FIX: Keep isCreatingSession true until WebSocket starts responding
+        // The WebSocket hook will set isThinking=true when stream_start arrives
+        // We delay clearing isCreatingSession to bridge the gap
+        setTimeout(() => {
+          setIsCreatingSession(false);
+        }, 1000); // 1 second should be enough for WebSocket to connect and start responding
+      } catch (error) {
+        showSnackbar(error.message, 'error');
+        setIsCreatingSession(false); // Clear immediately on error
+      }
+    },
+    [pageContext, entityType, entityId, entityName, connect, sendMessage, showSnackbar]
+  );
+
+  // Handle sending subsequent messages
+  const handleSendMessage = useCallback(
+    async (messageText, fileId = null) => {
+      if (!sessionId) {
+        // First message
+        await handleSendFirstMessage(messageText, fileId);
+      } else {
+        // Subsequent messages
+        const userMessage = {
+          id: `msg_user_${uuidv4()}`,
+          role: 'user',
+          content: messageText,
+          file_id: fileId,
+        };
+        setMessages((prev) => [...prev, userMessage]);
+        sendMessage(messageText, fileId);
+      }
+    },
+    [sessionId, handleSendFirstMessage, sendMessage]
+  );
 
   // Open history menu
-  const handleOpenHistory = useCallback(async (event) => {
-    setHistoryAnchor(event.currentTarget);
-    setHistoryLoading(true);
+  const handleOpenHistory = useCallback(
+    async (event) => {
+      setHistoryAnchor(event.currentTarget);
+      setHistoryLoading(true);
 
-    try {
-      const sessions = await chatService.getChatSessionsByEntity(entityType, entityId);
-      setHistorySessions(sessions);
-    } catch (error) {
-      showSnackbar(error.message, 'error');
-    } finally {
-      setHistoryLoading(false);
-    }
-  }, [entityType, entityId, showSnackbar]);
+      try {
+        const sessions = await chatService.getChatSessionsByEntity(entityType, entityId);
+        setHistorySessions(sessions);
+      } catch (error) {
+        showSnackbar(error.message, 'error');
+      } finally {
+        setHistoryLoading(false);
+      }
+    },
+    [entityType, entityId, showSnackbar]
+  );
 
   // Close history menu
   const handleCloseHistory = useCallback(() => {
@@ -242,29 +231,32 @@ const FloatingChatWindow = ({
   }, []);
 
   // Load previous chat
-  const handleSelectHistory = useCallback(async (selectedSessionId) => {
-    handleCloseHistory();
+  const handleSelectHistory = useCallback(
+    async (selectedSessionId) => {
+      handleCloseHistory();
 
-    try {
-      const sessionData = await chatService.getChatSessionDetails(selectedSessionId);
+      try {
+        const sessionData = await chatService.getChatSessionDetails(selectedSessionId);
 
-      // Map history to messages with charts
-      const formattedMessages = sessionData.history.map(msg => ({
-        id: msg.id || `msg_${uuidv4()}`,
-        role: msg.role,
-        content: msg.content,
-        charts: msg.metadata?.charts || []
-      }));
+        // Map history to messages with charts
+        const formattedMessages = sessionData.history.map((msg) => ({
+          id: msg.id || `msg_${uuidv4()}`,
+          role: msg.role,
+          content: msg.content,
+          charts: msg.metadata?.charts || [],
+        }));
 
-      setMessages(formattedMessages);
-      setSessionId(selectedSessionId);
-      connect(selectedSessionId);
+        setMessages(formattedMessages);
+        setSessionId(selectedSessionId);
+        connect(selectedSessionId);
 
-      showSnackbar('Chat history loaded', 'success');
-    } catch (error) {
-      showSnackbar(error.message, 'error');
-    }
-  }, [connect, handleCloseHistory, showSnackbar]);
+        showSnackbar('Chat history loaded', 'success');
+      } catch (error) {
+        showSnackbar(error.message, 'error');
+      }
+    },
+    [connect, handleCloseHistory, showSnackbar]
+  );
 
   // Start new chat
   const handleNewChat = useCallback(() => {
@@ -276,7 +268,7 @@ const FloatingChatWindow = ({
       role: 'bot',
       content: entityName
         ? `Hello! I'm here to help you analyze **${entityName}**. What would you like to know?`
-        : 'Hello! How can I help you with your analytics today?'
+        : 'Hello! How can I help you with your analytics today?',
     };
     setMessages([welcomeMessage]);
   }, [entityName, handleCloseHistory]);
@@ -287,8 +279,6 @@ const FloatingChatWindow = ({
     // 1. Window is open
     // 2. autoSendMessage is provided (not null/empty)
     if (open && autoSendMessage) {
-      console.log('[FloatingChatWindow] Auto-sending message:', autoSendMessage);
-
       // Small delay to ensure UI is ready
       const timer = setTimeout(() => {
         // Use handleSendMessage which works for both first and subsequent messages
@@ -332,14 +322,12 @@ const FloatingChatWindow = ({
     const baseStyles = {
       position: 'fixed',
       zIndex: 9999,
-      boxShadow: windowState === 'minimized'
-        ? '0 4px 12px rgba(0,0,0,0.15)'
-        : '0 12px 48px rgba(0,0,0,0.3)',
+      boxShadow: windowState === 'minimized' ? '0 4px 12px rgba(0,0,0,0.15)' : '0 12px 48px rgba(0,0,0,0.3)',
       display: 'flex',
       flexDirection: 'column',
       transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-      borderRadius: '12px',  // ALWAYS ROUNDED
-      transformOrigin: 'bottom right'  // ANIMATE FROM BOTTOM-RIGHT
+      borderRadius: '12px', // ALWAYS ROUNDED
+      transformOrigin: 'bottom right', // ANIMATE FROM BOTTOM-RIGHT
     };
 
     if (windowState === 'minimized') {
@@ -349,7 +337,7 @@ const FloatingChatWindow = ({
         height: '56px',
         right: '20px',
         bottom: '20px',
-        opacity: 0.95
+        opacity: 0.95,
       };
     } else if (windowState === 'maximized') {
       return {
@@ -357,7 +345,7 @@ const FloatingChatWindow = ({
         width: '95vw',
         height: '95vh',
         right: '2.5vw',
-        bottom: '2.5vh'
+        bottom: '2.5vh',
       };
     } else {
       // normal
@@ -366,7 +354,7 @@ const FloatingChatWindow = ({
         width: '480px',
         height: '70vh',
         right: '20px',
-        bottom: '20px'
+        bottom: '20px',
       };
     }
   }, [windowState]);
@@ -379,11 +367,7 @@ const FloatingChatWindow = ({
   const showThinking = isThinking || isCreatingSession;
 
   return (
-    <Paper
-      className="mst-float-chat"
-      elevation={10}
-      sx={{ ...windowStyles, overflow: 'hidden' }}
-    >
+    <Paper className="mst-float-chat" elevation={10} sx={{ ...windowStyles, overflow: 'hidden' }}>
       {/* Header */}
       <Box
         sx={{
@@ -393,7 +377,7 @@ const FloatingChatWindow = ({
           p: 1.5,
           borderBottom: '1px solid',
           borderColor: 'divider',
-          cursor: windowState === 'minimized' ? 'pointer' : 'default'
+          cursor: windowState === 'minimized' ? 'pointer' : 'default',
         }}
         onClick={windowState === 'minimized' ? handleRestore : undefined}
       >
@@ -406,20 +390,20 @@ const FloatingChatWindow = ({
               </IconButton>
             </Tooltip>
           )}
-          <span aria-hidden="true" className="mst-msg-avatar" style={{ marginTop: 0 }}><ChatIcon /></span>
+          <span aria-hidden="true" className="mst-msg-avatar" style={{ marginTop: 0 }}>
+            <ChatIcon />
+          </span>
           <Typography variant="subtitle1" component="h2" sx={{ fontWeight: 600 }}>
             Analytics with AI
           </Typography>
-          {stage && windowState !== 'minimized' && (
-            <Chip size="small" label={stage} color="info" variant="outlined" />
-          )}
+          {stage && windowState !== 'minimized' && <Chip size="small" label={stage} color="info" variant="outlined" />}
         </Box>
 
         {/* RIGHT SIDE: Download + Window controls */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
           {/* Download button - text when maximized, icon when normal */}
-          {windowState !== 'minimized' && (
-            windowState === 'maximized' ? (
+          {windowState !== 'minimized' &&
+            (windowState === 'maximized' ? (
               <Button
                 size="small"
                 variant="outlined"
@@ -431,7 +415,7 @@ const FloatingChatWindow = ({
                 {isDownloading ? 'Preparing…' : 'Download report'}
               </Button>
             ) : (
-              <Tooltip title={!sessionId ? "Start a conversation first" : "Download Report"}>
+              <Tooltip title={!sessionId ? 'Start a conversation first' : 'Download Report'}>
                 <span>
                   <IconButton
                     size="small"
@@ -443,8 +427,7 @@ const FloatingChatWindow = ({
                   </IconButton>
                 </span>
               </Tooltip>
-            )
-          )}
+            ))}
 
           {/* Minimize */}
           <Tooltip title="Minimize">
@@ -461,8 +444,8 @@ const FloatingChatWindow = ({
           )}
 
           {/* Maximize/Restore toggle (only when not minimized) */}
-          {windowState !== 'minimized' && (
-            windowState === 'maximized' ? (
+          {windowState !== 'minimized' &&
+            (windowState === 'maximized' ? (
               <Tooltip title="Restore">
                 <IconButton size="small" onClick={handleRestore}>
                   <RestoreIcon />
@@ -474,12 +457,17 @@ const FloatingChatWindow = ({
                   <MaximizeIcon />
                 </IconButton>
               </Tooltip>
-            )
-          )}
+            ))}
 
           {/* Close */}
           <Tooltip title="Close">
-            <IconButton size="small" onClick={() => { setWindowState('normal'); onClose?.(); }}>
+            <IconButton
+              size="small"
+              onClick={() => {
+                setWindowState('normal');
+                onClose?.();
+              }}
+            >
               <CloseIcon />
             </IconButton>
           </Tooltip>
@@ -494,12 +482,12 @@ const FloatingChatWindow = ({
             ref={messagesBoxRef}
             onScroll={handleMessagesScroll}
             sx={{
-              flex: '1 1 0',  // Allow grow and shrink, but start from 0 basis
-              minHeight: 0,    // Critical: prevent flex item from forcing minimum content size
+              flex: '1 1 0', // Allow grow and shrink, but start from 0 basis
+              minHeight: 0, // Critical: prevent flex item from forcing minimum content size
               overflow: 'auto',
               bgcolor: 'background.default',
               display: 'flex',
-              flexDirection: 'column'
+              flexDirection: 'column',
             }}
           >
             {messages.length === 0 ? (

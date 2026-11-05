@@ -1,9 +1,10 @@
-// /src/pages/quizzes/QuizParticipant.jsx
+// The student's live quiz screen: join with a room code, wait, answer each question, then leaderboard and review.
+// Area: quizzes
 
 // --- Core React Imports ---
 import React, { useState, useEffect, useRef } from 'react';
 import joinLogo from '../../assets/mst_logo_no_bg.png';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 // --- MUI Component Imports ---
 import {
@@ -26,7 +27,7 @@ import {
   ListItemText,
   ListItemAvatar,
   Container,
-  CircularProgress
+  CircularProgress,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -39,6 +40,63 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 // --- Service Import ---
 import quizService from '../../services/quizService';
 import MathTextDisplay from '../../components/common/MathTextDisplay';
+import { config } from '../../config';
+
+// #62: the student's place in this quiz, kept for this tab only, so a reload,
+// a restored tab or a phone that slept gets straight back in. sessionStorage
+// isn't shared with other tabs or kept on a shared device, and the token never
+// goes in a URL. It's cleared by "Join with a code" or a rejection, not when
+// the quiz ends, so a reload on the end screen shows the end screen (SOT-4).
+const PLACE_KEY = 'mst.quiz.place';
+const readPlace = (roomCode) => {
+  try {
+    const place = JSON.parse(sessionStorage.getItem(PLACE_KEY) || 'null');
+    // Only for the room in the URL, as the joining link has it.
+    const same = roomCode && String(place?.roomCode).toUpperCase() === roomCode.toUpperCase();
+    return same && place.session?.id && place.guestToken ? place : null;
+  } catch {
+    return null;
+  }
+};
+const savePlace = (place) => {
+  try {
+    sessionStorage.setItem(PLACE_KEY, JSON.stringify(place));
+  } catch {
+    // No storage, as in some private windows: joining still works, without resume.
+  }
+};
+// Question ids arrive from the socket as strings, so they're compared as strings.
+const sameQuestion = (a, b) => a != null && b != null && String(a) === String(b);
+const forgetPlace = () => {
+  try {
+    sessionStorage.removeItem(PLACE_KEY);
+  } catch {
+    // Nothing was kept.
+  }
+};
+const SLOW = 'Still trying. Check your Wi-Fi or mobile data.';
+
+// The join page's frame: the logo, a title, one line and the card. Getting
+// back in shows in it too (design R2 #62).
+const JoinFrame = ({ title, line, children }) => (
+  <Container maxWidth="sm">
+    <Fade in timeout={800}>
+      <Box sx={{ mt: { xs: 4, md: 8 }, textAlign: 'center' }}>
+        <img alt="MySmartTeach" className="mst-join-logo" src={joinLogo} />
+        <Typography component="h1" variant="h1" sx={{ mb: 1 }}>
+          {title}
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+          {line}
+        </Typography>
+
+        <Paper className="mst-rim mst-join-card" sx={{ p: { xs: 3, sm: 4 }, textAlign: 'left' }}>
+          {children}
+        </Paper>
+      </Box>
+    </Fade>
+  </Container>
+);
 
 /**
  * Join Screen Component
@@ -54,17 +112,17 @@ const JoinScreen = ({ onJoin }) => {
   const handleJoin = async () => {
     // Validation
     if (!roomCode.trim()) {
-      setError("Please enter a room code.");
+      setError('Please enter a room code.');
       return;
     }
 
     if (!guestName.trim()) {
-      setError("Please enter your name.");
+      setError('Please enter your name.');
       return;
     }
 
     if (!studentId.trim()) {
-      setError("Please enter your student ID.");
+      setError('Please enter your student ID.');
       return;
     }
 
@@ -72,102 +130,86 @@ const JoinScreen = ({ onJoin }) => {
       setIsJoining(true);
       setError(null);
 
-      console.log('[JoinScreen] Joining with:', { roomCode, guestName, studentId });
-
       // Call new joinSession API with object (supports identified guests)
       const response = await quizService.joinSession({
         room_code: roomCode.toUpperCase().trim(),
         guest_name: guestName.trim(),
-        student_id: studentId.trim()
+        student_id: studentId.trim(),
       });
 
-      console.log('[JoinScreen] Join successful:', response);
       onJoin(response);
     } catch (err) {
-      console.error("Failed to join session:", err);
-      setError(err.message || "Failed to join quiz. Please check the room code.");
+      console.error('Failed to join session:', err);
+      setError(err.message || 'Failed to join quiz. Please check the room code.');
     } finally {
       setIsJoining(false);
     }
   };
 
   return (
-    <Container maxWidth="sm">
-      <Fade in timeout={800}>
-        <Box sx={{ mt: { xs: 4, md: 8 }, textAlign: 'center' }}>
-          <img alt="MySmartTeach" className="mst-join-logo" src={joinLogo} />
-          <Typography component="h1" variant="h1" sx={{ mb: 1 }}>
-            Join the quiz
-          </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-            Type the room code your teacher shows you.
-          </Typography>
+    <JoinFrame title="Join the quiz" line="Type the room code your teacher shows you.">
+      <TextField
+        fullWidth
+        label="Room code"
+        value={roomCode}
+        onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+        placeholder="ABC123"
+        sx={{ mb: 3 }}
+        inputProps={{
+          style: {
+            fontSize: '2rem',
+            textAlign: 'center',
+            letterSpacing: 8,
+            fontWeight: 600,
+            fontFamily: 'var(--font-mono)',
+          },
+          maxLength: 6,
+        }}
+        autoFocus={!urlRoomCode}
+      />
 
-          <Paper className="mst-rim mst-join-card" sx={{ p: { xs: 3, sm: 4 }, textAlign: 'left' }}>
-            <TextField
-              fullWidth
-              label="Room code"
-              value={roomCode}
-              onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-              placeholder="ABC123"
-              sx={{ mb: 3 }}
-              inputProps={{
-                style: {
-                  fontSize: '2rem',
-                  textAlign: 'center',
-                  letterSpacing: 8,
-                  fontWeight: 600,
-                  fontFamily: 'var(--font-mono)'
-                },
-                maxLength: 6
-              }}
-              autoFocus
-            />
+      <TextField
+        fullWidth
+        label="Your name"
+        autoFocus={Boolean(urlRoomCode)}
+        value={guestName}
+        onChange={(e) => setGuestName(e.target.value)}
+        placeholder="e.g., John Doe"
+        sx={{ mb: 3 }}
+      />
 
-            <TextField
-              fullWidth
-              label="Your name"
-              value={guestName}
-              onChange={(e) => setGuestName(e.target.value)}
-              placeholder="e.g., John Doe"
-              sx={{ mb: 3 }}
-            />
+      <TextField
+        fullWidth
+        label="Student ID"
+        value={studentId}
+        onChange={(e) => setStudentId(e.target.value)}
+        placeholder="e.g., 12345"
+        sx={{ mb: 3 }}
+        onKeyPress={(e) => {
+          if (e.key === 'Enter') {
+            handleJoin();
+          }
+        }}
+      />
 
-            <TextField
-              fullWidth
-              label="Student ID"
-              value={studentId}
-              onChange={(e) => setStudentId(e.target.value)}
-              placeholder="e.g., 12345"
-              sx={{ mb: 3 }}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  handleJoin();
-                }
-              }}
-            />
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
 
-            {error && (
-              <Alert severity="error" sx={{ mb: 2 }}>
-                {error}
-              </Alert>
-            )}
-
-            <Button
-              fullWidth
-              variant="contained"
-              size="large"
-              onClick={handleJoin}
-              disabled={isJoining || !roomCode.trim() || !guestName.trim()}
-              startIcon={isJoining ? <CircularProgress size={20} /> : <LoginIcon />}
-              sx={{ py: 1.5, fontSize: 16, minHeight: 48 }}
-            >
-              {isJoining ? 'Joining…' : 'Join quiz'}
-            </Button>
-          </Paper>
-        </Box>
-      </Fade>
-    </Container>
+      <Button
+        fullWidth
+        variant="contained"
+        size="large"
+        onClick={handleJoin}
+        disabled={isJoining || !roomCode.trim() || !guestName.trim()}
+        startIcon={isJoining ? <CircularProgress size={20} /> : <LoginIcon />}
+        sx={{ py: 1.5, fontSize: 16, minHeight: 48 }}
+      >
+        {isJoining ? 'Joining…' : 'Join quiz'}
+      </Button>
+    </JoinFrame>
   );
 };
 
@@ -209,10 +251,24 @@ const WaitingRoom = ({ session, participantName }) => {
 /**
  * Question Display Component
  */
-const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining, autoAdvanceEnabled, totalQuestions, cooldownFeedback, awaitingNextQuestion }) => {
+const QuestionDisplay = ({
+  question,
+  onAnswer,
+  timeRemaining,
+  cooldownRemaining,
+  autoAdvanceEnabled,
+  totalQuestions,
+  cooldownFeedback,
+  awaitingNextQuestion,
+  answered = false,
+  savedAnswer,
+}) => {
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [timeExpired, setTimeExpired] = useState(false);
+  // #62: submitted here, or the server already has this student's answer, as
+  // after a reload (S3.4).
+  const submitted = isSubmitted || answered;
 
   // FIX: Reset state when question changes (allows answering new questions)
   useEffect(() => {
@@ -221,22 +277,28 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
     setTimeExpired(false);
   }, [question.id]); // Reset when question ID changes
 
+  // #62: after a reload, the answer this tab sent is marked again. This comes
+  // after the reset, so the reset can't clear it (S3.4).
+  useEffect(() => {
+    if (answered && savedAnswer != null) setSelectedAnswer(savedAnswer);
+  }, [answered, savedAnswer]);
+
   // FIX Issue 1: Detect when time expires
   useEffect(() => {
-    if (timeRemaining <= 0 && !isSubmitted) {
+    if (timeRemaining <= 0 && !submitted) {
       setTimeExpired(true);
       setSelectedAnswer(null); // Clear any selection
     }
-  }, [timeRemaining, isSubmitted]);
+  }, [timeRemaining, submitted]);
 
   const handleSelect = (answerIndex) => {
-    if (!isSubmitted && !timeExpired) {
+    if (!submitted && !timeExpired) {
       setSelectedAnswer(answerIndex);
     }
   };
 
   const handleSubmit = () => {
-    if (isSubmitted || timeExpired) return;
+    if (submitted || timeExpired) return;
 
     let answerToSubmit = null;
 
@@ -264,10 +326,21 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
     return 'error';
   };
 
-  const showCooldown = (awaitingNextQuestion || cooldownRemaining > 0 || cooldownRemaining === -1) && timeRemaining === 0;
+  const showCooldown =
+    (awaitingNextQuestion || cooldownRemaining > 0 || cooldownRemaining === -1) && timeRemaining === 0;
 
   return (
-    <Container maxWidth="md" sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', py: { xs: 2, md: 4 }, px: { xs: 2, md: 3 } }}>
+    <Container
+      maxWidth="md"
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'flex-start',
+        py: { xs: 2, md: 4 },
+        px: { xs: 2, md: 3 },
+      }}
+    >
       <Fade in timeout={500}>
         <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', overflowY: 'auto' }}>
           {/* FIX: Timer - Show question timer or cooldown timer with proper conditions */}
@@ -281,27 +354,33 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                   px: 4,
                   textAlign: 'center',
                   bgcolor: cooldownFeedback
-                    ? cooldownFeedback.grading_status === "pending" ? 'action.selected'
-                    : cooldownFeedback.is_correct ? 'success.light'
-                    : cooldownFeedback.did_not_answer ? 'action.hover' : 'error.light'
+                    ? cooldownFeedback.grading_status === 'pending'
+                      ? 'action.selected'
+                      : cooldownFeedback.is_correct
+                        ? 'success.light'
+                        : cooldownFeedback.did_not_answer
+                          ? 'action.hover'
+                          : 'error.light'
                     : 'action.selected',
-                  color: 'text.primary', border: '1px solid', borderColor: 'divider',
+                  color: 'text.primary',
+                  border: '1px solid',
+                  borderColor: 'divider',
                   borderRadius: 3,
-                  transition: 'all 0.3s ease-in-out'
+                  transition: 'all 0.3s ease-in-out',
                 }}
               >
                 {/* Answer Feedback (if available) */}
                 {cooldownFeedback && (
                   <Fade in timeout={500}>
                     <Box sx={{ mb: 2, pb: 2, borderBottom: '1px solid var(--mst-border)' }}>
-                      {cooldownFeedback.grading_status === "pending" ? (
+                      {cooldownFeedback.grading_status === 'pending' ? (
                         <>
                           <CircularProgress sx={{ color: 'text.primary', mb: 2 }} size={60} />
                           <Typography variant="h5" sx={{ mb: 1, fontWeight: 600 }}>
                             Answer Submitted!
                           </Typography>
                           <Typography variant="body1">
-                            {cooldownFeedback.message || "Your short answer is being graded..."}
+                            {cooldownFeedback.message || 'Your short answer is being graded...'}
                           </Typography>
                           <Typography variant="body2" sx={{ mt: 2, opacity: 0.9 }}>
                             Results will appear shortly
@@ -367,9 +446,11 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                               </Typography>
                               <Typography variant="body1">
                                 {Array.isArray(cooldownFeedback.correct_answer)
-                                  ? cooldownFeedback.correct_answer.map((ans, idx) =>
-                                      typeof ans === 'number' ? question.options?.[ans] || ans : String(ans)
-                                    ).join(', ')
+                                  ? cooldownFeedback.correct_answer
+                                      .map((ans, idx) =>
+                                        typeof ans === 'number' ? question.options?.[ans] || ans : String(ans)
+                                      )
+                                      .join(', ')
                                   : String(cooldownFeedback.correct_answer)}
                               </Typography>
                             </Box>
@@ -450,26 +531,34 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
               {/* Question - Compact version */}
               <Paper sx={{ p: { xs: 2, md: 3 }, mb: 2, textAlign: 'center', flexShrink: 0 }}>
                 <Chip
-                  label={totalQuestions ? `Question ${question.order_index + 1} of ${totalQuestions}` : `Question ${question.order_index + 1}`}
+                  label={
+                    totalQuestions
+                      ? `Question ${question.order_index + 1} of ${totalQuestions}`
+                      : `Question ${question.order_index + 1}`
+                  }
                   color="primary"
                   size="small"
                   sx={{ mb: 1 }}
                 />
-                <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5, fontSize: { xs: '1.25rem', md: '1.5rem' } }} component="div">
+                <Typography
+                  variant="h5"
+                  sx={{ fontWeight: 600, mb: 0.5, fontSize: { xs: '1.25rem', md: '1.5rem' } }}
+                  component="div"
+                >
                   <MathTextDisplay text={question.text} />
                 </Typography>
 
                 {/* Question Image */}
                 {question.media_url && (
                   <Box sx={{ my: 2, textAlign: 'center' }}>
-                    <img 
-                      src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${question.media_url}`}
+                    <img
+                      src={`${config.apiBaseUrl}${question.media_url}`}
                       alt="Question visual"
-                      style={{ 
-                        maxWidth: '100%', 
-                        maxHeight: 400, 
+                      style={{
+                        maxWidth: '100%',
+                        maxHeight: 400,
                         borderRadius: 8,
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                       }}
                     />
                   </Box>
@@ -477,7 +566,6 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                 <Typography variant="body2" color="text.secondary">
                   {question.points} points
                 </Typography>
-
               </Paper>
 
               {/* Answer Options - Compact rendering based on question type */}
@@ -491,7 +579,7 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                           variant={selectedAnswer === index ? 'contained' : 'outlined'}
                           size="large"
                           onClick={() => handleSelect(index)}
-                          disabled={isSubmitted || timeExpired}
+                          disabled={submitted || timeExpired}
                           sx={{
                             py: { xs: 2, md: 1.5 },
                             minHeight: { xs: '56px', md: '48px' },
@@ -504,8 +592,8 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                             '&:hover': {
                               borderWidth: 2,
                               transform: 'scale(1.02)',
-                              transition: 'transform 0.2s'
-                            }
+                              transition: 'transform 0.2s',
+                            },
                           }}
                         >
                           <Typography variant="h6" component="div">
@@ -529,14 +617,14 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                         size="large"
                         color={selectedAnswer === true ? 'success' : 'primary'}
                         onClick={() => handleSelect(true)}
-                        disabled={isSubmitted || timeExpired}
+                        disabled={submitted || timeExpired}
                         sx={{
                           py: { xs: 2.5, md: 2 },
                           minHeight: { xs: '56px', md: '48px' },
                           fontSize: { xs: '1.1rem', md: '1.2rem' },
                           fontWeight: 600,
                           borderWidth: 2,
-                          '&:hover': { borderWidth: 2, transform: 'scale(1.05)', transition: 'transform 0.2s' }
+                          '&:hover': { borderWidth: 2, transform: 'scale(1.05)', transition: 'transform 0.2s' },
                         }}
                       >
                         True
@@ -551,14 +639,14 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                         size="large"
                         color={selectedAnswer === false ? 'error' : 'primary'}
                         onClick={() => handleSelect(false)}
-                        disabled={isSubmitted || timeExpired}
+                        disabled={submitted || timeExpired}
                         sx={{
                           py: { xs: 2.5, md: 2 },
                           minHeight: { xs: '56px', md: '48px' },
                           fontSize: { xs: '1.1rem', md: '1.2rem' },
                           fontWeight: 600,
                           borderWidth: 2,
-                          '&:hover': { borderWidth: 2, transform: 'scale(1.05)', transition: 'transform 0.2s' }
+                          '&:hover': { borderWidth: 2, transform: 'scale(1.05)', transition: 'transform 0.2s' },
                         }}
                       >
                         False
@@ -578,14 +666,16 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
                       rows={3}
                       variant="outlined"
                       placeholder="Type your answer here..."
-                      value={(typeof selectedAnswer === 'string' || typeof selectedAnswer === 'number') ? selectedAnswer : ''}
+                      value={
+                        typeof selectedAnswer === 'string' || typeof selectedAnswer === 'number' ? selectedAnswer : ''
+                      }
                       onChange={(e) => setSelectedAnswer(e.target.value)}
-                      disabled={isSubmitted || timeExpired}
+                      disabled={submitted || timeExpired}
                       sx={{
                         '& .MuiOutlinedInput-root': {
                           fontSize: '1rem',
-                          backgroundColor: 'background.paper'
-                        }
+                          backgroundColor: 'background.paper',
+                        },
                       }}
                       autoFocus
                     />
@@ -599,49 +689,53 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
           )}
 
           {/* Submit Button - Compact, show for all question types when answer is valid */}
-          {!isSubmitted && !timeExpired && (
-            (selectedAnswer !== null && selectedAnswer !== '' && (question.type !== 'short_answer' || (typeof selectedAnswer === 'string' && selectedAnswer.trim() !== '')))
-          ) && (
-            <Fade in>
-              <Box sx={{ textAlign: 'center', mt: 2, mb: 2, flexShrink: 0 }}>
-                <Button
-                  variant="contained"
-                  size="large"
-                  onClick={handleSubmit}
-                  disabled={timeExpired}
-                  sx={{
-                    px: { xs: 4, md: 6 },
-                    py: { xs: 2, md: 1.5 },
-                    minHeight: { xs: '56px', md: '48px' },
-                    fontSize: { xs: '1.1rem', md: '1.1rem' },
-                    fontWeight: 600,
-                    width: { xs: '100%', sm: 'auto' },
-                    maxWidth: { xs: '100%', sm: '300px' }
-                  }}
-                >
-                  Submit Answer
-                </Button>
-              </Box>
-            </Fade>
-          )}
+          {!submitted &&
+            !timeExpired &&
+            selectedAnswer !== null &&
+            selectedAnswer !== '' &&
+            (question.type !== 'short_answer' ||
+              (typeof selectedAnswer === 'string' && selectedAnswer.trim() !== '')) && (
+              <Fade in>
+                <Box sx={{ textAlign: 'center', mt: 2, mb: 2, flexShrink: 0 }}>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    onClick={handleSubmit}
+                    disabled={timeExpired}
+                    sx={{
+                      px: { xs: 4, md: 6 },
+                      py: { xs: 2, md: 1.5 },
+                      minHeight: { xs: '56px', md: '48px' },
+                      fontSize: { xs: '1.1rem', md: '1.1rem' },
+                      fontWeight: 600,
+                      width: { xs: '100%', sm: 'auto' },
+                      maxWidth: { xs: '100%', sm: '300px' },
+                    }}
+                  >
+                    Submit Answer
+                  </Button>
+                </Box>
+              </Fade>
+            )}
 
           {/* FIX: Show appropriate message based on state - Compact */}
-          {showCooldown ? (
-            // During cooldown period - Hide question/options, show prominent cooldown
-            null
-          ) : isSubmitted && timeRemaining > 0 ? (
+          {showCooldown ? null : submitted && timeRemaining > 0 ? ( // During cooldown period - Hide question/options, show prominent cooldown
             // Submitted but timer still running
             <Fade in>
               <Alert severity="success" sx={{ mt: 1, flexShrink: 0 }}>
-                <Typography variant="body1" sx={{ fontWeight: 600 }}>Answer submitted</Typography>
+                <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                  Answer submitted
+                </Typography>
                 <Typography variant="body2">Waiting for other participants...</Typography>
               </Alert>
             </Fade>
-          ) : timeExpired && !isSubmitted && cooldownRemaining === 0 ? (
+          ) : timeExpired && !submitted && cooldownRemaining === 0 ? (
             // Time expired, no cooldown, not submitted
             <Fade in>
               <Alert severity="warning" sx={{ mt: 1, flexShrink: 0 }}>
-                <Typography variant="body1" sx={{ fontWeight: 600 }}>⏰ Time's up!</Typography>
+                <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                  ⏰ Time's up!
+                </Typography>
                 <Typography variant="body2">Waiting for next question...</Typography>
               </Alert>
             </Fade>
@@ -656,8 +750,8 @@ const QuestionDisplay = ({ question, onAnswer, timeRemaining, cooldownRemaining,
  * Results/Leaderboard Component
  */
 const LeaderboardDisplay = ({ leaderboard, participantId }) => {
-  const currentParticipant = leaderboard.find(p => p.participant_id === participantId);
-  const currentRank = leaderboard.findIndex(p => p.participant_id === participantId) + 1;
+  const currentParticipant = leaderboard.find((p) => p.participant_id === participantId);
+  const currentRank = leaderboard.findIndex((p) => p.participant_id === participantId) + 1;
 
   return (
     <Container maxWidth="md">
@@ -675,10 +769,12 @@ const LeaderboardDisplay = ({ leaderboard, participantId }) => {
                 mb: 4,
                 textAlign: 'center',
                 bgcolor: 'action.selected',
-                color: 'text.primary'
+                color: 'text.primary',
               }}
             >
-              <Typography variant="h6" gutterBottom>Your Position</Typography>
+              <Typography variant="h6" gutterBottom>
+                Your Position
+              </Typography>
               <Typography variant="h2" sx={{ fontWeight: 600 }}>
                 #{currentRank}
               </Typography>
@@ -699,17 +795,18 @@ const LeaderboardDisplay = ({ leaderboard, participantId }) => {
                     backgroundColor: participant.participant_id === participantId ? 'action.selected' : 'action.hover',
                     border: 2,
                     borderColor: index < 3 ? 'warning.main' : 'divider',
-                    boxShadow: participant.participant_id === participantId ? 4 : 1
+                    boxShadow: participant.participant_id === participantId ? 4 : 1,
                   }}
                 >
                   <ListItemAvatar>
                     <Avatar
                       sx={{
-                        bgcolor: index === 0 ? '#FFD700' : index === 1 ? '#C0C0C0' : index === 2 ? '#CD7F32' : 'primary.main',
+                        bgcolor:
+                          index === 0 ? '#FFD700' : index === 1 ? '#C0C0C0' : index === 2 ? '#CD7F32' : 'primary.main',
                         width: 56,
                         height: 56,
                         fontSize: '1.5rem',
-                        fontWeight: 600
+                        fontWeight: 600,
                       }}
                     >
                       {index < 3 ? <EmojiEventsIcon fontSize="large" /> : index + 1}
@@ -740,7 +837,6 @@ const LeaderboardDisplay = ({ leaderboard, participantId }) => {
     </Container>
   );
 };
-
 
 /**
  * Answer Review Component
@@ -797,15 +893,20 @@ const AnswerReviewDisplay = ({ sessionId, guestToken, onViewLeaderboard }) => {
     <Container maxWidth="md">
       <Fade in timeout={800}>
         <Box sx={{ mt: 4 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mb: 4,
+              flexWrap: 'wrap',
+              gap: 2,
+            }}
+          >
             <Typography variant="h3" sx={{ fontWeight: 600 }}>
               Your Results
             </Typography>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={onViewLeaderboard}
-            >
+            <Button variant="contained" color="primary" onClick={onViewLeaderboard}>
               View Leaderboard
             </Button>
           </Box>
@@ -815,16 +916,23 @@ const AnswerReviewDisplay = ({ sessionId, guestToken, onViewLeaderboard }) => {
               p: 3,
               mb: 4,
               bgcolor: 'background.paper',
-              border: '1px solid', borderColor: 'divider',
-              color: 'text.primary'
+              border: '1px solid',
+              borderColor: 'divider',
+              color: 'text.primary',
             }}
           >
-            <Typography variant="h5" gutterBottom>Score Summary</Typography>
+            <Typography variant="h5" gutterBottom>
+              Score Summary
+            </Typography>
             <Typography variant="h2" sx={{ fontWeight: 600 }}>
-              {reviewData.marking_pending ? 'Marking pending' : `${reviewData.total_score} / ${reviewData.max_possible_score}`}
+              {reviewData.marking_pending
+                ? 'Marking pending'
+                : `${reviewData.total_score} / ${reviewData.max_possible_score}`}
             </Typography>
             <Typography variant="h6">
-              {reviewData.marking_pending ? 'Your total will appear when marking is complete.' : `${reviewData.correct_count} out of ${reviewData.total_questions} correct`}
+              {reviewData.marking_pending
+                ? 'Your total will appear when marking is complete.'
+                : `${reviewData.correct_count} out of ${reviewData.total_questions} correct`}
             </Typography>
           </Paper>
 
@@ -838,34 +946,46 @@ const AnswerReviewDisplay = ({ sessionId, guestToken, onViewLeaderboard }) => {
 
             return (
               <Fade in timeout={200 * (index + 1)} key={`${review.question_number}-${index}`}>
-                <Card sx={{ mb: 3, border: 2, borderColor: isCorrect ? 'success.main' : isIncorrect ? 'error.main' : 'divider' }}>
+                <Card
+                  sx={{
+                    mb: 3,
+                    border: 2,
+                    borderColor: isCorrect ? 'success.main' : isIncorrect ? 'error.main' : 'divider',
+                  }}
+                >
                   <CardContent>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1 }}>
                       <Chip label={`Question ${review.question_number}`} color="primary" size="small" />
                       <Chip
-                        label={review.question_type === 'poll' ? 'Poll · Not scored' : review.marking_status === 'pending' ? 'Marking pending' : `${review.points_earned} / ${review.max_points} pts`}
+                        label={
+                          review.question_type === 'poll'
+                            ? 'Poll · Not scored'
+                            : review.marking_status === 'pending'
+                              ? 'Marking pending'
+                              : `${review.points_earned} / ${review.max_points} pts`
+                        }
                         color={isCorrect ? 'success' : isIncorrect ? 'error' : 'default'}
                         icon={isCorrect ? <CheckCircleIcon /> : isIncorrect ? <CancelIcon /> : undefined}
                       />
                     </Box>
 
-              <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }} component="div">
-                <MathTextDisplay text={review.question_text} />
-              </Typography>
-              {review.media_url && (
-                <Box sx={{ mb: 2, textAlign: 'center' }}>
-                  <img
-                    src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${review.media_url}`}
-                    alt="Question visual"
-                    style={{
-                      maxWidth: '100%',
-                      maxHeight: 300,
-                      borderRadius: 8,
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                    }}
-                  />
-                </Box>
-              )}
+                    <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }} component="div">
+                      <MathTextDisplay text={review.question_text} />
+                    </Typography>
+                    {review.media_url && (
+                      <Box sx={{ mb: 2, textAlign: 'center' }}>
+                        <img
+                          src={`${config.apiBaseUrl}${review.media_url}`}
+                          alt="Question visual"
+                          style={{
+                            maxWidth: '100%',
+                            maxHeight: 300,
+                            borderRadius: 8,
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                          }}
+                        />
+                      </Box>
+                    )}
 
                     {review.options && review.options.length > 0 ? (
                       <List>
@@ -884,25 +1004,21 @@ const AnswerReviewDisplay = ({ sessionId, guestToken, onViewLeaderboard }) => {
                                 borderColor: isCorrectAnswer
                                   ? 'success.main'
                                   : isStudentAnswer
-                                  ? 'error.main'
-                                  : 'divider',
+                                    ? 'error.main'
+                                    : 'divider',
                                 backgroundColor: isCorrectAnswer
                                   ? 'success.light'
                                   : isStudentAnswer
-                                  ? 'error.light'
-                                  : 'transparent'
+                                    ? 'error.light'
+                                    : 'transparent',
                               }}
                             >
                               <ListItemText
                                 primary={<MathTextDisplay text={option} />}
                                 secondary={
                                   <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
-                                    {isStudentAnswer && (
-                                      <Chip label="Your Answer" size="small" />
-                                    )}
-                                    {isCorrectAnswer && (
-                                      <Chip label="Correct Answer" size="small" color="success" />
-                                    )}
+                                    {isStudentAnswer && <Chip label="Your Answer" size="small" />}
+                                    {isCorrectAnswer && <Chip label="Correct Answer" size="small" color="success" />}
                                   </Box>
                                 }
                                 secondaryTypographyProps={{ component: 'div' }}
@@ -956,6 +1072,13 @@ const AnswerReviewDisplay = ({ sessionId, guestToken, onViewLeaderboard }) => {
 const QuizParticipant = () => {
   const { roomCode: urlRoomCode } = useParams();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  // #62: this tab's saved place, if it's this room's, and the reconnect state.
+  const [initialPlace] = useState(() => readPlace(urlRoomCode));
+  const retryRef = useRef(null);
+  const reconnectRef = useRef(null);
+  const [reconnecting, setReconnecting] = useState(false);
+  const [slow, setSlow] = useState(false);
 
   const wsRef = useRef(null);
   const timerRef = useRef(null);
@@ -963,14 +1086,14 @@ const QuizParticipant = () => {
   const cooldownTimerRef = useRef(null); // FIX: Store cooldown timer ID for cleanup
   const resyncTimerRef = useRef(null); // FIX: Store resync timer ID
 
-  const [phase, setPhase] = useState('join');
+  const [phase, setPhase] = useState(initialPlace ? 'rejoining' : 'join');
   const [showAnswerReview, setShowAnswerReview] = useState(false);
   const [showResultFeedback, setShowResultFeedback] = useState(true);
   const [showLeaderboardToStudents, setShowLeaderboardToStudents] = useState(true);
- // join, waiting, question, leaderboard, finished
-  const [session, setSession] = useState(null);
-  const [participant, setParticipant] = useState(null);
-  const [guestToken, setGuestToken] = useState(null);
+  // join, rejoining, waiting, question, leaderboard, finished, rejected
+  const [session, setSession] = useState(initialPlace?.session ?? null);
+  const [participant, setParticipant] = useState(initialPlace?.participant ?? null);
+  const [guestToken, setGuestToken] = useState(initialPlace?.guestToken ?? null);
   const [currentQuestion, setCurrentQuestion] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
   const [timeRemaining, setTimeRemaining] = useState(30);
@@ -985,6 +1108,9 @@ const QuizParticipant = () => {
   const [cooldownSeconds, setCooldownSeconds] = useState(10);
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
   const [awaitingNextQuestion, setAwaitingNextQuestion] = useState(false);
+  // #62: the question the server says this student has answered, from the
+  // resume sync's answer_submitted (S3.4).
+  const [answeredQuestionId, setAnsweredQuestionId] = useState(null);
 
   // NEW: Store answer feedback for cooldown display
   const [cooldownFeedback, setCooldownFeedback] = useState(null);
@@ -1002,15 +1128,10 @@ const QuizParticipant = () => {
 
   // FIX #3: Cleanup WebSocket and ALL timers on unmount to prevent memory leaks
   useEffect(() => {
-    console.log('[QuizParticipant] Component mounted');
-
     return () => {
-      console.log('[QuizParticipant] Component unmounting, cleaning up resources');
-
       // Cleanup WebSocket
       if (wsRef.current) {
         if (wsRef.current.readyState !== WebSocket.CLOSED) {
-          console.log('[QuizParticipant] Closing WebSocket connection');
           wsRef.current.close();
         }
         wsRef.current = null;
@@ -1018,63 +1139,90 @@ const QuizParticipant = () => {
 
       // Cleanup timer
       if (timerRef.current) {
-        console.log('[QuizParticipant] Clearing timer interval');
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
 
       // Cleanup leaderboard timer
       if (leaderboardTimerRef.current) {
-        console.log('[QuizParticipant] Clearing leaderboard timer');
         clearTimeout(leaderboardTimerRef.current);
         leaderboardTimerRef.current = null;
       }
 
       // FIX: Cleanup cooldown timer
       if (cooldownTimerRef.current) {
-        console.log('[QuizParticipant] Clearing cooldown timer');
         clearInterval(cooldownTimerRef.current);
         cooldownTimerRef.current = null;
       }
 
       // FIX: Cleanup resync timer
       if (resyncTimerRef.current) {
-        console.log('[QuizParticipant] Clearing resync timer');
         clearInterval(resyncTimerRef.current);
         resyncTimerRef.current = null;
       }
     };
   }, []);
 
-  const handleJoin = (joinResponse) => {
-    console.log('[QuizParticipant] Join successful:', {
-      sessionId: joinResponse.session.id,
-      participantId: joinResponse.participant.id,
-      participantName: joinResponse.participant.guest_name,
-      roomCode: joinResponse.session.room_code
-    });
+  // #62: a saved place resumes through the socket, not /join, so it doesn't
+  // use up the per-IP join limit. A dropped socket also retries at once when
+  // the device is back online or the tab is shown again.
+  useEffect(() => {
+    if (initialPlace) connectWebSocket(initialPlace.session.id, initialPlace.guestToken);
+    const retry = () => {
+      if (document.visibilityState === 'visible') reconnectRef.current();
+    };
+    window.addEventListener('online', retry);
+    document.addEventListener('visibilitychange', retry);
+    return () => {
+      clearTimeout(retryRef.current);
+      window.removeEventListener('online', retry);
+      document.removeEventListener('visibilitychange', retry);
+    };
+  }, []);
 
+  // After 8 s of trying, the Wi-Fi line (design R2 #62, steps 4 and 5).
+  const trying = phase === 'rejoining' || reconnecting;
+  useEffect(() => {
+    setSlow(false);
+    if (!trying) return undefined;
+    const timer = setTimeout(() => setSlow(true), 8000);
+    return () => clearTimeout(timer);
+  }, [trying]);
+
+  const handleJoin = (joinResponse) => {
     setSession(joinResponse.session);
     setParticipant(joinResponse.participant);
     setGuestToken(joinResponse.guest_token);
+    // #62: keep this tab's place. A reload resumes only when the URL has this
+    // room's code, as a joining link does, so a typed code goes into it too.
+    const code = joinResponse.session.room_code;
+    savePlace({
+      roomCode: code,
+      session: joinResponse.session,
+      participant: joinResponse.participant,
+      guestToken: joinResponse.guest_token,
+    });
+    if (urlRoomCode?.toUpperCase() !== code.toUpperCase()) {
+      navigate(`/quiz/join/${code}`, { replace: true });
+    }
     setPhase('waiting');
-
-    console.log('[QuizParticipant] Phase changed to: waiting');
 
     // Connect WebSocket
     connectWebSocket(joinResponse.session.id, joinResponse.guest_token);
   };
 
   const connectWebSocket = (sessionId, token) => {
-    console.log('[QuizParticipant] Connecting WebSocket for session:', sessionId);
-
     try {
       const ws = quizService.connectWebSocket(sessionId, token, false);
       wsRef.current = ws;
+      let heard = false; // #62: whether this socket has had a message yet
 
       ws.onmessage = (event) => {
-        console.log('[QuizParticipant] WebSocket message received');
         const message = JSON.parse(event.data);
+        // #62: any message means the student is in, at the quiz's current place.
+        heard = true;
+        setReconnecting(false);
+        setPhase((current) => (current === 'rejoining' ? 'waiting' : current));
         handleWebSocketMessage(message);
       };
 
@@ -1083,14 +1231,41 @@ const QuizParticipant = () => {
       };
 
       ws.onclose = (event) => {
-        console.log(`[QuizParticipant] 🔌 WebSocket disconnected - Code: ${event.code}, Clean: ${event.wasClean}`);
+        if (wsRef.current !== ws) return; // closed on purpose, or already replaced
+        if (event.code === 1008 && !heard) {
+          // #62: the server refused the saved place before letting the student
+          // in, for example because the quiz closed. Its heartbeat timeout also
+          // closes with 1008, but after messages, and that one reconnects.
+          forgetPlace();
+          setReconnecting(false);
+          setPhase('rejected');
+          return;
+        }
+        scheduleReconnect();
       };
-
-      console.log('[QuizParticipant] WebSocket connection initiated');
     } catch (err) {
       console.error('[QuizParticipant] Failed to connect WebSocket:', err);
-      setError("Failed to establish real-time connection.");
+      setError('Failed to establish real-time connection.');
     }
+  };
+
+  // #62 (A5): a dropped socket retries every 3 s, as the host page does. Never
+  // before joining, after a rejection or on the final screen.
+  const reconnectNow = () => {
+    clearTimeout(retryRef.current);
+    if (!guestToken || ['join', 'rejected', 'finished'].includes(phase)) {
+      setReconnecting(false);
+      return;
+    }
+    if (!wsRef.current || wsRef.current.readyState > WebSocket.OPEN) {
+      connectWebSocket(session.id, guestToken);
+    }
+  };
+  reconnectRef.current = reconnectNow; // the latest state, for timers and listeners
+  const scheduleReconnect = () => {
+    setReconnecting(true);
+    clearTimeout(retryRef.current);
+    retryRef.current = setTimeout(() => reconnectRef.current(), 3000);
   };
 
   const refetchResponseForQuestion = async (questionId) => {
@@ -1101,11 +1276,11 @@ const QuizParticipant = () => {
     try {
       const response = await quizService.getMyResponse(session.id, questionId, guestToken);
 
-      if (response?.grading_status === "pending") {
+      if (response?.grading_status === 'pending') {
         setCooldownFeedback({
-          grading_status: "pending",
-          message: response.message || "Your answer has been submitted!",
-          did_not_answer: false
+          grading_status: 'pending',
+          message: response.message || 'Your answer has been submitted!',
+          did_not_answer: false,
         });
         return;
       }
@@ -1117,7 +1292,7 @@ const QuizParticipant = () => {
         explanation: response?.explanation,
         ai_feedback: response?.ai_feedback,
         did_not_answer: false,
-        grading_status: response?.grading_status || "complete"
+        grading_status: response?.grading_status || 'complete',
       });
     } catch (error) {
       console.error('[AI Grading] Failed to fetch updated response:', error);
@@ -1125,24 +1300,20 @@ const QuizParticipant = () => {
   };
 
   const handleWebSocketMessage = (message) => {
-    console.log('[QuizParticipant] Processing WebSocket message:', message.type);
-
     switch (message.type) {
       case 'session_started':
-        console.log('[QuizParticipant] Session started');
         setPhase('waiting');
         setAwaitingNextQuestion(false);
         break;
 
       case 'question_started':
-        console.log('[QuizParticipant] Question started:', {
-          questionId: message.question.id,
-          questionText: message.question.text,
-          timeLimit: message.question.time_limit_seconds,
-          points: message.question.points,
-          serverTimestamp: message.server_timestamp,
-          expiresAt: message.expires_at
-        });
+        // A new question replaces the leaderboard, so its timer back to the
+        // waiting room is cancelled, as on session_ended (#62: a resumed
+        // socket's first sync can show the leaderboard just before the question).
+        if (leaderboardTimerRef.current) {
+          clearTimeout(leaderboardTimerRef.current);
+          leaderboardTimerRef.current = null;
+        }
 
         // FIX: Clear cooldown state when new question starts
         setCooldownEndsAt(null);
@@ -1160,17 +1331,12 @@ const QuizParticipant = () => {
         break;
 
       case 'leaderboard_update':
-        console.log('[QuizParticipant] Leaderboard update received:', {
-          participantCount: message.leaderboard?.length || 0,
-          sessionStatus: session?.status
-        });
         setLeaderboard(message.leaderboard || []);
         setAwaitingNextQuestion(false);
 
         // FIX Issue 1: Only show leaderboard if session is active
         // Don't show it on join (when session is still 'waiting')
         if (session?.status === 'active') {
-          console.log('[QuizParticipant] Session is active, showing leaderboard');
           setPhase('leaderboard');
 
           // Clear any existing leaderboard timer
@@ -1180,20 +1346,14 @@ const QuizParticipant = () => {
 
           // Auto-advance to next question after 10 seconds
           leaderboardTimerRef.current = setTimeout(() => {
-            console.log('[QuizParticipant] Auto-advancing from leaderboard to waiting');
             setPhase('waiting');
           }, 10000);
-        } else {
-          console.log('[QuizParticipant] Session not active, staying in current phase');
         }
         break;
 
       case 'session_ended':
-        console.log('[QuizParticipant] Session ended');
-
         // FIX Issue 3: Clear leaderboard timer to prevent switching back to waiting
         if (leaderboardTimerRef.current) {
-          console.log('[QuizParticipant] Clearing leaderboard timer on session end');
           clearTimeout(leaderboardTimerRef.current);
           leaderboardTimerRef.current = null;
         }
@@ -1207,18 +1367,12 @@ const QuizParticipant = () => {
 
       case 'auto_advance_updated':
         // FIX Issue 2: Auto-advance setting changed
-        console.log('[QuizParticipant] Auto-advance updated:', message.enabled, message.cooldown_seconds);
         setAutoAdvanceEnabled(message.enabled);
         setCooldownSeconds(message.cooldown_seconds);
         break;
 
       case 'question_ended':
         // FIX: Question ended, cooldown starting with timestamp synchronization
-        console.log('[QuizParticipant] Question ended, cooldown starting:', {
-          cooldownSeconds: message.cooldown_seconds,
-          cooldownEndsAt: message.cooldown_ends_at,
-          autoAdvanceEnabled: message.auto_advance_enabled
-        });
         setTimeRemaining(0);
         setQuestionExpiresAt(null); // Clear question timer
         setAutoAdvanceEnabled(message.auto_advance_enabled);
@@ -1233,18 +1387,18 @@ const QuizParticipant = () => {
 
       case 'answer_submitted':
         // NEW: Store answer result when student submits
-        console.log('[QuizParticipant] Answer submitted result:', message.result);
         if (message.result) {
-          if (message.result.grading_status === "pending") {
+          setAnsweredQuestionId(message.result.question_id ?? null);
+          if (message.result.grading_status === 'pending') {
             setCooldownFeedback({
-              grading_status: "pending",
-              message: message.result.message || "Your answer has been submitted!",
-              did_not_answer: false
+              grading_status: 'pending',
+              message: message.result.message || 'Your answer has been submitted!',
+              did_not_answer: false,
             });
           } else {
             setCooldownFeedback({
               ...message.result,
-              grading_status: "complete"
+              grading_status: 'complete',
             });
           }
         }
@@ -1253,12 +1407,6 @@ const QuizParticipant = () => {
       case 'cooldown_started':
         // FIX: Cooldown started from backend with timestamp synchronization
         // NEW: Store feedback if provided (when show_correct_answer_during_cooldown is enabled)
-        console.log('[QuizParticipant] Cooldown started:', {
-          cooldownSeconds: message.cooldown_seconds,
-          cooldownEndsAt: message.cooldown_ends_at,
-          autoAdvanceEnabled: message.auto_advance_enabled,
-          hasFeedback: Boolean(message.your_answer)
-        });
         setCooldownSeconds(message.cooldown_seconds);
         setAutoAdvanceEnabled(message.auto_advance_enabled);
         setCooldownEndsAt(message.cooldown_ends_at); // Set cooldown end timestamp
@@ -1266,25 +1414,23 @@ const QuizParticipant = () => {
 
         // NEW: Store cooldown feedback if provided
         if (message.your_answer) {
-          console.log('[QuizParticipant] Cooldown feedback received:', message.your_answer);
           if (message.your_answer.is_correct === null && !message.your_answer.did_not_answer) {
             setCooldownFeedback((prev) =>
-              prev?.grading_status === "pending"
+              prev?.grading_status === 'pending'
                 ? prev
                 : {
-                    grading_status: "pending",
-                    message: "Your answer has been submitted!",
-                    did_not_answer: false
+                    grading_status: 'pending',
+                    message: 'Your answer has been submitted!',
+                    did_not_answer: false,
                   }
             );
           } else {
             setCooldownFeedback({
               ...message.your_answer,
-              grading_status: "complete"
+              grading_status: 'complete',
             });
           }
         } else {
-          console.log('[QuizParticipant] No cooldown feedback (feature disabled)');
           setCooldownFeedback(null);
         }
 
@@ -1296,7 +1442,6 @@ const QuizParticipant = () => {
         break;
 
       case 'ping':
-        console.log('[QuizParticipant] Heartbeat ping received, sending pong');
         // Respond to heartbeat
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
           wsRef.current.send(JSON.stringify({ type: 'pong' }));
@@ -1304,7 +1449,6 @@ const QuizParticipant = () => {
         break;
 
       case 'ai_grading_complete':
-        console.log('[QuizParticipant] AI grading complete:', message);
         if (message.question_id) {
           refetchResponseForQuestion(message.question_id);
         }
@@ -1323,11 +1467,6 @@ const QuizParticipant = () => {
   // Server enforces time limits using question_started_at timestamp
   // Timer is synchronized with server timestamp to prevent local clock manipulation
   const startTimestampTimer = (expiresAtISO, fallbackDuration) => {
-    console.log('[QuizParticipant] Starting timestamp-based timer:', {
-      expiresAt: expiresAtISO,
-      fallbackDuration: fallbackDuration
-    });
-
     // Clear existing timers
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -1370,7 +1509,6 @@ const QuizParticipant = () => {
       setTimeRemaining(remaining);
 
       if (remaining <= 0) {
-        console.log('[QuizParticipant] Timer expired (timestamp-based)');
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
@@ -1385,11 +1523,6 @@ const QuizParticipant = () => {
    * Uses server timestamp to calculate remaining cooldown time
    */
   const startCooldownTimer = (cooldownEndsAtISO, fallbackDuration) => {
-    console.log('[QuizParticipant] Starting timestamp-based cooldown timer:', {
-      cooldownEndsAt: cooldownEndsAtISO,
-      fallbackDuration: fallbackDuration
-    });
-
     // Clear existing cooldown timer
     if (cooldownTimerRef.current) {
       clearInterval(cooldownTimerRef.current);
@@ -1431,7 +1564,6 @@ const QuizParticipant = () => {
       setCooldownRemaining(remaining);
 
       if (remaining <= 0) {
-        console.log('[QuizParticipant] Cooldown expired (timestamp-based)');
         setCooldownRemaining(0);
         clearInterval(cooldownTimerRef.current);
         cooldownTimerRef.current = null;
@@ -1443,17 +1575,9 @@ const QuizParticipant = () => {
     if (phase === 'finished') {
       return;
     }
-    console.log('[QuizParticipant] Submitting answer:', {
-      questionId: currentQuestion.id,
-      questionType: currentQuestion.type,
-      answer: answer,
-      timeRemaining: timeRemaining
-    });
 
     try {
       const timeTaken = (currentQuestion.time_limit_seconds - timeRemaining) * 1000;
-
-      console.log('[QuizParticipant] Time taken:', timeTaken, 'ms');
 
       // Format answer as array based on question type
       let formattedAnswer;
@@ -1467,8 +1591,6 @@ const QuizParticipant = () => {
         formattedAnswer = [answer]; // Fallback
       }
 
-      console.log('[QuizParticipant] Formatted answer for API:', formattedAnswer);
-
       // Issue #4 Fix: time_taken_ms is for display only
       // Server calculates actual time from question_started_at timestamp
       // This prevents timing manipulation attacks via browser DevTools
@@ -1477,18 +1599,20 @@ const QuizParticipant = () => {
         {
           question_id: currentQuestion.id,
           answer: formattedAnswer,
-          time_taken_ms: timeTaken  // Display-only, server validates actual time
+          time_taken_ms: timeTaken, // Display-only, server validates actual time
         },
         guestToken
       );
 
-      console.log('[QuizParticipant] Answer submitted successfully');
+      // #62: keep the answer with this tab's place, so a reload can mark it (S3.4).
+      const place = readPlace(session.room_code);
+      if (place) savePlace({ ...place, answer: { questionId: currentQuestion.id, value: answer } });
 
-      if (result?.grading_status === "pending") {
+      if (result?.grading_status === 'pending') {
         setCooldownFeedback({
-          grading_status: "pending",
-          message: result.message || "Your answer has been submitted!",
-          did_not_answer: false
+          grading_status: 'pending',
+          message: result.message || 'Your answer has been submitted!',
+          did_not_answer: false,
         });
       } else {
         setCooldownFeedback({
@@ -1498,7 +1622,7 @@ const QuizParticipant = () => {
           explanation: result?.explanation,
           ai_feedback: result?.ai_feedback,
           did_not_answer: false,
-          grading_status: "complete"
+          grading_status: 'complete',
         });
       }
 
@@ -1506,20 +1630,75 @@ const QuizParticipant = () => {
       // This allows all students to see the same countdown and cooldown timing
     } catch (err) {
       console.error('[QuizParticipant] ❌ Failed to submit answer:', err);
-      setError(err.message || "Failed to submit answer.");
+      setError(err.message || 'Failed to submit answer.');
     }
   };
 
+  // #62 (A5): while the socket reconnects, a slim note shows above the current
+  // screen. Every screen below is wrapped the same way, so the note coming and
+  // going never remounts the screen, and an answer being typed is kept.
+  const withNote = (screen) => (
+    <>
+      {reconnecting && phase !== 'finished' && (
+        <Container maxWidth="md" sx={{ pt: 2 }}>
+          <Alert severity={slow ? 'warning' : 'info'}>{slow ? `Reconnecting… ${SLOW}` : 'Reconnecting…'}</Alert>
+        </Container>
+      )}
+      {screen}
+    </>
+  );
+
+  if (phase === 'rejoining') {
+    const name = participant?.guest_name || participant?.display_name;
+    return (
+      <JoinFrame
+        title="Getting you back in…"
+        line={[name, `Room ${initialPlace.roomCode}`].filter(Boolean).join(' · ')}
+      >
+        <LinearProgress aria-label="Getting you back in" />
+        {slow && (
+          <Typography variant="body2" color="text.primary" sx={{ mt: 2, textAlign: 'center' }}>
+            {SLOW}
+          </Typography>
+        )}
+      </JoinFrame>
+    );
+  }
+
+  if (phase === 'rejected') {
+    return (
+      <JoinFrame
+        title="Couldn't get you back in"
+        line="This quiz may have closed. Join again with the code, or ask your teacher."
+      >
+        <Button
+          fullWidth
+          variant="outlined"
+          size="large"
+          onClick={() => {
+            forgetPlace();
+            setPhase('join');
+          }}
+          sx={{ minHeight: 48 }}
+        >
+          Join with a code
+        </Button>
+      </JoinFrame>
+    );
+  }
+
   if (phase === 'join') {
-    return <JoinScreen onJoin={handleJoin} />;
+    return withNote(<JoinScreen onJoin={handleJoin} />);
   }
 
   if (phase === 'waiting') {
-    return <WaitingRoom session={session} participantName={participant?.guest_name || participant?.display_name} />;
+    return withNote(
+      <WaitingRoom session={session} participantName={participant?.guest_name || participant?.display_name} />
+    );
   }
 
   if (phase === 'question' && currentQuestion) {
-    return (
+    return withNote(
       <QuestionDisplay
         question={currentQuestion}
         onAnswer={handleAnswer}
@@ -1529,41 +1708,42 @@ const QuizParticipant = () => {
         totalQuestions={session?.questions?.length}
         cooldownFeedback={cooldownFeedback}
         awaitingNextQuestion={awaitingNextQuestion}
+        answered={sameQuestion(answeredQuestionId, currentQuestion.id)}
+        savedAnswer={
+          sameQuestion(initialPlace?.answer?.questionId, currentQuestion.id) ? initialPlace.answer.value : undefined
+        }
       />
     );
   }
 
   if (phase === 'leaderboard') {
-    return showAnswerReview ? (
-      <AnswerReviewDisplay
-        sessionId={session?.id}
-        guestToken={guestToken}
-        onViewLeaderboard={() => setShowAnswerReview(false)}
-      />
-    ) : (
-      <Container maxWidth="md">
-        <Fade in timeout={800}>
-          <Box sx={{ mt: 4 }}>
-            <Box sx={{ textAlign: 'center', mb: 3 }}>
-              <Button
-                variant="contained"
-                size="large"
-                color="secondary"
-                onClick={() => setShowAnswerReview(true)}
-              >
-                View My Answers
-              </Button>
+    return withNote(
+      showAnswerReview ? (
+        <AnswerReviewDisplay
+          sessionId={session?.id}
+          guestToken={guestToken}
+          onViewLeaderboard={() => setShowAnswerReview(false)}
+        />
+      ) : (
+        <Container maxWidth="md">
+          <Fade in timeout={800}>
+            <Box sx={{ mt: 4 }}>
+              <Box sx={{ textAlign: 'center', mb: 3 }}>
+                <Button variant="contained" size="large" color="secondary" onClick={() => setShowAnswerReview(true)}>
+                  View My Answers
+                </Button>
+              </Box>
+              <LeaderboardDisplay leaderboard={leaderboard} participantId={participant?.id} />
             </Box>
-            <LeaderboardDisplay leaderboard={leaderboard} participantId={participant?.id} />
-          </Box>
-        </Fade>
-      </Container>
+          </Fade>
+        </Container>
+      )
     );
   }
 
   if (phase === 'finished') {
     if (!showResultFeedback) {
-      return (
+      return withNote(
         <Container maxWidth="md">
           <Fade in timeout={800}>
             <Box sx={{ mt: 8, textAlign: 'center' }}>
@@ -1586,7 +1766,7 @@ const QuizParticipant = () => {
     }
 
     if (showAnswerReview) {
-      return (
+      return withNote(
         <AnswerReviewDisplay
           sessionId={session?.id}
           guestToken={guestToken}
@@ -1596,7 +1776,7 @@ const QuizParticipant = () => {
     }
 
     if (showLeaderboardToStudents) {
-      return (
+      return withNote(
         <Container maxWidth="md">
           <Fade in timeout={800}>
             <Box sx={{ mt: 8, textAlign: 'center' }}>
@@ -1608,12 +1788,7 @@ const QuizParticipant = () => {
                 Thank you for participating
               </Typography>
               <Box sx={{ mb: 4 }}>
-                <Button
-                  variant="contained"
-                  size="large"
-                  color="secondary"
-                  onClick={() => setShowAnswerReview(true)}
-                >
+                <Button variant="contained" size="large" color="secondary" onClick={() => setShowAnswerReview(true)}>
                   View My Answers
                 </Button>
               </Box>
@@ -1624,7 +1799,7 @@ const QuizParticipant = () => {
       );
     }
 
-    return (
+    return withNote(
       <Container maxWidth="md">
         <Fade in timeout={800}>
           <Box sx={{ mt: 8, textAlign: 'center' }}>
@@ -1650,7 +1825,7 @@ const QuizParticipant = () => {
     );
   }
 
-  return null;
+  return withNote(null);
 };
 
 export default QuizParticipant;

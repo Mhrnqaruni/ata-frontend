@@ -1,6 +1,9 @@
+// The Tags tab on the Classes page: create, rename and archive student tags, and choose which students have each.
+// Area: academics
+
 import { useTeacherData } from '../../hooks/useTeacherData';
 import QueryNotice from '../common/QueryNotice';
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from 'react';
 import {
   Box,
   Button,
@@ -17,34 +20,35 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-} from "@mui/material";
-import MoreVert from "@mui/icons-material/MoreVert";
-import tagService from "../../services/tagService";
-import TagAnalytics from "./TagAnalytics";
+} from '@mui/material';
+import MoreVert from '@mui/icons-material/MoreVert';
+import tagService from '../../services/tagService';
+import TagAnalytics from './TagAnalytics';
 
 export default function TagsPanel({ newRequest = 0 }) {
   // A parent request opens the dialog once; returning to Tags must not reopen it.
-  const lastNewRequest=useRef(newRequest);
+  const lastNewRequest = useRef(newRequest);
   const tagsQuery = useTeacherData('tags');
   const data = tagsQuery.data || { tags: [], students: [] };
   const loading = tagsQuery.isPending;
   const [selected, setSelected] = useState(null),
     [members, setMembers] = useState([]),
     [savedMembers, setSavedMembers] = useState([]);
-  const [search, setSearch] = useState(""),
-    [error, setError] = useState(""),
+  const [search, setSearch] = useState(''),
+    [error, setError] = useState(''),
     [busy, setBusy] = useState(false),
-    [message, setMessage] = useState("");
+    [message, setMessage] = useState('');
   const [menu, setMenu] = useState(null),
     [nameDialog, setNameDialog] = useState(null),
-    [name, setName] = useState("");
-  const dirty =
-    [...members].sort().join("|") !== [...savedMembers].sort().join("|");
+    [name, setName] = useState('');
+  const dirty = [...members].sort().join('|') !== [...savedMembers].sort().join('|');
   useEffect(() => {
     if (tagsQuery.data) {
-      setSelected(previous => previous ? tagsQuery.data.tags.find(tag => tag.id === previous.id) || null : null);
+      setSelected((previous) => (previous ? tagsQuery.data.tags.find((tag) => tag.id === previous.id) || null : null));
       if (selected && !dirty) {
-        const ids = tagsQuery.data.students.filter(student => student.tags.some(tag => tag.id === selected.id)).map(student => student.id);
+        const ids = tagsQuery.data.students
+          .filter((student) => student.tags.some((tag) => tag.id === selected.id))
+          .map((student) => student.id);
         setMembers(ids);
         setSavedMembers(ids);
       }
@@ -53,56 +57,52 @@ export default function TagsPanel({ newRequest = 0 }) {
   }, [tagsQuery.data]);
   // Membership changes are local until Save; changing the tag must not silently discard them.
   const canLeave = () =>
-    !dirty ||
-    window.confirm(
-      "Discard unsaved membership changes? Your saved tag members will stay unchanged.",
-    );
+    !dirty || window.confirm('Discard unsaved membership changes? Your saved tag members will stay unchanged.');
   const choose = (tag) => {
     if (busy || !canLeave()) return;
-    const ids = data.students
-      .filter((s) => s.tags.some((t) => t.id === tag?.id))
-      .map((s) => s.id);
+    const ids = data.students.filter((s) => s.tags.some((t) => t.id === tag?.id)).map((s) => s.id);
     setSelected(tag);
     setMembers(ids);
     setSavedMembers(ids);
-    setMessage("");
+    setMessage('');
   };
   const openName = (mode) => {
-    if (busy || (mode === "create" && !canLeave())) return;
-    setName(mode === "rename" ? selected.name : "");
+    if (busy || (mode === 'create' && !canLeave())) return;
+    setName(mode === 'rename' ? selected.name : '');
     setNameDialog(mode);
-    setError("");
+    setError('');
   };
   useEffect(() => {
-    if (newRequest !== lastNewRequest.current) { lastNewRequest.current=newRequest; openName("create"); }
+    if (newRequest !== lastNewRequest.current) {
+      lastNewRequest.current = newRequest;
+      openName('create');
+    }
   }, [newRequest]);
   const act = async (action) => {
     setBusy(true);
-    setError("");
-    setMessage("");
+    setError('');
+    setMessage('');
     try {
       await action();
 
-      setMessage("Saved.");
+      setMessage('Saved.');
       return true;
     } catch (e) {
       const detail = e.response?.data?.detail;
-      setError(typeof detail === "string" ? detail : e.message);
+      setError(typeof detail === 'string' ? detail : e.message);
       return false;
     } finally {
       setBusy(false);
     }
   };
   const visible = data.students.filter((s) =>
-    `${s.name} ${s.studentId} ${s.classes.map((c) => c.name).join(" ")}`
-      .toLowerCase()
-      .includes(search.toLowerCase()),
+    `${s.name} ${s.studentId} ${s.classes.map((c) => c.name).join(' ')}`.toLowerCase().includes(search.toLowerCase())
   );
   const saveName = async (event) => {
     event.preventDefault();
     if (busy || !name.trim()) return;
     const ok = await act(async () => {
-      if (nameDialog === "rename") {
+      if (nameDialog === 'rename') {
         await tagService.update(selected.id, { name: name.trim() });
         setSelected({ ...selected, name: name.trim() });
       } else {
@@ -115,22 +115,20 @@ export default function TagsPanel({ newRequest = 0 }) {
     if (ok) setNameDialog(null);
   };
   return (
-    <Box className="mst-tags-panel" sx={{ display: "grid", gap: 2 }}>
+    <Box className="mst-tags-panel" sx={{ display: 'grid', gap: 2 }}>
       <QueryNotice query={tagsQuery} label="tags" />
       {error && <Alert severity="error">{error}</Alert>}
       {message && <Alert severity="success">{message}</Alert>}
-      <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
         <Autocomplete
-          sx={{ flex: "1 1 0", width: "100%", maxWidth: 420, minWidth: 0 }}
+          sx={{ flex: '1 1 0', width: '100%', maxWidth: 420, minWidth: 0 }}
           options={data.tags}
           value={selected}
           disabled={busy || loading}
           isOptionEqualToValue={(a, b) => a.id === b.id}
           getOptionLabel={(tag) => `${tag.name} (${tag.count ?? 0})`}
           onChange={(_, tag) => choose(tag)}
-          renderInput={(params) => (
-            <TextField {...params} size="small" label="Choose a tag" />
-          )}
+          renderInput={(params) => <TextField {...params} size="small" label="Choose a tag" />}
         />
         {selected && (
           <IconButton
@@ -142,15 +140,11 @@ export default function TagsPanel({ newRequest = 0 }) {
             <MoreVert />
           </IconButton>
         )}
-        <Menu
-          anchorEl={menu}
-          open={Boolean(menu)}
-          onClose={() => setMenu(null)}
-        >
+        <Menu anchorEl={menu} open={Boolean(menu)} onClose={() => setMenu(null)}>
           <MenuItem
             onClick={() => {
               setMenu(null);
-              openName("rename");
+              openName('rename');
             }}
           >
             Rename
@@ -183,35 +177,27 @@ export default function TagsPanel({ newRequest = 0 }) {
       {selected ? (
         <Box
           sx={{
-            display: "flex",
+            display: 'flex',
             gap: 1,
-            alignItems: "center",
-            flexWrap: "wrap",
+            alignItems: 'center',
+            flexWrap: 'wrap',
           }}
         >
-          <Typography variant="body2" sx={{ mr: "auto" }}>
+          <Typography variant="body2" sx={{ mr: 'auto' }}>
             {members.length} selected total · {visible.length} shown
-            {dirty ? " · Unsaved changes" : ""}
+            {dirty ? ' · Unsaved changes' : ''}
           </Typography>
           <Button
             size="small"
             disabled={busy || !visible.length}
-            onClick={() =>
-              setMembers([
-                ...new Set([...members, ...visible.map((s) => s.id)]),
-              ])
-            }
+            onClick={() => setMembers([...new Set([...members, ...visible.map((s) => s.id)])])}
           >
             Select shown
           </Button>
           <Button
             size="small"
             disabled={busy || !visible.length}
-            onClick={() =>
-              setMembers(
-                members.filter((id) => !visible.some((s) => s.id === id)),
-              )
-            }
+            onClick={() => setMembers(members.filter((id) => !visible.some((s) => s.id === id)))}
           >
             Clear shown
           </Button>
@@ -226,7 +212,7 @@ export default function TagsPanel({ newRequest = 0 }) {
               })
             }
           >
-            {busy ? "Saving…" : "Save changes"}
+            {busy ? 'Saving…' : 'Save changes'}
           </Button>
         </Box>
       ) : (
@@ -245,13 +231,11 @@ export default function TagsPanel({ newRequest = 0 }) {
                   disabled={busy}
                   checked={members.includes(s.id)}
                   inputProps={{
-                    "aria-label": `Include ${s.name} (${s.studentId})`,
+                    'aria-label': `Include ${s.name} (${s.studentId})`,
                   }}
                   onChange={(event) =>
                     setMembers(
-                      event.target.checked
-                        ? [...new Set([...members, s.id])]
-                        : members.filter((id) => id !== s.id),
+                      event.target.checked ? [...new Set([...members, s.id])] : members.filter((id) => id !== s.id)
                     )
                   }
                 />
@@ -261,14 +245,14 @@ export default function TagsPanel({ newRequest = 0 }) {
                   {s.name} <span className="mst-hint">· {s.studentId}</span>
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  {s.classes.map((c) => c.name).join(" · ")}
+                  {s.classes.map((c) => c.name).join(' · ')}
                 </Typography>
                 {!selected && s.tags.length > 0 && (
                   <Box
                     sx={{
-                      display: "flex",
+                      display: 'flex',
                       gap: 0.5,
-                      flexWrap: "wrap",
+                      flexWrap: 'wrap',
                       mt: 0.5,
                     }}
                   >
@@ -285,15 +269,11 @@ export default function TagsPanel({ newRequest = 0 }) {
       {!loading && !visible.length && (
         <Alert
           severity="info"
-          action={
-            data.students.length ? (
-              <Button onClick={() => setSearch("")}>Clear search</Button>
-            ) : undefined
-          }
+          action={data.students.length ? <Button onClick={() => setSearch('')}>Clear search</Button> : undefined}
         >
           {data.students.length
-            ? "No students match this search."
-            : "No enrolled students found. Add students to a class first."}
+            ? 'No students match this search.'
+            : 'No enrolled students found. Add students to a class first.'}
         </Alert>
       )}
       <TagAnalytics />
@@ -302,18 +282,15 @@ export default function TagsPanel({ newRequest = 0 }) {
         onClose={busy ? undefined : () => setNameDialog(null)}
         fullWidth
         maxWidth="xs"
-        PaperProps={{ component: "form", onSubmit: saveName }}
+        PaperProps={{ component: 'form', onSubmit: saveName }}
       >
-        <DialogTitle>
-          {nameDialog === "rename" ? "Rename tag" : "New tag"}
-        </DialogTitle>
+        <DialogTitle>{nameDialog === 'rename' ? 'Rename tag' : 'New tag'}</DialogTitle>
         <DialogContent>
           <Typography variant="body2" sx={{ mb: 2 }}>
-            Private label for students across your classes. Tags do not change
-            AI grading.
+            Private label for students across your classes. Tags do not change AI grading.
           </Typography>
           <QueryNotice query={tagsQuery} label="tags" />
-      {error && <Alert severity="error">{error}</Alert>}
+          {error && <Alert severity="error">{error}</Alert>}
           <TextField
             autoFocus
             fullWidth
@@ -329,16 +306,8 @@ export default function TagsPanel({ newRequest = 0 }) {
           <Button disabled={busy} onClick={() => setNameDialog(null)}>
             Cancel
           </Button>
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={busy || !name.trim()}
-          >
-            {busy
-              ? "Saving…"
-              : nameDialog === "rename"
-                ? "Save name"
-                : "Create tag"}
+          <Button type="submit" variant="contained" disabled={busy || !name.trim()}>
+            {busy ? 'Saving…' : nameDialog === 'rename' ? 'Save name' : 'Create tag'}
           </Button>
         </DialogActions>
       </Dialog>

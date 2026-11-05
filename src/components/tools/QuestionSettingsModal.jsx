@@ -1,29 +1,50 @@
+// Dialog to pick 1 to 5 question types, each with a count and a difficulty, for the question generator.
+// Area: ai_tools
+
 import NumberField from '../common/NumberField';
-// /src/components/tools/QuestionSettingsModal.jsx
 
 import React, { useState, useEffect } from 'react';
 import {
-  Dialog, DialogTitle, DialogContent, DialogActions, Button, Stack, Typography, IconButton,
-  List, ListItemButton, ListItemIcon, ListItemText, Checkbox, Divider,
-  FormControl, InputLabel, Select, MenuItem, TextField, Grid, Paper, Box
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Stack,
+  Typography,
+  IconButton,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Checkbox,
+  Divider,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  TextField,
+  Grid,
+  Paper,
+  Box,
 } from '@mui/material'; // CORRECTED: Grid, Paper, and Box are now imported.
 import CloseOutlined from '@mui/icons-material/CloseOutlined';
 
 // The canonical list of all available question types.
 const ALL_QUESTION_TYPES = [
-    { id: 'mcq', label: 'Multiple-choice questions', defaultCount: 5, enabled: true },
-    { id: 'true-false', label: 'True/False questions', defaultCount: 5, enabled: true },
-    { id: 'matching', label: 'Matching questions', defaultCount: 5, enabled: true },
-    { id: 'short-answer', label: 'Short-answer questions', defaultCount: 5, enabled: true },
-    { id: 'fill-in-the-blank', label: 'Fill-in-the-blank (Cloze) questions', defaultCount: 5, enabled: true },
-    { id: 'essay', label: 'Essay/Long-answer questions', defaultCount: 1, enabled: true },
-    { id: 'oral', label: 'Oral questions/Viva voce', defaultCount: 3, enabled: false },
-    { id: 'numerical', label: 'Computational/Numerical problems', defaultCount: 5, enabled: false },
-    { id: 'diagram-labeling', label: 'Diagram-labeling/Construction tasks', defaultCount: 1, enabled: false },
-    { id: 'image-graph', label: 'Image/Graph-based questions', defaultCount: 3, enabled: false },
-    { id: 'lab-practical', label: 'Laboratory practicals/Skill demonstrations', defaultCount: 1, enabled: false },
-    { id: 'project', label: 'Project/Coursework assessments', defaultCount: 1, enabled: false },
-    { id: 'presentation', label: 'Presentations/Performances', defaultCount: 1, enabled: false },
+  { id: 'mcq', label: 'Multiple-choice questions', defaultCount: 5, enabled: true },
+  { id: 'true-false', label: 'True/False questions', defaultCount: 5, enabled: true },
+  { id: 'matching', label: 'Matching questions', defaultCount: 5, enabled: true },
+  { id: 'short-answer', label: 'Short-answer questions', defaultCount: 5, enabled: true },
+  { id: 'fill-in-the-blank', label: 'Fill-in-the-blank (Cloze) questions', defaultCount: 5, enabled: true },
+  { id: 'essay', label: 'Essay/Long-answer questions', defaultCount: 1, enabled: true },
+  { id: 'oral', label: 'Oral questions/Viva voce', defaultCount: 3, enabled: false },
+  { id: 'numerical', label: 'Computational/Numerical problems', defaultCount: 5, enabled: false },
+  { id: 'diagram-labeling', label: 'Diagram-labeling/Construction tasks', defaultCount: 1, enabled: false },
+  { id: 'image-graph', label: 'Image/Graph-based questions', defaultCount: 3, enabled: false },
+  { id: 'lab-practical', label: 'Laboratory practicals/Skill demonstrations', defaultCount: 1, enabled: false },
+  { id: 'project', label: 'Project/Coursework assessments', defaultCount: 1, enabled: false },
+  { id: 'presentation', label: 'Presentations/Performances', defaultCount: 1, enabled: false },
 ];
 
 const QuestionSettingsModal = ({ open, onClose, onSave, initialConfigs }) => {
@@ -36,7 +57,7 @@ const QuestionSettingsModal = ({ open, onClose, onSave, initialConfigs }) => {
   }, [open, initialConfigs]);
 
   const handleToggleType = (type) => {
-    const currentIndex = selectedConfigs.findIndex(c => c.type === type.id);
+    const currentIndex = selectedConfigs.findIndex((c) => c.type === type.id);
     const newSelectedConfigs = [...selectedConfigs];
 
     if (currentIndex === -1) {
@@ -53,13 +74,13 @@ const QuestionSettingsModal = ({ open, onClose, onSave, initialConfigs }) => {
     }
     setSelectedConfigs(newSelectedConfigs);
   };
-  
+
   const handleConfigChange = (typeId, field, value) => {
-      setSelectedConfigs(prev => prev.map(config => 
-          config.type === typeId ? { ...config, [field]: value } : config
-      ));
+    setSelectedConfigs((prev) =>
+      prev.map((config) => (config.type === typeId ? { ...config, [field]: value } : config))
+    );
   };
-  
+
   const handleSave = () => {
     onSave(selectedConfigs);
     onClose();
@@ -69,22 +90,28 @@ const QuestionSettingsModal = ({ open, onClose, onSave, initialConfigs }) => {
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
       <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         Question types
-        <IconButton aria-label="close" onClick={onClose}><CloseOutlined /></IconButton>
+        <IconButton aria-label="close" onClick={onClose}>
+          <CloseOutlined />
+        </IconButton>
       </DialogTitle>
       <DialogContent dividers>
         <Grid container spacing={4}>
           <Grid item xs={12} md={5}>
-            <Typography variant="h4" gutterBottom>Types</Typography>
-            <Typography color="text.secondary" sx={{mb: 2}}>Select 1 to 5 types.</Typography>
+            <Typography variant="h4" gutterBottom>
+              Types
+            </Typography>
+            <Typography color="text.secondary" sx={{ mb: 2 }}>
+              Select 1 to 5 types.
+            </Typography>
             <List className="mst-type-list" sx={{ width: '100%', maxHeight: '52vh', overflowY: 'auto' }}>
               {ALL_QUESTION_TYPES.filter((type) => type.enabled).map((type) => {
-                const isSelected = selectedConfigs.some(c => c.type === type.id);
+                const isSelected = selectedConfigs.some((c) => c.type === type.id);
                 return (
-                  <ListItemButton 
-                    key={type.id} 
-                    role={undefined} 
-                    onClick={() => handleToggleType(type)} 
-                    dense 
+                  <ListItemButton
+                    key={type.id}
+                    role={undefined}
+                    onClick={() => handleToggleType(type)}
+                    dense
                     disabled={!type.enabled || (!isSelected && selectedConfigs.length >= 5)}
                   >
                     <ListItemIcon>
@@ -103,67 +130,77 @@ const QuestionSettingsModal = ({ open, onClose, onSave, initialConfigs }) => {
             </List>
             {ALL_QUESTION_TYPES.some((type) => !type.enabled) ? (
               <Typography color="text.secondary" sx={{ mt: 1.5, fontSize: 14 }}>
-                Coming soon: {ALL_QUESTION_TYPES.filter((type) => !type.enabled).map((type) => type.label.replace(/ questions?$/i, '')).join(', ')}.
+                Coming soon:{' '}
+                {ALL_QUESTION_TYPES.filter((type) => !type.enabled)
+                  .map((type) => type.label.replace(/ questions?$/i, ''))
+                  .join(', ')}
+                .
               </Typography>
             ) : null}
           </Grid>
-          
+
           <Grid item xs={12} md={7}>
-            <Typography variant="h4" gutterBottom>Count and difficulty</Typography>
-            <Typography color="text.secondary" sx={{mb: 2}}>
-                Adjust the count and difficulty for each selected question type.
+            <Typography variant="h4" gutterBottom>
+              Count and difficulty
             </Typography>
-            <Stack spacing={3} sx={{maxHeight: '60vh', overflowY: 'auto', p: 0.5}}>
-                {selectedConfigs.length > 0 ? (
-                    selectedConfigs.map(config => (
-                        <Paper key={config.type} variant="outlined" sx={{ p: 2 }}>
-                            <Typography variant="h5" gutterBottom>{config.label}</Typography>
-                            <Stack direction="row" spacing={2} sx={{mt: 2}}>
-                                <NumberField
-                                    label="How many"
-                                    type="number"
-                                    name="count"
-                                    value={config.count}
-                                    // IMPROVEMENT: Robustly handle empty input before parseInt
-                                    onChange={(e) => handleConfigChange(config.type, 'count', e.target.value === '' ? '' : parseInt(e.target.value, 10))}
-                                    InputProps={{ inputProps: { min: 1, max: 20 } }}
-                                    sx={{width: '50%'}}
-                                />
-                                <FormControl fullWidth sx={{width: '50%'}}>
-                                    <InputLabel>Difficulty</InputLabel>
-                                    <Select
-                                        name="difficulty"
-                                        value={config.difficulty}
-                                        label="Difficulty"
-                                        onChange={(e) => handleConfigChange(config.type, 'difficulty', e.target.value)}
-                                    >
-                                        <MenuItem value="very easy">Very Easy</MenuItem>
-                                        <MenuItem value="easy">Easy</MenuItem>
-                                        <MenuItem value="medium">Medium</MenuItem>
-                                        <MenuItem value="hard">Hard</MenuItem>
-                                        <MenuItem value="very hard">Very Hard</MenuItem>
-                                    </Select>
-                                </FormControl>
-                            </Stack>
-                        </Paper>
-                    ))
-                ) : (
-                    <Box sx={{textAlign: 'center', p: 4, border: '1px dashed', borderColor: 'divider', borderRadius: 1}}>
-                        <Typography color="text.secondary">Select a question type from the left to begin.</Typography>
-                    </Box>
-                )}
+            <Typography color="text.secondary" sx={{ mb: 2 }}>
+              Adjust the count and difficulty for each selected question type.
+            </Typography>
+            <Stack spacing={3} sx={{ maxHeight: '60vh', overflowY: 'auto', p: 0.5 }}>
+              {selectedConfigs.length > 0 ? (
+                selectedConfigs.map((config) => (
+                  <Paper key={config.type} variant="outlined" sx={{ p: 2 }}>
+                    <Typography variant="h5" gutterBottom>
+                      {config.label}
+                    </Typography>
+                    <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+                      <NumberField
+                        label="How many"
+                        type="number"
+                        name="count"
+                        value={config.count}
+                        // IMPROVEMENT: Robustly handle empty input before parseInt
+                        onChange={(e) =>
+                          handleConfigChange(
+                            config.type,
+                            'count',
+                            e.target.value === '' ? '' : parseInt(e.target.value, 10)
+                          )
+                        }
+                        InputProps={{ inputProps: { min: 1, max: 20 } }}
+                        sx={{ width: '50%' }}
+                      />
+                      <FormControl fullWidth sx={{ width: '50%' }}>
+                        <InputLabel>Difficulty</InputLabel>
+                        <Select
+                          name="difficulty"
+                          value={config.difficulty}
+                          label="Difficulty"
+                          onChange={(e) => handleConfigChange(config.type, 'difficulty', e.target.value)}
+                        >
+                          <MenuItem value="very easy">Very Easy</MenuItem>
+                          <MenuItem value="easy">Easy</MenuItem>
+                          <MenuItem value="medium">Medium</MenuItem>
+                          <MenuItem value="hard">Hard</MenuItem>
+                          <MenuItem value="very hard">Very Hard</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Stack>
+                  </Paper>
+                ))
+              ) : (
+                <Box sx={{ textAlign: 'center', p: 4, border: '1px dashed', borderColor: 'divider', borderRadius: 1 }}>
+                  <Typography color="text.secondary">Select a question type from the left to begin.</Typography>
+                </Box>
+              )}
             </Stack>
           </Grid>
         </Grid>
       </DialogContent>
       <DialogActions sx={{ p: 3 }}>
         <Button onClick={onClose}>Cancel</Button>
-        <Button 
-            variant="contained" 
-            onClick={handleSave} 
-            disabled={selectedConfigs.length === 0}
-        >
-            Save
+        <Button variant="contained" onClick={handleSave} disabled={selectedConfigs.length === 0}>
+          Save
         </Button>
       </DialogActions>
     </Dialog>

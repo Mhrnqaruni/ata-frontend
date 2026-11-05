@@ -1,4 +1,5 @@
-// /src/services/libraryService.js
+// Fetches the curriculum book library tree (/api/library/tree) that the AI tools' Library tabs pick from.
+// Area: ai_tools
 
 import apiClient from './api';
 
@@ -13,9 +14,10 @@ const libraryService = {
       const response = await apiClient.get('/api/library/tree');
       return response.data;
     } catch (error) {
-      console.error("Error fetching library tree:", error);
+      console.error('Error fetching library tree:', error);
       // For this critical data, we throw a more specific error.
-      const errorMessage = error.response?.data?.detail || "Could not load the curriculum library. Please try again later.";
+      const errorMessage =
+        error.response?.data?.detail || 'Could not load the curriculum library. Please try again later.';
       throw new Error(errorMessage);
     }
   },

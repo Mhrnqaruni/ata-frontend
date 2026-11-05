@@ -1,4 +1,7 @@
-// /src/hooks/useDebounce.js
+// Gives back a value that only updates after it has stopped changing for a set delay, e.g. while typing.
+// Used to wait for typing to settle before searching the AI tool history.
+// Area: platform
+
 import { useState, useEffect } from 'react';
 
 /**

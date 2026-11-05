@@ -1,4 +1,5 @@
-// /src/services/toolService.js
+// Sends an AI tool's settings, with or without a source file, to /api/tools/generate and returns the result.
+// Area: ai_tools
 
 import apiClient from './api';
 
@@ -16,7 +17,7 @@ const toolService = {
         const formData = new FormData();
         formData.append('settings', JSON.stringify(settingsPayload));
         formData.append('source_file', sourceFile);
-        
+
         const config = { headers: { 'Content-Type': 'multipart/form-data' } };
         const response = await apiClient.post('/api/tools/generate/upload', formData, config);
         return response.data;
@@ -25,8 +26,8 @@ const toolService = {
         return response.data;
       }
     } catch (error) {
-      console.error("Error generating content:", error);
-      const errorMessage = error.response?.data?.detail || "An unexpected server error occurred.";
+      console.error('Error generating content:', error);
+      const errorMessage = error.response?.data?.detail || 'An unexpected server error occurred.';
       throw new Error(errorMessage);
     }
   },

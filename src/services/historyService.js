@@ -1,4 +1,5 @@
-// /src/services/historyService.js
+// Wraps /api/history for the AI tools: save a generation, list saved ones with search, and delete one.
+// Area: ai_tools
 
 import apiClient from './api';
 
@@ -13,8 +14,8 @@ const historyService = {
       const response = await apiClient.post('/api/history', payload);
       return response.data;
     } catch (error) {
-      console.error("Error saving generation:", error);
-      const errorMessage = error.response?.data?.detail || "Could not save the generation. Please try again.";
+      console.error('Error saving generation:', error);
+      const errorMessage = error.response?.data?.detail || 'Could not save the generation. Please try again.';
       throw new Error(errorMessage);
     }
   },
@@ -29,8 +30,8 @@ const historyService = {
       const response = await apiClient.get('/api/history', { params });
       return response.data;
     } catch (error) {
-      console.error("Error fetching history:", error);
-      const errorMessage = error.response?.data?.detail || "An error occurred while fetching your saved generations.";
+      console.error('Error fetching history:', error);
+      const errorMessage = error.response?.data?.detail || 'An error occurred while fetching your saved generations.';
       throw new Error(errorMessage);
     }
   },
@@ -48,7 +49,7 @@ const historyService = {
       await apiClient.delete(`/api/history/${generationId}`);
     } catch (error) {
       console.error(`Error deleting generation ${generationId}:`, error);
-      const errorMessage = error.response?.data?.detail || "Could not delete the saved item. Please try again.";
+      const errorMessage = error.response?.data?.detail || 'Could not delete the saved item. Please try again.';
       throw new Error(errorMessage);
     }
   },

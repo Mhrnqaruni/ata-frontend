@@ -1,4 +1,7 @@
-import React, { useEffect, useState } from "react";
+// Picks who a quiz or assessment is for: choose classes and tags, how they combine, and preview the students.
+// Area: academics
+
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Autocomplete,
@@ -12,23 +15,17 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-} from "@mui/material";
-import ExpandMore from "@mui/icons-material/ExpandMore";
-import classService from "../../services/classService";
-import tagService from "../../services/tagService";
-const empty = { class_ids: [], tag_ids: [], mode: "union" };
+} from '@mui/material';
+import ExpandMore from '@mui/icons-material/ExpandMore';
+import classService from '../../services/classService';
+import tagService from '../../services/tagService';
+const empty = { class_ids: [], tag_ids: [], mode: 'union' };
 
 /** The server owns resolution. This view never guesses membership or adds counts. */
-export default function AudienceSelector({
-  value,
-  onChange,
-  onPreview,
-  disabled = false,
-  allowOpen = false,
-}) {
+export default function AudienceSelector({ value, onChange, onPreview, disabled = false, allowOpen = false }) {
   const [options, setOptions] = useState([]);
   const [preview, setPreview] = useState(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const spec = value || empty;
   useEffect(() => {
@@ -37,8 +34,8 @@ export default function AudienceSelector({
       .then(([classes, data]) => {
         if (active)
           setOptions([
-            ...classes.map((c) => ({ ...c, kind: "Class" })),
-            ...data.tags.map((t) => ({ ...t, kind: "Tag" })),
+            ...classes.map((c) => ({ ...c, kind: 'Class' })),
+            ...data.tags.map((t) => ({ ...t, kind: 'Tag' })),
           ]);
       })
       .catch((e) => active && setError(e.message));
@@ -51,7 +48,7 @@ export default function AudienceSelector({
     let active = true;
     setPreview(null);
     onPreview?.(null);
-    setError("");
+    setError('');
     if (!spec.class_ids.length && !spec.tag_ids.length) {
       setLoading(false);
       return;
@@ -71,11 +68,9 @@ export default function AudienceSelector({
       active = false;
     };
   }, [key]);
-  const selected = options.filter((o) =>
-    (o.kind === "Class" ? spec.class_ids : spec.tag_ids).includes(o.id),
-  );
+  const selected = options.filter((o) => (o.kind === 'Class' ? spec.class_ids : spec.tag_ids).includes(o.id));
   return (
-    <Box sx={{ display: "grid", gap: 2, minWidth: 0 }}>
+    <Box sx={{ display: 'grid', gap: 2, minWidth: 0 }}>
       <Autocomplete
         multiple
         options={options}
@@ -87,16 +82,12 @@ export default function AudienceSelector({
         onChange={(_, rows) =>
           onChange({
             ...spec,
-            class_ids: rows.filter((r) => r.kind === "Class").map((r) => r.id),
-            tag_ids: rows.filter((r) => r.kind === "Tag").map((r) => r.id),
+            class_ids: rows.filter((r) => r.kind === 'Class').map((r) => r.id),
+            tag_ids: rows.filter((r) => r.kind === 'Tag').map((r) => r.id),
           })
         }
         renderInput={(params) => (
-          <TextField
-            {...params}
-            label="Classes and tags"
-            placeholder="Select classes or tags"
-          />
+          <TextField {...params} label="Classes and tags" placeholder="Select classes or tags" />
         )}
       />
       {!!spec.class_ids.length && !!spec.tag_ids.length && (
@@ -109,36 +100,28 @@ export default function AudienceSelector({
             value={spec.mode}
             onChange={(e) => onChange({ ...spec, mode: e.target.value })}
           >
-            <MenuItem value="union">
-              Everyone in any selected class or tag
-            </MenuItem>
-            <MenuItem value="filter">
-              Tagged students within selected classes
-            </MenuItem>
+            <MenuItem value="union">Everyone in any selected class or tag</MenuItem>
+            <MenuItem value="filter">Tagged students within selected classes</MenuItem>
           </Select>
         </FormControl>
       )}
       {error && <Alert severity="error">{error}</Alert>}
-      {loading && (
-        <Typography variant="body2">Checking selected students…</Typography>
+      {loading && <Typography variant="body2">Checking selected students…</Typography>}
+      {preview && preview.count === 0 && (
+        <Alert severity="warning">No students match. Change the selected classes or tags before starting.</Alert>
       )}
-      {preview && preview.count===0 && <Alert severity="warning">No students match. Change the selected classes or tags before starting.</Alert>}
       {preview && preview.count > 0 && (
         <Accordion disableGutters>
           <AccordionSummary expandIcon={<ExpandMore />}>
-            {preview.count} unique{" "}
-            {preview.count === 1 ? "student" : "students"} · Preview audience
+            {preview.count} unique {preview.count === 1 ? 'student' : 'students'} · Preview audience
           </AccordionSummary>
           <AccordionDetails>
             {!preview.count ? (
-              <Alert severity="warning">
-                No students match. Change your selection before starting.
-              </Alert>
+              <Alert severity="warning">No students match. Change your selection before starting.</Alert>
             ) : (
               preview.students.map((s) => (
                 <Typography key={s.id} variant="body2" sx={{ mb: 1 }}>
-                  {s.name} · {s.studentId} —{" "}
-                  {s.classes.map((c) => c.name).join(", ")}
+                  {s.name} · {s.studentId} — {s.classes.map((c) => c.name).join(', ')}
                 </Typography>
               ))
             )}
@@ -147,14 +130,11 @@ export default function AudienceSelector({
       )}
       {!value?.class_ids?.length && !value?.tag_ids?.length && (
         <Typography variant="body2" color="text.secondary">
-          {allowOpen
-            ? "No selection: open quiz. Anyone with the code can join."
-            : "Select at least one class or tag."}
+          {allowOpen ? 'No selection: open quiz. Anyone with the code can join.' : 'Select at least one class or tag.'}
         </Typography>
       )}
       <Typography variant="caption" color="text.secondary">
-        Tags are private labels. They do not change AI grading. Students
-        selected more than once are counted once.
+        Tags are private labels. They do not change AI grading. Students selected more than once are counted once.
       </Typography>
     </Box>
   );

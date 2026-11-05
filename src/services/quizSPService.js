@@ -1,5 +1,8 @@
+// Wraps the self-paced quiz session endpoints (/api/quiz-sp-sessions) for teachers and for students.
+// Teachers create, start and end sessions and read results; students join, answer, navigate and submit.
+// Area: quizzes
+
 import { invalidateAfter, cacheFamilies } from './queryCache';
-// /src/services/quizSPService.js
 
 import apiClient from './api';
 
@@ -34,7 +37,7 @@ const quizSPService = {
     try {
       const response = await apiClient.post('/api/quiz-sp-sessions', {
         quiz_id: quizId,
-        ...sessionData
+        ...sessionData,
       });
       return response.data;
     } catch (error) {
@@ -175,9 +178,7 @@ const quizSPService = {
    */
   getSPStudentReport: async (sessionId, studentId) => {
     try {
-      const response = await apiClient.get(
-        `/api/quiz-sp-sessions/${sessionId}/student/${studentId}/report`
-      );
+      const response = await apiClient.get(`/api/quiz-sp-sessions/${sessionId}/student/${studentId}/report`);
       return response.data;
     } catch (error) {
       console.error(`Error fetching SP student report ${studentId}:`, error);
@@ -196,10 +197,9 @@ const quizSPService = {
    */
   downloadStudentReport: async (sessionId, studentId, studentName) => {
     try {
-      const response = await apiClient.get(
-        `/api/quiz-sp-sessions/${sessionId}/student/${studentId}/report.docx`,
-        { responseType: 'blob' }
-      );
+      const response = await apiClient.get(`/api/quiz-sp-sessions/${sessionId}/student/${studentId}/report.docx`, {
+        responseType: 'blob',
+      });
 
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const safeName = (studentName || 'Student').replace(/\s+/g, '_');
@@ -225,10 +225,9 @@ const quizSPService = {
    */
   downloadAllReports: async (sessionId) => {
     try {
-      const response = await apiClient.get(
-        `/api/quiz-sp-sessions/${sessionId}/download-all-reports`,
-        { responseType: 'blob' }
-      );
+      const response = await apiClient.get(`/api/quiz-sp-sessions/${sessionId}/download-all-reports`, {
+        responseType: 'blob',
+      });
 
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const fileName = 'SP_Quiz_All_Reports.zip';
@@ -260,7 +259,7 @@ const quizSPService = {
       const response = await apiClient.post('/api/quiz-sp-sessions/join', {
         access_code: accessCode.toUpperCase(),
         student_id: studentId,
-        guest_name: guestName
+        guest_name: guestName,
       });
 
       // Response now includes questions array (CRITICAL FIX from Phase 3)
@@ -282,14 +281,11 @@ const quizSPService = {
    */
   getSPProgress: async (sessionId, studentToken) => {
     try {
-      const response = await apiClient.get(
-        `/api/quiz-sp-sessions/${sessionId}/progress`,
-        {
-          headers: {
-            'X-Student-Token': studentToken
-          }
-        }
-      );
+      const response = await apiClient.get(`/api/quiz-sp-sessions/${sessionId}/progress`, {
+        headers: {
+          'X-Student-Token': studentToken,
+        },
+      });
       return response.data;
     } catch (error) {
       console.error('Error fetching SP progress:', error);
@@ -311,12 +307,12 @@ const quizSPService = {
       const response = await apiClient.post(
         `/api/quiz-sp-sessions/${sessionId}/navigate`,
         {
-          question_index: questionIndex
+          question_index: questionIndex,
         },
         {
           headers: {
-            'X-Student-Token': studentToken
-          }
+            'X-Student-Token': studentToken,
+          },
         }
       );
       return response.data;
@@ -344,12 +340,12 @@ const quizSPService = {
         {
           question_id: questionId,
           answer: answer,
-          time_taken_ms: timeTakenMs
+          time_taken_ms: timeTakenMs,
         },
         {
           headers: {
-            'X-Student-Token': studentToken
-          }
+            'X-Student-Token': studentToken,
+          },
         }
       );
       return response.data;
@@ -372,12 +368,12 @@ const quizSPService = {
       const response = await apiClient.post(
         `/api/quiz-sp-sessions/${sessionId}/submit`,
         {
-          confirm: true
+          confirm: true,
         },
         {
           headers: {
-            'X-Student-Token': studentToken
-          }
+            'X-Student-Token': studentToken,
+          },
         }
       );
       return response.data;
@@ -392,14 +388,11 @@ const quizSPService = {
    */
   getMyAnswerReview: async (sessionId, studentToken) => {
     try {
-      const response = await apiClient.get(
-        `/api/quiz-sp-sessions/${sessionId}/my-answers`,
-        {
-          headers: {
-            'X-Student-Token': studentToken
-          }
-        }
-      );
+      const response = await apiClient.get(`/api/quiz-sp-sessions/${sessionId}/my-answers`, {
+        headers: {
+          'X-Student-Token': studentToken,
+        },
+      });
       return response.data;
     } catch (error) {
       console.error(`Error fetching SP answer review for session ${sessionId}:`, error);
@@ -472,13 +465,10 @@ const quizSPService = {
    */
   flagSPOutsiderStudent: async (sessionId, outsiderId, flagged, teacherNotes = null) => {
     try {
-      const response = await apiClient.put(
-        `/api/quiz-sp-sessions/${sessionId}/outsiders/${outsiderId}/flag`,
-        {
-          flagged,
-          teacher_notes: teacherNotes
-        }
-      );
+      const response = await apiClient.put(`/api/quiz-sp-sessions/${sessionId}/outsiders/${outsiderId}/flag`, {
+        flagged,
+        teacher_notes: teacherNotes,
+      });
       return response.data;
     } catch (error) {
       console.error(`Error flagging SP outsider ${outsiderId}:`, error);
@@ -514,17 +504,27 @@ const quizSPService = {
    */
   assignOutsiderToStudent: async (sessionId, outsiderId, targetStudentSchoolId) => {
     try {
-      const response = await apiClient.post(
-        `/api/quiz-sp-sessions/${sessionId}/outsiders/${outsiderId}/assign`,
-        { target_student_school_id: targetStudentSchoolId }
-      );
+      const response = await apiClient.post(`/api/quiz-sp-sessions/${sessionId}/outsiders/${outsiderId}/assign`, {
+        target_student_school_id: targetStudentSchoolId,
+      });
       return response.data;
     } catch (error) {
       console.error('Error assigning outsider:', error);
       const errorMessage = error.response?.data?.detail || 'Failed to assign outsider';
       throw new Error(errorMessage);
     }
-  }
+  },
 };
 
-export default invalidateAfter(quizSPService, ['createSPSession', 'startSPSession', 'endSPSession', 'flagSPOutsiderStudent', 'syncSPSessionRoster', 'assignOutsiderToStudent'], cacheFamilies.quiz);
+export default invalidateAfter(
+  quizSPService,
+  [
+    'createSPSession',
+    'startSPSession',
+    'endSPSession',
+    'flagSPOutsiderStudent',
+    'syncSPSessionRoster',
+    'assignOutsiderToStudent',
+  ],
+  cacheFamilies.quiz
+);

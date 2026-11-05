@@ -1,10 +1,22 @@
-// /src/components/classes/ClassEditModal.jsx
+// A dialog to edit an existing class's name and description.
+// Area: academics
 
 // --- Core React Imports ---
 import React, { useState, useEffect } from 'react';
 
 // --- MUI Component Imports ---
-import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, Stack, IconButton, CircularProgress, Alert } from '@mui/material';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Button,
+  Stack,
+  IconButton,
+  CircularProgress,
+  Alert,
+} from '@mui/material';
 
 // --- Icon Imports ---
 import CloseOutlined from '@mui/icons-material/CloseOutlined';
@@ -29,9 +41,9 @@ const ClassEditModal = ({ open, onClose, onSubmit, initialData, isLoading, error
   // This populates the form with the current class data when the modal opens.
   useEffect(() => {
     if (open && initialData) {
-      setFormData({ 
-        name: initialData.name || '', 
-        description: initialData.description || '' 
+      setFormData({
+        name: initialData.name || '',
+        description: initialData.description || '',
       });
     }
   }, [open, initialData]);
@@ -39,7 +51,7 @@ const ClassEditModal = ({ open, onClose, onSubmit, initialData, isLoading, error
   // --- Event Handlers ---
   const handleChange = (event) => {
     const { name, value } = event.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (event) => {
@@ -58,12 +70,12 @@ const ClassEditModal = ({ open, onClose, onSubmit, initialData, isLoading, error
           <CloseOutlined />
         </IconButton>
       </DialogTitle>
-      
+
       <form onSubmit={handleSubmit}>
         <DialogContent>
           <Stack spacing={3} sx={{ pt: 1 }}>
             {error && <Alert severity="error">{error}</Alert>}
-            
+
             <TextField
               autoFocus
               required
@@ -90,7 +102,9 @@ const ClassEditModal = ({ open, onClose, onSubmit, initialData, isLoading, error
           </Stack>
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
-          <Button onClick={onClose} variant="outlined" disabled={isLoading}>Cancel</Button>
+          <Button onClick={onClose} variant="outlined" disabled={isLoading}>
+            Cancel
+          </Button>
           <Button
             type="submit"
             variant="contained"

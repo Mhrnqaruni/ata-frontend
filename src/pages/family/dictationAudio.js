@@ -1,24 +1,18 @@
+// Microphone recording for dictation: captures mono audio with an AudioWorklet and encodes it as a WAV file.
+// Area: family
+
 /** Encode mono PCM at the ACTUAL context rate, never a guessed device rate. */
 export function encodeWav(chunks, rate) {
   const count = chunks.reduce((sum, part) => sum + part.length, 0);
-  if (
-    !Number.isInteger(rate) ||
-    rate < 8000 ||
-    rate > 96000 ||
-    count > rate * 60 ||
-    44 + count * 2 > 10 * 1024 * 1024
-  )
-    throw new Error("Recording exceeds supported duration or sample rate.");
+  if (!Number.isInteger(rate) || rate < 8000 || rate > 96000 || count > rate * 60 || 44 + count * 2 > 10 * 1024 * 1024)
+    throw new Error('Recording exceeds supported duration or sample rate.');
   const buffer = new ArrayBuffer(44 + count * 2),
     view = new DataView(buffer);
-  const word = (at, text) =>
-    [...text].forEach((letter, i) =>
-      view.setUint8(at + i, letter.charCodeAt(0)),
-    );
-  word(0, "RIFF");
+  const word = (at, text) => [...text].forEach((letter, i) => view.setUint8(at + i, letter.charCodeAt(0)));
+  word(0, 'RIFF');
   view.setUint32(4, 36 + count * 2, true);
-  word(8, "WAVE");
-  word(12, "fmt ");
+  word(8, 'WAVE');
+  word(12, 'fmt ');
   view.setUint32(16, 16, true);
   view.setUint16(20, 1, true);
   view.setUint16(22, 1, true);
@@ -26,7 +20,7 @@ export function encodeWav(chunks, rate) {
   view.setUint32(28, rate * 2, true);
   view.setUint16(32, 2, true);
   view.setUint16(34, 16, true);
-  word(36, "data");
+  word(36, 'data');
   view.setUint32(40, count * 2, true);
   let offset = 44;
   for (const chunk of chunks)
@@ -35,7 +29,7 @@ export function encodeWav(chunks, rate) {
       view.setInt16(offset, sample < 0 ? sample * 32768 : sample * 32767, true);
       offset += 2;
     }
-  return new Blob([buffer], { type: "audio/wav" });
+  return new Blob([buffer], { type: 'audio/wav' });
 }
 export const canDictate = () =>
   !!(
@@ -44,6 +38,7 @@ export const canDictate = () =>
     globalThis.AudioContext &&
     globalThis.AudioWorkletNode
   );
+// Starts the microphone and returns {cancel, stop}; stop() gives a WAV blob of at most 60 seconds.
 export async function recordAudio(signal, onLimit) {
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: { channelCount: 1 },
@@ -51,7 +46,7 @@ export async function recordAudio(signal, onLimit) {
   });
   if (signal.aborted) {
     stream.getTracks().forEach((track) => track.stop());
-    throw new Error("Recording cancelled.");
+    throw new Error('Recording cancelled.');
   }
   const context = new AudioContext();
   let node;
@@ -61,17 +56,14 @@ export async function recordAudio(signal, onLimit) {
     void context.close();
   };
   try {
-    await context.audioWorklet.addModule("/family-dictation-worklet.js");
-    if (signal.aborted) throw new Error("Recording cancelled.");
-    node = new AudioWorkletNode(context, "family-dictation-recorder");
+    await context.audioWorklet.addModule('/family-dictation-worklet.js');
+    if (signal.aborted) throw new Error('Recording cancelled.');
+    node = new AudioWorkletNode(context, 'family-dictation-recorder');
     const source = context.createMediaStreamSource(stream);
     source.connect(node);
     node.connect(context.destination);
     await context.resume();
-    const maximum = Math.min(
-      context.sampleRate * 60,
-      Math.floor((10 * 1024 * 1024 - 44) / 2),
-    );
+    const maximum = Math.min(context.sampleRate * 60, Math.floor((10 * 1024 * 1024 - 44) / 2));
     const chunks = [];
     let length = 0,
       limitReached = false,
@@ -95,14 +87,14 @@ export async function recordAudio(signal, onLimit) {
       finished = true;
       release();
     };
-    signal.addEventListener("abort", cancel, { once: true });
+    signal.addEventListener('abort', cancel, { once: true });
     return {
       cancel,
       async stop() {
-        if (finished) throw new Error("Recording already stopped.");
+        if (finished) throw new Error('Recording already stopped.');
         await new Promise((resolve) => {
           finishResolve = resolve;
-          node.port.postMessage("stop");
+          node.port.postMessage('stop');
           setTimeout(resolve, 500);
         });
         finished = true;

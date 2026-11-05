@@ -1,3 +1,6 @@
+/* Declares the self-hosted Geist, Bricolage and Geist Mono fonts the app's text and headings use. */
+/* Area: platform */
+
 /* Self-hosted reference faces; OFL licences accompany the original assets. */
 @font-face {
   font-family: "Geist";

@@ -1,38 +1,29 @@
+// Wraps /api/assessments: list and delete assessments, create them from batch or manual uploads, and retry.
+// Also wraps document parsing, AI mark splitting, mark overrides and page counting.
+// Area: assessments
+
 import { invalidateAfter, cacheFamilies } from './queryCache';
-// /src/services/assessmentService.js (FINAL, WITH CORRECTED V2 API PATH)
 
-import apiClient from './api';
-
-// This helper function is correct and remains unchanged.
-function triggerBrowserDownload(blob, defaultFilename, headers) {
-  const url = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  const contentDisposition = headers['content-disposition'];
-  let filename = defaultFilename;
-  if (contentDisposition) {
-    const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-    if (filenameMatch && filenameMatch[1]) {
-      filename = filenameMatch[1].replace(/['"]/g, '').trim();
-    }
-  }
-  link.href = url;
-  link.setAttribute('download', filename);
-  document.body.appendChild(link);
-  link.click();
-  link.parentNode.removeChild(link);
-  window.URL.revokeObjectURL(url);
-}
+import apiClient, { apiError } from './api';
 
 const assessmentService = {
   getRetryDraft: async (jobId) => {
-    try { return (await apiClient.get(`/api/assessments/${encodeURIComponent(jobId)}/retry`)).data; }
-    catch (error) { throw new Error(error.response?.data?.detail || 'Could not restore this assessment.'); }
+    try {
+      return (await apiClient.get(`/api/assessments/${encodeURIComponent(jobId)}/retry`)).data;
+    } catch (error) {
+      throw apiError(error, 'Could not restore this assessment.');
+    }
   },
   startRetry: async (jobId, formData) => {
-    try { return (await apiClient.post(`/api/assessments/${encodeURIComponent(jobId)}/retry`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })).data; }
-    catch (error) { throw new Error(error.response?.data?.detail || 'Could not restart this assessment.'); }
+    try {
+      return (
+        await apiClient.post(`/api/assessments/${encodeURIComponent(jobId)}/retry`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+      ).data;
+    } catch (error) {
+      throw apiError(error, 'Could not restart this assessment.');
+    }
   },
 
   // --- [V2 WORKFLOW METHODS] ---
@@ -40,12 +31,12 @@ const assessmentService = {
   parseDocument: async (questionFile, answerKeyFile, classId, assessmentName) => {
     const formData = new FormData();
     // Repeated fields preserve group order and remain compatible with single-file callers.
-    const asFiles = value => Array.isArray(value) ? value : value ? [value] : [];
-    asFiles(questionFile).forEach(file => formData.append('question_file', file));
-    asFiles(answerKeyFile).forEach(file => formData.append('answer_key_file', file));
+    const asFiles = (value) => (Array.isArray(value) ? value : value ? [value] : []);
+    asFiles(questionFile).forEach((file) => formData.append('question_file', file));
+    asFiles(answerKeyFile).forEach((file) => formData.append('answer_key_file', file));
     formData.append('class_id', classId);
     formData.append('assessment_name', assessmentName);
-    
+
     try {
       const response = await apiClient.post('/api/assessments/parse-document', formData, {
         timeout: 630000, // The server bounds multi-reader analysis to ten minutes.
@@ -53,8 +44,8 @@ const assessmentService = {
       });
       return response.data;
     } catch (error) {
-      console.error("Error parsing assessment document(s):", error);
-      throw new Error(error.response?.data?.detail || "Failed to analyze document(s).");
+      console.error('Error parsing assessment document(s):', error);
+      throw apiError(error, 'Failed to analyze document(s).');
     }
   },
 
@@ -65,13 +56,13 @@ const assessmentService = {
       // Incorrect: '/api/v2/assessments'
       // Correct:   '/api/assessments/v2'
       const response = await apiClient.post('/api/assessments/v2', formData, {
-      // --- [END OF FIX] ---
+        // --- [END OF FIX] ---
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       return response.data;
     } catch (error) {
-      console.error("Error creating V2 assessment job:", error);
-      throw new Error(error.response?.data?.detail || "Failed to create V2 assessment job.");
+      console.error('Error creating V2 assessment job:', error);
+      throw apiError(error, 'Failed to create V2 assessment job.');
     }
   },
 
@@ -81,8 +72,8 @@ const assessmentService = {
       const response = await apiClient.post('/api/assessments/distribute-scores', payload);
       return response.data;
     } catch (error) {
-      console.error("Error distributing scores with AI:", error);
-      throw new Error(error.response?.data?.detail || "Failed to distribute scores.");
+      console.error('Error distributing scores with AI:', error);
+      throw apiError(error, 'Failed to distribute scores.');
     }
   },
 
@@ -94,7 +85,7 @@ const assessmentService = {
     formData.append('outsider_names', JSON.stringify(outsiders));
 
     // Create a Set of outsider IDs for quick lookup.
-    const outsiderIds = new Set(outsiders.map(o => o.id));
+    const outsiderIds = new Set(outsiders.map((o) => o.id));
 
     // Iterate over the staged files and append them to FormData with dynamic keys.
     // The key format 'student_<id>_files' or 'outsider_<id>_files' matches the backend expectation.
@@ -104,7 +95,7 @@ const assessmentService = {
         const entityType = outsiderIds.has(entityId) ? 'outsider' : 'student';
         const formKey = `${entityType}_${entityId}_files`;
 
-        fileList.forEach(file => {
+        fileList.forEach((file) => {
           formData.append(formKey, file, file.name);
         });
       }
@@ -116,15 +107,15 @@ const assessmentService = {
       });
       return response.data;
     } catch (error) {
-      console.error("Error creating job with manual uploads:", error);
-      throw new Error(error.response?.data?.detail || "Failed to create job with manual uploads.");
+      console.error('Error creating job with manual uploads:', error);
+      throw apiError(error, 'Failed to create job with manual uploads.');
     }
   },
 
   uploadManualSubmission: async (jobId, { studentId, outsiderName, images }) => {
     const formData = new FormData();
     formData.append('job_id', jobId);
-    images.forEach(image => {
+    images.forEach((image) => {
       formData.append('images', image, image.name);
     });
 
@@ -140,18 +131,8 @@ const assessmentService = {
       });
       return response.data;
     } catch (error) {
-      console.error("Error in manual submission:", error);
-      throw new Error(error.response?.data?.detail || "Failed to upload manual submission.");
-    }
-  },
-
-  manualMatchSubmissions: async (jobId, matches) => {
-    try {
-      const response = await apiClient.post(`/api/assessments/${jobId}/manual-match`, matches);
-      return response.data;
-    } catch (error) {
-      console.error("Error submitting manual matches:", error);
-      throw new Error(error.response?.data?.detail || "Failed to save manual matches.");
+      console.error('Error in manual submission:', error);
+      throw apiError(error, 'Failed to upload manual submission.');
     }
   },
 
@@ -162,20 +143,8 @@ const assessmentService = {
       const response = await apiClient.get('/api/assessments');
       return response.data.assessments || [];
     } catch (error) {
-      console.error("Error fetching assessments:", error);
-      throw new Error(error.response?.data?.detail || "Failed to load assessments.");
-    }
-  },
-
-  createAssessmentJob: async (formData) => {
-    try {
-      const response = await apiClient.post('/api/assessments', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      return response.data;
-    } catch (error) {
-      console.error("Error creating assessment job:", error);
-      throw new Error(error.response?.data?.detail || "Failed to create assessment job.");
+      console.error('Error fetching assessments:', error);
+      throw apiError(error, 'Failed to load assessments.');
     }
   },
 
@@ -185,7 +154,7 @@ const assessmentService = {
       await apiClient.delete(`/api/assessments/${jobId}`);
     } catch (error) {
       console.error(`Error deleting assessment job ${jobId}:`, error);
-      throw new Error(error.response?.data?.detail || "Failed to delete assessment.");
+      throw apiError(error, 'Failed to delete assessment.');
     }
   },
 
@@ -195,17 +164,7 @@ const assessmentService = {
       return response.data;
     } catch (error) {
       console.error(`Error fetching results for job ${jobId}:`, error);
-      throw new Error(error.response?.data?.detail || "Failed to load job results.");
-    }
-  },
-  
-  getAssessmentConfig: async (jobId) => {
-    try {
-      const response = await apiClient.get(`/api/assessments/${jobId}/config`);
-      return response.data;
-    } catch (error) {
-      console.error(`Error fetching config for job ${jobId}:`, error);
-      throw new Error(error.response?.data?.detail || "Failed to load assessment configuration.");
+      throw apiError(error, 'Failed to load job results.');
     }
   },
 
@@ -215,27 +174,7 @@ const assessmentService = {
       return response.data;
     } catch (error) {
       console.error(`Error saving overrides for student ${studentId}, question ${questionId}:`, error);
-      throw new Error(error.response?.data?.detail || "Could not save changes.");
-    }
-  },
-
-  downloadStudentReport: async (jobId, studentId) => {
-    try {
-      const response = await apiClient.get(`/api/assessments/${jobId}/report/${studentId}`, { responseType: 'blob' });
-      triggerBrowserDownload(response.data, `Report_${studentId}.docx`, response.headers);
-    } catch (error) {
-      console.error("Error downloading student report:", error);
-      throw new Error(error.response?.data?.detail || "Failed to download report.");
-    }
-  },
-
-  downloadAllReports: async (jobId) => {
-    try {
-      const response = await apiClient.get(`/api/assessments/${jobId}/reports/all`, { responseType: 'blob' });
-      triggerBrowserDownload(response.data, `All_Reports_${jobId}.zip`, response.headers);
-    } catch (error) {
-      console.error("Error downloading all reports:", error);
-      throw new Error(error.response?.data?.detail || "Failed to download all reports.");
+      throw apiError(error, 'Could not save changes.');
     }
   },
 
@@ -243,7 +182,7 @@ const assessmentService = {
 
   countPages: async (files) => {
     const formData = new FormData();
-    files.forEach(file => {
+    files.forEach((file) => {
       formData.append('files', file);
     });
 
@@ -253,10 +192,21 @@ const assessmentService = {
       });
       return response.data;
     } catch (error) {
-      console.error("Error counting pages:", error);
-      throw new Error(error.response?.data?.detail || "Failed to count pages.");
+      console.error('Error counting pages:', error);
+      throw apiError(error, 'Failed to count pages.');
     }
   },
 };
 
-export default invalidateAfter(assessmentService, ['startRetry', 'createAssessmentJobV2', 'createAssessmentJobWithManualUploads', 'uploadManualSubmission', 'manualMatchSubmissions', 'createAssessmentJob', 'deleteAssessment', 'saveOverrides'], cacheFamilies.assessment);
+export default invalidateAfter(
+  assessmentService,
+  [
+    'startRetry',
+    'createAssessmentJobV2',
+    'createAssessmentJobWithManualUploads',
+    'uploadManualSubmission',
+    'deleteAssessment',
+    'saveOverrides',
+  ],
+  cacheFamilies.assessment
+);

@@ -1,4 +1,6 @@
-// /src/components/common/ConfirmationModal.jsx
+// A reusable confirmation dialog with Cancel and a red confirm button, shown before deleting something.
+// Used on the class, assessment and AI tool history screens.
+// Area: platform
 
 import React from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from '@mui/material';
@@ -13,28 +15,33 @@ import { Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, B
  * @param {string} props.title - The title to display in the modal header.
  * @param {string} props.description - The descriptive text/question for the modal body.
  */
-const ConfirmationModal = ({ open, onClose, onConfirm, title, description, busy = false, confirmLabel = "Confirm" }) => {
+const ConfirmationModal = ({
+  open,
+  onClose,
+  onConfirm,
+  title,
+  description,
+  busy = false,
+  confirmLabel = 'Confirm',
+}) => {
   return (
     <Dialog
       open={open}
       onClose={busy ? undefined : onClose}
       aria-labelledby="confirmation-dialog-title"
       aria-describedby="confirmation-dialog-description"
+      PaperProps={{ 'data-mst': 'confirm-dialog' }}
     >
-      <DialogTitle id="confirmation-dialog-title">
-        {title}
-      </DialogTitle>
+      <DialogTitle id="confirmation-dialog-title">{title}</DialogTitle>
       <DialogContent>
-        <DialogContentText id="confirmation-dialog-description">
-          {description}
-        </DialogContentText>
+        <DialogContentText id="confirmation-dialog-description">{description}</DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button disabled={busy} onClick={onClose} variant="outlined">
+        <Button data-mst="cancel" disabled={busy} onClick={onClose} variant="outlined">
           Cancel
         </Button>
-        <Button disabled={busy} onClick={onConfirm} color="error" variant="contained">
-          {busy ? "Deleting…" : confirmLabel}
+        <Button data-mst="confirm" disabled={busy} onClick={onConfirm} color="error" variant="contained">
+          {busy ? 'Deleting…' : confirmLabel}
         </Button>
       </DialogActions>
     </Dialog>

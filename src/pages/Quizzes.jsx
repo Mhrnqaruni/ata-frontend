@@ -1,10 +1,13 @@
+// The teacher's quiz list: one card per quiz, filtered by All, Live or Self-paced.
+// Cards can be edited, published, renamed, duplicated, deleted, started live or self-paced, or opened for results.
+// Area: quizzes
+
 import { useQuizSessions, quizSessionOptions } from '../hooks/useTeacherData';
 import { queryClient } from '../services/queryCache';
 import { useAuth } from '../hooks/useAuth';
 import { useTeacherData } from '../hooks/useTeacherData';
 import QueryNotice from '../components/common/QueryNotice';
 import RenameActivityDialog from '../components/common/RenameActivityDialog';
-// /src/pages/Quizzes.jsx
 
 // --- Core React Imports ---
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -34,7 +37,7 @@ import {
   DialogActions,
   TextField,
   Tabs,
-  Tab
+  Tab,
 } from '@mui/material';
 import AddOutlined from '@mui/icons-material/AddOutlined';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -59,7 +62,11 @@ import EmptyStateCard from '../components/common/EmptyState';
  */
 const EmptyState = ({ onAddQuiz }) => (
   <EmptyStateCard
-    action={<Button variant="contained" startIcon={<AddOutlined />} onClick={onAddQuiz}>Create quiz</Button>}
+    action={
+      <Button variant="contained" startIcon={<AddOutlined />} onClick={onAddQuiz}>
+        Create quiz
+      </Button>
+    }
     icon={<QuizOutlined />}
     title="Create your first quiz"
   >
@@ -70,7 +77,21 @@ const EmptyState = ({ onAddQuiz }) => (
 /**
  * Quiz card component displaying a single quiz
  */
-const QuizCard = ({ quiz, displayTitle, onEdit, onDuplicate, onDelete, onRename, onStartSession, onStartSPSession, onResumeSPSession, activeSession, sessionBusy, onPublish, onReview }) => {
+const QuizCard = ({
+  quiz,
+  displayTitle,
+  onEdit,
+  onDuplicate,
+  onDelete,
+  onRename,
+  onStartSession,
+  onStartSPSession,
+  onResumeSPSession,
+  activeSession,
+  sessionBusy,
+  onPublish,
+  onReview,
+}) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useNavigate();
 
@@ -102,7 +123,14 @@ const QuizCard = ({ quiz, displayTitle, onEdit, onDuplicate, onDelete, onRename,
   };
 
   const selfPaced = quiz.settings?.mode === 'self_paced';
-  const meta = [`${quiz.question_count || 0} ${quiz.question_count === 1 ? 'question' : 'questions'}`, (quiz.audience ? `${quiz.audience.class_ids.length} classes · ${quiz.audience.tag_ids.length} tags${quiz.audience.mode==='filter'?' · filtered':''}` : quiz.class_name)].filter(Boolean).join(' · ');
+  const meta = [
+    `${quiz.question_count || 0} ${quiz.question_count === 1 ? 'question' : 'questions'}`,
+    quiz.audience
+      ? `${quiz.audience.class_ids.length} classes · ${quiz.audience.tag_ids.length} tags${quiz.audience.mode === 'filter' ? ' · filtered' : ''}`
+      : quiz.class_name,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
     <Card className="mst-rim mst-lift mst-quiz-card" data-enter="">
@@ -112,22 +140,33 @@ const QuizCard = ({ quiz, displayTitle, onEdit, onDuplicate, onDelete, onRename,
             <Chip
               className="mst-status"
               color={selfPaced ? 'default' : 'primary'}
-              icon={!selfPaced && activeSession ? <span aria-hidden="true" className="mst-dot mst-chip-dot" data-pulse="true" /> : undefined}
+              icon={
+                !selfPaced && activeSession ? (
+                  <span aria-hidden="true" className="mst-dot mst-chip-dot" data-pulse="true" />
+                ) : undefined
+              }
               label={selfPaced ? 'Self-paced' : activeSession ? 'Live now' : 'Live'}
               size="small"
             />
             <Chip color={getStatusColor(quiz.status)} label={getStatusLabel(quiz.status)} size="small" />
           </div>
-          <IconButton aria-label={`Options for ${displayTitle}`} onClick={handleMenuOpen} aria-haspopup="menu" aria-expanded={Boolean(anchorEl)} sx={{width:44,height:44}}>
+          <IconButton
+            aria-label={`Options for ${displayTitle}`}
+            onClick={handleMenuOpen}
+            aria-haspopup="menu"
+            aria-expanded={Boolean(anchorEl)}
+            sx={{ width: 44, height: 44 }}
+          >
             <MoreVertIcon />
           </IconButton>
         </div>
         <h2 className="mst-quiz-title">{displayTitle}</h2>
         <div className="mst-quiz-meta">{meta}</div>
-        {quiz.description && (
-          <p className="mst-quiz-desc">{quiz.description}</p>
-        )}
-        <div className="mst-quiz-date">Created {new Date(quiz.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+        {quiz.description && <p className="mst-quiz-desc">{quiz.description}</p>}
+        <div className="mst-quiz-date">
+          Created{' '}
+          {new Date(quiz.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
+        </div>
       </CardContent>
 
       <CardActions className="mst-quiz-actions">
@@ -165,43 +204,44 @@ const QuizCard = ({ quiz, displayTitle, onEdit, onDuplicate, onDelete, onRename,
                 Start session
               </Button>
             )
+          ) : // Regular quiz - check for active session
+          activeSession ? (
+            <Button
+              fullWidth
+              variant="contained"
+              startIcon={<span aria-hidden="true" className="mst-dot" data-pulse="true" />}
+              onClick={() => navigate(`/quizzes/sessions/${activeSession.id}/host`)}
+            >
+              Resume session
+            </Button>
           ) : (
-            // Regular quiz - check for active session
-            activeSession ? (
-              <Button
-                fullWidth
-                variant="contained"
-                startIcon={<span aria-hidden="true" className="mst-dot" data-pulse="true" />}
-                onClick={() => navigate(`/quizzes/sessions/${activeSession.id}/host`)}
-              >
-                Resume session
-              </Button>
-            ) : (
-              <Button
-                fullWidth
-                variant="contained"
-                startIcon={<PlayArrowIcon />}
-                disabled={sessionBusy}
-                onClick={() => onStartSession(quiz.id)}
-              >
-                Host quiz
-              </Button>
-            )
+            <Button
+              fullWidth
+              variant="contained"
+              startIcon={<PlayArrowIcon />}
+              disabled={sessionBusy}
+              onClick={() => onStartSession(quiz.id)}
+            >
+              Host quiz
+            </Button>
           )
         ) : (
-          <Button
-            fullWidth
-            variant="outlined"
-            startIcon={<EditIcon />}
-            onClick={() => onEdit(quiz.id)}
-          >
+          <Button fullWidth variant="outlined" startIcon={<EditIcon />} onClick={() => onEdit(quiz.id)}>
             Edit quiz
           </Button>
         )}
       </CardActions>
 
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-        <MenuItem onClick={()=>{handleMenuClose();onRename(quiz);}}><EditIcon fontSize="small" sx={{mr:1}}/>Rename</MenuItem>
+        <MenuItem
+          onClick={() => {
+            handleMenuClose();
+            onRename(quiz);
+          }}
+        >
+          <EditIcon fontSize="small" sx={{ mr: 1 }} />
+          Rename
+        </MenuItem>
         {quiz.status !== 'completed' && (
           <MenuItem
             onClick={() => {
@@ -258,28 +298,35 @@ const Quizzes = () => {
   const quizzesQuery = useTeacherData('quizzes');
   const classesQuery = useTeacherData('classes');
   const classes = classesQuery.data || [];
-  const classMap = Object.fromEntries(classes.map(item => [item.id, item.name]));
-  const quizzes = (quizzesQuery.data || []).map(quiz => ({ ...quiz, class_name: classMap[quiz.class_id] ?? quiz.class_name }));
+  const classMap = Object.fromEntries(classes.map((item) => [item.id, item.name]));
+  const quizzes = (quizzesQuery.data || []).map((quiz) => ({
+    ...quiz,
+    class_name: classMap[quiz.class_id] ?? quiz.class_name,
+  }));
   const sessions = useQuizSessions(quizzes);
-  const activeSessions = Object.fromEntries(quizzes.map((quiz, index) => [quiz.id,
-    ['active', 'draft', 'waiting'].includes(sessions[index]?.data?.status) ? sessions[index].data : null]));
+  const activeSessions = Object.fromEntries(
+    quizzes.map((quiz, index) => [
+      quiz.id,
+      ['active', 'draft', 'waiting'].includes(sessions[index]?.data?.status) ? sessions[index].data : null,
+    ])
+  );
   const isLoading = quizzesQuery.isPending;
   const [error, setError] = useState(null);
   const [modeFilter, setModeFilter] = useState('all');
   const sessionAction = useRef(false);
   const [sessionBusy, setSessionBusy] = useState(false);
 
-  const [renameItem,setRenameItem] = useState(null);
+  const [renameItem, setRenameItem] = useState(null);
 
   // Delete confirmation dialog
   const [deleteDialog, setDeleteDialog] = useState({ open: false, quizId: null });
-  const [deleting,setDeleting]=useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Duplicate dialog
   const [duplicateDialog, setDuplicateDialog] = useState({
     open: false,
     quizId: null,
-    newTitle: ''
+    newTitle: '',
   });
 
   const formatTitle = (quiz) => {
@@ -302,7 +349,7 @@ const Quizzes = () => {
     sessionAction.current = true;
     setSessionBusy(true);
     try {
-      const quiz = quizzes.find(item => item.id === quizId);
+      const quiz = quizzes.find((item) => item.id === quizId);
       const latest = await queryClient.fetchQuery({ ...quizSessionOptions(user.id, quiz), staleTime: 0 });
       if (['active', 'draft', 'waiting'].includes(latest?.status)) {
         navigate(`/quizzes/sessions/${latest.id}/host`);
@@ -311,8 +358,8 @@ const Quizzes = () => {
       const session = await quizService.createSession(quizId);
       navigate(`/quizzes/sessions/${session.id}/host`);
     } catch (err) {
-      console.error("Failed to start session:", err);
-      setError(err.message || "Failed to start quiz session.");
+      console.error('Failed to start session:', err);
+      setError(err.message || 'Failed to start quiz session.');
     } finally {
       sessionAction.current = false;
       setSessionBusy(false);
@@ -322,10 +369,9 @@ const Quizzes = () => {
   const handlePublish = async (quizId) => {
     try {
       await quizService.publishQuiz(quizId);
-
     } catch (err) {
-      console.error("Failed to publish quiz:", err);
-      setError(err.message || "Failed to publish quiz.");
+      console.error('Failed to publish quiz:', err);
+      setError(err.message || 'Failed to publish quiz.');
     }
   };
 
@@ -338,26 +384,26 @@ const Quizzes = () => {
   };
 
   const handleConfirmDelete = async () => {
-    if(deleting)return;
+    if (deleting) return;
     setDeleting(true);
     try {
       await quizService.deleteQuiz(deleteDialog.quizId);
       handleCloseDeleteDialog();
-
     } catch (err) {
-      console.error("Failed to delete quiz:", err);
-      setError(err.message || "Failed to delete quiz.");
+      console.error('Failed to delete quiz:', err);
+      setError(err.message || 'Failed to delete quiz.');
       handleCloseDeleteDialog();
+    } finally {
+      setDeleting(false);
     }
-    finally { setDeleting(false); }
   };
 
   const handleOpenDuplicateDialog = (quizId) => {
-    const quiz = quizzes.find(q => q.id === quizId);
+    const quiz = quizzes.find((q) => q.id === quizId);
     setDuplicateDialog({
       open: true,
       quizId,
-      newTitle: quiz ? `${quiz.title} (Copy)` : ''
+      newTitle: quiz ? `${quiz.title} (Copy)` : '',
     });
   };
 
@@ -369,10 +415,9 @@ const Quizzes = () => {
     try {
       await quizService.duplicateQuiz(duplicateDialog.quizId, duplicateDialog.newTitle);
       handleCloseDuplicateDialog();
-
     } catch (err) {
-      console.error("Failed to duplicate quiz:", err);
-      setError(err.message || "Failed to duplicate quiz.");
+      console.error('Failed to duplicate quiz:', err);
+      setError(err.message || 'Failed to duplicate quiz.');
       handleCloseDuplicateDialog();
     }
   };
@@ -410,8 +455,8 @@ const Quizzes = () => {
         // Session exists - confirm before creating new one
         const confirmed = window.confirm(
           `An active session already exists for this quiz. Do you want to:\n\n` +
-          `- Click "Cancel" to resume the existing session\n` +
-          `- Click "OK" to create a NEW session (students in old session will lose access)`
+            `- Click "Cancel" to resume the existing session\n` +
+            `- Click "OK" to create a NEW session (students in old session will lose access)`
         );
 
         if (!confirmed) {
@@ -421,7 +466,6 @@ const Quizzes = () => {
         }
 
         // User chose to create new session - proceed
-        console.log('[Quizzes] Creating new session despite existing active session');
       }
 
       // Create new session
@@ -438,7 +482,7 @@ const Quizzes = () => {
         require_all_answers: false,
         show_timer: true,
         show_results_immediately: false,
-        show_final_score_to_students: quiz.settings?.show_final_score_to_students ?? true
+        show_final_score_to_students: quiz.settings?.show_final_score_to_students ?? true,
       });
 
       await quizSPService.startSPSession(session.id);
@@ -461,7 +505,7 @@ const Quizzes = () => {
   };
 
   // NEW: Filter quizzes by mode
-  const filteredQuizzes = quizzes.filter(quiz => {
+  const filteredQuizzes = quizzes.filter((quiz) => {
     if (modeFilter === 'all') return true;
     return quiz.settings?.mode === modeFilter || (modeFilter === 'live' && !quiz.settings?.mode);
   });
@@ -487,11 +531,7 @@ const Quizzes = () => {
     }
 
     if (!Array.isArray(quizzes)) {
-      return (
-        <Alert severity="warning">
-          Could not display quiz data due to an unexpected format.
-        </Alert>
-      );
+      return <Alert severity="warning">Could not display quiz data due to an unexpected format.</Alert>;
     }
 
     if (quizzes.length === 0) {
@@ -501,22 +541,22 @@ const Quizzes = () => {
     return (
       <div className="mst-grid mst-grid-auto">
         {filteredQuizzes.map((quiz) => (
-            <QuizCard
-              key={quiz.id}
-              quiz={quiz}
-              displayTitle={formatTitle(quiz)}
-              onEdit={handleEditQuiz}
-              onDuplicate={handleOpenDuplicateDialog}
-              onRename={quiz=>setRenameItem({kind:"quiz",id:quiz.id,name:quiz.title})}
-              onDelete={handleOpenDeleteDialog}
-              onStartSession={handleStartSession}
-              onStartSPSession={handleCreateSPSession}
-              onResumeSPSession={handleResumeSPSession}
-              activeSession={activeSessions[quiz.id]}
-              sessionBusy={sessionBusy}
-              onPublish={handlePublish}
-              onReview={() => handleReviewAnalytics(quiz)}
-            />
+          <QuizCard
+            key={quiz.id}
+            quiz={quiz}
+            displayTitle={formatTitle(quiz)}
+            onEdit={handleEditQuiz}
+            onDuplicate={handleOpenDuplicateDialog}
+            onRename={(quiz) => setRenameItem({ kind: 'quiz', id: quiz.id, name: quiz.title })}
+            onDelete={handleOpenDeleteDialog}
+            onStartSession={handleStartSession}
+            onStartSPSession={handleCreateSPSession}
+            onResumeSPSession={handleResumeSPSession}
+            activeSession={activeSessions[quiz.id]}
+            sessionBusy={sessionBusy}
+            onPublish={handlePublish}
+            onReview={() => handleReviewAnalytics(quiz)}
+          />
         ))}
         <AddCard hint="Live in class or self-paced" label="Create a quiz" minHeight={232} onClick={handleCreateQuiz} />
       </div>
@@ -527,7 +567,11 @@ const Quizzes = () => {
     <>
       <Box>
         <PageHeader
-          actions={<Button variant="contained" startIcon={<AddOutlined />} onClick={handleCreateQuiz}>Create quiz</Button>}
+          actions={
+            <Button variant="contained" startIcon={<AddOutlined />} onClick={handleCreateQuiz}>
+              Create quiz
+            </Button>
+          }
           subtitle="Live quizzes for the whole class, or self-paced ones they take on their own."
           title="Quizzes"
         />
@@ -543,23 +587,30 @@ const Quizzes = () => {
 
         <QueryNotice query={quizzesQuery} label="quizzes" />
         <QueryNotice query={classesQuery} label="class names" />
-        {sessions.some(result => result.isError) && <Alert severity="warning" sx={{mb:2}}>Some session statuses are unavailable. Starting a session will check again first.</Alert>}
+        {sessions.some((result) => result.isError) && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            Some session statuses are unavailable. Starting a session will check again first.
+          </Alert>
+        )}
         {quizzesQuery.data === undefined && quizzesQuery.error ? null : renderContent()}
       </Box>
 
-      <RenameActivityDialog item={renameItem} onClose={()=>setRenameItem(null)}/>
+      <RenameActivityDialog item={renameItem} onClose={() => setRenameItem(null)} />
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialog.open} onClose={deleting ? undefined : handleCloseDeleteDialog}>
         <DialogTitle>Delete this quiz?</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Delete this quiz and remove its sessions from normal use? Its grades will no longer count in student, class or tag statistics. Internal history is retained. Open sessions must be ended first.
+            Delete this quiz and remove its sessions from normal use? Its grades will no longer count in student, class
+            or tag statistics. Internal history is retained. Open sessions must be ended first.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button disabled={deleting} onClick={handleCloseDeleteDialog}>Cancel</Button>
+          <Button disabled={deleting} onClick={handleCloseDeleteDialog}>
+            Cancel
+          </Button>
           <Button disabled={deleting} onClick={handleConfirmDelete} color="error" variant="contained">
-            {deleting ? "Deleting…" : "Delete"}
+            {deleting ? 'Deleting…' : 'Delete'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -568,26 +619,18 @@ const Quizzes = () => {
       <Dialog open={duplicateDialog.open} onClose={handleCloseDuplicateDialog}>
         <DialogTitle>Duplicate quiz</DialogTitle>
         <DialogContent>
-          <DialogContentText sx={{ mb: 2 }}>
-            Enter a title for the duplicated quiz:
-          </DialogContentText>
+          <DialogContentText sx={{ mb: 2 }}>Enter a title for the duplicated quiz:</DialogContentText>
           <TextField
             autoFocus
             fullWidth
             label="Title for the copy"
             value={duplicateDialog.newTitle}
-            onChange={(e) =>
-              setDuplicateDialog({ ...duplicateDialog, newTitle: e.target.value })
-            }
+            onChange={(e) => setDuplicateDialog({ ...duplicateDialog, newTitle: e.target.value })}
           />
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDuplicateDialog}>Cancel</Button>
-          <Button
-            onClick={handleConfirmDuplicate}
-            variant="contained"
-            disabled={!duplicateDialog.newTitle.trim()}
-          >
+          <Button onClick={handleConfirmDuplicate} variant="contained" disabled={!duplicateDialog.newTitle.trim()}>
             Duplicate
           </Button>
         </DialogActions>

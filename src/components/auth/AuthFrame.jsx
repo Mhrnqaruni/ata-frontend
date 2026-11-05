@@ -1,10 +1,13 @@
-import React from "react";
-import DarkModeOutlined from "@mui/icons-material/DarkModeOutlined";
-import LightModeOutlined from "@mui/icons-material/LightModeOutlined";
-import { useThemeMode } from "../../hooks/useThemeMode";
-import logo from "../../assets/mst_logo_no_bg.png";
-import GradingLine from "./GradingLine";
-import "./auth.css";
+// The sign-in and register page layout: a brand story panel beside the logo and form card, plus a theme switch.
+// Area: identity
+
+import React from 'react';
+import DarkModeOutlined from '@mui/icons-material/DarkModeOutlined';
+import LightModeOutlined from '@mui/icons-material/LightModeOutlined';
+import { useThemeMode } from '../../hooks/useThemeMode';
+import logo from '../../assets/mst_logo_no_bg.png';
+import GradingLine from './GradingLine';
+import './auth.css';
 
 /**
  * The sign-in surface, in two halves like the Moby Argus sign-in:
@@ -16,7 +19,7 @@ import "./auth.css";
  */
 export default function AuthFrame({ title, description, children }) {
   const { mode, toggleThemeMode } = useThemeMode();
-  const next = mode === "dark" ? "light" : "dark";
+  const next = mode === 'dark' ? 'light' : 'dark';
   return (
     <div className="mst-auth" data-mode={mode}>
       <section className="mst-auth-side">
@@ -36,14 +39,9 @@ export default function AuthFrame({ title, description, children }) {
       <aside aria-label="How marking works in MySmartTeach" className="mst-auth-story">
         <GradingLine tallFrom={1024} />
       </aside>
-      <button
-        aria-label={`Switch to ${next} mode`}
-        className="mst-auth-theme"
-        onClick={toggleThemeMode}
-        type="button"
-      >
-        {next === "dark" ? <DarkModeOutlined aria-hidden="true" /> : <LightModeOutlined aria-hidden="true" />}
-        <span>{next === "dark" ? "Dark" : "Light"}</span>
+      <button aria-label={`Switch to ${next} mode`} className="mst-auth-theme" onClick={toggleThemeMode} type="button">
+        {next === 'dark' ? <DarkModeOutlined aria-hidden="true" /> : <LightModeOutlined aria-hidden="true" />}
+        <span>{next === 'dark' ? 'Dark' : 'Light'}</span>
       </button>
     </div>
   );

@@ -1,8 +1,29 @@
+// Dialog on the AI tools page listing saved generations, with search, a tool filter, copy and delete.
+// Area: ai_tools
+
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Dialog, DialogTitle, DialogContent, IconButton, Typography, Box, List, Accordion,
-  AccordionSummary, AccordionDetails, TextField, MenuItem, Select, InputLabel,
-  FormControl, CircularProgress, Stack, Divider, Button, Alert, Tooltip
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  IconButton,
+  Typography,
+  Box,
+  List,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  TextField,
+  MenuItem,
+  Select,
+  InputLabel,
+  FormControl,
+  CircularProgress,
+  Stack,
+  Divider,
+  Button,
+  Alert,
+  Tooltip,
 } from '@mui/material';
 
 // Import Icons
@@ -25,10 +46,14 @@ import ConfirmationModal from '../common/ConfirmationModal';
 // Helper to get an icon based on the tool ID from the API
 const getToolIcon = (toolId) => {
   switch (toolId) {
-    case 'question-generator': return <QuestionAnswerOutlined fontSize="small" />;
-    case 'slide-generator': return <SlideshowOutlined fontSize="small" />;
-    case 'rubric-generator': return <RuleOutlined fontSize="small" />;
-    default: return <AutoAwesomeOutlined fontSize="small" />;
+    case 'question-generator':
+      return <QuestionAnswerOutlined fontSize="small" />;
+    case 'slide-generator':
+      return <SlideshowOutlined fontSize="small" />;
+    case 'rubric-generator':
+      return <RuleOutlined fontSize="small" />;
+    default:
+      return <AutoAwesomeOutlined fontSize="small" />;
   }
 };
 
@@ -92,7 +117,7 @@ const HistoryModal = ({ open, onClose }) => {
     try {
       await historyService.deleteGeneration(itemToDelete.id);
       // Optimistic UI update: remove the item from local state
-      setItems(prevItems => prevItems.filter(item => item.id !== itemToDelete.id));
+      setItems((prevItems) => prevItems.filter((item) => item.id !== itemToDelete.id));
       showSnackbar('History item deleted successfully.', 'success');
     } catch (err) {
       showSnackbar(err.message || 'Failed to delete item.', 'error');
@@ -103,12 +128,7 @@ const HistoryModal = ({ open, onClose }) => {
 
   return (
     <>
-      <Dialog
-        open={open}
-        onClose={onClose}
-        fullWidth
-        maxWidth="lg"
-      >
+      <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg">
         <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1.5 }}>
           Generation History
           <IconButton edge="end" color="inherit" onClick={onClose} aria-label="close">
@@ -138,7 +158,9 @@ const HistoryModal = ({ open, onClose }) => {
 
           {/* Content Display */}
           {isLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+              <CircularProgress />
+            </Box>
           ) : error ? (
             <Alert severity="error">{error}</Alert>
           ) : items.length === 0 ? (
@@ -155,7 +177,10 @@ const HistoryModal = ({ open, onClose }) => {
                           {item.title || 'Untitled Generation'}
                         </Typography>
                       </Stack>
-                      <Typography color="text.secondary" sx={{ flexShrink: 0, ml: 2, display: { xs: 'none', sm: 'block' } }}>
+                      <Typography
+                        color="text.secondary"
+                        sx={{ flexShrink: 0, ml: 2, display: { xs: 'none', sm: 'block' } }}
+                      >
                         {new Date(item.created_at).toLocaleDateString()}
                       </Typography>
                     </AccordionSummary>
@@ -176,7 +201,18 @@ const HistoryModal = ({ open, onClose }) => {
                         </Tooltip>
                       </Stack>
                       <Divider />
-                      <Box sx={{ mt: 2, maxHeight: 400, overflowY: 'auto', whiteSpace: 'pre-wrap', bgcolor: 'action.hover', p: 2, borderRadius: 1, fontFamily: 'var(--font-mono)' }}>
+                      <Box
+                        sx={{
+                          mt: 2,
+                          maxHeight: 400,
+                          overflowY: 'auto',
+                          whiteSpace: 'pre-wrap',
+                          bgcolor: 'action.hover',
+                          p: 2,
+                          borderRadius: 1,
+                          fontFamily: 'var(--font-mono)',
+                        }}
+                      >
                         {item.generated_content}
                       </Box>
                     </AccordionDetails>

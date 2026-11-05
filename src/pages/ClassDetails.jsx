@@ -1,14 +1,27 @@
+// One class's page: its stats and student roster, with add, import, edit, export and delete, and an AI chat.
+// Area: academics
+
 import RosterImportDialog from '../components/classes/RosterImportDialog';
 import { useTeacherData } from '../hooks/useTeacherData';
 import QueryNotice from '../components/common/QueryNotice';
-// /src/pages/ClassDetails.jsx (FINAL ENHANCED VERSION)
 
 // --- Core React & Router Imports ---
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link as RouterLink, useNavigate } from 'react-router-dom';
 
 // --- MUI Component Imports ---
-import { Box, Button, Skeleton, Alert, AlertTitle, IconButton, Tooltip, Menu, MenuItem, ListItemIcon } from '@mui/material';
+import {
+  Box,
+  Button,
+  Skeleton,
+  Alert,
+  AlertTitle,
+  IconButton,
+  Tooltip,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+} from '@mui/material';
 
 // --- Icon Imports ---
 import AddOutlined from '@mui/icons-material/AddOutlined';
@@ -50,8 +63,13 @@ const ClassDetails = () => {
   const error = classData === undefined && classQuery.error;
 
   // State organized by feature for clarity
-  const [importOpen,setImportOpen]=useState(false);
-  const [studentModal, setStudentModal] = useState({ open: false, mode: 'add', data: null, state: { isLoading: false, error: null } });
+  const [importOpen, setImportOpen] = useState(false);
+  const [studentModal, setStudentModal] = useState({
+    open: false,
+    mode: 'add',
+    data: null,
+    state: { isLoading: false, error: null },
+  });
   const [classEditModal, setClassEditModal] = useState({ open: false, state: { isLoading: false, error: null } });
   const [deleteConfirmation, setDeleteConfirmation] = useState({ open: false, type: null, data: null });
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
@@ -61,12 +79,14 @@ const ClassDetails = () => {
   const [autoSendMessage, setAutoSendMessage] = useState(null);
 
   // --- Event Handlers ---
-  const handleOpenAddStudentModal = () => setStudentModal({ open: true, mode: 'add', data: null, state: { isLoading: false, error: null } });
-  const handleOpenEditStudentModal = (student) => setStudentModal({ open: true, mode: 'edit', data: student, state: { isLoading: false, error: null } });
-  const handleStudentModalClose = () => setStudentModal(prev => ({ ...prev, open: false }));
+  const handleOpenAddStudentModal = () =>
+    setStudentModal({ open: true, mode: 'add', data: null, state: { isLoading: false, error: null } });
+  const handleOpenEditStudentModal = (student) =>
+    setStudentModal({ open: true, mode: 'edit', data: student, state: { isLoading: false, error: null } });
+  const handleStudentModalClose = () => setStudentModal((prev) => ({ ...prev, open: false }));
 
   const handleStudentModalSubmit = async (formData) => {
-    setStudentModal(prev => ({ ...prev, state: { isLoading: true, error: null } }));
+    setStudentModal((prev) => ({ ...prev, state: { isLoading: true, error: null } }));
     try {
       if (studentModal.mode === 'add') {
         await classService.addStudentToClass(class_id, formData);
@@ -76,21 +96,19 @@ const ClassDetails = () => {
         showSnackbar('Student updated successfully!', 'success');
       }
       handleStudentModalClose();
-
     } catch (err) {
-      setStudentModal(prev => ({ ...prev, state: { isLoading: false, error: err.message } }));
+      setStudentModal((prev) => ({ ...prev, state: { isLoading: false, error: err.message } }));
     }
   };
 
-  const handleOpenConfirmStudentDelete = (student) => setDeleteConfirmation({ open: true, type: 'student', data: student });
+  const handleOpenConfirmStudentDelete = (student) =>
+    setDeleteConfirmation({ open: true, type: 'student', data: student });
   const handleDeleteStudent = async () => {
     try {
       await classService.removeStudent(class_id, deleteConfirmation.data.id);
       showSnackbar('Student removed successfully.', 'success');
       setDeleteConfirmation({ open: false, type: null, data: null });
-
-    } catch (err)
-{
+    } catch (err) {
       showSnackbar(err.message, 'error');
       setDeleteConfirmation({ open: false, type: null, data: null });
     }
@@ -98,18 +116,20 @@ const ClassDetails = () => {
 
   const handleMenuOpen = (event) => setMenuAnchorEl(event.currentTarget);
   const handleMenuClose = () => setMenuAnchorEl(null);
-  const handleOpenClassEditModal = () => { setClassEditModal({ open: true, data: classData, state: { isLoading: false, error: null } }); handleMenuClose(); };
-  const handleClassEditModalClose = () => setClassEditModal(prev => ({ ...prev, open: false }));
+  const handleOpenClassEditModal = () => {
+    setClassEditModal({ open: true, data: classData, state: { isLoading: false, error: null } });
+    handleMenuClose();
+  };
+  const handleClassEditModalClose = () => setClassEditModal((prev) => ({ ...prev, open: false }));
 
   const handleClassEditModalSubmit = async (formData) => {
-    setClassEditModal(prev => ({ ...prev, state: { isLoading: true, error: null } }));
+    setClassEditModal((prev) => ({ ...prev, state: { isLoading: true, error: null } }));
     try {
       await classService.updateClass(class_id, formData);
       showSnackbar('Class details updated successfully!', 'success');
       handleClassEditModalClose();
-
     } catch (err) {
-      setClassEditModal(prev => ({ ...prev, state: { isLoading: false, error: err.message } }));
+      setClassEditModal((prev) => ({ ...prev, state: { isLoading: false, error: err.message } }));
     }
   };
 
@@ -117,13 +137,16 @@ const ClassDetails = () => {
     try {
       showSnackbar('Preparing your download...', 'info');
       await classService.exportClassRoster(class_id);
-    } catch(err) {
+    } catch (err) {
       showSnackbar(err.message, 'error');
     }
     handleMenuClose();
   };
 
-  const handleOpenConfirmClassDelete = () => { setDeleteConfirmation({ open: true, type: 'class', data: classData }); handleMenuClose(); };
+  const handleOpenConfirmClassDelete = () => {
+    setDeleteConfirmation({ open: true, type: 'class', data: classData });
+    handleMenuClose();
+  };
   const handleDeleteClass = async () => {
     try {
       await classService.deleteClass(class_id);
@@ -148,8 +171,6 @@ const ClassDetails = () => {
 
     // Open the chat window (or keep it open if already open)
     setChatOpen(true);
-
-    console.log('[ClassDetails] Opening progress tracker for student:', student.name, student.studentId);
   };
 
   // --- Render Logic ---
@@ -158,7 +179,11 @@ const ClassDetails = () => {
       <Box>
         <Skeleton height={36} sx={{ mb: 1, maxWidth: 220 }} variant="rounded" />
         <Skeleton height={44} sx={{ mb: 3.5, maxWidth: 360 }} variant="rounded" />
-        <div className="mst-grid mst-grid-3">{[0, 1, 2].map((i) => <Skeleton height={104} key={i} variant="rectangular" />)}</div>
+        <div className="mst-grid mst-grid-3">
+          {[0, 1, 2].map((i) => (
+            <Skeleton height={104} key={i} variant="rectangular" />
+          ))}
+        </div>
         <Skeleton height={320} sx={{ mt: 4 }} variant="rectangular" />
       </Box>
     );
@@ -166,35 +191,66 @@ const ClassDetails = () => {
   if (error) return <QueryNotice query={classQuery} label="this class" />;
   if (!classData) return <Alert severity="warning">Could not find class data.</Alert>;
 
-  const confirmationDescription = deleteConfirmation.type === 'student'
-    ? `Are you sure you want to remove ${deleteConfirmation.data?.name}? This action cannot be undone.`
-    : `Are you sure you want to delete the class "${deleteConfirmation.data?.name}"? All associated students will also be removed. This action is irreversible.`;
+  const confirmationDescription =
+    deleteConfirmation.type === 'student'
+      ? `Are you sure you want to remove ${deleteConfirmation.data?.name}? This action cannot be undone.`
+      : `Are you sure you want to delete the class "${deleteConfirmation.data?.name}"? All associated students will also be removed. This action is irreversible.`;
 
   const analyticsCards = [
-      { id: 'count', title: 'Students', value: classData.analytics.studentCount, icon: <PeopleAltOutlined /> },
-      { id: 'avg', title: 'Class grade', value: classData.analytics.classAverage == null ? 'Unavailable' : `${classData.analytics.classAverage}%`, icon: <FunctionsOutlined /> },
-      { id: 'graded', title: 'Assessments graded', value: classData.analytics.assessmentsGraded, icon: <FactCheckOutlined />, tone: 'ok' },
+    { id: 'count', title: 'Students', value: classData.analytics.studentCount, icon: <PeopleAltOutlined /> },
+    {
+      id: 'avg',
+      title: 'Class grade',
+      value: classData.analytics.classAverage == null ? 'Unavailable' : `${classData.analytics.classAverage}%`,
+      icon: <FunctionsOutlined />,
+    },
+    {
+      id: 'graded',
+      title: 'Assessments graded',
+      value: classData.analytics.assessmentsGraded,
+      icon: <FactCheckOutlined />,
+      tone: 'ok',
+    },
   ];
-  
+
   return (
     <Box>
       <QueryNotice query={classQuery} label="this class" />
       <PageHeader
         actions={
           <>
-            <Button variant="outlined" onClick={()=>setImportOpen(true)}>Import students</Button>
-            <Button variant="contained" startIcon={<AddOutlined />} onClick={handleOpenAddStudentModal}>Add student</Button>
-            <Button className="mst-ai" startIcon={<AutoAwesomeIcon />} onClick={() => setChatOpen(true)} variant="contained">Analytics with AI</Button>
+            <Button variant="outlined" onClick={() => setImportOpen(true)}>
+              Import students
+            </Button>
+            <Button variant="contained" startIcon={<AddOutlined />} onClick={handleOpenAddStudentModal}>
+              Add student
+            </Button>
+            <Button
+              className="mst-ai"
+              startIcon={<AutoAwesomeIcon />}
+              onClick={() => setChatOpen(true)}
+              variant="contained"
+            >
+              Analytics with AI
+            </Button>
           </>
         }
-        titleAdornment={<Tooltip title="Class options"><IconButton aria-label="Class options" onClick={handleMenuOpen}><MoreVertIcon /></IconButton></Tooltip>}
+        titleAdornment={
+          <Tooltip title="Class options">
+            <IconButton aria-label="Class options" onClick={handleMenuOpen}>
+              <MoreVertIcon />
+            </IconButton>
+          </Tooltip>
+        }
         breadcrumbs={[{ label: 'Classes', to: '/classes' }, { label: classData.name }]}
         subtitle={classData.description || undefined}
         title={classData.name}
       />
 
       <div className="mst-grid mst-grid-3">
-        {analyticsCards.map((card) => <InfoCard icon={card.icon} key={card.id} title={card.title} tone={card.tone} value={card.value} />)}
+        {analyticsCards.map((card) => (
+          <InfoCard icon={card.icon} key={card.id} title={card.title} tone={card.tone} value={card.value} />
+        ))}
       </div>
 
       <div className="mst-section-label">Students</div>
@@ -221,15 +277,51 @@ const ClassDetails = () => {
       />
 
       <Menu anchorEl={menuAnchorEl} open={Boolean(menuAnchorEl)} onClose={handleMenuClose}>
-        <MenuItem onClick={handleOpenClassEditModal}><ListItemIcon><EditOutlined fontSize="small"/></ListItemIcon>Edit details</MenuItem>
-        <MenuItem onClick={handleExportRoster}><ListItemIcon><DownloadOutlined fontSize="small"/></ListItemIcon>Export roster (.csv)</MenuItem>
-        <MenuItem onClick={handleOpenConfirmClassDelete} sx={{ color: 'error.main' }}><ListItemIcon><DeleteOutlineOutlined fontSize="small" color="error"/></ListItemIcon>Delete class</MenuItem>
+        <MenuItem onClick={handleOpenClassEditModal}>
+          <ListItemIcon>
+            <EditOutlined fontSize="small" />
+          </ListItemIcon>
+          Edit details
+        </MenuItem>
+        <MenuItem onClick={handleExportRoster}>
+          <ListItemIcon>
+            <DownloadOutlined fontSize="small" />
+          </ListItemIcon>
+          Export roster (.csv)
+        </MenuItem>
+        <MenuItem onClick={handleOpenConfirmClassDelete} sx={{ color: 'error.main' }}>
+          <ListItemIcon>
+            <DeleteOutlineOutlined fontSize="small" color="error" />
+          </ListItemIcon>
+          Delete class
+        </MenuItem>
       </Menu>
 
-      <RosterImportDialog open={importOpen} onClose={()=>setImportOpen(false)} classId={class_id}/>
-      <StudentModal open={studentModal.open} onClose={handleStudentModalClose} onSubmit={handleStudentModalSubmit} mode={studentModal.mode} initialData={studentModal.data} isLoading={studentModal.state.isLoading} error={studentModal.state.error}/>
-      <ClassEditModal open={classEditModal.open} onClose={handleClassEditModalClose} onSubmit={handleClassEditModalSubmit} initialData={classEditModal.data} isLoading={classEditModal.state.isLoading} error={classEditModal.state.error}/>
-      <ConfirmationModal open={deleteConfirmation.open} onClose={handleCloseConfirmDelete} onConfirm={deleteConfirmation.type === 'student' ? handleDeleteStudent : handleDeleteClass} title={`Delete ${deleteConfirmation.type === 'student' ? 'Student' : 'Class'}`} description={confirmationDescription}/>
+      <RosterImportDialog open={importOpen} onClose={() => setImportOpen(false)} classId={class_id} />
+      <StudentModal
+        open={studentModal.open}
+        onClose={handleStudentModalClose}
+        onSubmit={handleStudentModalSubmit}
+        mode={studentModal.mode}
+        initialData={studentModal.data}
+        isLoading={studentModal.state.isLoading}
+        error={studentModal.state.error}
+      />
+      <ClassEditModal
+        open={classEditModal.open}
+        onClose={handleClassEditModalClose}
+        onSubmit={handleClassEditModalSubmit}
+        initialData={classEditModal.data}
+        isLoading={classEditModal.state.isLoading}
+        error={classEditModal.state.error}
+      />
+      <ConfirmationModal
+        open={deleteConfirmation.open}
+        onClose={handleCloseConfirmDelete}
+        onConfirm={deleteConfirmation.type === 'student' ? handleDeleteStudent : handleDeleteClass}
+        title={`Delete ${deleteConfirmation.type === 'student' ? 'Student' : 'Class'}`}
+        description={confirmationDescription}
+      />
     </Box>
   );
 };

@@ -1,3 +1,7 @@
+// Gives a number input an editable draft; only valid numbers reach the page, and bounds apply on blur.
+// Used by the assessment wizard, structure review, quiz builder and quiz host.
+// Area: platform
+
 import { useEffect, useRef, useState } from 'react';
 
 /** Keep the editable draft separate from valid application state.
@@ -6,19 +10,29 @@ import { useEffect, useRef, useState } from 'react';
 export default function useNumberInput(value, onChange, { defaultValue = 0, min, max, integer = true } = {}) {
   const [draft, setDraft] = useState(value ?? '');
   const focused = useRef(false);
-  useEffect(() => { if (!focused.current) setDraft(value ?? ''); }, [value]);
-  const constrain = number => Math.min(max ?? Infinity, Math.max(min ?? -Infinity, number));
+  useEffect(() => {
+    if (!focused.current) setDraft(value ?? '');
+  }, [value]);
+  const constrain = (number) => Math.min(max ?? Infinity, Math.max(min ?? -Infinity, number));
   return {
     value: draft,
-    onFocus: () => { focused.current = true; },
-    onChange: event => {
+    onFocus: () => {
+      focused.current = true;
+    },
+    onChange: (event) => {
       const text = event.target.value;
       setDraft(text);
       const number = Number(text);
       // Invalid/incomplete drafts never reach saves or API requests.
-      if (text !== '' && Number.isFinite(number) && number === constrain(number) && (!integer || Number.isInteger(number))) onChange(number);
+      if (
+        text !== '' &&
+        Number.isFinite(number) &&
+        number === constrain(number) &&
+        (!integer || Number.isInteger(number))
+      )
+        onChange(number);
     },
-    onBlur: event => {
+    onBlur: (event) => {
       focused.current = false;
       const text = event.target.value;
       const number = text === '' ? defaultValue : Number(text);
@@ -26,6 +40,6 @@ export default function useNumberInput(value, onChange, { defaultValue = 0, min,
       const finalValue = constrain(integer ? Math.trunc(valid) : valid);
       setDraft(finalValue);
       onChange(finalValue);
-    }
+    },
   };
 }

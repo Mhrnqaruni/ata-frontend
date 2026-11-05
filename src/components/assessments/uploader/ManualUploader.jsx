@@ -1,3 +1,6 @@
+// Manual upload step: lists the class roster so the teacher can add each student's pages, plus outside students.
+// Area: assessments
+
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
@@ -20,7 +23,15 @@ import UploadFileIcon from '@mui/icons-material/UploadFile';
 
 import classService from '../../../services/classService';
 
-const ManualUploader = ({ classId, audienceStudents, onFilesStaged, onAddOutsider, stagedFiles = {}, outsiders = [], disabled = false }) => {
+const ManualUploader = ({
+  classId,
+  audienceStudents,
+  onFilesStaged,
+  onAddOutsider,
+  stagedFiles = {},
+  outsiders = [],
+  disabled = false,
+}) => {
   const [students, setStudents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -29,7 +40,12 @@ const ManualUploader = ({ classId, audienceStudents, onFilesStaged, onAddOutside
   const currentUploadTarget = useRef(null); // { type: 'student' | 'outsider', id: string }
 
   useEffect(() => {
-    if (audienceStudents) {setStudents(audienceStudents);setIsLoading(false);setError(null);return;}
+    if (audienceStudents) {
+      setStudents(audienceStudents);
+      setIsLoading(false);
+      setError(null);
+      return;
+    }
     if (!classId) {
       setError('No class selected. Please go back to the setup step.');
       setIsLoading(false);
@@ -89,22 +105,43 @@ const ManualUploader = ({ classId, audienceStudents, onFilesStaged, onAddOutside
     const files = stagedFiles[entity.id] || [];
     return (
       <li className="mst-manual-row" key={entity.id}>
-        <span aria-hidden="true" className="mst-avatar">{initialsOf(entity.name)}</span>
+        <span aria-hidden="true" className="mst-avatar">
+          {initialsOf(entity.name)}
+        </span>
         <span className="mst-manual-text">
           <span className="mst-manual-name">{entity.name}</span>
           <span className="mst-manual-meta">{secondary}</span>
         </span>
         <span className="mst-manual-files">
-          {files.length > 0 ? <Chip color="success" label={`${files.length} ${files.length === 1 ? 'page' : 'pages'} added`} size="small" /> : null}
+          {files.length > 0 ? (
+            <Chip
+              color="success"
+              label={`${files.length} ${files.length === 1 ? 'page' : 'pages'} added`}
+              size="small"
+            />
+          ) : null}
         </span>
-        <Button disabled={disabled} onClick={() => handleUploadClick(type, entity.id)} size="small" startIcon={<UploadFileIcon />} variant="outlined">
+        <Button
+          disabled={disabled}
+          onClick={() => handleUploadClick(type, entity.id)}
+          size="small"
+          startIcon={<UploadFileIcon />}
+          variant="outlined"
+        >
           {files.length > 0 ? 'Add more' : 'Add pages'}
         </Button>
       </li>
     );
   };
 
-  if (isLoading) return <Box sx={{ display: 'grid', gap: 1 }}>{[0, 1, 2].map((i) => <Skeleton height={56} key={i} variant="rounded" />)}</Box>;
+  if (isLoading)
+    return (
+      <Box sx={{ display: 'grid', gap: 1 }}>
+        {[0, 1, 2].map((i) => (
+          <Skeleton height={56} key={i} variant="rounded" />
+        ))}
+      </Box>
+    );
   if (error) return <Alert severity="error">{error}</Alert>;
 
   return (
@@ -119,7 +156,11 @@ const ManualUploader = ({ classId, audienceStudents, onFilesStaged, onAddOutside
         disabled={disabled}
       />
       <div className="mst-files">
-        <div className="mst-files-head"><span>Class roster · {students.length} {students.length === 1 ? 'student' : 'students'}</span></div>
+        <div className="mst-files-head">
+          <span>
+            Class roster · {students.length} {students.length === 1 ? 'student' : 'students'}
+          </span>
+        </div>
         <ul className="mst-files-list" aria-label="Students in this class">
           {students.map((student) => renderRow('student', student, `ID ${student.studentId}`))}
           {outsiders.map((outsider) => renderRow('outsider', outsider, 'Not in this class'))}
@@ -134,7 +175,9 @@ const ManualUploader = ({ classId, audienceStudents, onFilesStaged, onAddOutside
           size="small"
           value={outsiderName}
         />
-        <Button disabled={disabled || !outsiderName.trim()} startIcon={<AddIcon />} type="submit" variant="outlined">Add</Button>
+        <Button disabled={disabled || !outsiderName.trim()} startIcon={<AddIcon />} type="submit" variant="outlined">
+          Add
+        </Button>
       </form>
     </Box>
   );

@@ -1,4 +1,5 @@
-// /ata-frontend/src/pages/Chatbot.jsx (FINAL, DEFINITIVE, RACE-CONDITION-FREE)
+// The full-page assistant at /chat: past chats, streamed answers with charts, 'which one?' choices, report download.
+// Area: chat
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -40,10 +41,7 @@ const Chatbot = () => {
   const lastMessageCount = useRef(0);
 
   // WebSocket hook with inline charts enabled
-  const { isThinking, isResponding, connect, sendMessage } = useChatWebSocket(
-    setMessages,
-    { inlineCharts: true }
-  );
+  const { isThinking, isResponding, connect, sendMessage } = useChatWebSocket(setMessages, { inlineCharts: true });
 
   const fetchHistory = useCallback(async () => {
     setIsHistoryLoading(true);
@@ -75,12 +73,12 @@ const Chatbot = () => {
         setIsMessagesLoading(true);
         try {
           const sessionDetails = await chatService.getChatSessionDetails(sessionId);
-          const formattedMessages = sessionDetails.history.map(msg => ({
+          const formattedMessages = sessionDetails.history.map((msg) => ({
             id: msg.id || `msg_hist_${uuidv4()}`, // Prefer the real ID from the DB
             role: msg.role,
             content: msg.content,
             file_id: msg.file_id,
-            charts: msg.metadata?.charts || []
+            charts: msg.metadata?.charts || [],
           }));
           setMessages(formattedMessages);
         } catch (error) {
@@ -105,7 +103,7 @@ const Chatbot = () => {
       setDisambiguationOptions({
         entityType: entity_type,
         matches: matches,
-        message: disambigMessage
+        message: disambigMessage,
       });
     };
 
@@ -152,16 +150,15 @@ const Chatbot = () => {
       userHasScrolledUp.current = false;
       messagesBoxRef.current.scrollTo({
         top: messagesBoxRef.current.scrollHeight,
-        behavior: 'smooth'
+        behavior: 'smooth',
       });
     } else if (!userHasScrolledUp.current && (isResponding || isThinking)) {
       messagesBoxRef.current.scrollTo({
         top: messagesBoxRef.current.scrollHeight,
-        behavior: 'smooth'
+        behavior: 'smooth',
       });
     }
   }, [messages, isResponding, isThinking]);
-
 
   // History menu handlers
   const handleOpenHistory = useCallback((event) => {
@@ -177,20 +174,24 @@ const Chatbot = () => {
     navigate('/chat');
   }, [navigate, handleCloseHistory]);
 
-  const handleSessionSelect = useCallback((selectedSessionId) => {
-    handleCloseHistory();
-    if (sessionId !== selectedSessionId) {
-      navigate(`/chat/${selectedSessionId}`);
-    }
-  }, [sessionId, navigate, handleCloseHistory]);
+  const handleSessionSelect = useCallback(
+    (selectedSessionId) => {
+      handleCloseHistory();
+      if (sessionId !== selectedSessionId) {
+        navigate(`/chat/${selectedSessionId}`);
+      }
+    },
+    [sessionId, navigate, handleCloseHistory]
+  );
 
+  // When the assistant asks which of several matches was meant, sends an overview request for the one picked.
   const handleDisambiguationSelect = (selectedEntity) => {
     const entityName = selectedEntity.name || selectedEntity.title || 'that';
     const entityType = selectedEntity.entity_type || disambiguationOptions.entityType;
     const context = {
       entity_type: entityType,
       entity_id: selectedEntity.id,
-      entity_name: entityName
+      entity_name: entityName,
     };
     sendMessage(`Show me an overview of ${entityName}`, null, context);
     setDisambiguationOptions(null);
@@ -201,11 +202,11 @@ const Chatbot = () => {
       await chatService.deleteChatSession(sessionIdToDelete);
       await fetchHistory();
       if (sessionId === sessionIdToDelete) {
-          navigate('/chat', { replace: true });
+        navigate('/chat', { replace: true });
       }
       showSnackbar('Chat deleted successfully', 'success');
     } catch (error) {
-        showSnackbar(error.message, 'error');
+      showSnackbar(error.message, 'error');
     }
   };
 
@@ -228,40 +229,42 @@ const Chatbot = () => {
   }, [sessionId, showSnackbar]);
 
   // --- [THE DEFINITIVE FIX IS HERE] ---
-  const handleSendMessage = useCallback(async (messageText, fileId = null) => {
-    if (!sessionId) {
-      // --- Logic for the VERY FIRST message in a NEW chat ---
-      try {
-        // 1. Create the session on the backend. The backend now saves the first message.
-        const { sessionId: newSessionId } = await chatService.createNewChatSession(messageText, fileId);
-        
-        // 2. Navigate to the new session's URL.
-        // This will trigger the useEffect hooks to load the history (which now includes
-        // the first message) and connect the WebSocket.
-        navigate(`/chat/${newSessionId}`);
-        
-        // 3. After navigating, we also need to trigger the AI response for the first message.
-        // We do this by sending the message over the WebSocket.
-        sendMessage(messageText, fileId);
+  const handleSendMessage = useCallback(
+    async (messageText, fileId = null) => {
+      if (!sessionId) {
+        // --- Logic for the VERY FIRST message in a NEW chat ---
+        try {
+          // 1. Create the session on the backend. The backend now saves the first message.
+          const { sessionId: newSessionId } = await chatService.createNewChatSession(messageText, fileId);
 
-      } catch (error) {
-        showSnackbar(error.message, 'error');
+          // 2. Navigate to the new session's URL.
+          // This will trigger the useEffect hooks to load the history (which now includes
+          // the first message) and connect the WebSocket.
+          navigate(`/chat/${newSessionId}`);
+
+          // 3. After navigating, we also need to trigger the AI response for the first message.
+          // We do this by sending the message over the WebSocket.
+          sendMessage(messageText, fileId);
+        } catch (error) {
+          showSnackbar(error.message, 'error');
+        }
+      } else {
+        // --- Logic for all SUBSEQUENT messages in an EXISTING chat ---
+        // This is the standard optimistic update flow.
+        const userMessage = {
+          id: `msg_client_${uuidv4()}`,
+          role: 'user',
+          content: messageText,
+          file_id: fileId,
+        };
+        setMessages((prev) => [...prev, userMessage]);
+        sendMessage(messageText, fileId);
       }
-    } else {
-      // --- Logic for all SUBSEQUENT messages in an EXISTING chat ---
-      // This is the standard optimistic update flow.
-      const userMessage = {
-        id: `msg_client_${uuidv4()}`,
-        role: 'user',
-        content: messageText,
-        file_id: fileId,
-      };
-      setMessages(prev => [...prev, userMessage]);
-      sendMessage(messageText, fileId);
-    }
-  }, [sessionId, navigate, showSnackbar, sendMessage]);
+    },
+    [sessionId, navigate, showSnackbar, sendMessage]
+  );
   // --- [END OF FIX] ---
-  
+
   const handleStopGeneration = () => {
     // TODO: Implement stop generation functionality
   };
@@ -274,10 +277,16 @@ const Chatbot = () => {
   return (
     <Box className="mst-chat-page">
       <header className="mst-chat-head">
-        <span aria-hidden="true" className="mst-msg-avatar"><AutoAwesomeIcon /></span>
+        <span aria-hidden="true" className="mst-msg-avatar">
+          <AutoAwesomeIcon />
+        </span>
         <div className="mst-chat-head-text">
           <h1 className="mst-chat-title">Assistant</h1>
-          {stage ? <Chip size="small" label={stage} color="primary" /> : <span className="mst-hint">Answers from your classes, students and quizzes</span>}
+          {stage ? (
+            <Chip size="small" label={stage} color="primary" />
+          ) : (
+            <span className="mst-hint">Answers from your classes, students and quizzes</span>
+          )}
         </div>
         <Tooltip title="Chat history">
           <IconButton aria-label="Chat history" onClick={handleOpenHistory}>
@@ -296,82 +305,78 @@ const Chatbot = () => {
       </header>
 
       {/* Messages Area */}
-      <Box
-        ref={messagesBoxRef}
-        onScroll={handleMessagesScroll}
-        className="mst-chat-scroll"
-      >
+      <Box ref={messagesBoxRef} onScroll={handleMessagesScroll} className="mst-chat-scroll">
         <div className="mst-chat-column">
-        {isMessagesLoading ? (
-          <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <>
-            {/* Disambiguation UI */}
-            {disambiguationOptions && (
-              <Box
-                sx={{
-                  m: 2,
-                  p: 2,
-                  bgcolor: 'background.paper',
-                  borderRadius: 1,
-                  border: '1px solid',
-                  borderColor: 'divider'
-                }}
-              >
-                <Typography variant="subtitle1" gutterBottom>
-                  {disambiguationOptions.message}
-                </Typography>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 2 }}>
-                  {disambiguationOptions.matches.map((match, index) => (
-                    <Box
-                      key={index}
-                      onClick={() => handleDisambiguationSelect(match)}
-                      sx={{
-                        p: 2,
-                        border: '1px solid',
-                        borderColor: 'primary.main',
-                        borderRadius: 1,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        '&:hover': {
-                          bgcolor: 'action.selected',
-                          transform: 'translateX(4px)'
-                        }
-                      }}
-                    >
-                      <Typography variant="body1" fontWeight={600}>
-                        {match.name || match.title}
-                      </Typography>
-                      {match.studentId && (
-                        <Typography variant="caption" color="text.secondary">
-                          Student ID: {match.studentId}
+          {isMessagesLoading ? (
+            <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <>
+              {/* Disambiguation UI */}
+              {disambiguationOptions && (
+                <Box
+                  sx={{
+                    m: 2,
+                    p: 2,
+                    bgcolor: 'background.paper',
+                    borderRadius: 1,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                  }}
+                >
+                  <Typography variant="subtitle1" gutterBottom>
+                    {disambiguationOptions.message}
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 2 }}>
+                    {disambiguationOptions.matches.map((match, index) => (
+                      <Box
+                        key={index}
+                        onClick={() => handleDisambiguationSelect(match)}
+                        sx={{
+                          p: 2,
+                          border: '1px solid',
+                          borderColor: 'primary.main',
+                          borderRadius: 1,
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          '&:hover': {
+                            bgcolor: 'action.selected',
+                            transform: 'translateX(4px)',
+                          },
+                        }}
+                      >
+                        <Typography variant="body1" fontWeight={600}>
+                          {match.name || match.title}
                         </Typography>
-                      )}
-                    </Box>
-                  ))}
+                        {match.studentId && (
+                          <Typography variant="caption" color="text.secondary">
+                            Student ID: {match.studentId}
+                          </Typography>
+                        )}
+                      </Box>
+                    ))}
+                  </Box>
                 </Box>
-              </Box>
-            )}
+              )}
 
-            {messages.length === 0 ? (
-              <ChatWelcome onSend={handleSendMessage} entityName={null} />
-            ) : (
-              <MessageList messages={messages} isThinking={isThinking} />
-            )}
-          </>
-        )}
+              {messages.length === 0 ? (
+                <ChatWelcome onSend={handleSendMessage} entityName={null} />
+              ) : (
+                <MessageList messages={messages} isThinking={isThinking} />
+              )}
+            </>
+          )}
         </div>
       </Box>
 
       <div className="mst-chat-column mst-chat-composer-wrap">
-      <ChatInput
-        onSendMessage={handleSendMessage}
-        disabled={isInputDisabled}
-        isResponding={isResponding}
-        onStopGeneration={handleStopGeneration}
-      />
+        <ChatInput
+          onSendMessage={handleSendMessage}
+          disabled={isInputDisabled}
+          isResponding={isResponding}
+          onStopGeneration={handleStopGeneration}
+        />
       </div>
 
       {/* History Menu */}

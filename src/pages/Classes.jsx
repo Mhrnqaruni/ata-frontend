@@ -1,7 +1,9 @@
+// The teacher's classes as a grid of cards, with Add class (by hand or roster upload) and a Tags tab.
+// Area: academics
+
 import { useTeacherData } from '../hooks/useTeacherData';
 import QueryNotice from '../components/common/QueryNotice';
 import TagsPanel from '../components/tags/TagsPanel';
-// /src/pages/Classes.jsx (FINAL, ROBUST VERSION)
 
 // --- Core React Imports ---
 import React, { useState, useEffect, useCallback } from 'react';
@@ -29,9 +31,9 @@ import EmptyState from '../components/common/EmptyState';
  */
 const Classes = () => {
   const navigate = useNavigate();
-  const [searchParams,setSearchParams]=useSearchParams();
-  const section=searchParams.get('view')==='tags'?1:0;
-  const [newTagRequest,setNewTagRequest]=useState(0);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const section = searchParams.get('view') === 'tags' ? 1 : 0;
+  const [newTagRequest, setNewTagRequest] = useState(0);
   const classesQuery = useTeacherData('classes');
   const classes = classesQuery.data || [];
   const isLoading = classesQuery.isPending;
@@ -54,10 +56,9 @@ const Classes = () => {
         await classService.createClass(classData);
       }
       handleCloseModal();
-
     } catch (err) {
-      console.error("Failed to create class:", err);
-      setModalState({ isLoading: false, error: err.message || "Failed to create class." });
+      console.error('Failed to create class:', err);
+      setModalState({ isLoading: false, error: err.message || 'Failed to create class.' });
     }
   };
 
@@ -80,7 +81,11 @@ const Classes = () => {
     if (classes.length === 0) {
       return (
         <EmptyState
-          action={<Button onClick={handleOpenModal} startIcon={<AddOutlined />} variant="contained">Add class</Button>}
+          action={
+            <Button onClick={handleOpenModal} startIcon={<AddOutlined />} variant="contained">
+              Add class
+            </Button>
+          }
           icon={<SchoolOutlined />}
           title="Create your first class"
         >
@@ -102,13 +107,33 @@ const Classes = () => {
     <>
       <Box>
         <PageHeader
-          actions={<Button onClick={section===1?()=>setNewTagRequest(value=>value+1):handleOpenModal} startIcon={<AddOutlined />} variant="contained">{section===1?"New tag":"Add class"}</Button>}
-          subtitle={section===1?"Private labels for students across your classes. Tags do not change AI grading.":"Your rosters, grades and each student's progress."}
-          title={section===1?"Student tags":"Classes"}
+          actions={
+            <Button
+              onClick={section === 1 ? () => setNewTagRequest((value) => value + 1) : handleOpenModal}
+              startIcon={<AddOutlined />}
+              variant="contained"
+            >
+              {section === 1 ? 'New tag' : 'Add class'}
+            </Button>
+          }
+          subtitle={
+            section === 1
+              ? 'Private labels for students across your classes. Tags do not change AI grading.'
+              : "Your rosters, grades and each student's progress."
+          }
+          title={section === 1 ? 'Student tags' : 'Classes'}
         />
-        <Tabs value={section} onChange={(_,v)=>setSearchParams(v?{view:'tags'}:{})} aria-label="Classes and tags" sx={{mb:2}}><Tab label="Classes"/><Tab label="Tags"/></Tabs>
+        <Tabs
+          value={section}
+          onChange={(_, v) => setSearchParams(v ? { view: 'tags' } : {})}
+          aria-label="Classes and tags"
+          sx={{ mb: 2 }}
+        >
+          <Tab label="Classes" />
+          <Tab label="Tags" />
+        </Tabs>
         <QueryNotice query={classesQuery} label="classes" />
-        {section===0?renderContent():<TagsPanel newRequest={newTagRequest}/>}
+        {section === 0 ? renderContent() : <TagsPanel newRequest={newTagRequest} />}
       </Box>
 
       <AddClassModal

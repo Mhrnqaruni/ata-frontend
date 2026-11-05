@@ -9,7 +9,7 @@ const userHome = process.env.USERPROFILE || process.env.HOME;
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  
+
   // --- SERVER CONFIGURATION ---
   // This section configures the Vite development server.
   server: {
@@ -20,15 +20,15 @@ export default defineConfig({
     // This is a security feature to prevent DNS rebinding attacks.
     allowedHosts: [
       // Add your PageKite hostname here as a string.
-      "mehrangharooni.pagekite.me",
-      
+      'mehrangharooni.pagekite.me',
+
       // It's good practice to also keep the default if needed,
       // though Vite may handle localhost implicitly.
-      ".localhost",
+      '.localhost',
     ],
     // Allow KaTeX fonts when resolved outside the project root (dev only).
     fs: {
-      allow: [path.resolve(__dirname), userHome].filter(Boolean)
-    }
+      allow: [path.resolve(__dirname), userHome].filter(Boolean),
+    },
   },
 });

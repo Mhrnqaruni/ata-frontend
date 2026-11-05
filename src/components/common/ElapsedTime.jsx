@@ -1,11 +1,15 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Typography } from "@mui/material";
+// Shows how long an assessment job has been running, or took, from the server's clock, ticking each second.
+// Also exports formatElapsed, which writes seconds as hours, minutes and seconds.
+// Area: platform
+
+import React, { useEffect, useMemo, useState } from 'react';
+import { Typography } from '@mui/material';
 
 export function formatElapsed(seconds) {
   const total = Math.max(0, Math.floor(seconds));
   const hours = Math.floor(total / 3600);
   const minutes = Math.floor((total % 3600) / 60);
-  return `${hours ? `${hours}h ` : ""}${minutes}m ${String(total % 60).padStart(2, "0")}s`;
+  return `${hours ? `${hours}h ` : ''}${minutes}m ${String(total % 60).padStart(2, '0')}s`;
 }
 
 /** The server supplies accumulated elapsed time; browser ticks only interpolate it. */
@@ -18,12 +22,10 @@ export default function ElapsedTime({ clock }) {
     return () => clearInterval(timer);
   }, [clock?.running]);
   if (clock?.elapsed_seconds == null) return null;
-  const seconds =
-    clock.elapsed_seconds +
-    (clock.running ? Math.max(0, now - observedAt) / 1000 : 0);
+  const seconds = clock.elapsed_seconds + (clock.running ? Math.max(0, now - observedAt) / 1000 : 0);
   return (
     <Typography variant="caption" color="text.secondary">
-      {clock.running ? "Elapsed" : "Processing time"}: {formatElapsed(seconds)}
+      {clock.running ? 'Elapsed' : 'Processing time'}: {formatElapsed(seconds)}
     </Typography>
   );
 }

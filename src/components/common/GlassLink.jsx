@@ -1,13 +1,19 @@
-// /src/components/common/GlassLink.jsx
+// A clickable glass card that links to another page, with a hover lift and a soft light that follows the pointer.
+// Used for the class cards on the Classes page and the tool cards on the AI tools page.
+// Area: platform
+
 // A clickable glass card (router link): lifts 2px on hover, its shadow fades in on its own layer, and a soft
 // light follows the pointer (the card's box is read once on pointerenter; moves only write a transform).
 
-import React, { useRef } from "react";
-import { Link as RouterLink } from "react-router-dom";
+import React, { useRef } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 
-const canHover = () => typeof window !== "undefined" && window.matchMedia?.("(hover: hover) and (prefers-reduced-motion: no-preference)").matches;
+// True only on devices with a hover pointer where the user has not asked for reduced motion.
+const canHover = () =>
+  typeof window !== 'undefined' &&
+  window.matchMedia?.('(hover: hover) and (prefers-reduced-motion: no-preference)').matches;
 
-export default function GlassLink({ to, className = "", children, onClick, ariaLabel, ...rest }) {
+export default function GlassLink({ to, className = '', children, onClick, ariaLabel, ...rest }) {
   const light = useRef(null);
   const box = useRef(null);
   const handlers = canHover()
@@ -23,7 +29,14 @@ export default function GlassLink({ to, className = "", children, onClick, ariaL
       }
     : {};
   return (
-    <RouterLink aria-label={ariaLabel} className={`mst-g1 mst-rim mst-lift mst-card-link ${className}`} onClick={onClick} to={to} {...handlers} {...rest}>
+    <RouterLink
+      aria-label={ariaLabel}
+      className={`mst-g1 mst-rim mst-lift mst-card-link ${className}`}
+      onClick={onClick}
+      to={to}
+      {...handlers}
+      {...rest}
+    >
       <span aria-hidden="true" className="mst-pointer-light" ref={light} />
       {children}
     </RouterLink>

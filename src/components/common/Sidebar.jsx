@@ -1,58 +1,64 @@
-// /src/components/common/Sidebar.jsx
+// The teacher navigation: a floating sidebar (Home, Teaching, AI) that collapses to icons, or a drawer on phones.
+// It highlights the current page, prefetches its data on hover and holds the account menu at the bottom.
+// Area: platform
+
 // The primary navigation: a floating glass panel over the page's colour. Groups: Home · Teaching · AI.
 // The active item carries a small gradient pill at the panel's edge that slides between items.
 // Collapsible to icons on desktop; a temporary drawer below 900px.
 
-import React, { useLayoutEffect, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { Box, Drawer, Divider, IconButton, ListItemIcon, Menu, MenuItem, Tooltip } from "@mui/material";
-import ChevronLeftRounded from "@mui/icons-material/ChevronLeftRounded";
-import HomeOutlined from "@mui/icons-material/HomeOutlined";
-import SchoolOutlined from "@mui/icons-material/SchoolOutlined";
-import AutoAwesomeOutlined from "@mui/icons-material/AutoAwesomeOutlined";
-import GradingOutlined from "@mui/icons-material/GradingOutlined";
-import ForumOutlined from "@mui/icons-material/ForumOutlined";
-import QuizOutlined from "@mui/icons-material/QuizOutlined";
-import LightModeOutlined from "@mui/icons-material/LightModeOutlined";
-import DarkModeOutlined from "@mui/icons-material/DarkModeOutlined";
-import LogoutRounded from "@mui/icons-material/LogoutRounded";
-import PersonOutlineRounded from "@mui/icons-material/PersonOutlineRounded";
+import React, { useLayoutEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Box, Drawer, Divider, IconButton, ListItemIcon, Menu, MenuItem, Tooltip } from '@mui/material';
+import ChevronLeftRounded from '@mui/icons-material/ChevronLeftRounded';
+import HomeOutlined from '@mui/icons-material/HomeOutlined';
+import SchoolOutlined from '@mui/icons-material/SchoolOutlined';
+import AutoAwesomeOutlined from '@mui/icons-material/AutoAwesomeOutlined';
+import GradingOutlined from '@mui/icons-material/GradingOutlined';
+import ForumOutlined from '@mui/icons-material/ForumOutlined';
+import QuizOutlined from '@mui/icons-material/QuizOutlined';
+import LightModeOutlined from '@mui/icons-material/LightModeOutlined';
+import DarkModeOutlined from '@mui/icons-material/DarkModeOutlined';
+import LogoutRounded from '@mui/icons-material/LogoutRounded';
+import PersonOutlineRounded from '@mui/icons-material/PersonOutlineRounded';
 import AccountMenu from './AccountMenu';
-import logo from "../../assets/mst_logo_no_bg.png";
-import { useThemeMode } from "../../hooks/useThemeMode";
-import { useAuth } from "../../hooks/useAuth";
+import logo from '../../assets/mst_logo_no_bg.png';
+import { useThemeMode } from '../../hooks/useThemeMode';
+import { useAuth } from '../../hooks/useAuth';
 
 import { useNavigationPrefetch } from '../../hooks/useTeacherData';
 
 export const NAV_GROUPS = [
-  { label: null, items: [{ text: "Home", icon: HomeOutlined, path: "/" }] },
+  { label: null, items: [{ text: 'Home', icon: HomeOutlined, path: '/' }] },
   {
-    label: "Teaching",
+    label: 'Teaching',
     items: [
-      { text: "Classes", icon: SchoolOutlined, path: "/classes", also: ["/students"] },
-      { text: "Assessments", icon: GradingOutlined, path: "/assessments" },
-      { text: "Quizzes", icon: QuizOutlined, path: "/quizzes" },
+      { text: 'Classes', icon: SchoolOutlined, path: '/classes', also: ['/students'] },
+      { text: 'Assessments', icon: GradingOutlined, path: '/assessments' },
+      { text: 'Quizzes', icon: QuizOutlined, path: '/quizzes' },
     ],
   },
   {
-    label: "AI",
+    label: 'AI',
     items: [
-      { text: "AI tools", icon: AutoAwesomeOutlined, path: "/tools" },
-      { text: "Assistant", icon: ForumOutlined, path: "/chat" },
+      { text: 'AI tools', icon: AutoAwesomeOutlined, path: '/tools' },
+      { text: 'Assistant', icon: ForumOutlined, path: '/chat' },
     ],
   },
 ];
 
+// A menu item is active on its own path, its sub-pages and any extra paths listed in 'also'.
 const isActivePath = (pathname, item) =>
-  item.path === "/" ? pathname === "/" : [item.path, ...(item.also || [])].some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  item.path === '/'
+    ? pathname === '/'
+    : [item.path, ...(item.also || [])].some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
-const initialsOf = (name = "") =>
+const initialsOf = (name = '') =>
   name
     .trim()
     .split(/\s+/)
     .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() || "")
-    .join("") || "?";
+    .map((part) => part[0]?.toUpperCase() || '')
+    .join('') || '?';
 
 function SidebarPanel({ collapsed, onToggleCollapse, onNavigate, showCollapse }) {
   const location = useLocation();
@@ -71,42 +77,62 @@ function SidebarPanel({ collapsed, onToggleCollapse, onNavigate, showCollapse })
     setIndicator(active ? active.offsetTop + active.offsetHeight / 2 - 10 : null);
   }, [location.pathname, collapsed]);
 
-  const name = user?.fullName || user?.full_name || user?.email || "Your account";
+  const name = user?.fullName || user?.full_name || user?.email || 'Your account';
   const familyMode = location.pathname === '/family';
-  const groups = familyMode ? [{ label: null, items: [{ text: 'My family', icon: HomeOutlined, path: '/family' }] }] : NAV_GROUPS;
-  const role = user?.role ? user.role[0].toUpperCase() + user.role.slice(1) : "Teacher";
+  const groups = familyMode
+    ? [{ label: null, items: [{ text: 'My family', icon: HomeOutlined, path: '/family' }] }]
+    : NAV_GROUPS;
+  const role = user?.role ? user.role[0].toUpperCase() + user.role.slice(1) : 'Teacher';
 
   return (
-    <div className="mst-side" data-collapsed={collapsed ? "true" : "false"}>
+    <div className="mst-side" data-collapsed={collapsed ? 'true' : 'false'}>
       <div className="mst-side-top">
         {collapsed ? (
           <span aria-hidden="true" className="mst-side-star">
-            <svg viewBox="0 0 24 24"><path d="M12 1.8c.6 4.9 2.6 7.6 9.4 10.2-6.8 2.6-8.8 5.3-9.4 10.2-.6-4.9-2.6-7.6-9.4-10.2C9.4 9.4 11.4 6.7 12 1.8Z" fill="url(#mst-ai-grad)" /></svg>
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M12 1.8c.6 4.9 2.6 7.6 9.4 10.2-6.8 2.6-8.8 5.3-9.4 10.2-.6-4.9-2.6-7.6-9.4-10.2C9.4 9.4 11.4 6.7 12 1.8Z"
+                fill="url(#mst-ai-grad)"
+              />
+            </svg>
           </span>
         ) : (
           <img alt="MySmartTeach" className="mst-side-logo" src={logo} />
         )}
         {showCollapse ? (
-          <Tooltip placement="right" title={collapsed ? "Expand navigation" : "Collapse navigation"}>
-            <IconButton aria-label={collapsed ? "Expand navigation" : "Collapse navigation"} className="mst-side-collapse" onClick={onToggleCollapse}>
+          <Tooltip placement="right" title={collapsed ? 'Expand navigation' : 'Collapse navigation'}>
+            <IconButton
+              aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
+              className="mst-side-collapse"
+              data-mst="sidebar-collapse"
+              onClick={onToggleCollapse}
+            >
               <ChevronLeftRounded />
             </IconButton>
           </Tooltip>
         ) : null}
       </div>
 
-
-      <nav aria-label="Main" className="mst-side-nav" ref={listRef}>
-        {indicator !== null ? <span aria-hidden="true" className="mst-side-indicator" style={{ transform: `translateY(${indicator}px)` }} /> : null}
+      {/* data-mst names clicks in the UI log: its links log as sidebar/link:<page> */}
+      <nav aria-label="Main" className="mst-side-nav" data-mst="sidebar" ref={listRef}>
+        {indicator !== null ? (
+          <span aria-hidden="true" className="mst-side-indicator" style={{ transform: `translateY(${indicator}px)` }} />
+        ) : null}
         {groups.map((group) => (
-          <div className="mst-side-group" key={group.label || "home"}>
-            {group.label ? (collapsed ? <span aria-hidden="true" className="mst-side-rule" /> : <div className="mst-side-label">{group.label}</div>) : null}
+          <div className="mst-side-group" key={group.label || 'home'}>
+            {group.label ? (
+              collapsed ? (
+                <span aria-hidden="true" className="mst-side-rule" />
+              ) : (
+                <div className="mst-side-label">{group.label}</div>
+              )
+            ) : null}
             {group.items.map((item) => {
               const Icon = item.icon;
               const active = isActivePath(location.pathname, item);
               const button = (
                 <a
-                  aria-current={active ? "page" : undefined}
+                  aria-current={active ? 'page' : undefined}
                   aria-label={collapsed ? item.text : undefined}
                   className="mst-side-item"
                   href={item.path}
@@ -144,19 +170,33 @@ function SidebarPanel({ collapsed, onToggleCollapse, onNavigate, showCollapse })
 }
 
 const Sidebar = ({ mobileOpen, onDrawerToggle, sidebarWidth, collapsedWidth, isCollapsed, onToggleCollapse }) => (
-  <Box aria-label="Main navigation" component="aside" sx={{ width: { md: isCollapsed ? collapsedWidth : sidebarWidth }, flexShrink: { md: 0 } }}>
+  <Box
+    aria-label="Main navigation"
+    component="aside"
+    sx={{ width: { md: isCollapsed ? collapsedWidth : sidebarWidth }, flexShrink: { md: 0 } }}
+  >
     <Drawer
       ModalProps={{ keepMounted: true }}
       onClose={onDrawerToggle}
       open={mobileOpen}
-      sx={{ display: { xs: "block", md: "none" }, "& .MuiDrawer-paper": { width: sidebarWidth + 12, boxSizing: "border-box" } }}
+      sx={{
+        display: { xs: 'block', md: 'none' },
+        '& .MuiDrawer-paper': { width: sidebarWidth + 12, boxSizing: 'border-box' },
+      }}
       variant="temporary"
     >
       <SidebarPanel collapsed={false} onNavigate={onDrawerToggle} showCollapse={false} />
     </Drawer>
     <Drawer
       open
-      sx={{ display: { xs: "none", md: "block" }, "& .MuiDrawer-paper": { width: isCollapsed ? collapsedWidth : sidebarWidth, boxSizing: "border-box", overflow: "visible" } }}
+      sx={{
+        display: { xs: 'none', md: 'block' },
+        '& .MuiDrawer-paper': {
+          width: isCollapsed ? collapsedWidth : sidebarWidth,
+          boxSizing: 'border-box',
+          overflow: 'visible',
+        },
+      }}
       variant="permanent"
     >
       <SidebarPanel collapsed={isCollapsed} onToggleCollapse={onToggleCollapse} showCollapse />

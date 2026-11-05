@@ -1,8 +1,22 @@
-// /src/components/classes/AddClassModal.jsx
+// The Add a class dialog: create a class by hand, or from an uploaded roster file (CSV, Excel, Word, PDF, image).
+// Area: academics
+
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Dialog, DialogTitle, DialogContent, DialogActions, Button, Stack, TextField,
-  Tabs, Tab, Box, Typography, IconButton, CircularProgress, Alert
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Stack,
+  TextField,
+  Tabs,
+  Tab,
+  Box,
+  Typography,
+  IconButton,
+  CircularProgress,
+  Alert,
 } from '@mui/material';
 import CloseOutlined from '@mui/icons-material/CloseOutlined';
 import UploadDropzone from '../common/UploadDropzone';
@@ -62,37 +76,77 @@ const AddClassModal = ({ open, onClose, onSubmit, isLoading, error }) => {
     onSubmit({ name: className, description, file });
   };
 
-  const isSubmitDisabled = isLoading || (activeTab === 0 ? className.trim() === '' : className.trim() === '' || file === null);
+  const isSubmitDisabled =
+    isLoading || (activeTab === 0 ? className.trim() === '' : className.trim() === '' || file === null);
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" disableEscapeKeyDown={isLoading}>
       <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         Add a class
-        <IconButton aria-label="close" onClick={onClose} disabled={isLoading}><CloseOutlined /></IconButton>
+        <IconButton aria-label="close" onClick={onClose} disabled={isLoading}>
+          <CloseOutlined />
+        </IconButton>
       </DialogTitle>
       <form onSubmit={handleSubmit}>
         <DialogContent sx={{ pt: 0 }}>
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
           <Tabs aria-label="How to add the class" value={activeTab} onChange={handleTabChange}>
             <Tab label="Create by hand" disabled={isLoading} />
             <Tab label="Upload a roster" disabled={isLoading} />
           </Tabs>
           <TabPanel value={activeTab} index={0}>
             <Stack spacing={3}>
-              <TextField autoFocus required name="classNameManual" label="Class name" value={className} onChange={(e) => setClassName(e.target.value)} fullWidth disabled={isLoading} />
-              <TextField name="description" label="Description (optional)" value={description} onChange={(e) => setDescription(e.target.value)} fullWidth multiline rows={3} disabled={isLoading} />
+              <TextField
+                autoFocus
+                required
+                name="classNameManual"
+                label="Class name"
+                value={className}
+                onChange={(e) => setClassName(e.target.value)}
+                fullWidth
+                disabled={isLoading}
+              />
+              <TextField
+                name="description"
+                label="Description (optional)"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                fullWidth
+                multiline
+                rows={3}
+                disabled={isLoading}
+              />
             </Stack>
           </TabPanel>
           <TabPanel value={activeTab} index={1}>
             <Stack spacing={3}>
-              <TextField required name="classNameUpload" label="Class name" value={className} onChange={(e) => setClassName(e.target.value)} fullWidth disabled={isLoading} />
+              <TextField
+                required
+                name="classNameUpload"
+                label="Class name"
+                value={className}
+                onChange={(e) => setClassName(e.target.value)}
+                fullWidth
+                disabled={isLoading}
+              />
               <FileUploadZone file={file} setFile={setFile} isLoading={isLoading} />
             </Stack>
           </TabPanel>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose} variant="outlined" disabled={isLoading}>Cancel</Button>
-          <Button type="submit" variant="contained" disabled={isSubmitDisabled} startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}>
+          <Button onClick={onClose} variant="outlined" disabled={isLoading}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={isSubmitDisabled}
+            startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
+          >
             {activeTab === 0 ? 'Create class' : 'Create and upload'}
           </Button>
         </DialogActions>

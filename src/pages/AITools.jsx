@@ -1,4 +1,5 @@
-// /src/pages/AITools.jsx
+// The AI tools home page (/tools): a card for each generator and a History button for saved results.
+// Area: ai_tools
 
 import React, { useState } from 'react'; // <<< IMPORT useState
 
@@ -52,7 +53,11 @@ const AITools = () => {
     <>
       <Box>
         <PageHeader
-          actions={<Button onClick={() => setIsHistoryOpen(true)} startIcon={<HistoryOutlined />} variant="outlined">History</Button>}
+          actions={
+            <Button onClick={() => setIsHistoryOpen(true)} startIcon={<HistoryOutlined />} variant="outlined">
+              History
+            </Button>
+          }
           subtitle="Create classroom materials in seconds, then save what you like."
           title="AI tools"
         />
@@ -66,10 +71,7 @@ const AITools = () => {
       </Box>
 
       {/* --- [START] NEW MODAL RENDER --- */}
-      <HistoryModal
-        open={isHistoryOpen}
-        onClose={() => setIsHistoryOpen(false)}
-      />
+      <HistoryModal open={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} />
       {/* --- [END] NEW MODAL RENDER --- */}
     </>
   );

@@ -1,8 +1,12 @@
-// /src/App.jsx (FINAL, SECURE, SUPERVISOR-APPROVED VERSION)
+// The app root: sets up the router, theme and global providers, and maps every URL to its page.
+// Its routes cover sign-in, public quiz and report pages, /family, /admin and the signed-in teacher pages.
+// Area: platform
 
 // --- Core React & Router Imports ---
-import React, { useMemo, lazy, Suspense } from 'react';
+import React, { useMemo, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
+// Each page view reaches the UI log with its page name; lazyPage() is lazy() with the chunk's download timed.
+import { lazyPage, usePageViews } from './services/pageViews';
 
 // --- MUI & Theme Imports ---
 import { ThemeProvider } from '@mui/material/styles';
@@ -27,32 +31,30 @@ import Layout from './components/common/Layout';
 import Home from './pages/Home';
 import NotFound from './pages/NotFound';
 import Classes from './pages/Classes';
-const ClassDetails = lazy(() => import('./pages/ClassDetails'));
+const ClassDetails = lazyPage(() => import('./pages/ClassDetails'));
 import AITools from './pages/AITools';
-const QuestionGenerator = lazy(() => import('./pages/tools/QuestionGenerator'));
-const SlideGenerator = lazy(() => import('./pages/tools/SlideGenerator'));
-const RubricGenerator = lazy(() => import('./pages/tools/RubricGenerator'));
+const QuestionGenerator = lazyPage(() => import('./pages/tools/QuestionGenerator'));
+const SlideGenerator = lazyPage(() => import('./pages/tools/SlideGenerator'));
+const RubricGenerator = lazyPage(() => import('./pages/tools/RubricGenerator'));
 import Assessments from './pages/Assessments';
-const NewAssessmentV2 = lazy(() => import('./pages/assessments/NewAssessmentV2'));
-const QuickAssessment = lazy(() => import('./pages/assessments/QuickAssessment'));
-const AssessmentResultsPage = lazy(() => import('./pages/assessments/AssessmentResultsPage'));
-const AssessmentReviewPage = lazy(() => import('./pages/assessments/AssessmentReviewPage'));
-const RedirectReviewToFirstStudent = lazy(() => import('./pages/assessments/RedirectReviewToFirstStudent'));
-const PublicReportView = lazy(() => import('./pages/public/ReportView'));
-const Chatbot = lazy(() => import('./pages/Chatbot'));
-const StudentProfile = lazy(() => import('./pages/StudentProfile'));
-const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
-import ParentPortalPending from './pages/ParentPortalPending';
-const FamilyHome = lazy(() => import('./pages/family/FamilyHome'));
+const NewAssessmentV2 = lazyPage(() => import('./pages/assessments/NewAssessmentV2'));
+const QuickAssessment = lazyPage(() => import('./pages/assessments/QuickAssessment'));
+const AssessmentResultsPage = lazyPage(() => import('./pages/assessments/AssessmentResultsPage'));
+const AssessmentReviewPage = lazyPage(() => import('./pages/assessments/AssessmentReviewPage'));
+const PublicReportView = lazyPage(() => import('./pages/public/ReportView'));
+const Chatbot = lazyPage(() => import('./pages/Chatbot'));
+const StudentProfile = lazyPage(() => import('./pages/StudentProfile'));
+const AdminDashboard = lazyPage(() => import('./pages/AdminDashboard'));
+const FamilyHome = lazyPage(() => import('./pages/family/FamilyHome'));
 import FamilyLoading from './pages/family/FamilyLoading';
 import Quizzes from './pages/Quizzes';
-const QuizBuilder = lazy(() => import('./pages/quizzes/QuizBuilder'));
-const QuizHost = lazy(() => import('./pages/quizzes/QuizHost'));
-const QuizParticipant = lazy(() => import('./pages/quizzes/QuizParticipant'));
-const QuizAnalytics = lazy(() => import('./pages/quizzes/QuizAnalytics'));
-const QuizSPParticipant = lazy(() => import('./pages/quizzes/QuizSPParticipant'));
-const QuizSPHost = lazy(() => import('./pages/quizzes/QuizSPHost'));
-const QuizSPAnalytics = lazy(() => import('./pages/quizzes/QuizSPAnalytics'));
+const QuizBuilder = lazyPage(() => import('./pages/quizzes/QuizBuilder'));
+const QuizHost = lazyPage(() => import('./pages/quizzes/QuizHost'));
+const QuizParticipant = lazyPage(() => import('./pages/quizzes/QuizParticipant'));
+const QuizAnalytics = lazyPage(() => import('./pages/quizzes/QuizAnalytics'));
+const QuizSPParticipant = lazyPage(() => import('./pages/quizzes/QuizSPParticipant'));
+const QuizSPHost = lazyPage(() => import('./pages/quizzes/QuizSPHost'));
+const QuizSPAnalytics = lazyPage(() => import('./pages/quizzes/QuizSPAnalytics'));
 
 /**
  * A layout component that wraps all protected pages.
@@ -60,7 +62,15 @@ const QuizSPAnalytics = lazy(() => import('./pages/quizzes/QuizSPAnalytics'));
  */
 const AppLayout = () => (
   <Layout>
-    <Suspense fallback={<Box role="status" sx={{py:3}}>Loading page…</Box>}><Outlet /></Suspense>
+    <Suspense
+      fallback={
+        <Box role="status" sx={{ py: 3 }}>
+          Loading page…
+        </Box>
+      }
+    >
+      <Outlet />
+    </Suspense>
   </Layout>
 );
 
@@ -71,6 +81,8 @@ const ThemedApp = () => {
   const { mode } = useThemeMode();
   // useMemo ensures the theme is only recalculated when the mode changes.
   const theme = useMemo(() => getTheme(mode), [mode]);
+  // Once, here inside the router: each new pathname is a page view (services/pageViews.js).
+  usePageViews();
 
   return (
     <ThemeProvider theme={theme}>
@@ -78,86 +90,95 @@ const ThemedApp = () => {
       {/* the still brand ground (logo-colour blooms) behind every page */}
       <div aria-hidden="true" className="mst-ground" />
       {/* The Routes component is where all URL-to-component mapping is defined. */}
-      <Suspense fallback={<Box role="status" sx={{p:3}}>Loading page…</Box>}><Routes>
-        {/* --- [CRITICAL MODIFICATION 2/4: DEFINE PUBLIC-ONLY ROUTES] --- */}
-        {/* These routes are for unauthenticated users. */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+      <Suspense
+        fallback={
+          <Box role="status" sx={{ p: 3 }}>
+            Loading page…
+          </Box>
+        }
+      >
+        <Routes>
+          {/* --- [CRITICAL MODIFICATION 2/4: DEFINE PUBLIC-ONLY ROUTES] --- */}
+          {/* These routes are for unauthenticated users. */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
-        {/* --- [CRITICAL MODIFICATION 3/4: DEFINE TRULY PUBLIC ROUTES] --- */}
-        {/* This route is accessible to anyone, logged in or not. */}
-        <Route path="/report/:report_token" element={<PublicReportView />} />
+          {/* --- [CRITICAL MODIFICATION 3/4: DEFINE TRULY PUBLIC ROUTES] --- */}
+          {/* This route is accessible to anyone, logged in or not. */}
+          <Route path="/report/:report_token" element={<PublicReportView />} />
 
-        {/* --- QUIZ PARTICIPANT ROUTES (Public - No Auth Required) --- */}
-        <Route path="/quiz/join" element={<QuizParticipant />} />
-        <Route path="/quiz/join/:roomCode" element={<QuizParticipant />} />
+          {/* --- QUIZ PARTICIPANT ROUTES (Public - No Auth Required) --- */}
+          <Route path="/quiz/join" element={<QuizParticipant />} />
+          <Route path="/quiz/join/:roomCode" element={<QuizParticipant />} />
 
-        {/* --- SELF-PACED QUIZ PARTICIPANT ROUTES (Public - No Auth Required) --- */}
-        <Route path="/quiz/sp/join" element={<QuizSPParticipant />} />
-        <Route path="/quiz/sp/join/:accessCode" element={<QuizSPParticipant />} />
+          {/* --- SELF-PACED QUIZ PARTICIPANT ROUTES (Public - No Auth Required) --- */}
+          <Route path="/quiz/sp/join" element={<QuizSPParticipant />} />
+          <Route path="/quiz/sp/join/:accessCode" element={<QuizSPParticipant />} />
 
-        {/* --- ADMIN ROUTE (Special Protected Route) --- */}
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute requiredRole="admin" redirectTo="/">
-              <AdminDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/parent-pending"
-          element={
-            <ProtectedRoute requiredRole="parent" redirectTo="/">
-              <ParentPortalPending />
-            </ProtectedRoute>
-          }
-        />
+          {/* --- ADMIN ROUTE (Special Protected Route) --- */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute requiredRole="admin" redirectTo="/">
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
 
-        <Route path="/family" element={<ProtectedRoute><Suspense fallback={<FamilyLoading />}><FamilyHome /></Suspense></ProtectedRoute>} />
+          <Route
+            path="/family"
+            element={
+              <ProtectedRoute>
+                <Suspense fallback={<FamilyLoading />}>
+                  <FamilyHome />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
 
-        {/* --- [CRITICAL MODIFICATION 4/4: DEFINE PROTECTED ROUTES] --- */}
-        {/* This parent Route uses the ProtectedRoute component as its element.
+          {/* --- [CRITICAL MODIFICATION 4/4: DEFINE PROTECTED ROUTES] --- */}
+          {/* This parent Route uses the ProtectedRoute component as its element.
             ANY route nested inside this one will first be checked by ProtectedRoute.
             If the user is not authenticated, they will be redirected to /login
             and none of the child routes will ever be rendered. */}
-        <Route
-          element={
-            <ProtectedRoute requiredRole="teacher">
-              <AppLayout />
-            </ProtectedRoute>
-          }
-        >
-          {/* All application pages that require a user to be logged in go here. */}
-          <Route path="/" element={<Home />} />
-          <Route path="/classes" element={<Classes />} />
-          <Route path="/classes/:class_id" element={<ClassDetails />} />
-          <Route path="/students/:student_id" element={<StudentProfile />} />
-          <Route path="/tools" element={<AITools />} />
-          <Route path="/tools/question-generator" element={<QuestionGenerator />} />
-          <Route path="/tools/slide-generator" element={<SlideGenerator />} />
-          <Route path="/tools/rubric-generator" element={<RubricGenerator />} />
-          <Route path="/assessments" element={<Assessments />} />
-          <Route path="/assessments/new" element={<NewAssessmentV2 />} />
-          <Route path="/assessments/quick" element={<QuickAssessment />} />
-          <Route path="/assessments/:job_id/results" element={<AssessmentResultsPage />} />
-          <Route path="/assessments/:job_id/review/:entity_id" element={<AssessmentReviewPage />} />
-          <Route path="/quizzes" element={<Quizzes />} />
-          <Route path="/quizzes/new" element={<QuizBuilder />} />
-          <Route path="/quizzes/:quizId/edit" element={<QuizBuilder />} />
-          <Route path="/quizzes/:quizId/analytics" element={<QuizAnalytics />} />
-          <Route path="/quizzes/sessions/:sessionId/host" element={<QuizHost />} />
-          <Route path="/quizzes/sp-sessions/:sessionId/host" element={<QuizSPHost />} />
-          <Route path="/quizzes/sp-sessions/:sessionId/analytics" element={<QuizSPAnalytics />} />
-          <Route path="/chat/:sessionId?" element={<Chatbot />} />
+          <Route
+            element={
+              <ProtectedRoute requiredRole="teacher">
+                <AppLayout />
+              </ProtectedRoute>
+            }
+          >
+            {/* All application pages that require a user to be logged in go here. */}
+            <Route path="/" element={<Home />} />
+            <Route path="/classes" element={<Classes />} />
+            <Route path="/classes/:class_id" element={<ClassDetails />} />
+            <Route path="/students/:student_id" element={<StudentProfile />} />
+            <Route path="/tools" element={<AITools />} />
+            <Route path="/tools/question-generator" element={<QuestionGenerator />} />
+            <Route path="/tools/slide-generator" element={<SlideGenerator />} />
+            <Route path="/tools/rubric-generator" element={<RubricGenerator />} />
+            <Route path="/assessments" element={<Assessments />} />
+            <Route path="/assessments/new" element={<NewAssessmentV2 />} />
+            <Route path="/assessments/quick" element={<QuickAssessment />} />
+            <Route path="/assessments/:job_id/results" element={<AssessmentResultsPage />} />
+            <Route path="/assessments/:job_id/review/:entity_id" element={<AssessmentReviewPage />} />
+            <Route path="/quizzes" element={<Quizzes />} />
+            <Route path="/quizzes/new" element={<QuizBuilder />} />
+            <Route path="/quizzes/:quizId/edit" element={<QuizBuilder />} />
+            <Route path="/quizzes/:quizId/analytics" element={<QuizAnalytics />} />
+            <Route path="/quizzes/sessions/:sessionId/host" element={<QuizHost />} />
+            <Route path="/quizzes/sp-sessions/:sessionId/host" element={<QuizSPHost />} />
+            <Route path="/quizzes/sp-sessions/:sessionId/analytics" element={<QuizSPAnalytics />} />
+            <Route path="/chat/:sessionId?" element={<Chatbot />} />
 
-          {/* A catch-all route for any other path, rendered within the protected layout. */}
-          <Route path="*" element={<NotFound />} />
-        </Route>
-      </Routes></Suspense>
+            {/* A catch-all route for any other path, rendered within the protected layout. */}
+            <Route path="*" element={<NotFound />} />
+          </Route>
+        </Routes>
+      </Suspense>
     </ThemeProvider>
   );
-}
+};
 
 /**
  * The absolute top-level component of the application.

@@ -1,7 +1,9 @@
+// The result card of an AI tool: empty, loading and error states, then the Markdown result with Save, Copy and Clear.
+// Area: ai_tools
+
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
-// /src/components/tools/OutputPanel.jsx
 
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -9,9 +11,26 @@ import remarkGfm from 'remark-gfm';
 
 // MUI Component Imports (with Table components added)
 import {
-  Card, CardContent, Box, Typography, Button, IconButton, Tooltip,
-  Divider, Stack, Skeleton, Alert, AlertTitle, CircularProgress,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper
+  Card,
+  CardContent,
+  Box,
+  Typography,
+  Button,
+  IconButton,
+  Tooltip,
+  Divider,
+  Stack,
+  Skeleton,
+  Alert,
+  AlertTitle,
+  CircularProgress,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
 } from '@mui/material';
 
 // MUI Icon Imports
@@ -24,36 +43,38 @@ import CloudDoneOutlined from '@mui/icons-material/CloudDoneOutlined';
 
 // Internal State Component for when the panel is empty
 const EmptyState = () => (
-    <div className="mst-output-empty">
-      <span aria-hidden="true" className="mst-empty-icon" data-ai="true"><AutoAwesomeOutlined /></span>
-      <h2 className="mst-empty-title">Your result will appear here</h2>
-      <p className="mst-empty-text">Choose your settings, then press Generate.</p>
-    </div>
+  <div className="mst-output-empty">
+    <span aria-hidden="true" className="mst-empty-icon" data-ai="true">
+      <AutoAwesomeOutlined />
+    </span>
+    <h2 className="mst-empty-title">Your result will appear here</h2>
+    <p className="mst-empty-text">Choose your settings, then press Generate.</p>
+  </div>
 );
 
 // While the AI works: a moving gradient bar along the card's top edge and the shape of what's coming
 const LoadingState = () => (
-    <div className="mst-output-loading" aria-busy="true" aria-live="polite">
-        <div className="mst-ai-bar mst-output-bar" />
-        <Box sx={{ p: 3 }}>
-            <span className="mst-visually-hidden">Generating…</span>
-            <Skeleton variant="rounded" width="40%" height={24} sx={{ mb: 1.5 }} />
-            <Skeleton variant="rounded" width="22%" height={16} sx={{ mb: 3 }} />
-            <Skeleton variant="rounded" height={72} sx={{ mb: 1.5 }} />
-            <Skeleton variant="rounded" height={72} sx={{ mb: 1.5 }} />
-            <Skeleton variant="rounded" height={72} />
-        </Box>
-    </div>
+  <div className="mst-output-loading" aria-busy="true" aria-live="polite">
+    <div className="mst-ai-bar mst-output-bar" />
+    <Box sx={{ p: 3 }}>
+      <span className="mst-visually-hidden">Generating…</span>
+      <Skeleton variant="rounded" width="40%" height={24} sx={{ mb: 1.5 }} />
+      <Skeleton variant="rounded" width="22%" height={16} sx={{ mb: 3 }} />
+      <Skeleton variant="rounded" height={72} sx={{ mb: 1.5 }} />
+      <Skeleton variant="rounded" height={72} sx={{ mb: 1.5 }} />
+      <Skeleton variant="rounded" height={72} />
+    </Box>
+  </div>
 );
 
 // Internal State Component for when an error has occurred
 const ErrorState = ({ error }) => (
-    <Box sx={{ p: 3 }}>
-      <Alert severity="error">
-        <AlertTitle>Generation failed</AlertTitle>
-        {error || 'An unknown error occurred.'}
-      </Alert>
-    </Box>
+  <Box sx={{ p: 3 }}>
+    <Alert severity="error">
+      <AlertTitle>Generation failed</AlertTitle>
+      {error || 'An unknown error occurred.'}
+    </Alert>
+  </Box>
 );
 
 /**
@@ -78,23 +99,28 @@ const OutputPanel = ({ isLoading, error, generatedContent, onClear, onSave, isSa
     if (isLoading) return <LoadingState />;
     if (error) return <ErrorState error={error} />;
     if (!generatedContent) return <EmptyState />;
-    
+
     // Success State: Display the content and action buttons
     return (
       <>
         {/* Header with Title and Action Buttons */}
         <Box className="mst-card-head" sx={{ flexShrink: 0 }}>
-          <Typography component="h2" variant="h4">Result</Typography>
+          <Typography component="h2" variant="h4">
+            Result
+          </Typography>
           <Stack direction="row" spacing={1} alignItems="center">
-            
             <Button
-              variant={isSaved ? "contained" : "outlined"}
+              variant={isSaved ? 'contained' : 'outlined'}
               size="small"
-              color={isSaved ? "success" : "primary"}
+              color={isSaved ? 'success' : 'primary'}
               startIcon={
-                isSaving ? <CircularProgress size={16} color="inherit" />
-                : isSaved ? <CloudDoneOutlined />
-                : <SaveOutlined />
+                isSaving ? (
+                  <CircularProgress size={16} color="inherit" />
+                ) : isSaved ? (
+                  <CloudDoneOutlined />
+                ) : (
+                  <SaveOutlined />
+                )
               }
               onClick={onSave}
               disabled={isSaving || isSaved}
@@ -113,14 +139,10 @@ const OutputPanel = ({ isLoading, error, generatedContent, onClear, onSave, isSa
             >
               {copied ? 'Copied!' : 'Copy'}
             </Button>
-            
+
             <Tooltip title="Clear and start over">
               <span>
-                <IconButton
-                  onClick={onClear}
-                  aria-label="clear output"
-                  disabled={isLoading || isSaving}
-                >
+                <IconButton onClick={onClear} aria-label="clear output" disabled={isLoading || isSaving}>
                   <RestartAltOutlined />
                 </IconButton>
               </span>
@@ -132,26 +154,35 @@ const OutputPanel = ({ isLoading, error, generatedContent, onClear, onSave, isSa
         {/* Content Area with Upgraded Markdown Rendering */}
         <CardContent sx={{ flexGrow: 1, overflowY: 'auto' }}>
           <ReactMarkdown
-            remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[[rehypeKatex, { trust: false, maxExpand: 1000, maxSize: 20 }]]}
+            remarkPlugins={[remarkGfm, remarkMath]}
+            rehypePlugins={[[rehypeKatex, { trust: false, maxExpand: 1000, maxSize: 20 }]]}
             components={{
               // Text and Header overrides
-              p: ({node, ...props}) => <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }} {...props} />,
-              strong: ({node, ...props}) => <Typography component="span" sx={{ fontWeight: 600 }} {...props} />,
-              li: ({node, ...props}) => <li><Typography variant="body1" component="span" sx={{ whiteSpace: 'pre-wrap' }} {...props} /></li>,
-              h1: ({node, ...props}) => <Typography variant="h1" gutterBottom {...props} />,
-              h2: ({node, ...props}) => <Typography variant="h2" gutterBottom {...props} />,
-              h3: ({node, ...props}) => <Typography variant="h3" gutterBottom {...props} />,
-              h4: ({node, ...props}) => <Typography variant="h4" gutterBottom {...props} />,
-              h5: ({node, ...props}) => <Typography variant="h5" gutterBottom {...props} />,
-              h6: ({node, ...props}) => <Typography variant="h6" gutterBottom {...props} />,
+              p: ({ node, ...props }) => <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }} {...props} />,
+              strong: ({ node, ...props }) => <Typography component="span" sx={{ fontWeight: 600 }} {...props} />,
+              li: ({ node, ...props }) => (
+                <li>
+                  <Typography variant="body1" component="span" sx={{ whiteSpace: 'pre-wrap' }} {...props} />
+                </li>
+              ),
+              h1: ({ node, ...props }) => <Typography variant="h1" gutterBottom {...props} />,
+              h2: ({ node, ...props }) => <Typography variant="h2" gutterBottom {...props} />,
+              h3: ({ node, ...props }) => <Typography variant="h3" gutterBottom {...props} />,
+              h4: ({ node, ...props }) => <Typography variant="h4" gutterBottom {...props} />,
+              h5: ({ node, ...props }) => <Typography variant="h5" gutterBottom {...props} />,
+              h6: ({ node, ...props }) => <Typography variant="h6" gutterBottom {...props} />,
 
               // --- [CRITICAL FIX] Overrides for Table Elements ---
-              table: ({node, ...props}) => <TableContainer component={Paper} variant="outlined" sx={{ my: 2 }}><Table {...props} /></TableContainer>,
-              thead: ({node, ...props}) => <TableHead sx={{ bgcolor: 'action.hover' }} {...props} />,
-              tbody: ({node, ...props}) => <TableBody {...props} />,
-              tr: ({node, ...props}) => <TableRow {...props} />,
-              th: ({node, ...props}) => <TableCell sx={{ fontWeight: 600 }} {...props} />,
-              td: ({node, ...props}) => <TableCell {...props} />,
+              table: ({ node, ...props }) => (
+                <TableContainer component={Paper} variant="outlined" sx={{ my: 2 }}>
+                  <Table {...props} />
+                </TableContainer>
+              ),
+              thead: ({ node, ...props }) => <TableHead sx={{ bgcolor: 'action.hover' }} {...props} />,
+              tbody: ({ node, ...props }) => <TableBody {...props} />,
+              tr: ({ node, ...props }) => <TableRow {...props} />,
+              th: ({ node, ...props }) => <TableCell sx={{ fontWeight: 600 }} {...props} />,
+              td: ({ node, ...props }) => <TableCell {...props} />,
             }}
           >
             {generatedContent}

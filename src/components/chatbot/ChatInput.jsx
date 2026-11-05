@@ -1,4 +1,5 @@
-// /ata-frontend/src/components/chatbot/ChatInput.jsx
+// The message box of the assistant chat: Enter sends, Shift+Enter adds a line, and Stop shows while it answers.
+// Area: chat
 
 import React, { useState } from 'react';
 import { Box, TextField, IconButton, InputAdornment, Stack, Button } from '@mui/material';
@@ -59,7 +60,7 @@ const ChatInput = ({ onSendMessage, disabled, isResponding, onStopGeneration }) 
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
             disabled={disabled}
-            placeholder={disabled ? "The assistant is thinking…" : "Ask about a class, a student or a quiz…"}
+            placeholder={disabled ? 'The assistant is thinking…' : 'Ask about a class, a student or a quiz…'}
             inputProps={{ 'aria-label': 'Message the assistant' }}
             InputProps={{
               endAdornment: (
