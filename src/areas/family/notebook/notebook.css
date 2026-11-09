@@ -1,0 +1,162 @@
+/* The Notebook (Phase 1.38 design §4) in teacher mode's look: teacher's chat header, messages and composer (app.css's */
+/* .mst-chat-*, .mst-msg* and .mst-composer), the 320 px panel from 1200 px, the tabs below it and the keyboard rule. */
+/* Area: family */
+
+/* The page: the chat column beside the panel from 1200 px (design §4.3), level with the sidebar's 12 px margin. */
+.fam-nb { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; padding: 12px 24px; }
+.fam-nb[data-wide="true"] { display: grid; grid-template-columns: minmax(0, 1fr) 320px; grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "head panel" "chat panel"; gap: 0 16px; }
+.fam-nb[data-wide="true"] > .fam-nb-head { grid-area: head; }
+.fam-nb[data-wide="true"] > .fam-nb-chat-area { grid-area: chat; }
+.fam-nb[data-wide="true"] > .fam-nb-panel { grid-area: panel; }
+.fam-nb [hidden] { display: none !important; }
+.fam-nb :is(h2, h3) { font-family: var(--font-ui); }
+.fam-nb-chat-area { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.fam-nb-banner.MuiAlert-root { flex: none; margin-top: 8px; }
+.fam-nb-message { padding: 24px; }
+
+/* Teacher's segmented control below 1200 px, full width; 44 px segments on phones and touch screens. */
+.fam-nb-tabs.MuiTabs-root { flex: none; width: 100%; }
+@media (pointer: coarse), (max-width: 899px) { .fam-nb-tabs .MuiTab-root { min-height: 44px; } }
+
+/* The header bar (design §4.4): the title over "{chat} · answers by AI", then Your chats, More, New chat. */
+.fam-nb-head .mst-chat-head-text { display: grid; gap: 0; }
+.fam-nb-head .mst-hint { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; line-height: 16px; font-weight: 500; }
+.fam-nb-head-btn.MuiButton-root { flex: none; color: var(--mst-ink); }
+.fam-nb-head-btn .MuiButton-startIcon { color: var(--mst-ink-2); }
+.fam-nb-head-btn .MuiButton-startIcon > svg { font-size: 20px; }
+/* The phone row (design §4.3): the chat's name, then Chats, New and More in the accent ink. */
+.fam-nb-row { flex: none; display: flex; align-items: center; gap: 2px; min-height: 48px; }
+.fam-nb-row-name { flex: 1; min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; line-height: 24px; font-weight: 600; color: var(--mst-ink); }
+.fam-nb-row .fam-nb-head-btn.MuiButton-root { padding-inline: 8px; color: var(--mst-accent-ink); }
+.fam-nb-row .fam-nb-head-btn .MuiButton-startIcon { color: inherit; }
+
+/* The menus: teacher's (glass 2, radius 14); Your chats is 320 px, under its group label. */
+.fam-nb-chats .MuiMenu-paper { width: 320px; max-width: calc(100% - 32px); }
+.fam-nb-menu-label.MuiListSubheader-root { position: static; padding: 8px 12px 4px; background: none; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--mst-ink-3); }
+.fam-nb-chats .MuiMenuItem-root[role="menuitemradio"] { min-height: 52px; gap: 8px; }
+.fam-nb-menu-text { flex: 1; min-width: 0; display: grid; }
+.fam-nb-menu-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; line-height: 20px; font-weight: 600; }
+.fam-nb-menu-meta { font-size: 12px; line-height: 16px; font-weight: 500; color: var(--mst-ink-3); }
+.fam-nb-menu-check.MuiSvgIcon-root { flex: none; font-size: 20px; color: var(--mst-accent-ink); }
+.fam-nb-menu-all.MuiMenuItem-root, .fam-nb-menu-all .MuiListItemIcon-root { color: var(--mst-accent-ink); font-weight: 600; }
+@media (pointer: coarse) { .fam-nb-menu .MuiMenuItem-root { min-height: 44px; } }
+
+/* The messages (design §4.5): teacher's bubbles in a column of at most 760 px, newest at the bottom. */
+.fam-nb-chat { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.fam-nb .mst-chat-column { max-width: 760px; }
+.fam-nb-msgs { display: grid; gap: 16px; padding: 16px 4px 8px; }
+.fam-nb .mst-msg[data-role="user"] .mst-msg-bubble { white-space: pre-wrap; }
+.fam-nb-sending .mst-msg-bubble { opacity: .75; }
+.fam-nb-older.MuiButton-root { display: flex; margin: 8px auto 0; }
+.fam-nb-answer { min-width: 0; display: grid; gap: 4px; }
+.fam-nb-who { margin: 0 0 0 40px; font-size: 12px; line-height: 16px; font-weight: 600; color: var(--mst-ink-2); }
+.fam-nb-simpler.MuiButton-root { justify-self: start; min-height: 32px; margin: 4px 0 0 40px; padding: 0 12px; font-size: 13px; color: var(--mst-ink-2); }
+
+/* Something made in this chat (design §4.5): one glass row, its chip, then Open; never a filled button. */
+.fam-nb-made { display: flex; align-items: center; gap: 12px; margin-left: 40px; padding: 10px 12px; border: 1px solid var(--mst-g1-edge); border-radius: 14px; background: var(--mst-g1-fill); box-shadow: var(--mst-g1-hi); }
+.fam-nb-made-text { flex: 1; min-width: 0; display: grid; }
+.fam-nb-made-name { overflow-wrap: anywhere; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--mst-ink); }
+.fam-nb-made-meta { font-size: 12px; line-height: 16px; font-weight: 500; color: var(--mst-ink-3); }
+.fam-nb-made-end { flex: none; display: flex; align-items: center; gap: 8px; }
+.fam-nb-status { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; font-size: 14px; line-height: 20px; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--mst-ink-2); }
+.fam-nb-status[data-tone="warn"] { color: var(--mst-warn-ink); }
+.fam-nb-open.MuiButton-root { flex: none; min-width: 0; padding: 0 8px; color: var(--mst-accent-ink); }
+
+/* A new chat (design §4.6): teacher's welcome, a 20/28 question, and the ideas as outlined pills. */
+.fam-nb-welcome .mst-chat-welcome-title { font-size: 20px; line-height: 28px; }
+.fam-nb-welcome .mst-chat-welcome-text { max-width: 460px; }
+.fam-nb-ideas { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 560px; }
+.fam-nb-idea.MuiButton-root { font-weight: 500; color: var(--mst-ink); }
+.fam-nb-idea .MuiButton-startIcon { color: var(--mst-accent-ink); }
+
+/* The composer (design §4.7): teacher's floating glass box, 52 px tall, with a round 40 px Send in the accent. */
+.fam-nb-compose { display: grid; gap: 6px; }
+.fam-nb-undo.MuiButton-root { justify-self: start; }
+.fam-nb-box.mst-composer { display: flex; align-items: flex-end; gap: 4px; min-height: 52px; margin: 0; padding: 4px 6px 4px 12px; }
+.fam-nb-box .fam-compose-input .MuiInputBase-root { padding: 10px 4px; font-size: 15px; line-height: 24px; }
+.fam-nb-box .fam-compose-input textarea::placeholder { color: var(--mst-ink-3); opacity: 1; }
+.fam-nb-send.MuiButton-root { flex: none; width: 40px; min-width: 40px; height: 40px; min-height: 40px; margin: 2px; padding: 0; border-radius: 50%; }
+.fam-nb-send svg { font-size: 20px; }
+/* "Using 2 materials · Change" above the box, under 1200 px only (the panel shows the ticks from 1200 px). */
+.fam-nb-using { justify-self: start; display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 6px; border: 0; border-radius: 10px; background: none; color: var(--mst-ink-2); font: inherit; font-size: 14px; line-height: 20px; cursor: pointer; }
+.fam-nb-using svg { font-size: 16px; color: var(--mst-ink-3); }
+.fam-nb-using b { font-weight: 600; color: var(--mst-accent-ink); }
+
+/* The right panel (design §4.8): a 320 px glass card the page's height, scrolling inside itself when it's long. */
+.fam-nb-panel { min-height: 0; overflow-y: auto; }
+.fam-nb[data-wide="true"] .fam-nb-panel { padding: 16px; }
+.fam-nb:not([data-wide="true"]) .fam-nb-panel { flex: 1; padding: 4px 0 16px; }
+.fam-nb-rule { height: 1px; margin: 18px 0 16px; border: 0; background: var(--mst-edge); }
+.fam-nb-h2 { margin: 0; font-size: 17px; line-height: 24px; font-weight: 600; color: var(--mst-ink); }
+.fam-nb-from { display: flex; align-items: center; gap: 6px; margin: 4px 0 2px; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--mst-ink); }
+.fam-nb-from svg { font-size: 18px; color: var(--mst-accent-ink); }
+.fam-nb-lead { margin: 2px 0 12px; font-size: 14px; line-height: 20px; color: var(--mst-ink-2); }
+/* The four tiles, 2 by 2; on the Make tab one per row, 64 px tall, with a chevron (design §4.9). */
+.fam-nb-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.fam-nb-tile { display: grid; justify-items: start; align-content: start; gap: 6px; padding: 12px; border: 1px solid var(--mst-g1-edge); border-radius: 14px; background: var(--mst-g1-fill); box-shadow: var(--mst-g1-hi); color: var(--mst-ink); font: inherit; text-align: left; cursor: pointer; transition: transform 150ms var(--mst-ease), box-shadow 150ms var(--mst-ease); }
+.fam-nb-tile:hover:not(:disabled) { transform: translateY(-1px); box-shadow: var(--mst-g1-hi), var(--mst-shadow-rest); }
+.fam-nb-tile:disabled { cursor: default; opacity: .6; }
+.fam-nb-tile-name { font-size: 14px; line-height: 20px; font-weight: 600; }
+.fam-nb-tile-line { font-size: 12px; line-height: 16px; font-weight: 500; color: var(--mst-ink-2); }
+.fam-nb-make[data-rows] .fam-nb-tiles { grid-template-columns: minmax(0, 1fr); }
+.fam-nb-make[data-rows] .fam-nb-tile { grid-template-columns: 36px minmax(0, 1fr) 20px; align-items: center; gap: 0 12px; min-height: 64px; }
+.fam-nb-make[data-rows] .fam-nb-tile > .mst-tile, .fam-nb-make[data-rows] .fam-nb-tile-chev { grid-row: 1 / span 2; }
+.fam-nb-make[data-rows] .fam-nb-tile-chev { grid-column: 3; font-size: 20px; color: var(--mst-ink-3); }
+
+/* Materials: a 20 px tick box in a 44 px target, the name and its line, and View; then the two-line buttons. */
+.fam-nb-mat-list { list-style: none; margin: 0 0 4px; padding: 0; display: grid; gap: 2px; }
+.fam-nb-mat { display: flex; align-items: center; gap: 4px; min-height: 52px; }
+.fam-nb-mat .MuiCheckbox-root { flex: none; margin-left: -10px; padding: 12px; }
+.fam-nb-mat-text { flex: 1; min-width: 0; display: grid; }
+.fam-nb-mat-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; line-height: 20px; font-weight: 500; color: var(--mst-ink); }
+.fam-nb-mat-meta { font-size: 12px; line-height: 16px; font-weight: 500; color: var(--mst-ink-3); }
+.fam-nb-mat .MuiButton-root { flex: none; min-width: 0; padding: 0 8px; font-size: 13px; font-weight: 600; color: var(--mst-accent-ink); }
+.fam-nb-add { width: 100%; display: flex; align-items: center; gap: 12px; margin-top: 8px; padding: 10px 14px; border: 1px solid var(--mst-edge-control); border-radius: 14px; background: none; color: var(--mst-ink); font: inherit; text-align: left; cursor: pointer; transition: background-color 150ms var(--mst-ease); }
+.fam-nb-add:hover { background: var(--mst-hover-fill); }
+.fam-nb-add > svg { flex: none; font-size: 22px; color: var(--mst-accent-ink); }
+.fam-nb-add-text { min-width: 0; display: grid; }
+.fam-nb-add-name { font-size: 14px; line-height: 20px; font-weight: 600; }
+.fam-nb-add-line { font-size: 12px; line-height: 16px; color: var(--mst-ink-2); }
+
+/* Saved explanations under Materials (C-15): name and date, each opening its explanation. */
+.fam-nb-saved { margin-top: 20px; }
+.fam-nb-saved-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 2px; }
+.fam-saved-row { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 6px 4px 6px 8px; border-radius: 12px; color: var(--mst-ink); text-decoration: none; }
+.fam-saved-row:hover { background: var(--mst-hover-fill); }
+.fam-saved-text { flex: 1; min-width: 0; display: grid; }
+.fam-saved-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; line-height: 20px; font-weight: 500; }
+.fam-saved-date { font-size: 12px; line-height: 16px; color: var(--mst-ink-3); }
+.fam-saved-chev.MuiSvgIcon-root { flex: none; color: var(--mst-ink-3); }
+
+/* Phones and narrow windows (design §4.9, §11.1): 12 px sides, the composer just above the tab bar. */
+@media (max-width: 899px) {
+  .fam-nb { padding: 8px 12px 4px; }
+  .fam-nb-welcome.mst-chat-welcome { padding: 32px 8px 16px; }
+}
+/* Touch screens and phones: 44 px targets (design §1.8); a phone's answers use the full width. */
+@media (pointer: coarse), (max-width: 599px) {
+  .fam-nb .MuiIconButton-root { min-width: 44px; min-height: 44px; }
+  .fam-nb-send.MuiButton-root { width: 44px; min-width: 44px; height: 44px; margin: 0; }
+  .fam-nb-using { min-height: 44px; }
+}
+@media (max-width: 599px) {
+  .fam-nb-box .fam-compose-input .MuiInputBase-root { font-size: 16px; }
+  .fam-nb .mst-msg[data-role="bot"] .mst-msg-avatar { display: none; }
+  .fam-nb-who, .fam-nb-simpler.MuiButton-root, .fam-nb-made { margin-left: 0; }
+  .fam-nb-made { flex-wrap: wrap; }
+  .fam-nb-made-text { flex-basis: calc(100% - 48px); }
+  .fam-nb-made-end { margin-left: 48px; }
+  .fam-nb-open.MuiButton-root { margin-left: auto; }
+}
+
+/* The keyboard rule (C-13): while the chat's input has focus, the tabs hide (shell.css hides the tab bar), and on a */
+/* visible screen under 600 px the chat's row too. The top bar, the messages and the input stay. */
+@media (max-width: 899px) {
+  :root[data-fam-typing] .fam-nb-tabs { display: none; }
+  :root[data-fam-typing="short"] .fam-nb-row { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .fam-nb-tile { transition: none; } }
+
+/* The phone tabs' chosen segment is solid (design §1.2): a tester measured the quiet pill as "no fill". */
+.fam-nb-tabs .MuiTab-root.Mui-selected { color: #fff; }
+.fam-nb-tabs .MuiTabs-indicator { background-color: var(--mst-accent-solid); }

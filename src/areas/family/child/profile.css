@@ -1,0 +1,55 @@
+/* Styles the child's profile (Phase 1.38 design §3.4–3.5): its one-line subtitle, the two cards and the chats list, */
+/* and the child's details form and dialogs (Edit details, and Add a child, which shares the form). */
+/* Area: family */
+
+/* ── the profile page ───────────────────────────────────────────────────────────────────────── */
+/* The name stays beside the 64 px avatar on phones too; Edit details wraps under them there. */
+.fam-profile .mst-page-head-text { flex-basis: 160px; }
+.fam-profile-line { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Side by side from 1200 px, chart first and wider; stacked below that, chart first. */
+.fam-profile-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (min-width: 1200px) { .fam-profile-grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); } }
+/* The chats card is teacher Home's list (home.css: .home-recent, .home-row-button); its titles take up to two lines. */
+.fam-profile-chats .mst-list-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; white-space: normal; }
+.fam-profile-chev { flex: none; color: var(--mst-ink-3); }
+
+/* ── the child's details form (ChildForm) ───────────────────────────────────────────────────── */
+.fam-cf { display: flex; flex-direction: column; gap: 20px; }
+.fam-cf-label { margin-bottom: 6px; font-size: 14px; line-height: 20px; font-weight: 500; color: var(--mst-ink); }
+/* the dialog's one-sentence subtitle (design §10) */
+.fam-child-dialog .fam-dialog-sub.MuiTypography-root { margin: -8px 0 16px; font-size: 15px; line-height: 24px; color: var(--mst-ink-2); }
+/* School year: 13 pills, one choice; 7 to a row, or 5 on phones. */
+.fam-cf-years { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.fam-cf-year { height: 36px; padding: 0; border: 0; border-radius: 999px; background: transparent; box-shadow: inset 0 0 0 1px var(--mst-edge-control); color: var(--mst-ink-2); font: inherit; font-size: 14px; line-height: 20px; font-weight: 500; white-space: nowrap; cursor: pointer; transition: background-color 150ms var(--mst-ease), box-shadow 150ms var(--mst-ease); }
+.fam-cf-year:hover:not(:disabled) { background: var(--mst-hover-fill); box-shadow: inset 0 0 0 1px var(--mst-accent-ink); }
+/* the chosen year is solid, as every chosen option is (design §1.2): a tester found the tint "only slightly brighter" */
+.fam-cf-year[data-on="true"], .fam-cf-year[data-on="true"]:hover { background: var(--mst-accent-solid); box-shadow: inset 0 0 0 1px var(--mst-accent-solid); color: #fff; font-weight: 600; }
+.fam-cf-years[data-missing="true"] .fam-cf-year { box-shadow: inset 0 0 0 1px var(--mst-bad); }
+.fam-cf-year:disabled { opacity: .6; cursor: default; }
+.fam-cf-years[data-size="lg"] .fam-cf-year { height: 44px; }
+
+/* ── the dialogs: teacher's dialog, 520 px wide ─────────────────────────────────────────────── */
+.fam-child-dialog .MuiDialog-paper:not(.MuiDialog-paperFullScreen) { max-width: 520px; }
+/* Phones: a full-screen sheet, opaque so the form never looks smudged, with its foot at the bottom. */
+.fam-child-dialog .MuiDialog-paperFullScreen { background: var(--mst-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.fam-child-dialog .MuiDialog-paperFullScreen .MuiDialogTitle-root { padding: 16px 16px 8px; }
+.fam-child-dialog .MuiDialog-paperFullScreen .MuiDialogContent-root { padding: 8px 16px 16px; }
+.fam-child-dialog .MuiDialog-paperFullScreen .MuiDialogActions-root { padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--mst-edge); }
+/* Remove sits apart at the end of the form, under a rule, never beside Cancel. */
+.fam-cf-remove { margin-top: 24px; padding-top: 12px; border-top: 1px solid var(--mst-edge); }
+.fam-cf-remove .MuiButton-root { margin-left: -12px; padding-inline: 12px; color: var(--mst-bad-ink); }
+.fam-cf-remove .MuiButton-root:hover { background: var(--mst-error-surface); }
+.fam-cf-remove { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+.fam-cf-remove-note { font-size: 14px; line-height: 20px; color: var(--mst-ink-2); }
+/* the note field's helper reads at 14/20, not MUI's 12 px caption (row 3's tester read "Used to…" as "it used to") */
+.fam-child-dialog .MuiFormHelperText-root:not(.Mui-error) { font-size: 14px; line-height: 20px; color: var(--mst-ink-2); }
+
+/* Phones and touch screens: 44 px targets. */
+@media (max-width: 599.95px), (pointer: coarse) {
+  .fam-profile .MuiButton-root, .fam-child-dialog .MuiButton-root { min-height: 44px; }
+}
+/* Phones: 5 pills to a row, 44 px tall. */
+@media (max-width: 599.95px) {
+  .fam-cf-years { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .fam-cf-year { height: 44px; }
+}

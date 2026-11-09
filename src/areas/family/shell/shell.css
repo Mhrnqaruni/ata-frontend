@@ -1,0 +1,129 @@
+/* Parent mode's shell (Phase 1.38 design §1.3–1.5): teacher's sidebar (its mst-side classes) from 900 px, the */
+/* phone's glass bars below, the child switcher and the page column, in teacher's --mst-* tokens only. */
+/* Area: family */
+
+/* The shell is see-through, so teacher's ground (.mst-ground) shows behind the glass, as in teacher mode. */
+.fam-shell { height: 100dvh; display: grid; grid-template-columns: auto minmax(0, 1fr); color: var(--mst-ink); }
+.fam-shell[data-phone="true"] { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+.fam-shell-main { min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; outline: none; }
+/* Today's screens, until each moves, fill the main area instead of the whole window. */
+.fam-shell-main .fam-app { height: 100%; flex: 1; min-height: 0; }
+.fam-defs { position: absolute; }
+
+/* the skip link: hidden until focused */
+.fam-skip { position: absolute; left: 16px; top: -120px; z-index: 1300; padding: 12px 16px; border-radius: 12px; background: var(--mst-solid); color: var(--mst-accent-ink); font-weight: 600; text-decoration: none; box-shadow: var(--mst-shadow-float); }
+.fam-skip:focus { top: 16px; outline: 2px solid var(--mst-accent-ink); outline-offset: 2px; }
+
+/* ── the sidebar, from 900 px: teacher's panel in a 212 px column, 76 px collapsed ───────────── */
+.fam-side-col { width: 212px; height: 100%; min-height: 0; transition: width 280ms var(--mst-ease-move); }
+.fam-shell[data-collapsed="true"] .fam-side-col { width: 76px; }
+.fam-side-switcher { flex: none; margin-top: 12px; }
+.fam-side-item { position: relative; }
+/* "New" is a word in the sidebar (design §1.3); collapsed, it becomes a dot on the icon. */
+.fam-new-chip { margin-left: auto; display: inline-grid; place-items: center; height: 20px; padding: 0 8px; border-radius: 999px; background: var(--mst-accent-tint); color: var(--mst-accent-ink); font-size: 12px; line-height: 16px; font-weight: 600; }
+.mst-side[data-collapsed="true"] .fam-new-chip { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; padding: 0; font-size: 0; background: var(--mst-accent-ink); }
+.mst-side[data-collapsed="true"] .fam-side-user { justify-content: center; padding: 6px 0; }
+.mst-side[data-collapsed="true"] .fam-side-user .mst-side-user-text { display: none; }
+
+/* ── the child switcher: teacher's account-row look (design §1.3) ───────────────────────────── */
+.fam-switcher { box-sizing: border-box; width: 100%; min-height: 52px; display: flex; align-items: center; gap: 10px; padding: 6px 8px; border: 1px solid var(--mst-g1-edge); border-radius: 14px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; transition: background-color 200ms var(--mst-ease); }
+.fam-switcher:hover { background: var(--mst-hover-fill); }
+.fam-switcher:focus-visible { outline: 2px solid var(--mst-accent-ink); outline-offset: -2px; }
+.fam-switcher-text { flex: 1; min-width: 0; display: grid; }
+.fam-switcher-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; line-height: 20px; font-weight: 600; }
+.fam-switcher-year { font-size: 12px; line-height: 16px; font-weight: 500; color: var(--mst-ink-3); white-space: nowrap; }
+.fam-switcher .fam-chev { flex: none; font-size: 20px; color: var(--mst-ink-3); }
+.fam-switcher[data-collapsed="true"] { justify-content: center; width: 52px; margin-inline: auto; padding: 6px; border-color: transparent; }
+/* on the child's profile, the switcher's row is where the parent is (design §3.3) */
+.fam-switcher[data-current="true"] { background: var(--mst-active-fill); box-shadow: var(--mst-shadow-rest); }
+/* the phone's form: one line, "Sam · Year 4", in a 44 px target */
+.fam-switcher[data-compact="true"] { width: auto; max-width: 100%; min-height: 44px; padding: 0 4px; border: 0; }
+/* content-width, so the chevron follows "· Year 4" and never reads as the account's (the Designer, 20:12) */
+.fam-switcher[data-compact="true"] .fam-switcher-text { flex: 0 1 auto; display: flex; align-items: baseline; }
+.fam-switcher[data-compact="true"] .fam-switcher-name { font-size: 15px; line-height: 24px; }
+.fam-switcher[data-compact="true"] .fam-switcher-year { font-size: 15px; line-height: 24px; }
+.fam-avatar-none { width: 32px; height: 32px; border-radius: 50%; background: var(--mst-hover-fill); }
+/* the menu: teacher's menu (glass 2, radius 14), 260 px wide, 6 px under the row so it never covers it */
+.fam-switcher-menu .MuiMenu-paper { width: 260px; max-height: 70vh; margin-top: 6px; }
+.fam-switcher-child.MuiMenuItem-root, .fam-sheet .fam-switcher-child.MuiMenuItem-root { min-height: 48px; gap: 10px; }
+.fam-switcher-check { flex: none; font-size: 20px; color: var(--mst-accent-ink); }
+.fam-switcher-add.MuiMenuItem-root, .fam-switcher-add .MuiListItemIcon-root { color: var(--mst-accent-ink); font-weight: 600; }
+/* below 600 px: the same items in a bottom sheet, "Choose a child" ([HIG: Popovers]) */
+.fam-sheet .MuiDialog-container { align-items: flex-end; }
+.fam-sheet .MuiDialog-paper { width: 100%; max-width: none; margin: 0; border-radius: 24px 24px 0 0; padding-bottom: env(safe-area-inset-bottom); }
+.fam-sheet-list { padding: 0 8px 12px; }
+
+/* ── the phone bars, below 900 px (design §1.4) ─────────────────────────────────────────────── */
+.fam-phone-top { position: relative; z-index: 3; display: flex; align-items: center; gap: 8px; height: 64px; padding: 0 8px 0 12px; background: var(--mst-g2-sheen), var(--mst-g2-fill); -webkit-backdrop-filter: var(--mst-g2-blur); backdrop-filter: var(--mst-g2-blur); border-bottom: 1px solid var(--mst-g1-edge); }
+.fam-phone-switcher { flex: 1; min-width: 0; }
+.fam-phone-account.MuiIconButton-root { width: 44px; height: 44px; padding: 6px; color: var(--mst-ink-2); }
+.fam-phone-account svg { font-size: 26px; }
+/* Touch screens and phones: every button is a 44 px target (design §1.8; Apple's 44 pt). Scoped to parent mode. */
+@media (pointer: coarse), (max-width: 599px) {
+  :root[data-space="family"] .MuiButton-root { min-height: 44px; }
+}
+/* the floating tab bar: glass 2, like the sidebar, clear of the home indicator */
+.fam-tabbar { position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 4; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); height: 64px; padding: 0 4px; border: 1px solid var(--mst-g1-edge); border-radius: 24px; background: var(--mst-g2-sheen), var(--mst-g2-fill); -webkit-backdrop-filter: var(--mst-g2-blur); backdrop-filter: var(--mst-g2-blur); box-shadow: var(--mst-shadow-rest); }
+.fam-tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 0; border-radius: 18px; color: var(--mst-ink-2); text-decoration: none; }
+.fam-tab:focus-visible { outline: 2px solid var(--mst-accent-ink); outline-offset: -2px; }
+.fam-tab-pill { position: relative; display: grid; place-items: center; width: 56px; height: 30px; border-radius: 999px; transition: background-color 150ms var(--mst-ease); }
+.fam-tab-pill svg { font-size: 24px; }
+.fam-tab-label { font-size: 12px; line-height: 16px; font-weight: 500; }
+.fam-tab[aria-current="page"] { color: var(--mst-accent-ink); }
+.fam-tab[aria-current="page"] .fam-tab-label { font-weight: 600; }
+.fam-tab[aria-current="page"] .fam-tab-pill { background: var(--mst-active-fill); box-shadow: var(--mst-shadow-rest); }
+.fam-tab-dot { position: absolute; top: 2px; right: 12px; width: 8px; height: 8px; border-radius: 50%; background: var(--mst-accent-ink); }
+/* the main area stops above the tab bar, so nothing hides under it */
+.fam-shell[data-phone="true"] .fam-shell-main { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
+/* The keyboard rule (C-13): while the chat's input has focus, the tab bar hides (notebook/useTypingRule.js). */
+:root[data-fam-typing] .fam-phone-bottom { display: none; }
+:root[data-fam-typing] .fam-shell[data-phone="true"] .fam-shell-main { padding-bottom: 0; }
+/* Short landscape screens: the labels leave the eye, not the screen reader. */
+@media (max-height: 400px) {
+  .fam-tabbar { height: 52px; }
+  .fam-tab-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}
+
+/* ── states ─────────────────────────────────────────────────────────────────────────────────── */
+.fam-shell-message { margin: 24px; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.fam-shell-message p { margin: 0; }
+.fam-shell-children { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.fam-shell-child { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 12px; border-radius: 12px; color: var(--mst-ink); font-weight: 600; text-decoration: none; }
+.fam-shell-child:hover { background: var(--mst-hover-fill); }
+.fam-shell-child:focus-visible { outline: 2px solid var(--mst-accent-ink); outline-offset: -2px; }
+.fam-skel { display: block; background: var(--mst-hover-fill); border-radius: 8px; }
+.fam-skel-circle { flex: none; width: 32px; height: 32px; border-radius: 50%; }
+.fam-skel-line { width: 70%; height: 14px; margin: 3px 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .fam-skel { animation: fam-pulse 1.6s ease-in-out infinite; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fam-side-col, .fam-tab-pill { transition: none; }
+}
+
+/* ── each page: teacher's page header, in a column of at most 960 px, left-aligned (design §1.5) ── */
+.fam-page { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.fam-page-sentinel { display: block; height: 0; }
+.fam-shell-main > .fam-page:not(.fam-page-bare) { overflow-y: auto; padding: 24px 24px 32px; }
+.fam-shell-main > .fam-page:not(.fam-page-bare) > * { width: 100%; max-width: 960px; margin-inline: 0; }
+.fam-page-head .mst-page-head-title { outline: none; }
+@media (min-width: 1200px) {
+  .fam-shell-main > .fam-page:not(.fam-page-bare) { padding-inline: 32px; }
+}
+@media (max-width: 599px) {
+  .fam-shell-main > .fam-page:not(.fam-page-bare) { padding: 16px; }
+}
+/* lit like the nav's active item (the Designer, row 3): the fill, the name in 600 and a ring on the avatar */
+.fam-switcher[data-current="true"] { border-color: transparent; }
+.fam-switcher[data-current="true"] .fam-avatar, .fam-switcher[data-current="true"] .mst-avatar { box-shadow: 0 0 0 2px var(--mst-solid), 0 0 0 4px var(--mst-accent); }
+.fam-switcher[data-current="true"] .fam-switcher-year { color: var(--mst-ink-2); }
+/* Page and card titles take focus for screen readers (FamilyPage), with no ring or underline, as teacher's titles. */
+:root[data-space="family"] :is(h1, h2)[tabindex="-1"]:focus { outline: none; text-decoration: none; }
+/* Every family dialog is a solid sheet on phones (design §1.2, §11.1): glass over a page made the forms look smudged. */
+.fam-dialog .MuiPaper-root.MuiDialog-paperFullScreen { background: var(--mst-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
+/* At 320 px the top bar's switcher drops " · Year 4" and cuts a long name with an ellipsis (design §11.2); the menu
+   still shows the year. */
+.fam-switcher[data-compact="true"] .fam-switcher-name { min-width: 0; }
+@media (max-width: 359.95px) {
+  .fam-switcher[data-compact="true"] .fam-switcher-year { display: none; }
+}

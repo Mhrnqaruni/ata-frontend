@@ -1,0 +1,82 @@
+/* The mind map (Phase 1.38 design §6.7) in teacher's look: the board with its how-to card and zoom words, glass nodes */
+/* with the big idea solid, "Show 3 ideas" buttons, the Summary panel, and the phone's tap-to-open outline. */
+/* Area: family */
+
+.fam-mm-wrap { flex: 1; min-height: 0; display: flex; }
+.fam-mm { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 12px; padding: 0 12px 12px; }
+.fam-mm-board { position: relative; min-width: 0; min-height: 0; height: 100%; display: flex; flex-direction: column; border: 1px solid var(--mst-g1-edge); border-radius: 20px; overflow: hidden; }
+.fam-mm-canvas { position: relative; flex: 1; min-height: 0; overflow: auto; display: flex; background: var(--mst-g1-fill); }
+.fam-mm-sizer { margin: auto; flex: none; position: relative; }
+.fam-mm-stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.fam-mm-lines { position: absolute; inset: 0; overflow: visible; }
+.fam-mm-lines path { fill: none; stroke: var(--mst-edge-control); stroke-width: 2; opacity: .8; animation: fam-mm-in 220ms var(--mst-ease) both; }
+
+/* how to use it (design §6.7): what a map is and three steps, at the top left; above the outline on phones */
+.fam-mm-how { position: absolute; left: 16px; top: 16px; z-index: 2; width: min(300px, calc(100% - 32px)); padding: 14px 16px; border: 1px solid var(--mst-g1-edge); border-radius: 16px; background: var(--mst-g2-sheen), var(--mst-g2-fill); -webkit-backdrop-filter: var(--mst-g2-blur); backdrop-filter: var(--mst-g2-blur); box-shadow: var(--mst-g1-hi), var(--mst-shadow-rest); }
+.fam-mm-how-what { margin: 0 0 8px; font-size: 14px; line-height: 20px; color: var(--mst-ink-2); }
+.fam-mm-how-steps { margin: 0; padding-left: 20px; font-size: 15px; line-height: 24px; color: var(--mst-ink); }
+
+/* the nodes: teacher's glass, radius 14, 14/20 600; the big idea solid with white words */
+.fam-mm-node { position: absolute; left: 0; top: 0; display: flex; align-items: center; width: max-content; min-width: 120px; transition: transform 260ms var(--mst-ease); animation: fam-mm-in 220ms var(--mst-ease) both; }
+.fam-mm-label { flex: 1; min-width: 0; min-height: 44px; padding: 10px 14px; border: 1px solid var(--mst-g1-edge); border-radius: 14px; background: var(--mst-g1-fill); box-shadow: var(--mst-g1-hi), var(--mst-shadow-rest); color: var(--mst-ink); font: inherit; font-size: 14px; line-height: 20px; font-weight: 600; text-align: left; overflow-wrap: anywhere; cursor: pointer; transition: box-shadow 150ms var(--mst-ease); }
+.fam-mm-label:hover { box-shadow: var(--mst-g1-hi), var(--mst-shadow-float); }
+.fam-mm-label:focus-visible, .fam-mm-toggle:focus-visible, .fam-mm-o-row:focus-visible { outline: 2px solid var(--mst-accent-ink); outline-offset: 2px; }
+.fam-mm-node[data-selected="true"] .fam-mm-label { box-shadow: inset 0 0 0 2px var(--mst-accent), var(--mst-shadow-rest); }
+.fam-mm-node[data-depth="0"] .fam-mm-label { min-height: 56px; font-size: 17px; line-height: 24px; background: var(--mst-accent-solid); border-color: var(--mst-accent-solid); color: #fff; }
+.fam-mm-node[data-depth="0"][data-selected="true"] .fam-mm-label { box-shadow: inset 0 0 0 2px #fff, var(--mst-shadow-rest); }
+/* "Show 3 ideas": the button that opens a closed part, in the gap to its right */
+.fam-mm-toggle { position: absolute; right: -8px; top: 50%; transform: translate(100%, -50%); display: inline-flex; align-items: center; gap: 2px; height: 32px; padding: 0 8px 0 12px; border: 0; border-radius: 999px; background: var(--mst-accent-tint); color: var(--mst-accent-ink); font: inherit; font-size: 14px; line-height: 20px; font-weight: 600; white-space: nowrap; cursor: pointer; }
+.fam-mm-toggle:hover { background: var(--mst-hover-fill); }
+.fam-mm-toggle svg { font-size: 20px; }
+.fam-mm-toggle::before { content: ""; position: absolute; inset: -6px; }
+
+/* the zoom: three text buttons at the bottom right, in words, and the drag hint under them */
+.fam-mm-float { position: absolute; right: 16px; bottom: 16px; z-index: 2; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.fam-mm-float-row { display: flex; gap: 4px; padding: 4px; border: 1px solid var(--mst-g1-edge); border-radius: 16px; background: var(--mst-g2-sheen), var(--mst-g2-fill); -webkit-backdrop-filter: var(--mst-g2-blur); backdrop-filter: var(--mst-g2-blur); box-shadow: var(--mst-g1-hi), var(--mst-shadow-rest); }
+.fam-mm-float .MuiButton-root { min-height: 44px; }
+.fam-mm-drag { margin: 0; padding-right: 8px; font-size: 14px; line-height: 20px; color: var(--mst-ink-2); }
+
+/* the panel: a part's notes when one is open, the Summary, and Next step */
+.fam-mm-panel { min-height: 0; overflow-y: auto; padding: 20px; border: 1px solid var(--mst-g1-edge); border-radius: 20px; background: var(--mst-g1-fill); box-shadow: var(--mst-g1-hi), var(--mst-shadow-rest); }
+.fam-mm-detail { display: flex; flex-direction: column; gap: 16px; }
+.fam-mm-section { display: flex; flex-direction: column; gap: 8px; }
+.fam-mm-section + .fam-mm-section { padding-top: 16px; border-top: 1px solid var(--mst-edge); }
+.fam-mm-detail-title.MuiTypography-root { font-size: 17px; line-height: 24px; font-weight: 600; }
+.fam-mm-explain { font-size: 15px; line-height: 24px; color: var(--mst-ink-2); }
+.fam-mm-explain[data-clamp="true"] { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.fam-mm-read.MuiButton-root, .fam-mm-ask.MuiButton-root { align-self: flex-start; }
+.fam-mm-read.MuiButton-root { margin-left: -10px; color: var(--mst-accent-ink); }
+.fam-mm-context { display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 12px; background: var(--mst-neutral); color: var(--mst-ink-2); }
+@keyframes fam-mm-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* phones: the same map as a tap-to-open outline (no sideways scrolling), with the how-to card above it */
+.fam-mm-phone { flex: 1; min-height: 0; overflow-y: auto; display: block; padding: 0 16px 16px; }
+.fam-mm-phone .fam-mm-how { position: static; width: auto; margin: 12px 0 16px; }
+.fam-mm-o { display: flex; flex-direction: column; gap: 8px; }
+.fam-mm-o-row { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 52px; padding: 10px 12px 10px 14px; border: 1px solid var(--mst-g1-edge); border-radius: 14px; background: var(--mst-g1-fill); box-shadow: var(--mst-g1-hi); color: var(--mst-ink); font: inherit; font-size: 15px; line-height: 20px; font-weight: 600; text-align: left; cursor: pointer; }
+.fam-mm-o[data-depth="0"] > .fam-mm-o-row { background: var(--mst-accent-solid); border-color: var(--mst-accent-solid); color: #fff; font-size: 17px; }
+.fam-mm-o-row[data-selected="true"] { box-shadow: inset 0 0 0 2px var(--mst-accent), var(--mst-g1-hi); }
+.fam-mm-o[data-depth="0"] > .fam-mm-o-row[data-selected="true"] { box-shadow: inset 0 0 0 2px #fff; }
+.fam-mm-o-label { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.fam-mm-o-count { flex: none; display: inline-flex; align-items: center; gap: 2px; font-size: 14px; font-weight: 600; color: var(--mst-accent-ink); white-space: nowrap; }
+.fam-mm-o[data-depth="0"] > .fam-mm-o-row .fam-mm-o-count { color: #fff; }
+.fam-mm-o-explain { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-left: 14px; padding: 10px 12px; border-left: 3px solid var(--mst-edge-control); color: var(--mst-ink-2); font-size: 15px; line-height: 24px; animation: fam-mm-in 200ms var(--mst-ease) both; }
+.fam-mm-o[data-depth="0"] > .fam-mm-o-explain { border-left-color: var(--mst-accent); }
+.fam-mm-o-text[data-clamp="true"] { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.fam-mm-o-kids { position: relative; display: flex; flex-direction: column; gap: 8px; margin-left: 14px; padding-left: 16px; border-left: 2px solid var(--mst-edge); }
+.fam-mm-o-kids > .fam-mm-o { position: relative; animation: fam-mm-in 200ms var(--mst-ease) both; }
+.fam-mm-o-kids > .fam-mm-o::before { content: ""; position: absolute; left: -16px; top: 26px; width: 14px; height: 2px; background: var(--mst-edge); }
+.fam-mm-tip { margin: 16px 0 0; }
+
+/* between 900 and 1199 px the panel sits under the map; the map alone is full width */
+@media (max-width: 1199px) {
+  .fam-mm { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
+  .fam-mm-panel { max-height: 40%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fam-mm-node, .fam-mm-label { transition: none; }
+  .fam-mm-node, .fam-mm-lines path, .fam-mm-o-kids > .fam-mm-o, .fam-mm-o-explain { animation: none; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .fam-mm-how, .fam-mm-float-row, .fam-mm-panel { background: var(--mst-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}

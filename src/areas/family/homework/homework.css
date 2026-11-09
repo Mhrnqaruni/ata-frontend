@@ -1,0 +1,46 @@
+/* The homework parts (Phase 1.38 design §5.3–5.5) in teacher's tokens: the drop zone's tile, buttons and fine print, */
+/* the page thumbnails, the summary's score and comment, the question map, the file rows and Next step. */
+/* Area: family */
+
+/* ── Check homework: the drop zone (§5.4) ──────────────────────────────────────────────────────── */
+.fam-drop-tile.mst-tile { width: 48px; height: 48px; margin-bottom: 4px; }
+.fam-drop-buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 8px; }
+.fam-drop-fine { display: block; margin-top: 4px; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--mst-ink-3); }
+/* the pages added, as 72 px thumbnails with a 44 px Remove at the corner */
+.fam-thumb { position: relative; width: 72px; height: 72px; border: 1px solid var(--mst-edge); border-radius: 12px; overflow: hidden; background: var(--mst-neutral); }
+.fam-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.fam-thumb .MuiIconButton-root { position: absolute; top: 0; right: 0; width: 44px; height: 44px; color: var(--mst-ink); }
+
+/* ── The marked result (§5.5): the summary card ────────────────────────────────────────────────── */
+.fam-hw-score { margin: 0; font-family: var(--font-display); font-size: 30px; line-height: 36px; font-weight: 600; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.fam-hw-comment { margin: 8px 0 0; font-size: 15px; line-height: 24px; color: var(--mst-ink-2); }
+.fam-hw-chev { transition: transform 200ms var(--mst-ease); }
+.fam-hw-chev[data-open="true"] { transform: rotate(180deg); }
+/* the question map: one card of numbered tiles */
+.fam-hw-map { padding: 16px 20px 20px; border-radius: 20px; }
+/* the marked pages' file rows */
+.fam-hw-file-text { display: grid; min-width: 0; }
+.fam-hw-file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; line-height: 24px; font-weight: 500; }
+/* Next step: a lightbulb beside the title and one sentence */
+.fam-hw-next-icon { flex: none; font-size: 28px; color: var(--mst-accent-ink); }
+.fam-hw-next-body { display: grid; gap: 4px; min-width: 0; }
+.fam-hw-next-text { margin: 0; font-size: 15px; line-height: 24px; color: var(--mst-ink-2); }
+@media (prefers-reduced-motion: reduce) {
+  .fam-hw-chev { transition: none; }
+}
+
+/* ── The Designer's row 5 fixes (9 Nov) ────────────────────────────────────────────────────────── */
+/* The summary stacks (§5.5): the old row layout squeezed the score into 64 px (P1). */
+.fam-hw-summary { flex-direction: column; align-items: stretch; gap: 12px; padding: 20px; border-radius: 20px; }
+.fam-hw-fine { margin: 0; font-size: 12px; line-height: 16px; color: var(--mst-ink-3); }
+/* the legend: three short items with a middle dot between them, then one line on what to press */
+.fam-hw-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 0; margin: 8px 0 0; padding: 0; list-style: none; font-size: 14px; line-height: 20px; color: var(--mst-ink-2); }
+.fam-hw-legend li + li::before { content: "·"; margin: 0 8px; color: var(--mst-ink-3); }
+.fam-hw-legend-line { margin: 4px 0 12px; font-size: 14px; line-height: 20px; color: var(--mst-ink-2); }
+/* Phones and touch screens: the question boxes are 44 px targets (§11.1) */
+@media (max-width: 599.95px), (pointer: coarse) {
+  .fam-hw-chip { height: 44px; min-width: 56px; }
+}
+/* To look at · All: the chosen segment is solid (§1.2), as every chosen option */
+.fam-hw-filter .MuiTab-root.Mui-selected { color: #fff; }
+.fam-hw-filter .MuiTabs-indicator { background-color: var(--mst-accent-solid); }

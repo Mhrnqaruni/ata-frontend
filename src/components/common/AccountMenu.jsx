@@ -24,8 +24,11 @@ import { useThemeMode } from '../../hooks/useThemeMode';
 import ModeSwitch from './ModeSwitch';
 import './AccountMenu.css';
 
-/** The same adult menu is used by both workspaces; modes never change identity. */
-export default function AccountMenu({ compact = false }) {
+/**
+ * The same adult menu is used by both workspaces; modes never change identity.
+ * `renderButton(props)` draws a workspace's own trigger with the menu's props (parent mode's "Your account").
+ */
+export default function AccountMenu({ compact = false, renderButton }) {
   const { user, logout } = useAuth();
   const { mode, toggleThemeMode } = useThemeMode();
   const [settings, setSettings] = useState(false);
@@ -35,7 +38,9 @@ export default function AccountMenu({ compact = false }) {
   const open = (e) => setAnchor(e.currentTarget);
   return (
     <>
-      {compact ? (
+      {renderButton ? (
+        renderButton({ 'aria-haspopup': 'menu', 'aria-expanded': !!anchor, onClick: open, 'data-mst': 'account-menu' })
+      ) : compact ? (
         <IconButton
           aria-label={`Account: ${name}`}
           aria-haspopup="menu"

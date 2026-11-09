@@ -1,0 +1,52 @@
+/* Styles the make window (Phase 1.38 design §6.3) in teacher mode's look: the sentence under the title, segmented */
+/* controls in teacher's segmented pill, tick chips for the materials and the More options line. */
+/* Area: family */
+
+.fam-mk-sub { margin: 0 0 18px; font-size: 15px; line-height: 24px; color: var(--mst-ink-2); }
+.fam-mk-label { margin: 0 0 8px; font-size: 14px; line-height: 20px; font-weight: 500; color: var(--mst-ink); }
+
+/* The segmented control: teacher's pill track (its Tabs look) with a raised thumb that slides, as a radio group. */
+/* Labels may wrap to two lines rather than overflow at 320 px (design §11.2). */
+.fam-mk-seg { position: relative; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); padding: 3px; border: 1px solid var(--mst-edge); border-radius: 999px; background: var(--mst-well); }
+.fam-mk-seg-thumb { position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / var(--n)); border-radius: 999px; background: var(--mst-accent-solid); box-shadow: var(--mst-shadow-rest); transform: translateX(calc(var(--i) * 100%)); transition: transform 200ms var(--mst-ease); }
+.fam-mk-seg-btn { position: relative; z-index: 1; min-width: 0; min-height: 36px; padding: 4px 8px; border: 0; border-radius: 999px; background: none; color: var(--mst-ink-2); font: inherit; font-size: 14px; line-height: 18px; font-weight: 500; cursor: pointer; }
+.fam-mk-seg-btn[data-on="true"] { color: #fff; font-weight: 600; }
+.fam-mk-seg-btn:focus-visible { outline: 2px solid var(--mst-accent-ink); outline-offset: 2px; }
+
+/* The materials: tick chips, 36 px (44 on touch); a ticked one is solid, as every chosen option is (design §1.2). */
+.fam-mk-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.fam-mk-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; max-width: 100%; padding: 0 14px; border: 0; border-radius: 999px; background: none; box-shadow: inset 0 0 0 1px var(--mst-edge-control); color: var(--mst-ink); font: inherit; font-size: 14px; line-height: 20px; font-weight: 500; text-align: left; overflow-wrap: anywhere; cursor: pointer; }
+.fam-mk-chip svg { flex: none; font-size: 16px; }
+.fam-mk-chip:hover { box-shadow: inset 0 0 0 1px var(--mst-accent-ink); }
+.fam-mk-chip[data-on="true"] { background: var(--mst-accent-solid); box-shadow: inset 0 0 0 1px var(--mst-accent-solid); color: #fff; font-weight: 600; }
+.fam-mk-chip:focus-visible { outline: 2px solid var(--mst-accent-ink); outline-offset: 2px; }
+.fam-mk-note { margin: -8px 0 0; font-size: 14px; line-height: 20px; color: var(--mst-ink-2); }
+
+/* More options: a closed line that says what's inside, in the accent ink. */
+.fam-mk-more.MuiButton-root { min-height: 44px; margin-left: -10px; padding: 0 10px; color: var(--mst-accent-ink); text-align: left; }
+.fam-mk-more-body { padding-top: 12px; }
+
+/* Touch screens and phones: 44 px chips and 40 px segments (design §1.8, §11.1). */
+@media (pointer: coarse), (max-width: 599px) {
+  .fam-mk-chip { min-height: 44px; }
+  .fam-mk-seg-btn { min-height: 40px; }
+}
+/* Under 600 px: a solid full-screen sheet, its foot at the bottom (design §1.2). */
+.fam-make .MuiPaper-root.MuiDialog-paperFullScreen { background: var(--mst-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
+@media (prefers-reduced-motion: reduce) { .fam-mk-seg-thumb { transition: none; } }
+
+/* Choose a topic (design §10.3): the sentence, a 44 px search pill, year labels and 52 px radio rows. */
+.fam-dialog-lead { margin: -4px 0 16px; font-size: 15px; line-height: 24px; color: var(--mst-ink-2); }
+.fam-tp-search.MuiTextField-root { margin-bottom: 16px; }
+.fam-tp-search .MuiInputBase-root { min-height: 44px; border-radius: 999px; }
+.fam-tp-search-icon { margin-right: 8px; color: var(--mst-ink-3); }
+.fam-tp-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+.fam-tp-label.MuiTypography-root { margin: 0 0 2px; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--mst-ink-3); }
+.fam-tp-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 52px; padding: 8px 14px; border-radius: 14px; color: var(--mst-ink); font: inherit; text-align: left; cursor: pointer; }
+.fam-tp-row svg { flex: none; font-size: 22px; color: var(--mst-ink-3); }
+.fam-tp-row[aria-checked="true"] { background: var(--mst-accent-tint); box-shadow: inset 0 0 0 1px var(--mst-accent); }
+.fam-tp-row[aria-checked="true"] svg { color: var(--mst-accent-ink); }
+.fam-tp-row:focus-visible { outline: 2px solid var(--mst-accent-ink); outline-offset: 2px; }
+.fam-tp-text { display: grid; min-width: 0; }
+.fam-tp-name { font-size: 14px; line-height: 20px; font-weight: 600; }
+.fam-tp-meta { font-size: 12px; line-height: 16px; color: var(--mst-ink-3); }

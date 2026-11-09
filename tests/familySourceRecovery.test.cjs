@@ -8,23 +8,22 @@ const React = requireProduct('react'),
   esbuild = requireProduct('esbuild');
 const { act } = Renderer;
 let resolveDownload;
-const api = {
-  get: () => new Promise((resolve) => (resolveDownload = resolve)),
+let downloads = 0;
+// The family service's file download, which the reader calls (Phase 1.37, S2.2).
+const familyApi = {
+  materialFile: () => {
+    downloads += 1;
+    return new Promise((resolve) => (resolveDownload = resolve));
+  },
 };
-const mui = { useMediaQuery: () => false };
-for (const name of [
-  'Alert',
-  'Box',
-  'Button',
-  'CircularProgress',
-  'Dialog',
-  'DialogActions',
-  'DialogContent',
-  'DialogTitle',
-  'Typography',
-])
-  mui[name] = name;
-const raw = fs.readFileSync(path.join(__dirname, '../src/pages/family/FamilySource.jsx'), 'utf8');
+const mui = {};
+// The reader opens from the address (Phase 1.37, S2.6); here a plain state stands in for useDialogParam.
+const useDialogParam = () => {
+  const [open, setOpen] = React.useState(false);
+  return [open, () => setOpen(true), () => setOpen(false)];
+};
+for (const name of ['Alert', 'Button', 'CircularProgress', 'Dialog', 'Typography']) mui[name] = name;
+const raw = fs.readFileSync(path.join(__dirname, '../src/areas/family/FamilySource.jsx'), 'utf8');
 const compiled = esbuild.transformSync(raw, {
   loader: 'jsx',
   format: 'cjs',
@@ -36,11 +35,15 @@ new Function('require', 'module', 'exports', compiled)(
       ? React
       : id === '@mui/material'
         ? mui
-        : id.includes('MathText')
+        : id.startsWith('@mui/icons-material') || id.includes('MathText')
           ? () => null
-          : id.includes('services/api')
-            ? api
-            : requireProduct(id),
+          : id.endsWith('.css')
+            ? {}
+            : id.includes('familyApi')
+              ? { familyApi }
+              : id.includes('useDialogParam')
+                ? { __esModule: true, default: useDialogParam }
+                : requireProduct(id),
   moduleMock,
   moduleMock.exports
 );
@@ -53,29 +56,30 @@ const source = {
     { name: 'B.pdf', mime: 'application/pdf', pages: 2 },
   ],
 };
-test('closing a pending multi-file reader permits reopening both files', async () => {
+// The reader of Phase 1.38 design §10.4: one page at a time, Previous and Next page, Close as the one exit.
+test('closing the reader during a download, then reopening it, starts afresh at page 1', async () => {
   let view;
   await act(async () => {
-    view = Renderer.create(React.createElement(Component, { base: '/test', source }));
+    view = Renderer.create(React.createElement(Component, { childId: 'test', source, label: 'Read notes' }));
   });
-  const read = () => view.root.findAllByType('Button').find((x) => x.props.children === 'Read notes');
-  await act(async () => read().props.onClick());
-  const files = () => view.root.findAllByType('Button').filter((x) => x.props.variant === 'outlined');
+  const button = (text) => view.root.findAllByType('Button').find((x) => x.props.children === text);
+  const text = (className) => view.root.findAll((x) => x.props.className === className)[0];
+  await act(async () => button('Read notes').props.onClick());
+  if (downloads !== 1) throw Error(`Opening the reader should download page 1 once, not ${downloads} times`);
+  // Page 2 is asked for while page 1 is still downloading; then the reader closes before either arrives.
+  await act(async () => button('Next page').props.onClick());
+  await act(async () => button('Close').props.onClick());
   await act(async () => {
-    files()[0].props.onClick();
-  });
-  await act(async () =>
-    view.root
-      .findAllByType('Button')
-      .find((x) => x.props.children === 'Close')
-      .props.onClick()
-  );
-  await act(async () => {
-    resolveDownload({ data: new Blob(['sample']) });
+    resolveDownload(new Blob(['sample']));
     await Promise.resolve();
   });
-  await act(async () => read().props.onClick());
-  if (files().some((x) => x.props.disabled)) throw Error('Reader controls remained disabled after cancellation');
-
+  if (view.root.findAllByType('iframe').length) throw Error('A download cancelled by Close was shown');
+  // Reopening starts at page 1 again, with a fresh download and working buttons.
+  await act(async () => button('Read notes').props.onClick());
+  if (downloads !== 3) throw Error(`Reopening should download page 1 afresh (${downloads} downloads)`);
+  const progress = text('fam-viewer-progress');
+  if (!progress || progress.children.join('') !== 'Page 1 of 2') throw Error('The reader did not reopen at page 1');
+  if (button('Previous page').props.disabled !== true || button('Next page').props.disabled)
+    throw Error('Reader controls did not reset after cancellation');
   await act(async () => view.unmount());
 });
