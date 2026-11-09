@@ -1,0 +1,86 @@
+/* Styles parent mode's list pages in teacher mode's look (design §1.4–1.7, §5.3): the page column, the list card on */
+/* teacher Home's glass rows (home.css's .home-recent rules, reused rather than copied), each row's status and notices. */
+/* Area: family */
+
+/* The page: teacher's column, at most 960 px and left-aligned (design §1.5). It scrolls on its own, so the shell's */
+/* bars stay put. */
+.fam-list-page { overflow-y: auto; padding: 24px 32px 48px; }
+.fam-list-page > * { width: 100%; max-width: 960px; }
+@media (max-width: 1199px) { .fam-list-page { padding-inline: 24px; } }
+@media (max-width: 599px) { .fam-list-page { padding: 16px 16px 32px; } }
+
+/* "‹ Activities" above the title on phones (design §1.4): 15/24 500 in the accent ink, with a 44 px target. The h1 */
+/* stays first for screen readers. */
+.fam-list-backbar { order: -1; margin-bottom: 4px; }
+.fam-list-back { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; margin-left: -6px; padding-right: 8px; border-radius: 12px;
+  color: var(--mst-accent-ink); font-size: 15px; line-height: 24px; font-weight: 500; text-decoration: none; }
+.fam-list-back svg { font-size: 22px; }
+@media (min-width: 900px) { .fam-list-backbar { display: none; } }
+
+.fam-list-body { margin-top: 24px; }
+.fam-list-error { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 15px; line-height: 24px; color: var(--mst-bad-ink); }
+.fam-list-note { margin: 12px 0 0; font-size: 14px; line-height: 20px; color: var(--mst-ink-2); }
+/* A page that can't load (design §10.7): a quiet notice in the column, with the shell still around it. */
+.fam-list-notice { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 16px 20px; border: 1px solid color-mix(in srgb, var(--mst-bad) 25%, transparent); border-radius: 16px; background: color-mix(in srgb, var(--mst-bad) 10%, transparent); color: var(--mst-ink); }
+.fam-list-notice svg { flex: none; color: var(--mst-bad-ink); }
+.fam-list-notice p { flex: 1 1 240px; margin: 0; font-size: 15px; line-height: 24px; }
+@media (max-width: 599px) { .fam-list-notice .MuiButton-root { width: 100%; } }
+.fam-list-more.MuiButton-root { margin-top: 16px; }
+/* A list that can't load: a quiet notice with Try again, never an empty page (design §10.7). */
+.fam-list-notice { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 16px; border: 1px solid color-mix(in srgb, var(--mst-bad) 25%, transparent);
+  border-radius: 16px; background: color-mix(in srgb, var(--mst-bad) 10%, transparent); color: var(--mst-ink); }
+.fam-list-notice > svg { flex: none; color: var(--mst-bad-ink); }
+.fam-list-notice p { flex: 1 1 240px; margin: 0; font-size: 15px; line-height: 24px; }
+
+/* The list card (design §1.6): .home-recent gives its list the 8 px 12 px 12 px padding and the 8 px gaps, and each */
+/* .home-row-button its glass, 64 px height, 10 px 12 px padding, radius 14 and lift. The card itself has no padding. */
+.fam-list-card.home-recent { padding: 0; }
+/* Homework's "Past checks", the card's own title (design §5.3). */
+.fam-list-head { padding: 16px 20px 0; }
+.fam-list-head h2 { outline: none; }
+.fam-list-item { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.fam-list-card .home-row-button { flex: 1 1 280px; min-width: 0; }
+/* The title wraps to two lines at most, at teacher Home's 14 px, instead of being cut off. */
+.fam-list-card .mst-list-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; white-space: normal; overflow-wrap: anywhere; line-height: 20px; }
+/* A check that couldn't be marked says so in its line, in the warning ink (design §5.3). */
+.fam-list-card .mst-list-meta[data-tone="warn"] { color: var(--mst-warn-ink); }
+/* A kind tile: teacher's small tile, 36 px in the accent tint. */
+.fam-list-card .mst-tile[data-size="sm"] { width: 36px; height: 36px; border-radius: 12px; }
+.fam-list-card .mst-tile[data-size="sm"] svg { font-size: 18px; }
+
+/* The right end: the chips and the score, then the chevron. */
+.fam-list-end { flex: none; display: flex; align-items: center; gap: 8px; animation: fam-list-fade 150ms var(--mst-ease); }
+.fam-list-status { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; line-height: 20px; font-weight: 500; color: var(--mst-ink-2);
+  font-variant-numeric: tabular-nums; white-space: nowrap; }
+.fam-list-status[data-tone="warn"] { color: var(--mst-warn-ink); }
+.fam-row-chip.MuiChip-root { flex: none; }
+.fam-list-chev.MuiSvgIcon-root { flex: none; font-size: 20px; color: var(--mst-ink-3); }
+@keyframes fam-list-fade { from { opacity: 0; } }
+
+/* Check now and Add the missing pages: teacher's outlined pills, 36 px (44 on touch, shell.css), never inside a link. */
+.fam-list-action.MuiButton-root { flex: none; margin-left: auto; }
+/* A row with nothing to open (saved but not marked) keeps the glass, without a link's pointer or lift. */
+.fam-list-card .fam-list-static { flex-wrap: wrap; cursor: default; }
+.home-recent .fam-list-static.home-row-button:hover { transform: none; }
+.fam-list-static .mst-list-text { flex: 1 1 160px; }
+.fam-list-static .fam-list-end { margin-left: auto; }
+
+/* Loading: four row-shaped placeholders in the card. */
+.fam-list-wait { display: grid; gap: 8px; padding: 8px 12px 12px; }
+.fam-list-wait .fam-skel { height: 64px; border-radius: 14px; background: var(--mst-neutral); }
+
+/* Under 600 px a row has two lines, so the title is never squeezed (design §1.6): the tile, the title and the */
+/* chevron; then the meta at the left, with the chips and score at the right, wrapping under it when they don't fit. */
+@media (max-width: 599px) {
+  .fam-list-card .fam-list-link { flex-wrap: wrap; column-gap: 10px; row-gap: 2px; }
+  .fam-list-link > .mst-list-text { display: contents; }
+  .fam-list-link .mst-list-title { order: 1; flex: 1 1 0; min-width: 0; }
+  .fam-list-link > .fam-list-chev { order: 1; }
+  .fam-list-link::after { content: ""; order: 2; flex-basis: 100%; }
+  .fam-list-link .mst-list-meta { order: 3; }
+  .fam-list-link[data-tile] .mst-list-meta { margin-left: 46px; }
+  .fam-list-link > .fam-list-end { order: 4; flex: 0 1 auto; flex-wrap: wrap; justify-content: flex-end; margin-left: auto; }
+  .fam-list-status { white-space: normal; }
+}
+/* Spinners keep turning, because they show status. */
+@media (prefers-reduced-motion: reduce) { .fam-list-end { animation: none; } }

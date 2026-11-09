@@ -35,6 +35,7 @@ import VisibilityOff from '@mui/icons-material/VisibilityOffOutlined';
 import { useAuth } from '../hooks/useAuth';
 import { useSnackbar } from '../hooks/useSnackbar';
 import { useThemeMode } from '../hooks/useThemeMode';
+import { safeFamilyReturn } from '../areas/family/familyPaths';
 import lightLogo from '../assets/mst_logo_no_bg.png';
 import darkLogo from '../assets/mst_logo_dark_no_bg.png';
 import AuthFrame from '../components/auth/AuthFrame';
@@ -70,6 +71,10 @@ const Login = () => {
   const [isPasswordAutofilled, setIsPasswordAutofilled] = useState(false);
 
   const from = location.state?.from?.pathname || '/';
+  // A family link opened while signed out, or a family page whose session ran out, with its query (C-16).
+  const familyReturn = safeFamilyReturn(
+    new URLSearchParams(location.search).get('next') || from + (location.state?.from?.search || '')
+  );
 
   // --- Side Effect for "Remember Me" ---
   useEffect(() => {
@@ -85,14 +90,16 @@ const Login = () => {
       return;
     }
 
-    if (user?.role === 'admin') {
+    if (familyReturn) {
+      navigate(familyReturn, { replace: true });
+    } else if (user?.role === 'admin') {
       navigate('/admin', { replace: true });
     } else if (user?.role === 'parent') {
       navigate('/family', { replace: true });
     } else if (user?.role === 'teacher') {
       navigate('/', { replace: true });
     }
-  }, [isAuthLoading, isLoading, isAuthenticated, user, navigate]);
+  }, [isAuthLoading, isLoading, isAuthenticated, user, navigate, familyReturn]);
 
   // --- Event Handlers ---
   const handleSubmit = async (event) => {
@@ -121,7 +128,9 @@ const Login = () => {
         localStorage.removeItem('rememberedEmail');
       }
 
-      if (currentUser?.role === 'admin') {
+      if (familyReturn) {
+        navigate(familyReturn, { replace: true });
+      } else if (currentUser?.role === 'admin') {
         navigate('/admin', { replace: true });
       } else if (currentUser?.role === 'parent') {
         navigate('/family', { replace: true });

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { encodeWav } from '../src/pages/family/dictationAudio.js';
+import { encodeWav } from '../src/areas/family/dictationAudio.js';
 test('WAV uses the real sample rate and mono PCM frames', async () => {
   const blob = encodeWav([new Float32Array([0, 1, -1, 0.5])], 48000);
   const data = new DataView(await blob.arrayBuffer());

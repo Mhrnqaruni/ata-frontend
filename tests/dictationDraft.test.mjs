@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mergeDictation } from '../src/pages/family/familyPresentation.js';
+import { mergeDictation } from '../src/areas/family/familyPresentation.js';
 test('completed speech goes into the unchanged draft at its captured caret', () => {
   assert.equal(
     mergeDictation('Hello world', 'lovely', { text: 'Hello world', start: 6, end: 6 }, true),

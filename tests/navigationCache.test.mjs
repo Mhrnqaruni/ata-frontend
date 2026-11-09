@@ -24,7 +24,7 @@ const output = path.join(dir, 'runtime.mjs');
 await build({
   stdin: {
     contents: `export {default as api} from './src/services/api.js';
-export {default as useActivityProgress} from './src/pages/family/useActivityProgress.js'; export * from './src/services/queryCache.js'; export * from './src/hooks/useAuth.jsx';
+export {default as useActivityProgress} from './src/areas/family/useActivityProgress.js'; export * from './src/services/queryCache.js'; export * from './src/hooks/useAuth.jsx';
 export { teacherOptions, quizSessionOptions } from './src/hooks/useTeacherData.js';
 export { default as RenameActivityDialog } from './src/components/common/RenameActivityDialog.jsx';`,
     resolveDir: process.cwd(),

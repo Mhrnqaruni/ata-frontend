@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { activityBasis, materialName, safeMarkdownUrl } from '../src/pages/family/familyPresentation.js';
+import { activityBasis, materialName, safeMarkdownUrl } from '../src/areas/family/familyPresentation.js';
 test('empty selection never selects an existing book', () => {
   assert.equal(activityBasis([], true), 'conversation');
   assert.equal(activityBasis([], false), 'topic');

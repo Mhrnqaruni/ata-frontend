@@ -1,0 +1,44 @@
+/* Styles the profile's "How Sam is doing" card (Phase 1.38 design §3.4): teacher's glass card and segmented control, */
+/* the line chart in teacher's look, its caption, the sentence under it, and the card's states. */
+/* Area: family */
+
+/* The card is teacher's glass (mst-g1 mst-rim, radius 20); these set its inside. */
+.fam-scores { display: flex; flex-direction: column; gap: 12px; padding: 16px 20px 20px; color: var(--mst-ink); font-size: 15px; line-height: 24px; font-variant-numeric: tabular-nums; }
+.fam-scores-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.fam-scores-body { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+/* Teacher's segmented control (the theme's Tabs): 34 px segments in a 3 px well. The chosen one is solid (design §1.2): */
+/* a tester read teacher's quiet fill as "Quizzes is grey, so it looks switched off". The indicator is the pill. */
+.fam-scores-switch.MuiTabs-root { min-height: 0; padding: 3px; }
+.fam-scores-switch .MuiTab-root { position: relative; z-index: 1; min-height: 34px; padding: 7px 16px; }
+.fam-scores-switch .MuiTab-root.Mui-selected { color: #fff; }
+.fam-scores-switch .MuiTabs-indicator { background-color: var(--mst-accent-solid); }
+.fam-scores-caption { margin: 0; font-size: 14px; line-height: 20px; color: var(--mst-ink-2); }
+
+/* The chart is drawn for its real width, so its labels stay at 12 px. */
+.fam-scores-chart .recharts-cartesian-grid line { stroke: var(--mst-edge); }
+.fam-scores-chart .recharts-cartesian-axis-tick-value { fill: var(--mst-ink-3); font-size: 12px; font-weight: 500; }
+.fam-scores-chart .recharts-line-curve { stroke: var(--mst-accent); stroke-width: 2.5px; stroke-linejoin: round; }
+.fam-scores-dot { cursor: pointer; outline: none; }
+/* Each dot has a 44 px target, and a ring while it has the keyboard's focus. */
+.fam-scores-hit { fill: transparent; pointer-events: all; }
+.fam-scores-mark { fill: var(--mst-accent); }
+.fam-scores-ring { fill: none; stroke: var(--mst-accent-ink); stroke-width: 2px; opacity: 0; }
+.fam-scores-dot:focus-visible .fam-scores-ring { opacity: 1; }
+/* The latest score has a halo in the card's colour, so the line never runs through its digits. */
+.fam-scores-latest { fill: var(--mst-ink); font-size: 14px; font-weight: 600; paint-order: stroke; stroke: var(--mst-solid); stroke-width: 4px; stroke-linejoin: round; }
+
+.fam-scores-caption, .fam-scores-trend, .fam-scores-error, .fam-scores-note { margin: 0; }
+.fam-scores-trend { color: var(--mst-ink-2); }
+.fam-scores-trend strong { color: var(--mst-ink); font-weight: 600; }
+.fam-scores-error { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--mst-bad-ink); }
+.fam-scores-note { font-size: 14px; line-height: 20px; color: var(--mst-ink-2); }
+/* Loading keeps the chart's shape, still and quiet. */
+.fam-scores-wait { border-radius: 14px; background: var(--mst-neutral); }
+
+/* Phones: the switch sits under the title at full width, with 44 px segments, so the title stays on one line. */
+@media (max-width: 599.95px) {
+  .fam-scores { padding: 16px; }
+  .fam-scores-head { flex-direction: column; align-items: stretch; }
+  .fam-scores-switch.MuiTabs-root { width: 100%; }
+  .fam-scores-switch .MuiTab-root { min-height: 44px; }
+}

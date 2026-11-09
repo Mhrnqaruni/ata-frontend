@@ -45,8 +45,16 @@ const PublicReportView = lazyPage(() => import('./pages/public/ReportView'));
 const Chatbot = lazyPage(() => import('./pages/Chatbot'));
 const StudentProfile = lazyPage(() => import('./pages/StudentProfile'));
 const AdminDashboard = lazyPage(() => import('./pages/AdminDashboard'));
-const FamilyHome = lazyPage(() => import('./pages/family/FamilyHome'));
-import FamilyLoading from './pages/family/FamilyLoading';
+const FamilyArea = lazyPage(() => import('./areas/family/FamilyArea'));
+const FamilyStart = lazyPage(() => import('./areas/family/FamilyStart'));
+const FamilyShell = lazyPage(() => import('./areas/family/shell/FamilyShell'));
+const SectionListPage = lazyPage(() => import('./areas/family/lists/SectionListPage'));
+const ActivitiesPage = lazyPage(() => import('./areas/family/lists/ActivitiesPage'));
+const HomePage = lazyPage(() => import('./areas/family/child/HomePage'));
+const ProfilePage = lazyPage(() => import('./areas/family/child/ProfilePage'));
+const NotebookPage = lazyPage(() => import('./areas/family/notebook/NotebookPage'));
+const ResultPage = lazyPage(() => import('./areas/family/results/ResultPage'));
+import FamilyLoading from './areas/family/FamilyLoading';
 import Quizzes from './pages/Quizzes';
 const QuizBuilder = lazyPage(() => import('./pages/quizzes/QuizBuilder'));
 const QuizHost = lazyPage(() => import('./pages/quizzes/QuizHost'));
@@ -125,16 +133,61 @@ const ThemedApp = () => {
             }
           />
 
+          {/* Parent mode (Phase 1.37): one pathless route holds the sign-in guard, the parent space, its loading
+            screen and "Start Parent mode". Each address inside is written out, because the page-name test reads
+            them; sections.js lists the sections for the navigation. */}
           <Route
-            path="/family"
             element={
               <ProtectedRoute>
                 <Suspense fallback={<FamilyLoading />}>
-                  <FamilyHome />
+                  <FamilyArea />
                 </Suspense>
               </ProtectedRoute>
             }
-          />
+          >
+            <Route path="/family" element={<FamilyStart />} />
+            {/* No list page of children (C-1): this address opens what /family opens. */}
+            <Route path="/family/children" element={<FamilyStart />} />
+            {/* The shell's route: the side panel or phone bars, the switcher and the children's dialogs. */}
+            <Route element={<FamilyShell />}>
+              <Route path="/family/children/:child_id" element={<HomePage />} />
+              {/* The child's profile (Phase 1.38 design §3): the details, how the child is doing, and the chats. */}
+              <Route path="/family/children/:child_id/profile" element={<ProfilePage />} />
+              <Route path="/family/children/:child_id/notebook" element={<NotebookPage />} />
+              {/* Homework and the four Activities sections share one list page; the Activities page leads to them. */}
+              <Route path="/family/children/:child_id/homework" element={<SectionListPage section="homework" />} />
+              <Route path="/family/children/:child_id/activities" element={<ActivitiesPage />} />
+              <Route path="/family/children/:child_id/quizzes" element={<SectionListPage section="quizzes" />} />
+              <Route path="/family/children/:child_id/flashcards" element={<SectionListPage section="flashcards" />} />
+              <Route path="/family/children/:child_id/mind-maps" element={<SectionListPage section="mind-maps" />} />
+              <Route path="/family/children/:child_id/stories" element={<SectionListPage section="stories" />} />
+              {/* Each result at its own address (C-2): one page for every kind, given its section's segment. */}
+              <Route
+                path="/family/children/:child_id/quizzes/:activity_id"
+                element={<ResultPage segment="quizzes" />}
+              />
+              <Route
+                path="/family/children/:child_id/flashcards/:activity_id"
+                element={<ResultPage segment="flashcards" />}
+              />
+              <Route
+                path="/family/children/:child_id/mind-maps/:activity_id"
+                element={<ResultPage segment="mind-maps" />}
+              />
+              <Route
+                path="/family/children/:child_id/stories/:activity_id"
+                element={<ResultPage segment="stories" />}
+              />
+              <Route
+                path="/family/children/:child_id/homework/:activity_id"
+                element={<ResultPage segment="homework" />}
+              />
+              <Route
+                path="/family/children/:child_id/notebook/explanations/:activity_id"
+                element={<ResultPage segment="notebook/explanations" />}
+              />
+            </Route>
+          </Route>
 
           {/* --- [CRITICAL MODIFICATION 4/4: DEFINE PROTECTED ROUTES] --- */}
           {/* This parent Route uses the ProtectedRoute component as its element.

@@ -1,0 +1,57 @@
+/* Home and the first run (Phase 1.38 design §2.3–2.5): teacher Home's cards and rows, in teacher's --mst-* tokens. */
+/* Area: family */
+
+/* ── a card: glass 1 (mst-g1 mst-rim), a head with its title and one quiet link or button ──────── */
+.fam-card { position: relative; margin: 0 0 16px; padding: 4px 0 8px; border-radius: 20px; }
+.fam-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; padding: 8px 12px 4px 20px; }
+.fam-card-title { margin: 0; font-family: var(--font-ui); font-size: 17px; line-height: 24px; font-weight: 600; }
+.fam-card-action.MuiButton-root { min-height: 44px; color: var(--mst-accent-ink); font-weight: 600; }
+.fam-card-link { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; padding: 0 8px 0 12px; border-radius: 12px; color: var(--mst-accent-ink); font-size: 14px; line-height: 20px; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.fam-card-link svg { font-size: 18px; }
+.fam-card-link:hover { background: var(--mst-hover-fill); }
+.fam-card-link:focus-visible { outline: 2px solid var(--mst-accent-ink); outline-offset: -2px; }
+.fam-card-lead { margin: 0; padding: 0 20px 4px; font-size: 15px; line-height: 24px; color: var(--mst-ink-2); }
+.fam-card-empty { margin: 0; padding: 8px 20px 16px; font-size: 15px; line-height: 24px; color: var(--mst-ink-2); }
+.fam-card-wait { display: grid; gap: 8px; padding: 8px 20px 16px; }
+.fam-card-wait .fam-skel { height: 56px; border-radius: 14px; }
+
+/* ── Get started's rows, in the lists' recipe (lists.css): the sidebar's icon and name, and a sentence that wraps ── */
+.fam-home-row .mst-list-title { white-space: normal; }
+.fam-home-sentence { font-size: 14px; line-height: 20px; color: var(--mst-ink-2); }
+.fam-home-chev { flex: none; font-size: 20px; color: var(--mst-ink-3); }
+/* How parent mode works: a text link under the last card */
+.fam-home-help { display: inline-flex; align-items: center; align-self: flex-start; gap: 6px; min-height: 44px; margin: 0 0 8px 4px; padding: 0 10px; border: 0; border-radius: 12px; background: none; color: var(--mst-accent-ink); font: inherit; font-size: 14px; line-height: 20px; font-weight: 600; cursor: pointer; }
+.fam-home-help svg { font-size: 18px; }
+.fam-home-help:hover { background: var(--mst-hover-fill); }
+.fam-home-help:focus-visible { outline: 2px solid var(--mst-accent-ink); outline-offset: -2px; }
+
+/* ── the first run, no child yet: no sidebar or tab bar, one centred card (design §2.4) ─────────── */
+.fam-first { min-height: 100dvh; display: flex; flex-direction: column; color: var(--mst-ink); }
+.fam-first-top { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 64px; padding: 0 16px 0 24px; }
+.fam-first-logo { display: block; height: 36px; width: auto; }
+.fam-first-main { flex: 1; display: grid; place-items: center; padding: 16px 16px 48px; }
+.fam-first-card { box-sizing: border-box; width: 100%; max-width: 560px; padding: 32px; border-radius: 24px; text-align: center; }
+.fam-first-lead { margin: 8px 0 24px; font-size: 15px; line-height: 24px; color: var(--mst-ink-2); }
+.fam-first-ways { display: grid; gap: 16px; margin: 0 0 24px; padding: 0; list-style: none; text-align: left; }
+.fam-first-way { display: flex; align-items: flex-start; gap: 14px; }
+.fam-first-way-text { display: grid; min-width: 0; }
+.fam-first-way-name { font-size: 15px; line-height: 24px; font-weight: 600; }
+.fam-first-way-sentence { font-size: 14px; line-height: 20px; color: var(--mst-ink-2); }
+.fam-first-note { margin: 12px 0 0; font-size: 14px; line-height: 20px; color: var(--mst-ink-2); }
+.fam-first-state { margin: 24px; }
+@media (max-width: 599px) {
+  .fam-first-top { padding: 0 8px 0 16px; }
+  .fam-first-card { padding: 20px; }
+}
+
+/* Phones (the Designer's row 2 P1): the guide rows keep the tile at the left, the title at 15/20 600 and the sentence */
+/* under it; the lists' two-line recipe (lists.css) breaks these rows, so they get their own grid here. */
+@media (max-width: 599px) {
+  .fam-list-card .fam-home-row.fam-list-link { display: grid; grid-template-columns: 36px minmax(0, 1fr) 20px; grid-template-areas: "tile title chev" "tile sentence sentence"; column-gap: 10px; row-gap: 2px; align-items: center; }
+  .fam-list-card .fam-home-row.fam-list-link > .mst-tile { grid-area: tile; }
+  .fam-list-card .fam-home-row.fam-list-link > .mst-list-text { display: contents; }
+  .fam-list-card .fam-home-row.fam-list-link .mst-list-title { grid-area: title; font-size: 15px; line-height: 20px; font-weight: 600; }
+  .fam-list-card .fam-home-row.fam-list-link .fam-home-sentence { grid-area: sentence; }
+  .fam-list-card .fam-home-row.fam-list-link > .fam-home-chev { grid-area: chev; }
+  .fam-list-card .fam-home-row.fam-list-link::after { display: none; }
+}

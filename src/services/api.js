@@ -108,8 +108,11 @@ apiClient.interceptors.response.use(
       // this is a low-level service file outside of the React component tree.
       // This is one of the few appropriate places to use a hard redirect.
       // It also has the benefit of clearing all application state.
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+      // A family page comes back after sign-in, with its query (Phase 1.37, C-16); any other page signs in afresh.
+      const { pathname, search } = window.location;
+      const family = pathname === '/family' || pathname.startsWith('/family/');
+      if (pathname !== '/login') {
+        window.location.href = family ? `/login?next=${encodeURIComponent(pathname + search)}` : '/login';
       }
     }
 

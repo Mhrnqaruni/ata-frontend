@@ -1,0 +1,177 @@
+/* Styles the frame every opened item shares (Phase 1.38 design §6.4) in teacher mode's look: glass top and bottom */
+/* bars, a 680 px column, the quiz (§6.5), the flashcards (§6.6), Next step and Advanced, in --mst-* tokens only. */
+/* Area: family */
+
+/* The page: teacher's ground and its blooms behind the glass (the dialog paper isolates them under its content). */
+.fam-viewer .MuiPaper-root.MuiDialog-paper { display: flex; flex-direction: column; isolation: isolate; background: var(--mst-ground); -webkit-backdrop-filter: none; backdrop-filter: none; color: var(--mst-ink); }
+
+/* The top bar: teacher's glass, radius 20, 12 px from the edges; Close, the name with its line, and progress. */
+.fam-viewer-head { flex: none; display: flex; align-items: center; gap: 12px; min-height: 64px; margin: 12px 12px 0; padding: 8px 16px 8px 8px; border: 1px solid var(--mst-g1-edge); border-radius: 20px; background: var(--mst-g2-sheen), var(--mst-g2-fill); -webkit-backdrop-filter: var(--mst-g2-blur); backdrop-filter: var(--mst-g2-blur); box-shadow: var(--mst-g1-hi), var(--mst-shadow-rest); }
+.fam-viewer-head .fam-icon-btn.MuiIconButton-root { flex: none; width: 44px; height: 44px; border-radius: 12px; color: var(--mst-ink-2); }
+.fam-viewer-head .fam-viewer-close.MuiButton-root { flex: none; min-height: 44px; color: var(--mst-ink-2); }
+/* Getting it ready (§10.5): the spinner, "Making Sam's quiz…", and two plain lines */
+.fam-viewer .fam-making-sub.MuiTypography-root { max-width: 440px; font-size: 15px; line-height: 24px; color: var(--mst-ink-2); }
+/* The reader (§10.4): a 760 px column, and the page on a glass card */
+.fam-col-760 { width: 100%; max-width: 760px; margin: 0 auto; }
+.fam-reader-card { padding: 16px; border-radius: 20px; }
+.fam-reader-card img, .fam-reader-card iframe { display: block; width: 100%; border-radius: 12px; }
+.fam-reader-card iframe { height: 70vh; border: 0; background: var(--mst-solid); }
+.fam-reader-card .fam-prose { font-size: 17px; line-height: 28px; }
+.fam-reader-wait { display: grid; place-items: center; min-height: 240px; }
+.fam-viewer-title { flex: 1; min-width: 0; display: grid; }
+.fam-viewer .fam-viewer-name.MuiTypography-root { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 17px; line-height: 24px; font-weight: 600; color: var(--mst-ink); }
+.fam-viewer-line { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--mst-ink-3); }
+.fam-viewer-progress { flex: none; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--mst-ink-2); font-variant-numeric: tabular-nums; }
+.fam-viewer-action { flex: none; }
+.fam-viewer-alert.MuiAlert-root { margin: 8px 12px 0; }
+
+/* The middle scrolls; the bottom bar is the same glass, holding the step's buttons with the main one at the right. */
+.fam-viewer-main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.fam-viewer-scroll { flex: 1; min-height: 0; overflow-y: auto; }
+/* (its padding is a default: :where() keeps it below a view's own, such as the homework result's) */
+:where(.fam-viewer-scroll) { padding: 24px; }
+.fam-viewer-foot { flex: none; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 12px calc(12px + env(safe-area-inset-bottom, 0px)); padding: 10px 12px; border: 1px solid var(--mst-g1-edge); border-radius: 20px; background: var(--mst-g2-sheen), var(--mst-g2-fill); -webkit-backdrop-filter: var(--mst-g2-blur); backdrop-filter: var(--mst-g2-blur); box-shadow: var(--mst-g1-hi), var(--mst-shadow-rest); }
+.fam-col { max-width: 680px; margin: 0 auto; }
+.fam-stack { display: flex; flex-direction: column; gap: 16px; }
+
+/* The step bar: one 6 px segment per question or card, in the accent up to the current one. */
+.fam-prog { display: flex; gap: 6px; margin: 4px 0 20px; }
+.fam-prog span { flex: 1; height: 6px; border-radius: 999px; background: var(--mst-edge-control); opacity: .5; transition: background-color 150ms var(--mst-ease), opacity 150ms var(--mst-ease); }
+.fam-prog span[data-on="true"] { background: var(--mst-accent); opacity: 1; }
+
+/* Playing a quiz: the "with Sam" line, the question (20/28; 17/24 on phones), and teacher's glass choice rows. */
+.fam-viewer .fam-quiz-hint.MuiTypography-root { margin: 0 0 6px; font-size: 14px; line-height: 20px; color: var(--mst-ink-2); }
+.fam-viewer .fam-quiz-text.MuiTypography-root { margin: 0 0 16px; font-size: 20px; line-height: 28px; font-weight: 600; overflow-wrap: anywhere; }
+.fam-quiz-q[data-dir="next"] { animation: fam-q-in 180ms var(--mst-ease) both; }
+.fam-quiz-q[data-dir="back"] { animation: fam-q-back 180ms var(--mst-ease) both; }
+.fam-options { display: flex; flex-direction: column; gap: 8px; }
+.fam-opt { display: flex; align-items: center; gap: 14px; min-height: 56px; padding: 10px 14px; border: 1px solid var(--mst-g1-edge); border-radius: 14px; background: var(--mst-g1-fill); box-shadow: var(--mst-g1-hi); color: var(--mst-ink); font: inherit; font-size: 17px; line-height: 24px; font-weight: 500; text-align: left; cursor: pointer; transition: border-color 150ms var(--mst-ease), background-color 150ms var(--mst-ease), box-shadow 150ms var(--mst-ease); }
+.fam-opt:hover:not(:disabled) { border-color: var(--mst-accent); }
+.fam-opt:focus-visible { outline: 2px solid var(--mst-accent-ink); outline-offset: 2px; }
+/* the chosen row is solid (§1.2; a tester: "C hardly stands out… could just be where my mouse is"), with its radio filled */
+.fam-opt[data-state="selected"] { border-color: var(--mst-accent-solid); background: var(--mst-accent-solid); box-shadow: none; color: #fff; font-weight: 600; }
+.fam-opt[data-state="selected"] .fam-opt-badge { background: rgb(255 255 255 / .2); color: #fff; }
+.fam-opt-radio { flex: none; width: 20px; height: 20px; border-radius: 50%; box-shadow: inset 0 0 0 2px var(--mst-ink-3); }
+.fam-opt[data-state="selected"] .fam-opt-radio { box-shadow: inset 0 0 0 2px #fff; background: radial-gradient(circle, #fff 0 5px, transparent 5.5px); }
+.fam-opt[data-state="correct"] { border-color: var(--mst-ok); background: color-mix(in srgb, var(--mst-ok) var(--mst-tint), transparent); box-shadow: inset 0 0 0 1px var(--mst-ok); }
+.fam-opt[data-state="wrong"] { border-color: var(--mst-warn); background: color-mix(in srgb, var(--mst-warn) var(--mst-tint), transparent); box-shadow: inset 0 0 0 1px var(--mst-warn); }
+.fam-opt:disabled { cursor: default; }
+.fam-opt:disabled[data-state="idle"] { color: var(--mst-ink-3); }
+.fam-opt-badge { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 10px; background: var(--mst-accent-tint); color: var(--mst-accent-ink); font-size: 14px; font-weight: 600; }
+.fam-opt-badge svg { font-size: 18px; }
+.fam-opt[data-state="correct"] .fam-opt-badge { background: var(--mst-ok); color: var(--mst-solid); }
+.fam-opt[data-state="wrong"] .fam-opt-badge { background: var(--mst-warn); color: var(--mst-solid); }
+.fam-opt-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.fam-opt-note { flex: none; font-size: 14px; line-height: 20px; font-weight: 600; }
+.fam-opt-note[data-tone="ok"] { color: var(--mst-ok-ink); }
+.fam-opt-note[data-tone="warm"] { color: var(--mst-warn-ink); }
+.fam-hint-btn.MuiButton-root { margin: 8px 0 0 -10px; padding: 0 10px; min-height: 44px; color: var(--mst-accent-ink); }
+.fam-hint-text { margin-top: 4px; padding: 12px 16px; border-radius: 14px; background: var(--mst-accent-tint); }
+.fam-feedback { display: grid; gap: 4px; margin-top: 16px; padding: 14px 16px; border-radius: 14px; }
+.fam-feedback[data-tone="ok"] { background: color-mix(in srgb, var(--mst-ok) var(--mst-tint), transparent); }
+.fam-feedback[data-tone="warm"] { background: color-mix(in srgb, var(--mst-warn) var(--mst-tint), transparent); }
+.fam-viewer .fam-feedback-title.MuiTypography-root { font-size: 17px; line-height: 24px; font-weight: 600; }
+.fam-feedback[data-tone="ok"] .fam-feedback-title { color: var(--mst-ok-ink); }
+.fam-feedback[data-tone="warm"] .fam-feedback-title { color: var(--mst-warn-ink); }
+
+/* The quiz's result: the summary card (a word, "4 of 5 right", a bar, the last try), then each question. */
+.fam-result { display: grid; gap: 16px; max-width: 980px; margin: 0 auto; align-items: start; }
+@media (min-width: 900px) { .fam-result { grid-template-columns: 300px minmax(0, 1fr); } .fam-score { position: sticky; top: 0; } }
+.fam-score { padding: 20px; }
+.fam-viewer .fam-score-title.MuiTypography-root { margin: 0 0 4px; font-size: 17px; line-height: 24px; font-weight: 600; }
+.fam-viewer .fam-score-num.MuiTypography-root { margin: 0; font-family: var(--font-display); font-size: 30px; line-height: 36px; font-weight: 600; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.fam-segs { display: flex; gap: 4px; margin: 10px 0 12px; }
+.fam-segs span { flex: 1; height: 10px; border-radius: 999px; background: var(--mst-ok); }
+.fam-segs span[data-ok="false"] { background: var(--mst-warn); }
+.fam-viewer .fam-score-last.MuiTypography-root { font-size: 14px; line-height: 20px; color: var(--mst-ink-2); }
+.fam-result-list { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.fam-qrows { margin: 0; padding: 8px 12px; list-style: none; }
+.fam-qrow { display: flex; align-items: flex-start; gap: 12px; padding: 12px 4px; border-bottom: 1px solid var(--mst-edge); }
+.fam-qrow:last-child { border-bottom: 0; }
+.fam-qrow-mark { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; }
+.fam-qrow-mark svg { font-size: 18px; }
+.fam-qrow[data-ok="true"] .fam-qrow-mark { background: color-mix(in srgb, var(--mst-ok) var(--mst-tint), transparent); color: var(--mst-ok-ink); }
+.fam-qrow[data-ok="false"] .fam-qrow-mark { background: color-mix(in srgb, var(--mst-warn) var(--mst-tint), transparent); color: var(--mst-warn-ink); }
+.fam-qrow-body { flex: 1; min-width: 0; }
+.fam-qrow-q { font-size: 15px; line-height: 24px; font-weight: 500; overflow-wrap: anywhere; }
+.fam-qrow-a { font-size: 14px; line-height: 20px; color: var(--mst-ink-2); overflow-wrap: anywhere; }
+.fam-qrow .fam-prose { margin-top: 6px; font-size: 15px; color: var(--mst-ink-2); }
+.fam-qrow-why.MuiButton-root { flex: none; min-height: 36px; padding: 0 8px; color: var(--mst-accent-ink); }
+
+/* Next step: today's AI advice as a glass card, with the lightbulb and its heading. */
+.fam-viewer .fam-tip { display: flex; align-items: flex-start; gap: 12px; padding: 16px 20px; border: 1px solid var(--mst-g1-edge); border-radius: 20px; background: var(--mst-g1-fill); -webkit-backdrop-filter: var(--mst-g1-blur, none); backdrop-filter: var(--mst-g1-blur, none); box-shadow: var(--mst-g1-hi), var(--mst-shadow-rest); text-align: left; }
+.fam-viewer .fam-tip-icon { flex: none; margin-top: 2px; color: var(--mst-accent-ink); }
+.fam-viewer .fam-tip-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; color: var(--mst-ink-2); }
+.fam-viewer .fam-tip-title.MuiTypography-root { font-size: 15px; line-height: 24px; font-weight: 600; color: var(--mst-ink); }
+.fam-viewer .fam-tip-action.MuiButton-root { align-self: flex-start; margin-left: -10px; }
+/* "Want different questions? Make 5 new ones" (§6.5): one line in words, with the AI star on its link */
+.fam-viewer .fam-tip-more { margin: 4px 0 0; font-size: 14px; line-height: 20px; color: var(--mst-ink-2); }
+.fam-viewer .fam-tip-link.MuiButton-root { min-height: 32px; padding: 0 6px; vertical-align: baseline; font-weight: 600; color: var(--mst-accent-ink); }
+/* a 44 px target on phones and touch screens (§11.1), without pushing the line apart */
+@media (max-width: 599.95px), (pointer: coarse) {
+  .fam-viewer .fam-tip-link.MuiButton-root { min-height: 44px; margin: -6px 0; }
+}
+
+/* Advanced: one closed disclosure at the end of the content, a 44 px glass-edged row. */
+.fam-viewer .fam-evidence { margin: 0; padding: 0 16px; border: 1px solid var(--mst-g1-edge); border-radius: 14px; font-size: 14px; line-height: 20px; color: var(--mst-ink-2); }
+.fam-viewer .fam-evidence > summary { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0; font-weight: 600; list-style: none; cursor: pointer; }
+.fam-viewer .fam-evidence > summary::-webkit-details-marker { display: none; }
+.fam-viewer .fam-evidence > summary::before { content: ""; flex: none; width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); transition: transform 150ms var(--mst-ease); }
+.fam-viewer .fam-evidence[open] > summary::before { transform: rotate(45deg); }
+.fam-viewer .fam-evidence[open] { padding-bottom: 12px; }
+.fam-viewer .fam-evidence > summary:focus-visible { outline: 2px solid var(--mst-accent-ink); outline-offset: 2px; border-radius: 10px; }
+.fam-col > .fam-evidence, .fam-read > .fam-evidence { margin-top: 16px; }
+
+/* Flashcards: a glass card at least 300 px tall, QUESTION, then ANSWER under a rule, in the ink at the card's size */
+/* (the Designer, row 7: the accent made maths "look like a link"). */
+.fam-fcard { display: grid; place-items: center; min-height: 300px; padding: 32px; border-radius: 24px; text-align: center; font-size: 20px; line-height: 28px; font-weight: 600; overflow-wrap: anywhere; }
+.fam-fcard-in { width: 100%; }
+.fam-fcard-side { display: block; margin: 0 0 12px; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--mst-ink-3); }
+.fam-fcard-back { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--mst-edge); font-size: 20px; line-height: 28px; font-weight: 600; color: var(--mst-ink); }
+.fam-fcard-back .fam-fcard-side { margin-bottom: 6px; }
+.fam-fcard-more { margin-top: 12px; color: var(--mst-ink-2); }
+.fam-viewer .fam-fcard-ask.MuiTypography-root { margin-top: 14px; text-align: center; font-size: 14px; line-height: 20px; color: var(--mst-ink-2); }
+
+/* The story (design §6.8): one reading card, 680 px, radius 24, padding 28 by 32, the intro line, then the parts */
+/* at 17/28, teacher's card-title size as a reading exception, because a story is read aloud with a child. */
+.fam-story-card { padding: 28px 32px; border-radius: 24px; }
+.fam-story-intro { margin: 0 0 16px; font-size: 15px; line-height: 24px; color: var(--mst-ink-2); }
+.fam-story-card .fam-prose, .fam-story-card .fam-prose p { font-size: 17px; line-height: 28px; font-weight: 400; color: var(--mst-ink); }
+.fam-story-part + .fam-story-part { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--mst-edge); }
+/* a bottom bar as wide as a 680 px column, centred (§6.4) */
+.fam-viewer-foot[data-col="680"] { width: min(100% - 24px, 680px); margin-left: auto; margin-right: auto; }
+
+/* The end of a deck or a practice, getting it ready, and a failure: one glass card. */
+.fam-end, .fam-viewer .fam-making { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 28px 24px; text-align: center; }
+.fam-end { border-radius: 20px; }
+.fam-viewer .fam-making { width: 100%; max-width: 480px; margin: 0 auto; gap: 12px; border: 1px solid var(--mst-g1-edge); border-radius: 20px; background: var(--mst-g1-fill); box-shadow: var(--mst-g1-hi), var(--mst-shadow-rest); }
+.fam-viewer .fam-making-icon { font-size: 36px; color: var(--mst-accent-ink); }
+.fam-viewer .fam-making .fam-making-bar { width: 100%; }
+.fam-viewer .fam-end-title.MuiTypography-root, .fam-viewer .fam-h.MuiTypography-root { font-size: 20px; line-height: 28px; font-weight: 600; }
+.fam-viewer .fam-end-sub.MuiTypography-root { font-size: 15px; line-height: 24px; color: var(--mst-ink-2); }
+.fam-end-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 4px; }
+
+/* A save that failed: one calm line, in the warn tint. */
+.fam-viewer .fam-save-note { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; padding: 10px 14px; border-radius: 14px; background: color-mix(in srgb, var(--mst-warn) var(--mst-tint), transparent); color: var(--mst-warn-ink); font-size: 14px; line-height: 20px; font-weight: 500; }
+.fam-save-note .MuiButton-root { min-height: 32px; padding: 0 10px; color: inherit; text-decoration: underline; }
+
+/* Phones: the bars 8 px from the edges, a 16 px page, and the result's buttons in two columns, the main one first. */
+@media (max-width: 599px) {
+  .fam-viewer-head { margin: 8px 8px 0; padding-right: 12px; }
+  /* the item's name wraps to two lines rather than being cut off (§6.4) */
+  .fam-viewer .fam-viewer-name.MuiTypography-root { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+  :where(.fam-viewer-scroll) { padding: 16px; }
+  .fam-viewer-foot { margin: 0 8px calc(8px + env(safe-area-inset-bottom, 0px)); }
+  .fam-viewer .fam-quiz-text.MuiTypography-root { font-size: 17px; line-height: 24px; }
+  .fam-fcard { padding: 24px 16px; }
+  .fam-story-card { padding: 20px 16px; }
+  .fam-viewer-foot[data-col="680"] { width: calc(100% - 16px); }
+  .fam-viewer-foot[data-layout="result"] { display: grid; grid-template-columns: 1fr 1fr; }
+  .fam-viewer-foot[data-layout="result"] .fam-grow { display: none; }
+  .fam-viewer-foot[data-layout="result"] .MuiButton-contained { grid-column: 1 / -1; order: -1; }
+}
+@media (prefers-reduced-transparency: reduce) { .fam-viewer-head, .fam-viewer-foot { background: var(--mst-solid); -webkit-backdrop-filter: none; backdrop-filter: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .fam-quiz-q[data-dir] { animation: fam-fade 120ms linear both; }
+  .fam-prog span, .fam-opt, .fam-viewer .fam-evidence > summary::before { transition: none; }
+}
