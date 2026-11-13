@@ -63,7 +63,9 @@
 /* "Reading 1 more file…" under the summary while the list stays (Designer D1) */
 .mst-roster-reading { flex: none; display: grid; gap: 6px; margin-top: -8px; font-size: 14px; line-height: 20px; color: var(--mst-ink-3); }
 .mst-roster-alert.MuiAlert-root { flex: none; }
-.mst-roster-alert-line { display: block; }
+.mst-roster-alert-line { display: block; overflow-wrap: anywhere; }
+/* at a line's end the button keeps its right margin, so it never overhangs the notice's text box (QA E2E-P3-1) */
+.mst-roster-alert .mst-inline-btn.MuiButton-root { margin-right: 0; }
 .mst-roster-alert-line + .mst-roster-alert-line { margin-top: 4px; }
 
 /* the list box: solid, as working data is; the only thing that scrolls */
