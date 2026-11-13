@@ -1,0 +1,209 @@
+/* The class-list import windows, Create a class and Add students (Phase 1.42, design §3-§6). */
+/* The window never scrolls: the body is a flex column, and only the list box (or the file list) scrolls. */
+/* Area: academics */
+
+/* ── the window: 640 px wide, up to the screen less 64 px (24 px on phones) ── */
+.mst-roster-dialog.MuiPaper-root {
+  display: flex;
+  flex-direction: column;
+  width: min(640px, calc(100vw - 64px));
+  max-width: none;
+  max-height: calc(100dvh - 64px);
+  margin: 32px;
+}
+.mst-roster-dialog .MuiDialogTitle-root {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 24px 20px 8px 28px;
+}
+.mst-roster-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 12px 28px 16px;
+}
+.mst-roster-dialog .MuiDialogActions-root { flex: none; padding: 12px 28px 24px; }
+.mst-roster-dialog .MuiTabs-root { flex: none; width: 100%; }
+.mst-roster-dialog .MuiTab-root { flex: 1 1 0; }
+.mst-roster-dialog .MuiTextField-root, .mst-roster-error.MuiAlert-root { flex: none; }
+.mst-roster-one { flex: 1 0 auto; display: flex; flex-direction: column; gap: 16px; }
+
+/* ── the import part ── */
+.mst-roster { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: inherit; }
+.mst-roster .mst-upload, .mst-roster-files { flex: none; }
+.mst-roster-optional { font-weight: 400; color: var(--mst-ink-3); }
+.mst-roster .mst-drop-browse { margin-top: 8px; }
+/* once files are listed, the drop area is a slim strip, so the files and the window still fit */
+.mst-roster[data-files="true"] .mst-drop { min-height: 0; padding: 12px; gap: 2px; }
+.mst-roster[data-files="true"] .mst-drop-orb { display: none; }
+.mst-roster[data-files="true"] .mst-drop-browse { margin-top: 6px; }
+.mst-roster-files .mst-files-list { max-height: 168px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.mst-roster-files .mst-files-head { min-height: 40px; padding-top: 6px; padding-bottom: 6px; }
+.mst-roster-bar { margin: 0 16px 8px; }
+.mst-roster .mst-file-state[data-state="reading"] { gap: 6px; padding: 0 10px; background: var(--mst-accent-tint); color: var(--mst-accent-ink); }
+.mst-roster .mst-file-state[data-state="warn"] { padding: 0 10px; background: color-mix(in srgb, var(--mst-warn) var(--mst-tint), transparent); color: var(--mst-warn-ink); }
+.mst-roster .mst-file-state[data-state="bad"] { background: color-mix(in srgb, var(--mst-bad) var(--mst-tint), transparent); color: var(--mst-bad-ink); }
+.mst-roster-again.MuiButton-root { flex: none; min-height: 32px; padding: 4px 8px; }
+.mst-roster-hint { flex: none; margin: 0; font-size: 14px; line-height: 20px; color: var(--mst-ink-3); }
+
+/* text buttons inside a line keep their words in line with the text around them */
+.mst-inline-btn.MuiButton-root { min-height: 32px; margin: -4px -8px; padding: 4px 8px; }
+
+/* ── the List view ── */
+.mst-roster-sum { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 20px; }
+.mst-roster-sum p { margin: 0; font-size: 15px; line-height: 24px; color: var(--mst-ink-2); }
+.mst-roster-sum b { color: var(--mst-ink); font-weight: 600; }
+.mst-roster-fixcount { color: var(--mst-warn-ink); font-weight: 600; }
+.mst-roster-quiet { flex: none; margin: -8px 0 0; font-size: 14px; line-height: 20px; color: var(--mst-ink-3); }
+/* "Reading 1 more file…" under the summary while the list stays (Designer D1) */
+.mst-roster-reading { flex: none; display: grid; gap: 6px; margin-top: -8px; font-size: 14px; line-height: 20px; color: var(--mst-ink-3); }
+.mst-roster-alert.MuiAlert-root { flex: none; }
+.mst-roster-alert-line { display: block; }
+.mst-roster-alert-line + .mst-roster-alert-line { margin-top: 4px; }
+
+/* the list box: solid, as working data is; the only thing that scrolls */
+.mst-roster-box {
+  flex: 1 1 auto;
+  min-height: 148px;
+  overflow: hidden auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  border: 1px solid var(--mst-edge);
+  border-radius: 16px;
+  background: var(--mst-solid);
+}
+.mst-roster-head, .mst-roster-row { display: grid; grid-template-columns: minmax(0, 1fr) 156px 132px 40px; gap: 8px; align-items: center; }
+.mst-roster-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 8px 6px 8px 16px;
+  border-bottom: 1px solid var(--mst-edge);
+  background: var(--mst-solid);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  color: var(--mst-ink-3);
+}
+.mst-roster-groups, .mst-roster-rows { margin: 0; padding: 0; list-style: none; }
+.mst-roster-sub {
+  position: sticky;
+  top: 33px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 32px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--mst-edge);
+  background: linear-gradient(var(--mst-well), var(--mst-well)), var(--mst-solid);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  color: var(--mst-ink-3);
+}
+.mst-roster-group + .mst-roster-group .mst-roster-sub { border-top: 1px solid var(--mst-edge); }
+.mst-roster-row { padding: 2px 6px 2px 8px; } /* 44 px rows: the 40 px remove button and 2 px a side */
+.mst-roster-row + .mst-roster-row { border-top: 1px solid var(--mst-edge); }
+.mst-roster-row[data-fix="true"] { background: color-mix(in srgb, var(--mst-warn) 9%, transparent); }
+.mst-roster-input {
+  width: 100%;
+  min-width: 0;
+  height: 36px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--mst-ink);
+  text-overflow: ellipsis; /* a long name ends in "…" until it's tapped (Designer D5) */
+  outline: none;
+  transition: border-color 150ms var(--mst-ease), background-color 150ms var(--mst-ease);
+}
+.mst-roster-input::placeholder { color: var(--mst-ink-3); opacity: 1; }
+.mst-roster-input:hover:not(:disabled) { border-color: var(--mst-edge-control); background: var(--mst-well); }
+/* boxes show where typing is needed: an empty field, and a row that needs a fix (Designer D2) */
+.mst-roster-input:placeholder-shown:not(:disabled):not(:focus),
+.mst-roster-row[data-fix="true"] .mst-roster-input:not(:focus) { border-color: var(--mst-edge-control); background: var(--mst-well); }
+@media (hover: none) {
+  .mst-roster-input:not(:disabled):not(:focus) { border-color: var(--mst-edge); }
+}
+.mst-roster-input:focus { border-color: var(--mst-accent-ink); background: var(--mst-well); box-shadow: 0 0 0 3px var(--mst-accent-tint); }
+.mst-roster-id { font-family: "GeistMono", ui-monospace, monospace; font-size: 13px; font-variant-numeric: tabular-nums; }
+.mst-roster-chips { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+.mst-roster-chip {
+  display: block;
+  max-width: 100%;
+  height: 24px;
+  padding: 0 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 24px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mst-roster-chip[data-tone="link"] { background: var(--mst-accent-tint); color: var(--mst-accent-ink); }
+.mst-roster-chip[data-tone="check"] { background: color-mix(in srgb, var(--mst-warn) var(--mst-tint), transparent); color: var(--mst-warn-ink); }
+.mst-roster-remove.MuiIconButton-root { width: 40px; height: 40px; color: var(--mst-ink-2); }
+.mst-roster-row[data-removed="true"] .mst-roster-input { color: var(--mst-ink-3); text-decoration: line-through; }
+.mst-roster-undo.MuiButton-root { grid-column: 2 / -1; justify-self: end; min-height: 36px; }
+.mst-roster-fix { grid-column: 1 / -1; padding: 0 8px 6px; font-size: 13px; line-height: 18px; color: var(--mst-warn-ink); }
+.mst-roster-fix b { font-weight: 600; }
+.mst-roster-note { grid-column: 1 / -1; padding: 0 8px 4px; font-size: 12px; line-height: 16px; color: var(--mst-ink-3); }
+.mst-roster-under { flex: none; margin: -12px 0 -8px; }
+.mst-roster-under .MuiButton-root { margin-left: -8px; }
+@media (pointer: coarse) {
+  .mst-roster-remove.MuiIconButton-root { width: 44px; height: 44px; }
+}
+
+/* ── phones (under 600 px): the full width less 12 px a side; rows stay on one line, chips go under the name ── */
+@media (max-width: 599px) {
+  .mst-roster-dialog.MuiPaper-root { width: calc(100vw - 24px); max-height: calc(100dvh - 24px); margin: 12px; }
+  .mst-roster-dialog .MuiDialogTitle-root { padding: 16px 8px 4px 16px; }
+  .mst-roster-body { gap: 16px; padding: 8px 16px 12px; }
+  .mst-roster-dialog .MuiDialogActions-root { flex-wrap: nowrap; padding: 12px 16px 16px; }
+  .mst-roster-dialog .MuiDialogActions-root > .MuiButton-root { flex: 1 1 0; }
+  /* 126 px fits a whole MST- ID (12 characters of 16 px GeistMono) with 4 px padding (QA S2-P3-1) */
+  .mst-roster-head, .mst-roster-row { grid-template-columns: minmax(0, 1fr) 126px 40px; gap: 4px; }
+  .mst-roster-head { padding-left: 12px; }
+  .mst-roster-row { padding: 2px 2px 2px 4px; }
+  .mst-roster-input, .mst-roster-id { font-size: 16px; }
+  .mst-roster-id { padding: 0 4px; }
+  .mst-roster-chips { grid-column: 1 / -1; grid-row: 2; flex-direction: row; flex-wrap: wrap; padding: 0 0 4px 8px; }
+  .mst-roster-chips:empty { display: none; }
+  .mst-roster-remove.MuiIconButton-root { grid-column: 3; grid-row: 1; }
+  .mst-roster-count { display: none; } /* the summary shows the count; the button stays one line (Designer P3-1) */
+  .mst-roster .mst-file[data-again="true"] .mst-file-state { display: none; }
+}
+
+/* ── short screens (under 760 px tall, such as a 768 px laptop): tighter spacing ── */
+@media (max-height: 760px) {
+  .mst-roster-dialog.MuiPaper-root { max-height: calc(100dvh - 32px); margin-top: 16px; margin-bottom: 16px; }
+  .mst-roster-dialog .MuiDialogTitle-root { padding: 16px 16px 4px 28px; }
+  .mst-roster-body { gap: 12px; padding: 8px 28px 12px; }
+  .mst-roster-dialog .MuiDialogActions-root { padding: 8px 28px 16px; }
+  .mst-roster-box { min-height: 124px; }
+  .mst-roster-quiet { margin-top: -4px; }
+  .mst-roster-under { margin-top: -6px; }
+}
+@media (max-height: 760px) and (max-width: 599px) {
+  .mst-roster-dialog .MuiDialogTitle-root { padding: 12px 8px 4px 16px; }
+  .mst-roster-body { padding: 8px 16px 12px; }
+  .mst-roster-dialog .MuiDialogActions-root { padding: 8px 16px 12px; }
+}
+
+/* ── very short screens (under 560 px tall, a phone on its side): the body scrolls as a last resort ── */
+@media (max-height: 559px) {
+  .mst-roster-body { overflow-y: auto; }
+  .mst-roster-box { flex: none; height: 168px; min-height: 0; }
+}

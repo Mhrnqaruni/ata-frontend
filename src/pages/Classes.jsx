@@ -1,4 +1,4 @@
-// The teacher's classes as a grid of cards, with Add class (by hand or roster upload) and a Tags tab.
+// The teacher's classes as a grid of cards, with Create a class (with or without class lists) and a Tags tab.
 // Area: academics
 
 import { useTeacherData } from '../hooks/useTeacherData';
@@ -19,8 +19,6 @@ import AddOutlined from '@mui/icons-material/AddOutlined';
 import ClassCard from '../components/classes/ClassCard';
 import AddClassModal from '../components/classes/AddClassModal';
 
-// --- Service Import for Backend Communication ---
-import classService from '../services/classService';
 import PageHeader from '../components/common/PageHeader';
 import EmptyState from '../components/common/EmptyState';
 
@@ -39,27 +37,14 @@ const Classes = () => {
   const isLoading = classesQuery.isPending;
   const error = classesQuery.data === undefined && classesQuery.error;
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalState, setModalState] = useState({ isLoading: false, error: null });
 
-  const handleOpenModal = () => {
-    setModalState({ isLoading: false, error: null });
-    setIsModalOpen(true);
-  };
+  const handleOpenModal = () => setIsModalOpen(true);
   const handleCloseModal = () => setIsModalOpen(false);
 
-  const handleSubmit = async (classData) => {
-    setModalState({ isLoading: true, error: null });
-    try {
-      if (classData.file) {
-        await classService.createClassWithUpload(classData.name, classData.file);
-      } else {
-        await classService.createClass(classData);
-      }
-      handleCloseModal();
-    } catch (err) {
-      console.error('Failed to create class:', err);
-      setModalState({ isLoading: false, error: err.message || 'Failed to create class.' });
-    }
+  // The new class's page opens with its notice (design §3.6).
+  const handleCreated = (made, notice) => {
+    setIsModalOpen(false);
+    navigate(`/classes/${made.id}`, { state: { notice } });
   };
 
   const renderContent = () => {
@@ -82,14 +67,19 @@ const Classes = () => {
       return (
         <EmptyState
           action={
-            <Button onClick={handleOpenModal} startIcon={<AddOutlined />} variant="contained">
-              Add class
+            <Button
+              data-mst="create-class-open"
+              onClick={handleOpenModal}
+              startIcon={<AddOutlined />}
+              variant="contained"
+            >
+              Create class
             </Button>
           }
           icon={<SchoolOutlined />}
           title="Create your first class"
         >
-          Add a class and its students by hand, or upload a roster.
+          Give it a name, and drop in a class list if you have one.
         </EmptyState>
       );
     }
@@ -98,7 +88,7 @@ const Classes = () => {
         {classes.map((classItem) => (
           <ClassCard key={classItem.id} classData={classItem} />
         ))}
-        <AddCard hint="By hand or from a roster file" label="Add a class" onClick={handleOpenModal} />
+        <AddCard hint="With or without a class list" label="Create a class" onClick={handleOpenModal} />
       </div>
     );
   };
@@ -113,7 +103,7 @@ const Classes = () => {
               startIcon={<AddOutlined />}
               variant="contained"
             >
-              {section === 1 ? 'New tag' : 'Add class'}
+              {section === 1 ? 'New tag' : 'Create class'}
             </Button>
           }
           subtitle={
@@ -136,13 +126,7 @@ const Classes = () => {
         {section === 0 ? renderContent() : <TagsPanel newRequest={newTagRequest} />}
       </Box>
 
-      <AddClassModal
-        open={isModalOpen}
-        onClose={handleCloseModal}
-        onSubmit={handleSubmit}
-        isLoading={modalState.isLoading}
-        error={modalState.error}
-      />
+      <AddClassModal open={isModalOpen} onClose={handleCloseModal} onCreated={handleCreated} />
     </>
   );
 };

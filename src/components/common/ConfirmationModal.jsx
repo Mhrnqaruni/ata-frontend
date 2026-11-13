@@ -14,6 +14,7 @@ import { Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, B
  * @param {function} props.onConfirm - Callback to execute when the confirm button is clicked.
  * @param {string} props.title - The title to display in the modal header.
  * @param {string} props.description - The descriptive text/question for the modal body.
+ * @param {string} [props.cancelLabel] - The words on the button that keeps things as they are.
  */
 const ConfirmationModal = ({
   open,
@@ -23,6 +24,7 @@ const ConfirmationModal = ({
   description,
   busy = false,
   confirmLabel = 'Confirm',
+  cancelLabel = 'Cancel',
 }) => {
   return (
     <Dialog
@@ -38,7 +40,7 @@ const ConfirmationModal = ({
       </DialogContent>
       <DialogActions>
         <Button data-mst="cancel" disabled={busy} onClick={onClose} variant="outlined">
-          Cancel
+          {cancelLabel}
         </Button>
         <Button data-mst="confirm" disabled={busy} onClick={onConfirm} color="error" variant="contained">
           {busy ? 'Deleting…' : confirmLabel}
