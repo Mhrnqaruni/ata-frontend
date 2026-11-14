@@ -1,4 +1,4 @@
-// Wraps the /api/classes endpoints: list, create, edit and delete classes, upload and export rosters.
+// Wraps the /api/classes endpoints: list, create, edit and delete classes, read, check and add class lists, export.
 // Also adds, edits and removes a class's students, and refreshes cached roster data after each change.
 // Area: academics
 
@@ -36,25 +36,6 @@ const classService = {
     } catch (error) {
       console.error('Error creating class:', error);
       const errorMessage = error.response?.data?.detail || 'Failed to create the class.';
-      throw new Error(errorMessage);
-    }
-  },
-  createClassWithUpload: async (className, file) => {
-    const formData = new FormData();
-    formData.append('name', className);
-    formData.append('file', file);
-    try {
-      const response = await apiClient.post('/api/classes/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: 60000,
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error uploading roster:', error);
-      if (error.code === 'ECONNABORTED') {
-        throw new Error('The upload is taking longer than expected and timed out. Please check the file or try again.');
-      }
-      const errorMessage = error.response?.data?.detail || 'Failed to upload and process the roster file.';
       throw new Error(errorMessage);
     }
   },
@@ -99,6 +80,36 @@ const classService = {
       throw new Error('Failed to export the roster. Please try again.');
     }
   },
+  // --- CLASS-LIST IMPORT (Phase 1.42): read each file, check the joined list, then add it in one call ---
+  // Reads one class-list file with the AI; nothing is saved. A refused or failed read throws an Error with
+  // `reason` (design §3.4): the server's code, too_large for a body the proxy refused, else ai_failed.
+  readRosterFile: async (file, classId, signal) => {
+    const body = new FormData();
+    body.append('file', file);
+    if (classId) body.append('class_id', classId);
+    try {
+      const response = await apiClient.post('/api/classes/imports/read', body, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        signal,
+      });
+      return response.data;
+    } catch (error) {
+      const detail = error.response?.data?.detail;
+      const reason = detail?.reason || (error.response?.status === 413 ? 'too_large' : 'ai_failed');
+      throw Object.assign(new Error(detail?.message || 'The file could not be read.'), { reason });
+    }
+  },
+  // Each row's state before anything is saved: in this class, or with no class for a new one.
+  checkRoster: async (rows, classId) => {
+    const url = classId ? `/api/classes/${classId}/imports/check` : '/api/classes/imports/check';
+    return (await apiClient.post(url, { rows })).data;
+  },
+  // Adds the checked rows to a class; the same requestId again returns the saved outcome.
+  commitRoster: async (classId, requestId, rows) =>
+    (await apiClient.put(`/api/classes/${classId}/imports/${requestId}`, { rows })).data,
+  // Makes a class and its students together or not at all: {class, outcome}.
+  createClassWithRows: async (requestId, name, rows) =>
+    (await apiClient.put(`/api/classes/imports/${requestId}`, { name, rows })).data,
   // --- STUDENT CRUD METHODS ---
   addStudentToClass: async (classId, studentData) => {
     try {
@@ -134,7 +145,8 @@ export default invalidateAfter(
   classService,
   [
     'createClass',
-    'createClassWithUpload',
+    'createClassWithRows',
+    'commitRoster',
     'updateClass',
     'deleteClass',
     'addStudentToClass',

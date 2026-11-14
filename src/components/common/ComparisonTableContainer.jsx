@@ -1,5 +1,5 @@
 // A scrollable wrapper for wide comparison tables: every column stays, with a swipe hint on phones.
-// Used by the quiz analytics and host screens and the admin dashboard.
+// Used by the quiz analytics and host screens.
 // Area: platform
 
 import React from 'react';

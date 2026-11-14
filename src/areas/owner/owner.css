@@ -1,0 +1,50 @@
+/* The admin panel's frame and sign-in: the sidebar's Admin mark, search and account, and the page column. */
+/* Area: owner */
+
+/* the frame: the sidebar stays put while the page scrolls, as the teacher drawer does */
+.owner-frame { display: flex; min-height: 100vh; }
+.owner-aside { position: sticky; top: 0; flex: none; width: 212px; height: 100vh; transition: width 280ms var(--mst-ease-move); }
+.owner-aside[data-collapsed="true"] { width: 76px; }
+.owner-main { flex: 1; min-width: 0; padding: 24px 32px 16px; }
+.owner-page { width: 100%; max-width: 1320px; min-width: 0; margin: 0 auto; }
+
+/* computer only (D6): below 1024 px, one line says so */
+.owner-small-screen { display: none; }
+@media (max-width: 1023px) {
+  .owner-small-screen { display: block; margin: 0 0 12px; padding: 8px 12px; border-radius: 12px; background: var(--mst-well); color: var(--mst-ink-2); font-size: 14px; line-height: 20px; }
+  .owner-main { padding: 16px; }
+}
+
+/* the Admin mark: an inverse neutral pill, clear in both themes (design §6, answer 11) */
+.owner-mark { display: inline-flex; align-items: center; gap: 6px; width: max-content; height: 24px; padding: 0 10px 0 8px; border-radius: 999px; background: var(--mst-ink); color: var(--mst-solid); font-size: 12px; line-height: 16px; font-weight: 600; }
+.owner-mark .MuiSvgIcon-root { font-size: 16px; }
+.mst-side .owner-mark { margin: 4px 0 12px 8px; }
+.mst-side[data-collapsed="true"] .owner-mark { justify-content: center; width: 40px; padding: 0; margin: 4px auto 12px; }
+
+/* search: a field with a "/" hint; collapsed, an icon */
+.owner-search { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 8px 0 10px; border: 1px solid var(--mst-edge-control); border-radius: 12px; background: var(--mst-well); color: var(--mst-ink-3); }
+.owner-search:focus-within { outline: 2px solid var(--mst-accent-ink); outline-offset: -1px; }
+.owner-search input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; color: var(--mst-ink); font: inherit; font-size: 14px; line-height: 20px; }
+.owner-search input::placeholder { color: var(--mst-ink-3); opacity: 1; }
+.owner-search input::-webkit-search-cancel-button { display: none; }
+.owner-search kbd { padding: 0 6px; border: 1px solid var(--mst-edge); border-radius: 6px; font: inherit; font-size: 12px; line-height: 18px; color: var(--mst-ink-3); }
+.owner-search-glyph.MuiSvgIcon-root { font-size: 18px; }
+.owner-search-icon.MuiIconButton-root, .owner-account-icon.MuiIconButton-root { display: flex; margin: 0 auto; color: var(--mst-ink-2); }
+
+/* the account button at the foot: the owner's email, cut with "…" when long */
+.owner-account { display: flex; align-items: center; gap: 10px; width: 100%; height: 44px; padding: 0 10px; border: 0; border-radius: 12px; background: transparent; color: var(--mst-ink-2); font: inherit; font-size: 14px; line-height: 20px; cursor: pointer; }
+.owner-account:hover { background: var(--mst-hover-fill); color: var(--mst-ink); }
+.owner-account:focus-visible { outline: 2px solid var(--mst-accent-ink); outline-offset: -2px; }
+.owner-account span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.owner-menu-check.MuiSvgIcon-root { margin-left: auto; padding-left: 12px; color: var(--mst-accent-ink); }
+
+/* the sign-in: one card on the ground, with no story panel */
+.owner-signin { display: grid; place-items: center; min-height: 100vh; padding: 24px; }
+.owner-signin-card { display: grid; justify-items: center; gap: 16px; width: min(420px, 100%); padding: 36px; border: 1px solid var(--mst-g1-edge); border-radius: 28px; background: var(--mst-g1-fill); -webkit-backdrop-filter: var(--mst-g1-blur); backdrop-filter: var(--mst-g1-blur); box-shadow: var(--mst-g1-hi), var(--mst-shadow-float); color: var(--mst-ink); }
+.owner-signin-logo { display: block; height: 40px; width: auto; }
+.owner-signin-card h1 { margin: 0; font-size: 30px; line-height: 36px; font-weight: 600; text-align: center; }
+.owner-signin-form { display: grid; gap: 16px; width: 100%; }
+.owner-signin .mst-field { display: grid; gap: 6px; }
+.owner-signin .mst-field-label { color: var(--mst-ink); font-size: 14px; line-height: 20px; font-weight: 500; }
+.owner-signin-form .MuiButton-root { min-height: 44px; }
+.owner-signin-foot { margin: 0; color: var(--mst-ink-3); font-size: 12px; line-height: 16px; }

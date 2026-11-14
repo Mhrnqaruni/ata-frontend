@@ -3,7 +3,6 @@
 // Area: family
 
 import { Suspense, useEffect } from 'react';
-import { Alert } from '@mui/material';
 import { Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { hasMode } from '../../services/accountModes';
@@ -26,7 +25,6 @@ export default function FamilyArea() {
   const { user } = useAuth();
   const { pathname, search } = useLocation();
   useEffect(() => rememberPage(user?.id, pathname, search), [user?.id, pathname, search]);
-  if (user?.role === 'admin') return <Alert severity="info">Use an adult account for family learning.</Alert>;
   if (!hasMode(user, 'parent')) return <StartParentMode />;
   return (
     <Suspense fallback={<FamilyLoading />}>

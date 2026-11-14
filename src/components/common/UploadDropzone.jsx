@@ -19,7 +19,7 @@ import CheckCircleRounded from '@mui/icons-material/CheckCircleRounded';
 export const formatBytes = (bytes = 0) =>
   bytes >= 1024 * 1024 ? `${(bytes / (1024 * 1024)).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
 
-const kindOf = (file) => {
+export const kindOf = (file) => {
   const name = (file?.name || '').toLowerCase();
   if (name.endsWith('.pdf')) return { icon: <PictureAsPdfOutlined />, label: 'PDF', tone: 'pdf' };
   if (/\.(png|jpe?g|gif|webp|heic)$/.test(name)) return { icon: <ImageOutlined />, label: 'Image', tone: 'image' };
@@ -99,6 +99,7 @@ export function UploadFileRow({ file, onRemove, disabled, meta, order, onMove, f
  * @param {boolean} [props.disabled]
  * @param {"large"|"compact"} [props.size]
  * @param {string} [props.label] - a short heading above the area (e.g. "Question paper")
+ * @param {string} [props.browseLabel] - the browse pill's words; on the compact size the pill shows only with it
  */
 export default function UploadDropzone({
   title,
@@ -115,6 +116,7 @@ export default function UploadDropzone({
   filesHeader,
   onMove,
   onDropRejected,
+  browseLabel,
 }) {
   const { getRootProps, getInputProps, isDragActive, isDragReject, open } = useDropzone({
     accept,
@@ -157,9 +159,9 @@ export default function UploadDropzone({
         </span>
         <span className="mst-drop-hint">{hint}</span>
         {/* looks like a button; the whole area is the one control (no nested buttons) */}
-        {size === 'large' ? (
+        {size === 'large' || browseLabel ? (
           <span aria-hidden="true" className="mst-drop-browse">
-            Browse files
+            {browseLabel || 'Browse files'}
           </span>
         ) : null}
       </div>

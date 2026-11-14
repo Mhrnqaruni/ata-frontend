@@ -9,6 +9,7 @@ import React, { useState, useEffect } from 'react';
 import tagService from '../../services/tagService';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import {
+  Button,
   Chip,
   Card,
   Table,
@@ -54,7 +55,7 @@ const stop = (handler) => (event) => {
   handler();
 };
 
-const StudentTable = ({ students, onEdit, onDelete, onProgressTracker }) => {
+const StudentTable = ({ students, onEdit, onDelete, onProgressTracker, onAddStudents }) => {
   const navigate = useNavigate();
   const [tagMap, setTagMap] = useState({});
   useEffect(() => {
@@ -83,8 +84,18 @@ const StudentTable = ({ students, onEdit, onDelete, onProgressTracker }) => {
 
   if (!students || students.length === 0) {
     return (
-      <EmptyState icon={<PersonAddOutlined />} title="No students in this class yet">
-        Use "Add student" to build the roster.
+      <EmptyState
+        action={
+          onAddStudents ? (
+            <Button onClick={onAddStudents} startIcon={<PersonAddOutlined />} variant="contained">
+              Add students
+            </Button>
+          ) : null
+        }
+        icon={<PersonAddOutlined />}
+        title="No students in this class yet"
+      >
+        Bring in your class list, or add students one by one.
       </EmptyState>
     );
   }

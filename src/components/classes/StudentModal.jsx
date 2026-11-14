@@ -1,4 +1,4 @@
-// A dialog to add a student to a class or edit one: full name and student ID.
+// A dialog to add a student to a class or edit one: full name and student ID, both required.
 // Area: academics
 
 // --- Core React Imports ---
@@ -10,7 +10,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
   Button,
   Stack,
   IconButton,
@@ -20,6 +19,7 @@ import {
 
 // --- Icon Imports ---
 import CloseOutlined from '@mui/icons-material/CloseOutlined';
+import StudentFields from './StudentFields';
 
 /**
  * A controlled modal component for adding a new student or editing an existing one.
@@ -55,11 +55,6 @@ const StudentModal = ({ open, onClose, onSubmit, mode, initialData, isLoading, e
   }, [open, mode, initialData]); // Dependencies for the effect.
 
   // --- Event Handlers ---
-  const handleChange = (event) => {
-    const { name, value } = event.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
   const handleSubmit = (event) => {
     event.preventDefault(); // Prevent default browser form submission.
     onSubmit(formData); // Delegate the submission logic to the parent component.
@@ -84,29 +79,7 @@ const StudentModal = ({ open, onClose, onSubmit, mode, initialData, isLoading, e
             {/* Display any submission error passed down from the parent. */}
             {error && <Alert severity="error">{error}</Alert>}
 
-            <TextField
-              autoFocus // Automatically focus the first field when the modal opens.
-              required
-              id="name"
-              name="name" // The 'name' must match the key in the formData state.
-              label="Full name"
-              type="text"
-              fullWidth
-              value={formData.name}
-              onChange={handleChange}
-              disabled={isLoading}
-            />
-            <TextField
-              required
-              id="studentId"
-              name="studentId"
-              label="Student ID"
-              type="text"
-              fullWidth
-              value={formData.studentId}
-              onChange={handleChange}
-              disabled={isLoading}
-            />
+            <StudentFields disabled={isLoading} onChange={setFormData} value={formData} />
           </Stack>
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>

@@ -1,5 +1,5 @@
 // The app root: sets up the router, theme and global providers, and maps every URL to its page.
-// Its routes cover sign-in, public quiz and report pages, /family, /admin and the signed-in teacher pages.
+// Its routes cover sign-in, public quiz and report pages, /family, the /owner admin panel and the teacher pages.
 // Area: platform
 
 // --- Core React & Router Imports ---
@@ -44,7 +44,20 @@ const AssessmentReviewPage = lazyPage(() => import('./pages/assessments/Assessme
 const PublicReportView = lazyPage(() => import('./pages/public/ReportView'));
 const Chatbot = lazyPage(() => import('./pages/Chatbot'));
 const StudentProfile = lazyPage(() => import('./pages/StudentProfile'));
-const AdminDashboard = lazyPage(() => import('./pages/AdminDashboard'));
+import OwnerGuard from './areas/owner/OwnerGuard';
+const OwnerShell = lazyPage(() => import('./areas/owner/shell/OwnerShell'));
+const OwnerSignIn = lazyPage(() => import('./areas/owner/pages/SignInPage'));
+const OwnerOverview = lazyPage(() => import('./areas/owner/pages/OverviewPage'));
+const OwnerAiUse = lazyPage(() => import('./areas/owner/pages/AiUsePage'));
+const OwnerAiTask = lazyPage(() => import('./areas/owner/pages/AiTaskPage'));
+const OwnerUsers = lazyPage(() => import('./areas/owner/pages/UsersPage'));
+const OwnerUser = lazyPage(() => import('./areas/owner/pages/UserPage'));
+const OwnerAssessments = lazyPage(() => import('./areas/owner/pages/AssessmentsPage'));
+const OwnerAssessment = lazyPage(() => import('./areas/owner/pages/AssessmentPage'));
+const OwnerProblems = lazyPage(() => import('./areas/owner/pages/ProblemsPage'));
+const OwnerOrganizations = lazyPage(() => import('./areas/owner/pages/OrganizationsPage'));
+const OwnerSearch = lazyPage(() => import('./areas/owner/pages/SearchPage'));
+const OwnerAccess = lazyPage(() => import('./areas/owner/pages/AccessPage'));
 const FamilyArea = lazyPage(() => import('./areas/family/FamilyArea'));
 const FamilyStart = lazyPage(() => import('./areas/family/FamilyStart'));
 const FamilyShell = lazyPage(() => import('./areas/family/shell/FamilyShell'));
@@ -82,6 +95,13 @@ const AppLayout = () => (
   </Layout>
 );
 
+// The teacher's sign-in state, for every page but the admin panel's (Phase 1.44, design §3.0).
+const TeacherSession = () => (
+  <AuthProvider>
+    <Outlet />
+  </AuthProvider>
+);
+
 /**
  * A component that applies the MUI theme and defines the application's routing structure.
  */
@@ -106,126 +126,142 @@ const ThemedApp = () => {
         }
       >
         <Routes>
-          {/* --- [CRITICAL MODIFICATION 2/4: DEFINE PUBLIC-ONLY ROUTES] --- */}
-          {/* These routes are for unauthenticated users. */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-
-          {/* --- [CRITICAL MODIFICATION 3/4: DEFINE TRULY PUBLIC ROUTES] --- */}
-          {/* This route is accessible to anyone, logged in or not. */}
-          <Route path="/report/:report_token" element={<PublicReportView />} />
-
-          {/* --- QUIZ PARTICIPANT ROUTES (Public - No Auth Required) --- */}
-          <Route path="/quiz/join" element={<QuizParticipant />} />
-          <Route path="/quiz/join/:roomCode" element={<QuizParticipant />} />
-
-          {/* --- SELF-PACED QUIZ PARTICIPANT ROUTES (Public - No Auth Required) --- */}
-          <Route path="/quiz/sp/join" element={<QuizSPParticipant />} />
-          <Route path="/quiz/sp/join/:accessCode" element={<QuizSPParticipant />} />
-
-          {/* --- ADMIN ROUTE (Special Protected Route) --- */}
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute requiredRole="admin" redirectTo="/">
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Parent mode (Phase 1.37): one pathless route holds the sign-in guard, the parent space, its loading
-            screen and "Start Parent mode". Each address inside is written out, because the page-name test reads
-            them; sections.js lists the sections for the navigation. */}
-          <Route
-            element={
-              <ProtectedRoute>
-                <Suspense fallback={<FamilyLoading />}>
-                  <FamilyArea />
-                </Suspense>
-              </ProtectedRoute>
-            }
-          >
-            <Route path="/family" element={<FamilyStart />} />
-            {/* No list page of children (C-1): this address opens what /family opens. */}
-            <Route path="/family/children" element={<FamilyStart />} />
-            {/* The shell's route: the side panel or phone bars, the switcher and the children's dialogs. */}
-            <Route element={<FamilyShell />}>
-              <Route path="/family/children/:child_id" element={<HomePage />} />
-              {/* The child's profile (Phase 1.38 design §3): the details, how the child is doing, and the chats. */}
-              <Route path="/family/children/:child_id/profile" element={<ProfilePage />} />
-              <Route path="/family/children/:child_id/notebook" element={<NotebookPage />} />
-              {/* Homework and the four Activities sections share one list page; the Activities page leads to them. */}
-              <Route path="/family/children/:child_id/homework" element={<SectionListPage section="homework" />} />
-              <Route path="/family/children/:child_id/activities" element={<ActivitiesPage />} />
-              <Route path="/family/children/:child_id/quizzes" element={<SectionListPage section="quizzes" />} />
-              <Route path="/family/children/:child_id/flashcards" element={<SectionListPage section="flashcards" />} />
-              <Route path="/family/children/:child_id/mind-maps" element={<SectionListPage section="mind-maps" />} />
-              <Route path="/family/children/:child_id/stories" element={<SectionListPage section="stories" />} />
-              {/* Each result at its own address (C-2): one page for every kind, given its section's segment. */}
-              <Route
-                path="/family/children/:child_id/quizzes/:activity_id"
-                element={<ResultPage segment="quizzes" />}
-              />
-              <Route
-                path="/family/children/:child_id/flashcards/:activity_id"
-                element={<ResultPage segment="flashcards" />}
-              />
-              <Route
-                path="/family/children/:child_id/mind-maps/:activity_id"
-                element={<ResultPage segment="mind-maps" />}
-              />
-              <Route
-                path="/family/children/:child_id/stories/:activity_id"
-                element={<ResultPage segment="stories" />}
-              />
-              <Route
-                path="/family/children/:child_id/homework/:activity_id"
-                element={<ResultPage segment="homework" />}
-              />
-              <Route
-                path="/family/children/:child_id/notebook/explanations/:activity_id"
-                element={<ResultPage segment="notebook/explanations" />}
-              />
+          {/* The admin panel (Phase 1.44): outside the teacher AuthProvider, so an owner page never sends a
+            teacher's token, runs the teacher session check or counts that teacher as active (design §3.0). Each
+            address is written out, because the page-name test reads them; sections.js lists the navigation. */}
+          <Route path="/owner/sign-in" element={<OwnerSignIn />} />
+          <Route element={<OwnerGuard />}>
+            <Route element={<OwnerShell />}>
+              <Route path="/owner" element={<OwnerOverview />} />
+              <Route path="/owner/ai" element={<OwnerAiUse />} />
+              <Route path="/owner/ai/tasks/:task_kind/:task_id" element={<OwnerAiTask />} />
+              <Route path="/owner/users" element={<OwnerUsers />} />
+              <Route path="/owner/users/:user_id" element={<OwnerUser />} />
+              <Route path="/owner/assessments" element={<OwnerAssessments />} />
+              <Route path="/owner/assessments/:assessment_id" element={<OwnerAssessment />} />
+              <Route path="/owner/problems" element={<OwnerProblems />} />
+              <Route path="/owner/organizations" element={<OwnerOrganizations />} />
+              <Route path="/owner/search" element={<OwnerSearch />} />
+              <Route path="/owner/access" element={<OwnerAccess />} />
             </Route>
           </Route>
 
-          {/* --- [CRITICAL MODIFICATION 4/4: DEFINE PROTECTED ROUTES] --- */}
-          {/* This parent Route uses the ProtectedRoute component as its element.
+          {/* Every other page has the teacher's sign-in state. */}
+          <Route element={<TeacherSession />}>
+            {/* --- [CRITICAL MODIFICATION 2/4: DEFINE PUBLIC-ONLY ROUTES] --- */}
+            {/* These routes are for unauthenticated users. */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+
+            {/* --- [CRITICAL MODIFICATION 3/4: DEFINE TRULY PUBLIC ROUTES] --- */}
+            {/* This route is accessible to anyone, logged in or not. */}
+            <Route path="/report/:report_token" element={<PublicReportView />} />
+
+            {/* --- QUIZ PARTICIPANT ROUTES (Public - No Auth Required) --- */}
+            <Route path="/quiz/join" element={<QuizParticipant />} />
+            <Route path="/quiz/join/:roomCode" element={<QuizParticipant />} />
+
+            {/* --- SELF-PACED QUIZ PARTICIPANT ROUTES (Public - No Auth Required) --- */}
+            <Route path="/quiz/sp/join" element={<QuizSPParticipant />} />
+            <Route path="/quiz/sp/join/:accessCode" element={<QuizSPParticipant />} />
+
+            {/* Parent mode (Phase 1.37): one pathless route holds the sign-in guard, the parent space, its loading
+            screen and "Start Parent mode". Each address inside is written out, because the page-name test reads
+            them; sections.js lists the sections for the navigation. */}
+            <Route
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<FamilyLoading />}>
+                    <FamilyArea />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/family" element={<FamilyStart />} />
+              {/* No list page of children (C-1): this address opens what /family opens. */}
+              <Route path="/family/children" element={<FamilyStart />} />
+              {/* The shell's route: the side panel or phone bars, the switcher and the children's dialogs. */}
+              <Route element={<FamilyShell />}>
+                <Route path="/family/children/:child_id" element={<HomePage />} />
+                {/* The child's profile (Phase 1.38 design §3): the details, how the child is doing, and the chats. */}
+                <Route path="/family/children/:child_id/profile" element={<ProfilePage />} />
+                <Route path="/family/children/:child_id/notebook" element={<NotebookPage />} />
+                {/* Homework and the four Activities sections share one list page; the Activities page leads to them. */}
+                <Route path="/family/children/:child_id/homework" element={<SectionListPage section="homework" />} />
+                <Route path="/family/children/:child_id/activities" element={<ActivitiesPage />} />
+                <Route path="/family/children/:child_id/quizzes" element={<SectionListPage section="quizzes" />} />
+                <Route
+                  path="/family/children/:child_id/flashcards"
+                  element={<SectionListPage section="flashcards" />}
+                />
+                <Route path="/family/children/:child_id/mind-maps" element={<SectionListPage section="mind-maps" />} />
+                <Route path="/family/children/:child_id/stories" element={<SectionListPage section="stories" />} />
+                {/* Each result at its own address (C-2): one page for every kind, given its section's segment. */}
+                <Route
+                  path="/family/children/:child_id/quizzes/:activity_id"
+                  element={<ResultPage segment="quizzes" />}
+                />
+                <Route
+                  path="/family/children/:child_id/flashcards/:activity_id"
+                  element={<ResultPage segment="flashcards" />}
+                />
+                <Route
+                  path="/family/children/:child_id/mind-maps/:activity_id"
+                  element={<ResultPage segment="mind-maps" />}
+                />
+                <Route
+                  path="/family/children/:child_id/stories/:activity_id"
+                  element={<ResultPage segment="stories" />}
+                />
+                <Route
+                  path="/family/children/:child_id/homework/:activity_id"
+                  element={<ResultPage segment="homework" />}
+                />
+                <Route
+                  path="/family/children/:child_id/notebook/explanations/:activity_id"
+                  element={<ResultPage segment="notebook/explanations" />}
+                />
+              </Route>
+            </Route>
+
+            {/* --- [CRITICAL MODIFICATION 4/4: DEFINE PROTECTED ROUTES] --- */}
+            {/* This parent Route uses the ProtectedRoute component as its element.
             ANY route nested inside this one will first be checked by ProtectedRoute.
             If the user is not authenticated, they will be redirected to /login
             and none of the child routes will ever be rendered. */}
-          <Route
-            element={
-              <ProtectedRoute requiredRole="teacher">
-                <AppLayout />
-              </ProtectedRoute>
-            }
-          >
-            {/* All application pages that require a user to be logged in go here. */}
-            <Route path="/" element={<Home />} />
-            <Route path="/classes" element={<Classes />} />
-            <Route path="/classes/:class_id" element={<ClassDetails />} />
-            <Route path="/students/:student_id" element={<StudentProfile />} />
-            <Route path="/tools" element={<AITools />} />
-            <Route path="/tools/question-generator" element={<QuestionGenerator />} />
-            <Route path="/tools/slide-generator" element={<SlideGenerator />} />
-            <Route path="/tools/rubric-generator" element={<RubricGenerator />} />
-            <Route path="/assessments" element={<Assessments />} />
-            <Route path="/assessments/new" element={<NewAssessmentV2 />} />
-            <Route path="/assessments/quick" element={<QuickAssessment />} />
-            <Route path="/assessments/:job_id/results" element={<AssessmentResultsPage />} />
-            <Route path="/assessments/:job_id/review/:entity_id" element={<AssessmentReviewPage />} />
-            <Route path="/quizzes" element={<Quizzes />} />
-            <Route path="/quizzes/new" element={<QuizBuilder />} />
-            <Route path="/quizzes/:quizId/edit" element={<QuizBuilder />} />
-            <Route path="/quizzes/:quizId/analytics" element={<QuizAnalytics />} />
-            <Route path="/quizzes/sessions/:sessionId/host" element={<QuizHost />} />
-            <Route path="/quizzes/sp-sessions/:sessionId/host" element={<QuizSPHost />} />
-            <Route path="/quizzes/sp-sessions/:sessionId/analytics" element={<QuizSPAnalytics />} />
-            <Route path="/chat/:sessionId?" element={<Chatbot />} />
+            <Route
+              element={
+                <ProtectedRoute requiredRole="teacher">
+                  <AppLayout />
+                </ProtectedRoute>
+              }
+            >
+              {/* All application pages that require a user to be logged in go here. */}
+              <Route path="/" element={<Home />} />
+              <Route path="/classes" element={<Classes />} />
+              <Route path="/classes/:class_id" element={<ClassDetails />} />
+              <Route path="/students/:student_id" element={<StudentProfile />} />
+              <Route path="/tools" element={<AITools />} />
+              <Route path="/tools/question-generator" element={<QuestionGenerator />} />
+              <Route path="/tools/slide-generator" element={<SlideGenerator />} />
+              <Route path="/tools/rubric-generator" element={<RubricGenerator />} />
+              <Route path="/assessments" element={<Assessments />} />
+              <Route path="/assessments/new" element={<NewAssessmentV2 />} />
+              <Route path="/assessments/quick" element={<QuickAssessment />} />
+              <Route path="/assessments/:job_id/results" element={<AssessmentResultsPage />} />
+              <Route path="/assessments/:job_id/review/:entity_id" element={<AssessmentReviewPage />} />
+              <Route path="/quizzes" element={<Quizzes />} />
+              <Route path="/quizzes/new" element={<QuizBuilder />} />
+              <Route path="/quizzes/:quizId/edit" element={<QuizBuilder />} />
+              <Route path="/quizzes/:quizId/analytics" element={<QuizAnalytics />} />
+              <Route path="/quizzes/sessions/:sessionId/host" element={<QuizHost />} />
+              <Route path="/quizzes/sp-sessions/:sessionId/host" element={<QuizSPHost />} />
+              <Route path="/quizzes/sp-sessions/:sessionId/analytics" element={<QuizSPAnalytics />} />
+              <Route path="/chat/:sessionId?" element={<Chatbot />} />
 
-            {/* A catch-all route for any other path, rendered within the protected layout. */}
-            <Route path="*" element={<NotFound />} />
+              {/* A catch-all route for any other path, rendered within the protected layout. */}
+              <Route path="*" element={<NotFound />} />
+            </Route>
           </Route>
         </Routes>
       </Suspense>
@@ -235,21 +271,18 @@ const ThemedApp = () => {
 
 /**
  * The absolute top-level component of the application.
- * It sets up the Router and all the global context providers.
- * The order of providers here generally doesn't matter, but it's good practice
- * to have the AuthProvider near the top.
+ * It sets up the Router and the global context providers. The teacher's AuthProvider sits inside the routes
+ * (TeacherSession), so the admin panel's pages never have it.
  */
 function App() {
   return (
     <ErrorBoundary>
       <Router>
-        <AuthProvider>
-          <SnackbarProvider>
-            <ThemeModeProvider>
-              <ThemedApp />
-            </ThemeModeProvider>
-          </SnackbarProvider>
-        </AuthProvider>
+        <SnackbarProvider>
+          <ThemeModeProvider>
+            <ThemedApp />
+          </ThemeModeProvider>
+        </SnackbarProvider>
       </Router>
     </ErrorBoundary>
   );

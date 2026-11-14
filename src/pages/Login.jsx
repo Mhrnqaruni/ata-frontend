@@ -1,4 +1,4 @@
-// The sign-in page: email and password with remember me; sends admins, parents and teachers to their own home.
+// The sign-in page: email and password with remember me; sends parents and teachers to their own home.
 // Area: identity
 
 // --- Core React & Router Imports ---
@@ -92,8 +92,6 @@ const Login = () => {
 
     if (familyReturn) {
       navigate(familyReturn, { replace: true });
-    } else if (user?.role === 'admin') {
-      navigate('/admin', { replace: true });
     } else if (user?.role === 'parent') {
       navigate('/family', { replace: true });
     } else if (user?.role === 'teacher') {
@@ -130,8 +128,6 @@ const Login = () => {
 
       if (familyReturn) {
         navigate(familyReturn, { replace: true });
-      } else if (currentUser?.role === 'admin') {
-        navigate('/admin', { replace: true });
       } else if (currentUser?.role === 'parent') {
         navigate('/family', { replace: true });
       } else {

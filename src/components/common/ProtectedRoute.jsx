@@ -74,8 +74,7 @@ const ProtectedRoute = ({ children, requiredRole, redirectTo }) => {
   }
 
   if (requiredRole && !hasMode(user, requiredRole)) {
-    const fallbackPath =
-      redirectTo ?? (user?.role === 'admin' ? '/admin' : user?.role === 'parent' ? '/family' : '/login');
+    const fallbackPath = redirectTo ?? (user?.role === 'parent' ? '/family' : '/login');
     return <Navigate to={fallbackPath} replace />;
   }
 

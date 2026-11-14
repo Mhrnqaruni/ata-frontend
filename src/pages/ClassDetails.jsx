@@ -1,13 +1,14 @@
-// One class's page: its stats and student roster, with add, import, edit, export and delete, and an AI chat.
+// One class's page: its stats and student roster, with Add students (from files or one by one), edit, export and
+// delete, and an AI chat.
 // Area: academics
 
-import RosterImportDialog from '../components/classes/RosterImportDialog';
+import AddStudentsDialog from '../components/classes/AddStudentsDialog';
 import { useTeacherData } from '../hooks/useTeacherData';
 import QueryNotice from '../components/common/QueryNotice';
 
 // --- Core React & Router Imports ---
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, Link as RouterLink, useNavigate } from 'react-router-dom';
+import { useParams, Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
 
 // --- MUI Component Imports ---
 import {
@@ -24,7 +25,7 @@ import {
 } from '@mui/material';
 
 // --- Icon Imports ---
-import AddOutlined from '@mui/icons-material/AddOutlined';
+import PersonAddOutlined from '@mui/icons-material/PersonAddOutlined';
 import EditOutlined from '@mui/icons-material/EditOutlined';
 import DeleteOutlineOutlined from '@mui/icons-material/DeleteOutlineOutlined';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -54,6 +55,7 @@ const ClassDetails = () => {
   // --- Hooks ---
   const { class_id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { showSnackbar } = useSnackbar();
 
   // --- State Management ---
@@ -63,10 +65,12 @@ const ClassDetails = () => {
   const error = classData === undefined && classQuery.error;
 
   // State organized by feature for clarity
-  const [importOpen, setImportOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  // What was just added, or the new class's notice from Create a class (design §3.6).
+  const [notice, setNotice] = useState(() => location.state?.notice || null);
   const [studentModal, setStudentModal] = useState({
     open: false,
-    mode: 'add',
+    mode: 'edit',
     data: null,
     state: { isLoading: false, error: null },
   });
@@ -78,9 +82,16 @@ const ClassDetails = () => {
   const [chatOpen, setChatOpen] = useState(false);
   const [autoSendMessage, setAutoSendMessage] = useState(null);
 
+  // The notice shows once: a refresh or a return to this page doesn't bring it back.
+  useEffect(() => {
+    if (location.state?.notice) navigate(location.pathname, { replace: true, state: null });
+  }, [location, navigate]);
+
   // --- Event Handlers ---
-  const handleOpenAddStudentModal = () =>
-    setStudentModal({ open: true, mode: 'add', data: null, state: { isLoading: false, error: null } });
+  const handleStudentsAdded = (words) => {
+    setAddOpen(false);
+    setNotice(words);
+  };
   const handleOpenEditStudentModal = (student) =>
     setStudentModal({ open: true, mode: 'edit', data: student, state: { isLoading: false, error: null } });
   const handleStudentModalClose = () => setStudentModal((prev) => ({ ...prev, open: false }));
@@ -88,13 +99,8 @@ const ClassDetails = () => {
   const handleStudentModalSubmit = async (formData) => {
     setStudentModal((prev) => ({ ...prev, state: { isLoading: true, error: null } }));
     try {
-      if (studentModal.mode === 'add') {
-        await classService.addStudentToClass(class_id, formData);
-        showSnackbar('Student added successfully!', 'success');
-      } else {
-        await classService.updateStudent(class_id, studentModal.data.id, formData);
-        showSnackbar('Student updated successfully!', 'success');
-      }
+      await classService.updateStudent(class_id, studentModal.data.id, formData);
+      showSnackbar('Student updated successfully!', 'success');
       handleStudentModalClose();
     } catch (err) {
       setStudentModal((prev) => ({ ...prev, state: { isLoading: false, error: err.message } }));
@@ -219,11 +225,13 @@ const ClassDetails = () => {
       <PageHeader
         actions={
           <>
-            <Button variant="outlined" onClick={() => setImportOpen(true)}>
-              Import students
-            </Button>
-            <Button variant="contained" startIcon={<AddOutlined />} onClick={handleOpenAddStudentModal}>
-              Add student
+            <Button
+              data-mst="add-students"
+              onClick={() => setAddOpen(true)}
+              startIcon={<PersonAddOutlined />}
+              variant="contained"
+            >
+              Add students
             </Button>
             <Button
               className="mst-ai"
@@ -254,7 +262,13 @@ const ClassDetails = () => {
       </div>
 
       <div className="mst-section-label">Students</div>
+      {notice ? (
+        <Alert onClose={() => setNotice(null)} severity="success" sx={{ mb: 2 }}>
+          {notice}
+        </Alert>
+      ) : null}
       <StudentTable
+        onAddStudents={() => setAddOpen(true)}
         students={classData.students}
         onEdit={handleOpenEditStudentModal}
         onDelete={handleOpenConfirmStudentDelete}
@@ -297,7 +311,13 @@ const ClassDetails = () => {
         </MenuItem>
       </Menu>
 
-      <RosterImportDialog open={importOpen} onClose={() => setImportOpen(false)} classId={class_id} />
+      <AddStudentsDialog
+        classId={class_id}
+        className={classData.name}
+        onAdded={handleStudentsAdded}
+        onClose={() => setAddOpen(false)}
+        open={addOpen}
+      />
       <StudentModal
         open={studentModal.open}
         onClose={handleStudentModalClose}

@@ -145,17 +145,15 @@ export default function AccountMenu({ compact = false, renderButton }) {
           );
         })}
         <Divider />
-        {user?.role !== 'admin' && (
-          <MenuItem
-            data-mst="settings"
-            onClick={() => {
-              setAnchor(null);
-              setSettings(true);
-            }}
-          >
-            Account settings
-          </MenuItem>
-        )}
+        <MenuItem
+          data-mst="settings"
+          onClick={() => {
+            setAnchor(null);
+            setSettings(true);
+          }}
+        >
+          Account settings
+        </MenuItem>
         <MenuItem
           data-mst="sign-out"
           onClick={() => {

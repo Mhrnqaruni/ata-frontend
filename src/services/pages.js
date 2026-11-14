@@ -6,6 +6,18 @@ import { matchRoutes } from 'react-router-dom';
 
 // One entry for each <Route path> in App.jsx, in its order. tests/pageNames.test.mjs fails if one is missing.
 export const PAGES = [
+  { path: '/owner/sign-in', name: 'owner.sign_in' },
+  { path: '/owner', name: 'owner.overview' },
+  { path: '/owner/ai', name: 'owner.ai' },
+  { path: '/owner/ai/tasks/:task_kind/:task_id', name: 'owner.ai.task' },
+  { path: '/owner/users', name: 'owner.users' },
+  { path: '/owner/users/:user_id', name: 'owner.user' },
+  { path: '/owner/assessments', name: 'owner.assessments' },
+  { path: '/owner/assessments/:assessment_id', name: 'owner.assessment' },
+  { path: '/owner/problems', name: 'owner.problems' },
+  { path: '/owner/organizations', name: 'owner.organizations' },
+  { path: '/owner/search', name: 'owner.search' },
+  { path: '/owner/access', name: 'owner.access' },
   { path: '/login', name: 'login' },
   { path: '/register', name: 'register' },
   { path: '/report/:report_token', name: 'report' },
@@ -13,7 +25,6 @@ export const PAGES = [
   { path: '/quiz/join/:roomCode', name: 'quiz.join.code' },
   { path: '/quiz/sp/join', name: 'quiz.sp.join' },
   { path: '/quiz/sp/join/:accessCode', name: 'quiz.sp.join.code' },
-  { path: '/admin', name: 'admin' },
   { path: '/family', name: 'family.start' },
   { path: '/family/children', name: 'family.children' },
   { path: '/family/children/:child_id', name: 'family.child' },
