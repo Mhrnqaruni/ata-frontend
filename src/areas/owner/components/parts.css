@@ -1,0 +1,225 @@
+/* The admin panel's shared parts: the range, tiles, cards, charts, ranked lists, tables, chips, viewers and log. */
+/* Area: owner */
+
+/* the range button and its menu */
+.owner-range.MuiButton-root { min-height: 40px; border-color: var(--mst-edge-control); color: var(--mst-ink); white-space: nowrap; }
+.owner-range-custom { display: grid; gap: 12px; padding: 12px 16px; }
+.owner-range-foot { margin: 0; padding: 8px 16px 4px; border-top: 1px solid var(--mst-edge); color: var(--mst-ink-3); font-size: 12px; line-height: 16px; }
+
+/* the stacked tile: glass 1, the label, a big value, the context and the change (design §6) */
+.owner-tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
+.owner-tiles[data-count="4"] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.owner-tile { display: flex; flex-direction: column; gap: 2px; min-width: 0; min-height: 132px; padding: 18px 20px; border-radius: 20px; color: var(--mst-ink); text-decoration: none; }
+.owner-tile-link { transition: transform 150ms var(--mst-ease), box-shadow 150ms var(--mst-ease); }
+.owner-tile-link:hover { transform: translateY(-2px); box-shadow: var(--mst-shadow-hover); }
+.owner-tile-link:focus-visible { outline: 2px solid var(--mst-accent-ink); outline-offset: 2px; }
+.owner-tile-label { display: inline-flex; align-items: center; gap: 8px; width: max-content; max-width: 100%; color: var(--mst-ink-2); font-size: 14px; line-height: 20px; font-weight: 500; }
+.owner-tile-label .MuiSvgIcon-root { font-size: 18px; color: var(--mst-ink-3); }
+.owner-tile-value { overflow: hidden; margin-top: 4px; font-family: var(--font-display); font-size: 30px; line-height: 36px; font-weight: 600; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; }
+.owner-tile-context { color: var(--mst-ink-2); font-size: 14px; line-height: 20px; }
+.owner-tile-change { width: max-content; margin-top: auto; padding-top: 6px; color: var(--mst-ink-3); font-size: 12px; line-height: 16px; font-weight: 500; }
+.owner-tile-warn .owner-tile-value, .owner-tile-warn .owner-tile-label .MuiSvgIcon-root { color: var(--mst-warn-ink); }
+@media (prefers-reduced-motion: reduce) { .owner-tile-link:hover { transform: none; } }
+
+/* solid data cards (design §6): tables, charts and lists sit on --mst-solid */
+.owner-card { position: relative; min-width: 0; border: 1px solid var(--mst-edge); border-radius: 20px; background: var(--mst-solid); color: var(--mst-ink); overflow: hidden; }
+.owner-card-head { min-height: 56px; }
+/* A17: both chart heads are 56 px, the one with Daily · Weekly · Monthly too (QA's Section 4 P3-7) */
+.owner-chart .owner-card-head { flex-wrap: nowrap; height: 56px; padding-top: 0; padding-bottom: 0; }
+
+/* Refetch (design §4): while a range, filter, sort or page change loads, the last answer stays at 60%, with a
+   thin bar on each card, and nothing moves. A page marks a container, or a card itself, data-refreshing. */
+.owner-tile { position: relative; }
+.owner-card > *, .owner-tile > * { transition: opacity 150ms var(--mst-ease); }
+:is([data-refreshing='true'] :is(.owner-card, .owner-tile), .owner-card[data-refreshing='true']):not(.owner-card *) > * { opacity: 0.6; }
+:is([data-refreshing='true'] :is(.owner-card, .owner-tile), .owner-card[data-refreshing='true']):not(.owner-card *)::after { content: ''; position: absolute; top: 0; right: 20px; left: 20px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, transparent, var(--mst-accent), transparent) 0 0 / 40% 100% no-repeat; animation: owner-refresh 1200ms linear infinite; pointer-events: none; }
+@keyframes owner-refresh { from { background-position: -60% 0; } to { background-position: 160% 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .owner-card > *, .owner-tile > * { transition: none; }
+  :is([data-refreshing='true'] :is(.owner-card, .owner-tile), .owner-card[data-refreshing='true']):not(.owner-card *)::after { animation: none; background: var(--mst-accent); opacity: 0.6; }
+}
+.owner-refreshing { display: contents; }
+.owner-card-head h2, .owner-card-title { margin: 0; font-size: 17px; line-height: 24px; font-weight: 600; }
+.owner-card-caption { margin: 0; padding: 0 24px 16px; color: var(--mst-ink-3); font-size: 12px; line-height: 16px; }
+.owner-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 16px; align-items: start; margin-bottom: 16px; }
+.owner-span-4 { grid-column: span 4; }
+.owner-span-6 { grid-column: span 6; }
+.owner-span-12 { grid-column: span 12; }
+
+/* the chart card */
+.owner-chart-body { padding: 0 8px 8px 0; }
+.owner-chart-body .recharts-text { font-variant-numeric: tabular-nums; }
+.owner-chart-one { display: grid; gap: 4px; padding: 16px 24px 24px; }
+.owner-chart-one strong { font-family: var(--font-display); font-size: 30px; line-height: 36px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.owner-chart-one span { color: var(--mst-ink-3); font-size: 12px; line-height: 16px; }
+.owner-chart-tip { display: grid; gap: 2px; padding: 10px 12px; border: 1px solid var(--mst-g1-edge); border-radius: 14px; background: var(--mst-g2-sheen), var(--mst-g2-fill); -webkit-backdrop-filter: var(--mst-g2-blur); backdrop-filter: var(--mst-g2-blur); box-shadow: var(--mst-shadow-float); color: var(--mst-ink-2); font-size: 12px; line-height: 16px; font-variant-numeric: tabular-nums; }
+.owner-chart-tip strong { color: var(--mst-ink); font-size: 14px; line-height: 20px; font-weight: 600; }
+.owner-chart-tip-day { color: var(--mst-ink-3); }
+
+/* the ranked list: name, bar, value, share (design §3.13, §10 M2) */
+.owner-rank-rows { display: grid; padding: 0 12px 8px; }
+.owner-rank-row { display: grid; grid-template-columns: minmax(124px, 1.6fr) minmax(0, 1fr) 60px 32px 16px; align-items: center; gap: 8px; min-height: 40px; padding: 0 8px 0 12px; border-radius: 12px; color: var(--mst-ink); font-size: 14px; line-height: 20px; text-decoration: none; }
+.owner-rank-link { transition: background-color 150ms var(--mst-ease); }
+.owner-rank-link:hover { background: var(--mst-row-hover, var(--mst-hover-fill)); }
+.owner-rank-link:focus-visible { outline: 2px solid var(--mst-accent-ink); outline-offset: -2px; }
+.owner-rank-row[data-muted="true"] { color: var(--mst-ink-3); }
+.owner-rank-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.owner-rank-link .owner-rank-name { color: var(--mst-accent-ink); }
+.owner-rank-track { display: block; height: 8px; border-radius: 4px; background: var(--mst-well); overflow: hidden; }
+.owner-rank-bar { display: block; height: 100%; border-radius: 4px; background: var(--mst-accent); }
+.owner-rank-row[data-muted="true"] .owner-rank-bar { background: var(--mst-ink-3); }
+.owner-rank-value { font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.owner-rank-share { color: var(--mst-ink-3); font-size: 12px; line-height: 16px; font-variant-numeric: tabular-nums; text-align: right; }
+.owner-rank-chevron.MuiSvgIcon-root { font-size: 18px; color: var(--mst-ink-3); }
+
+/* the owner table: 48 px rows, sticky heads, the name column pinned when it scrolls sideways */
+.owner-table-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 16px 16px 12px; }
+.owner-table-toolbar .owner-grow { flex: 1; }
+.owner-table-caption { margin: 0; padding: 0 16px 12px; color: var(--mst-ink-3); font-size: 12px; line-height: 16px; }
+.owner-table-scroll.MuiTableContainer-root { max-height: none; overflow-x: auto; }
+.owner-table .MuiTableCell-head { padding: 10px 12px; background: var(--mst-solid); color: var(--mst-ink-3); font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: normal; text-transform: none; white-space: nowrap; }
+.owner-table tbody .MuiTableCell-root { height: 48px; padding: 6px 12px; font-size: 14px; line-height: 20px; }
+.owner-table .MuiTableCell-alignRight { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.owner-table .owner-pin { position: sticky; left: 0; z-index: 1; padding-left: 16px; background: var(--mst-solid); }
+.owner-table thead .owner-pin { z-index: 3; }
+.owner-table-groups .MuiTableCell-head { padding-top: 12px; padding-bottom: 0; border-bottom: 0; color: var(--mst-ink-2); }
+.owner-table-link { cursor: pointer; }
+.owner-table-link:hover .owner-pin { background: var(--mst-row-hover, var(--mst-solid)); }
+.owner-table-chevron.MuiTableCell-root { width: 36px; padding: 0 8px 0 0; color: var(--mst-ink-3); }
+.owner-table-chevron .MuiSvgIcon-root { display: block; font-size: 18px; }
+.owner-table-empty.MuiTableCell-root { padding: 32px 16px; color: var(--mst-ink-2); text-align: center; }
+.owner-table-foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--mst-edge); color: var(--mst-ink-2); font-size: 14px; line-height: 20px; font-variant-numeric: tabular-nums; }
+.owner-table-foot span { margin-right: 8px; }
+.owner-link { color: var(--mst-accent-ink); font-weight: 500; text-decoration: none; }
+.owner-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+.owner-sub { display: block; overflow: hidden; color: var(--mst-ink-3); font-size: 12px; line-height: 16px; text-overflow: ellipsis; white-space: nowrap; }
+.owner-dash { color: var(--mst-ink-3); }
+
+/* chips and tags */
+.owner-chip.MuiChip-root .MuiChip-icon { font-size: 16px; }
+.owner-tag.MuiChip-root { height: 22px; border-color: var(--mst-edge-control); color: var(--mst-ink-2); font-size: 12px; }
+.owner-cost-note { color: var(--mst-ink-2); font-size: 12px; line-height: 16px; white-space: nowrap; }
+.owner-cost-note[data-warn="true"] { color: var(--mst-warn-ink); }
+
+/* the data note under the header */
+.owner-note { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 16px; color: var(--mst-ink-2); font-size: 14px; line-height: 20px; }
+.owner-note > .MuiSvgIcon-root { font-size: 18px; color: var(--mst-ink-3); }
+.owner-note-pop { display: grid; gap: 8px; max-width: 360px; margin: 0; padding: 14px 16px 14px 32px; color: var(--mst-ink-2); font-size: 14px; line-height: 20px; }
+
+/* the section bar: sticky under the condensed header */
+.owner-section-bar { position: sticky; top: 72px; z-index: 4; margin: 0 0 8px; }
+/* D4: the bar floats on the condensed header's glass, so rows never show through it and the active tab reads */
+.owner-section-bar .MuiTabs-root { background: var(--mst-g2-sheen), var(--mst-g2-fill); backdrop-filter: var(--mst-g2-blur); -webkit-backdrop-filter: var(--mst-g2-blur); box-shadow: var(--mst-g1-hi), var(--mst-shadow-rest); }
+
+/* the text viewer: closed by default, plain text, at most 480 px tall until "Show all" */
+.owner-viewer { border: 1px solid var(--mst-edge); border-radius: 14px; background: var(--mst-well); }
+.owner-viewer + .owner-viewer { margin-top: 8px; }
+.owner-viewer-head { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 0 14px 0 10px; border: 0; background: transparent; color: var(--mst-ink); font: inherit; font-size: 14px; line-height: 20px; font-weight: 500; text-align: left; cursor: pointer; }
+.owner-viewer-head:focus-visible { outline: 2px solid var(--mst-accent-ink); outline-offset: -2px; border-radius: 14px; }
+.owner-viewer-arrow.MuiSvgIcon-root { font-size: 20px; color: var(--mst-ink-3); transform: rotate(-90deg); transition: transform 150ms var(--mst-ease); }
+[data-open="true"] > .owner-viewer-head .owner-viewer-arrow.MuiSvgIcon-root, [data-open="true"] > .owner-call-head .owner-viewer-arrow.MuiSvgIcon-root { transform: none; }
+.owner-viewer-size { margin-left: auto; color: var(--mst-ink-3); font-size: 12px; font-weight: 400; }
+.owner-viewer-text { max-height: 480px; margin: 0; padding: 0 16px 14px; overflow: auto; color: var(--mst-ink); font: inherit; font-size: 15px; line-height: 24px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.owner-viewer-text[data-json="true"] { font-family: "GeistMono", ui-monospace, monospace; font-size: 14px; line-height: 20px; }
+.owner-viewer-text[data-whole="true"] { max-height: none; }
+.owner-viewer-all.MuiButton-root { margin: 0 12px 10px; }
+
+/* the log: a task's calls, oldest first */
+.owner-log { display: grid; gap: 8px; margin: 0; padding: 0 16px 16px; list-style: none; }
+.owner-call { border: 1px solid var(--mst-edge); border-radius: 14px; }
+.owner-call-head { display: grid; grid-template-columns: 20px 112px minmax(120px, 1fr) 140px 76px 76px 96px auto auto; align-items: center; gap: 10px; width: 100%; min-height: 48px; padding: 0 12px 0 10px; border: 0; background: transparent; color: var(--mst-ink); font: inherit; font-size: 14px; line-height: 20px; text-align: left; cursor: pointer; }
+.owner-call-head:focus-visible { outline: 2px solid var(--mst-accent-ink); outline-offset: -2px; border-radius: 14px; }
+.owner-call-time, .owner-call-model { color: var(--mst-ink-2); }
+.owner-call-step { font-weight: 500; }
+.owner-call-num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.owner-call-body { display: grid; gap: 12px; padding: 0 16px 16px 40px; }
+.owner-call-rows { display: grid; gap: 4px; margin: 0; }
+.owner-call-rows > div { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 12px; }
+.owner-call-rows dt { color: var(--mst-ink-2); font-size: 14px; line-height: 20px; }
+.owner-call-rows dd { margin: 0; font-size: 14px; line-height: 20px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+/* page parts: loading, filters, sections, what happened, the latest problems, the where-it-goes table */
+.owner-loading { display: grid; gap: 16px; }
+.owner-filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
+.owner-section { margin-bottom: 16px; }
+.owner-head-actions { display: inline-flex; gap: 4px; }
+.owner-problem-alert.MuiAlert-root { margin-bottom: 16px; }
+.owner-happened { display: block; margin: 0; padding: 0 24px 20px; color: var(--mst-ink); font-size: 15px; line-height: 24px; }
+/* D2: one sentence stays one paragraph; viewers in it are spaced */
+.owner-happened > * + * { margin-top: 8px; }
+.owner-content { padding: 0 16px 16px; }
+.owner-more.MuiButton-root { margin: 0 16px 16px; }
+.owner-task-title { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.owner-all-clear { display: flex; align-items: center; gap: 8px; }
+.owner-all-clear .MuiSvgIcon-root { color: var(--mst-ok-ink); font-size: 20px; }
+.owner-problems-mini { display: grid; margin: 0; padding: 0 12px 8px; list-style: none; }
+.owner-problem-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; align-items: center; gap: 2px 10px; padding: 8px 12px; border-radius: 12px; color: var(--mst-ink); text-decoration: none; }
+a.owner-problem-row:hover { background: var(--mst-row-hover, var(--mst-hover-fill)); }
+a.owner-problem-row:focus-visible { outline: 2px solid var(--mst-accent-ink); outline-offset: -2px; }
+.owner-problem-reason { display: -webkit-box; overflow: hidden; font-size: 14px; line-height: 20px; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.owner-problem-row .owner-chip { grid-row: span 2; }
+.owner-problem-when { color: var(--mst-ink-3); font-size: 12px; line-height: 16px; }
+.owner-where-table { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 20px; }
+.owner-where-table th, .owner-where-table td { height: 44px; padding: 0 12px; border-top: 1px solid var(--mst-edge); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.owner-where-table th:first-child, .owner-where-table td:first-child { padding-left: 24px; text-align: left; }
+.owner-where-table td:nth-child(2) { width: 30%; }
+.owner-where-table thead th { height: 36px; border-top: 0; color: var(--mst-ink-3); font-size: 12px; line-height: 16px; font-weight: 600; }
+.owner-where-table tfoot th, .owner-where-table tfoot td { font-weight: 600; }
+.owner-where-link { cursor: pointer; }
+.owner-where-link:hover td { background: var(--mst-row-hover, var(--mst-hover-fill)); }
+.owner-where-table tr[data-muted="true"] td { color: var(--mst-ink-3); }
+.owner-cost-notes { margin-top: 16px; }
+.owner-cost-body { display: grid; gap: 16px; padding: 0 0 16px; }
+.owner-cost-body ul { display: grid; gap: 4px; margin: 0; padding: 0 24px 0 44px; color: var(--mst-ink-2); font-size: 14px; line-height: 20px; }
+.owner-price-table caption { padding: 0 24px 8px; color: var(--mst-ink-3); font-size: 12px; line-height: 16px; text-align: left; }
+
+/* users, a user, assessments and an assessment */
+.owner-name { display: grid; min-width: 0; max-width: 280px; }
+/* A table keeps one line per row (48 px): a name never shrinks below 168 px, and other text ends in "…".
+   These widths fit every table at 1440, and users, needs attention and the access record at 1280 (M1). */
+.owner-table .owner-name { min-width: 168px; }
+.owner-cell { display: block; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* D6: number, date and chip columns fit their content; the title column takes the rest and wraps to 2 lines */
+.owner-table .owner-fit.MuiTableCell-root { width: 1%; white-space: nowrap; }
+.owner-cell-grow { display: -webkit-box; min-width: 160px; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; white-space: normal; }
+.owner-cell-grow .owner-task-title { display: inline; }
+.owner-cell-grow .owner-clip { overflow: visible; white-space: normal; }
+.owner-cell-grow .owner-task-title > * + * { margin-left: 6px; }
+.owner-table .owner-task-title { max-width: 192px; flex-wrap: nowrap; }
+.owner-task-title .owner-name-main { min-width: 0; }
+.owner-clip { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.owner-name-main { overflow: hidden; color: var(--mst-ink); font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.owner-warn-count { display: inline-flex; align-items: center; gap: 4px; color: var(--mst-warn-ink); font-weight: 600; }
+.owner-warn-count .MuiSvgIcon-root { font-size: 16px; }
+.owner-table-search.MuiInputBase-root { width: 280px; background: var(--mst-well); }
+.owner-table-count { color: var(--mst-ink-3); font-size: 14px; line-height: 20px; font-variant-numeric: tabular-nums; }
+.owner-wrap.MuiTableCell-root { min-width: 180px; max-width: 360px; overflow-wrap: anywhere; white-space: normal; }
+.owner-facts { display: flex; flex-wrap: wrap; gap: 8px 24px; margin: 0 0 16px; color: var(--mst-ink-2); font-size: 14px; line-height: 20px; }
+.owner-head-note { margin-left: 8px; color: var(--mst-ink-3); font-size: 14px; font-weight: 500; }
+.owner-subhead { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 16px 0 8px; padding: 0 24px; font-size: 15px; line-height: 24px; font-weight: 600; }
+.owner-section .owner-card { margin: 0 16px 16px; }
+.owner-section .owner-chart, .owner-section .owner-rank { margin: 0; }
+.owner-minis { padding: 0 24px; }
+.owner-inner-grid { padding: 0 16px; margin-bottom: 0; }
+.owner-anchor { scroll-margin-top: 128px; }
+.owner-students { display: grid; gap: 8px; margin: 0; padding: 0 16px 16px; list-style: none; }
+.owner-student { border: 1px solid var(--mst-edge); border-radius: 14px; }
+.owner-student-head { display: grid; grid-template-columns: 20px minmax(160px, 1fr) auto 96px auto 72px; align-items: center; gap: 12px; width: 100%; min-height: 52px; padding: 0 14px 0 10px; border: 0; background: transparent; color: var(--mst-ink); font: inherit; font-size: 14px; line-height: 20px; text-align: left; cursor: pointer; }
+.owner-student-head:disabled { cursor: default; }
+.owner-student-head:focus-visible { outline: 2px solid var(--mst-accent-ink); outline-offset: -2px; border-radius: 14px; }
+.owner-student-name { display: grid; font-weight: 600; }
+.owner-answers { display: grid; gap: 12px; margin: 0; padding: 0 16px 16px 42px; list-style: none; }
+.owner-answer { display: grid; gap: 6px; padding: 12px 14px; border-radius: 12px; background: var(--mst-well); }
+.owner-answer-q { font-size: 14px; line-height: 20px; font-weight: 600; }
+.owner-plain { white-space: pre-wrap; }
+.owner-readings { display: grid; gap: 8px; justify-items: start; }
+.owner-readings .owner-viewer { width: 100%; background: var(--mst-solid); }
+
+/* search results, organizations' groups */
+.owner-results { display: grid; margin: 0; padding: 0 12px 8px; list-style: none; }
+.owner-result { display: grid; grid-template-columns: minmax(0, 1fr) auto 20px; align-items: center; gap: 12px; min-height: 52px; padding: 6px 12px; border-radius: 12px; color: var(--mst-ink); text-decoration: none; }
+.owner-result:hover { background: var(--mst-row-hover, var(--mst-hover-fill)); }
+.owner-result:focus-visible { outline: 2px solid var(--mst-accent-ink); outline-offset: -2px; }
+.owner-result-side { display: inline-flex; gap: 6px; color: var(--mst-ink-2); font-size: 14px; line-height: 20px; font-variant-numeric: tabular-nums; }
+.owner-org-group th, .owner-org-group td { background: var(--mst-well); color: var(--mst-ink-2); font-weight: 600; }
+.owner-center { justify-content: center; }

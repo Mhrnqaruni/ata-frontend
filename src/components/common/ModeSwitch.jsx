@@ -17,7 +17,6 @@ export default function ModeSwitch({ onSelected }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
   const parent = location.pathname === '/family' || location.pathname.startsWith('/family/');
-  if (user?.role === 'admin') return null;
   // In the parent space, only accounts that teach get the way back to classes.
   if (parent && !hasMode(user, 'teacher')) return null;
   async function select(mode) {
