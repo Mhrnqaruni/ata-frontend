@@ -1,4 +1,5 @@
-// An expandable Tag analytics panel: each student's participation and score, filterable by tag.
+// "Results by student group": an expandable panel of each student's participation and score, filtered by group.
+// The screens say "Student groups" (SOT-14 W2); the data and the API keep "tags".
 // Area: academics
 
 import React, { useEffect, useState } from 'react';
@@ -45,14 +46,14 @@ export default function TagAnalytics({ activityId, quizId }) {
   }, [open, activityId, quizId, JSON.stringify(selected)]);
   return (
     <Accordion expanded={open} onChange={(_, v) => setOpen(v)} sx={{ my: 2 }}>
-      <AccordionSummary expandIcon={<ExpandMore />}>Tag analytics</AccordionSummary>
+      <AccordionSummary expandIcon={<ExpandMore />}>Results by student group</AccordionSummary>
       <AccordionDetails>
         <Typography variant="body2" sx={{ mb: 2 }}>
-          Membership is recorded when the activity is created. Older work without a recorded audience is excluded.
-          Overlapping tags count once per student and activity.
+          Each group counts the students who were in it when the work was set, so older work without that record isn't
+          included. A student in two chosen groups counts once.
         </Typography>
         {error && <Alert severity="error">{error}</Alert>}
-        {!data && !error && <Typography>Loading tag results…</Typography>}
+        {!data && !error && <Typography>Loading group results…</Typography>}
         {data && (
           <>
             <Autocomplete
@@ -62,7 +63,7 @@ export default function TagAnalytics({ activityId, quizId }) {
               getOptionLabel={(t) => t.name}
               isOptionEqualToValue={(a, b) => a.id === b.id}
               onChange={(_, v) => setSelected(v)}
-              renderInput={(params) => <TextField {...params} label="Filter tags (any selected)" />}
+              renderInput={(params) => <TextField {...params} label="Filter groups (any chosen)" />}
             />
             {updating ? (
               <Typography role="status" sx={{ my: 2 }}>
@@ -77,7 +78,7 @@ export default function TagAnalytics({ activityId, quizId }) {
                     {data.average_percentage == null ? 'not available' : `${data.average_percentage}%`}
                   </Typography>
                   <TableContainer>
-                    <Table size="small" aria-label="Tag analytics">
+                    <Table size="small" aria-label="Results by student group">
                       <TableHead>
                         <TableRow>
                           {['Student', 'Classes at creation', 'Activity', 'Score'].map((t) => (
@@ -105,7 +106,7 @@ export default function TagAnalytics({ activityId, quizId }) {
                       </TableBody>
                     </Table>
                   </TableContainer>
-                  {!data.rows.length && <Alert severity="info">No recorded tag results yet.</Alert>}
+                  {!data.rows.length && <Alert severity="info">No group results yet.</Alert>}
                 </>
               )
             )}

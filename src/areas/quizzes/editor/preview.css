@@ -1,0 +1,86 @@
+/* Preview's phone-shaped window (Phase 1.46 S5.2, design.md §3.4, §3.12): a 390 px screen with the pupil's */
+/* question, 56 px answer pills and the Send bar at the bottom. Tokens only. */
+/* Area: quizzes */
+
+.MuiDialog-paper.mst-qe-phone-window { width: 422px; max-width: calc(100% - 16px); margin: 8px; padding: 8px 16px 16px; }
+.mst-qe-phone-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 40px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--mst-ink-2);
+}
+.mst-qe-phone {
+  display: flex;
+  flex-direction: column;
+  height: min(720px, calc(100dvh - 120px));
+  overflow: hidden;
+  border: 1px solid var(--mst-edge-control);
+  border-radius: 32px;
+  background: var(--mst-ground);
+}
+.mst-qe-phone-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 20px 0;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  color: var(--mst-ink-2);
+}
+.mst-qe-phone-clock {
+  font-family: var(--font-display);
+  font-size: 30px;
+  line-height: 36px;
+  font-weight: 600;
+  color: var(--mst-ink);
+  font-variant-numeric: tabular-nums;
+}
+.mst-qe-phone-points { margin: 0; padding: 0 20px; font-size: 12px; line-height: 16px; color: var(--mst-ink-2); }
+.mst-qe-phone-body { display: grid; flex: 1; align-content: start; gap: 16px; min-height: 0; padding: 16px 20px; overflow-y: auto; }
+.mst-qe-phone-body img { max-width: 100%; max-height: 180px; border-radius: 12px; object-fit: contain; }
+.mst-qe-phone-question { margin: 0; font-size: 17px; line-height: 24px; font-weight: 600; color: var(--mst-ink); }
+.mst-qe-phone-empty { margin: auto; padding: 20px; font-size: 14px; color: var(--mst-ink-2); text-align: center; }
+.mst-qe-phone-answers { display: grid; gap: 8px; }
+.mst-qe-phone-answers button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 8px 14px 8px 10px;
+  border: 1px solid var(--mst-edge-control);
+  border-radius: 16px;
+  background: var(--mst-solid);
+  font: inherit;
+  font-size: 15px;
+  line-height: 20px;
+  color: var(--mst-ink);
+  text-align: left;
+  cursor: pointer;
+}
+.mst-qe-phone-answers button[aria-pressed="true"] { border: 2px solid var(--mst-accent); background: var(--mst-accent-tint); }
+.mst-qe-phone-type { min-height: 56px; padding: 8px 14px; border: 1px solid var(--mst-edge-control); border-radius: 16px; background: var(--mst-solid); }
+.mst-qe-phone-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 72px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--mst-edge);
+  background: var(--mst-solid);
+}
+.mst-qe-phone-send {
+  display: inline-grid;
+  flex: 1;
+  place-items: center;
+  min-height: 56px;
+  border-radius: 999px;
+  background: var(--mst-accent-tint);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--mst-accent-ink);
+}

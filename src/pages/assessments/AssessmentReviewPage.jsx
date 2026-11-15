@@ -1,389 +1,193 @@
-// The marking review page for one student: the teacher checks the AI's reading, adjusts marks and feedback, saves.
+// The marking review page for one student: every question on one page with the question map, the AI's reading before
+// each mark, and marks and feedback saved card by card with Undo (Phase 1.47 S4.3; SOT-6, design.md §3.9).
 // Area: assessments
 
-import { sessionGeneration } from '../../services/queryCache';
-import NumberField from '../../components/common/NumberField';
-import React, { useState, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { Box, Alert, AlertTitle, TextField, Button, Card, Skeleton } from '@mui/material';
+import { Alert, AlertTitle, Box, Button, Skeleton } from '@mui/material';
 import ErrorAlert from '../../components/common/ErrorAlert';
-import HeldReason, { reasonFromFeedback } from '../../areas/assessments/HeldReason';
-import AgreementHint from '../../areas/assessments/AgreementHint';
-import MathInputWithPreview from '../../components/common/MathInputWithPreview';
-import MathTextDisplay from '../../components/common/MathTextDisplay';
-import reviewService from '../../services/reviewService';
-import { useSnackbar } from '../../hooks/useSnackbar';
-import StatusChip from '../../components/assessments/StatusChip';
-import PageHeader from '../../components/common/PageHeader';
-import QuestionNavigator from '../../components/common/QuestionNavigator';
 import OriginalScriptDialog from '../../components/assessments/OriginalScriptDialog';
+import DownloadMenu from '../../components/review/DownloadMenu';
+import ReviewHeader from '../../components/review/ReviewHeader';
+import ReviewLayout from '../../components/review/ReviewLayout';
+import UndoToast from '../../components/review/UndoToast';
+import useLeaveGuard from '../../components/review/useLeaveGuard';
+import useReviewSaves from '../../components/review/useReviewSaves';
+import AssessmentReviewCard from '../../areas/assessments/AssessmentReviewCard';
+import { reasonFromFeedback } from '../../areas/assessments/HeldReason';
+import * as rules from '../../areas/assessments/reviewRules';
+import { useSnackbar } from '../../hooks/useSnackbar';
+import reviewService from '../../services/reviewService';
 
-// Tab-memory drafts survive SPA Back/Forward. Never persist or auto-save grades.
-const reviewDrafts = new Map();
-if (typeof window !== 'undefined') window.addEventListener('mst-session-reset', () => reviewDrafts.clear());
-// Fingerprint of a question's saved grading record; a draft is restored only if the record is unchanged.
-const questionBasis = (q) =>
-  JSON.stringify([
-    q.questionText,
-    q.maxScore,
-    q.grade,
-    q.feedback,
-    q.status,
-    q.sourceExecutionId,
-    q.studentAnswer,
-    q.readingState,
-    q.evidencePages,
-    q.revisionHash,
-  ]);
+const BACK = 'Back to results';
+const SCRIPT = 'View submitted script';
 
-const AssessmentReviewPage = () => {
-  const { job_id, entity_id } = useParams();
-  const question = useSearchParams()[0].get('question'); // the held-questions alert opens a student on one
+// A held answer's reason once went into its feedback (TODO #106): its box starts empty (design §3.5), and an older
+// result's reason goes on the reason line instead.
+const opened = (q) => (rules.isHeld(q) ? { ...q, feedback: '', oldReason: reasonFromFeedback(q.feedback) } : q);
+
+function StudentReview({ jobId, entityId }) {
+  const asked = useSearchParams()[0].get('question'); // the held-questions alert opens a student on one
   const { showSnackbar } = useSnackbar();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [data, setData] = useState(null);
-  const [selected, setSelected] = useState(null);
-  const [filter, setFilter] = useState('all');
-  const [sourceOpen, setSourceOpen] = useState(false);
-  const [dirty, setDirty] = useState({});
-  const [saving, setSaving] = useState(null);
-  const [saveError, setSaveError] = useState({});
-  const [saved, setSaved] = useState({});
-  const requestVersion = useRef(0);
-  const draftBasis = useRef({});
-  const [draftNotice, setDraftNotice] = useState('');
-  const draftKey = `${sessionGeneration()}:${job_id}:${entity_id}`;
+  const [load, setLoad] = useState({ loading: true, error: null, data: null });
+  const [script, setScript] = useState(null); // the question whose submitted script is open
+  const [inView, setInView] = useState(null);
 
+  // The review, with the time it was asked for, so a read older than a save never undoes it.
+  const read = useCallback(async () => {
+    const requestedAt = Date.now();
+    const value = await reviewService.getStudentReview(jobId, entityId);
+    return { ...value, perQuestion: (value.perQuestion || []).map(opened), requestedAt };
+  }, [jobId, entityId]);
   useEffect(() => {
     let active = true;
-    requestVersion.current += 1;
-    setLoading(true);
-    setError(null);
-    setDirty({});
-    setSaved({});
-    setSaveError({});
-    setSaving(null);
-    reviewService
-      .getStudentReview(job_id, entity_id)
-      .then((value) => {
-        if (!active) return;
-        // Restore only after authorization succeeds, and never over newer grading evidence.
-        const cached = reviewDrafts.get(draftKey) || {};
-        const retained = {};
-        draftBasis.current = Object.fromEntries((value.perQuestion || []).map((q) => [q.questionId, questionBasis(q)]));
-        const restored = (value.perQuestion || []).map((q) => {
-          const draft = cached[q.questionId];
-          if (draft && draft.base === questionBasis(q)) {
-            retained[q.questionId] = draft;
-            return { ...q, grade: draft.grade, feedback: draft.feedback };
-          }
-          // A held answer's reason once went into its feedback (TODO #106): the box starts empty (design §3.5), and an
-          // older result's reason goes on the reason line instead.
-          return q.status === 'PENDING_REVIEW' ? { ...q, feedback: '', oldReason: reasonFromFeedback(q.feedback) } : q;
-        });
-        if (Object.keys(retained).length) reviewDrafts.set(draftKey, retained);
-        else reviewDrafts.delete(draftKey);
-        setDirty(Object.fromEntries(Object.keys(retained).map((id) => [id, true])));
-        setDraftNotice(
-          Object.keys(retained).length
-            ? 'Unsaved draft restored in this tab. Saved grades have not changed.'
-            : Object.keys(cached).length
-              ? 'Previous drafts no longer match the current grading records and were not restored.'
-              : ''
-        );
-        setData({ ...value, perQuestion: restored });
-        const asked = value.perQuestion?.find((q) => q.questionId === question);
-        const firstPending = value.perQuestion?.find((q) => q.status === 'PENDING_REVIEW');
-        setSelected((asked || firstPending || value.perQuestion?.[0])?.questionId ?? null);
-        setFilter((asked ? asked.status === 'PENDING_REVIEW' : firstPending) ? 'pending' : 'all');
-      })
-      .catch((err) => active && setError(err))
-      .finally(() => active && setLoading(false));
+    read()
+      .then((data) => active && setLoad({ loading: false, error: null, data }))
+      .catch((error) => active && setLoad({ loading: false, error, data: null }));
     return () => {
       active = false;
     };
-  }, [job_id, entity_id, question]);
+  }, [read]);
 
-  // Switching questions keeps drafts in page state; leaving the page must not silently discard them.
-  const hasDrafts = Object.values(dirty).some(Boolean);
-  useEffect(() => {
-    if (!hasDrafts) return undefined;
-    const unload = (event) => {
-      event.preventDefault();
-      event.returnValue = '';
-    };
-    const leave = (event) => {
-      const anchor = event.target.closest?.('a[href]');
-      const back = event.target.closest?.('button[aria-label="Back to results"]');
-      if (
-        (anchor && anchor.origin === window.location.origin && anchor.pathname !== window.location.pathname) ||
-        back
-      ) {
-        if (!window.confirm('Leave this review? Unsaved drafts stay in this tab until you reload or close it.')) {
-          event.preventDefault();
-          event.stopPropagation();
-        }
+  const data = load.data;
+  const records = useMemo(() => data?.perQuestion ?? [], [data]);
+  // The save's rules stay the server's (assessments/commands.py): the status becomes Teacher graded, the job turns
+  // Completed when nothing is pending, the AI summary is cleared, and each question has its own revision check.
+  const save = useCallback(
+    async (values, record) => {
+      const body = rules.saveBody(values, record);
+      try {
+        const confirmation = await reviewService.saveQuestion(jobId, entityId, record.questionId, body);
+        return rules.afterSave(record, body, confirmation);
+      } catch (error) {
+        throw rules.refusal(error);
       }
-    };
-    window.addEventListener('beforeunload', unload);
-    document.addEventListener('click', leave, true);
-    return () => {
-      window.removeEventListener('beforeunload', unload);
-      document.removeEventListener('click', leave, true);
-    };
-  }, [hasDrafts]);
+    },
+    [jobId, entityId]
+  );
+  const saves = useReviewSaves({
+    records,
+    idOf: rules.idOf,
+    valuesOf: rules.valuesOf,
+    isValid: rules.isValid,
+    save,
+    canUndo: rules.canUndo,
+    requestedAt: data?.requestedAt,
+  });
+  useLeaveGuard(saves.unsaved, BACK);
 
-  const change = (id, field, value) => {
-    const question = data.perQuestion.find((q) => q.questionId === id);
-    reviewDrafts.set(draftKey, {
-      ...(reviewDrafts.get(draftKey) || {}),
-      [id]: {
-        base: draftBasis.current[id],
-        grade: field === 'grade' ? value : question.grade,
-        feedback: field === 'feedback' ? value : question.feedback,
-      },
-    });
-    setData((previous) => ({
-      ...previous,
-      perQuestion: previous.perQuestion.map((q) => (q.questionId === id ? { ...q, [field]: value } : q)),
-    }));
-    setDirty((previous) => ({ ...previous, [id]: true }));
-    setSaved((previous) => ({ ...previous, [id]: false }));
-    setSaveError((previous) => ({ ...previous, [id]: null }));
-  };
-  const save = async (q) => {
-    const version = requestVersion.current;
-    const maximum = q.maxScore ?? 100;
-    const grade = Number(q.grade);
-    if (q.grade == null || q.grade === '' || !Number.isFinite(grade) || grade < 0 || grade > maximum) {
-      setSaveError((previous) => ({ ...previous, [q.questionId]: `Enter a mark from 0 to ${maximum}.` }));
-      return;
-    }
-    setSaving(q.questionId);
-    setSaveError((previous) => ({ ...previous, [q.questionId]: null }));
-    try {
-      const confirmation = await reviewService.saveQuestion(job_id, entity_id, q.questionId, {
-        grade,
-        feedback: q.feedback ?? '',
-        expectedRevision: q.revisionHash,
-      });
-      if (version !== requestVersion.current) return;
-      setData((previous) => ({
-        ...previous,
-        perQuestion: previous.perQuestion.map((item) =>
-          item.questionId === q.questionId
-            ? { ...item, status: 'TEACHER_GRADED', revisionHash: confirmation.resultRevision }
-            : item
-        ),
-      }));
-      const cached = { ...(reviewDrafts.get(draftKey) || {}) };
-      delete cached[q.questionId];
-      if (Object.keys(cached).length) reviewDrafts.set(draftKey, cached);
-      else {
-        reviewDrafts.delete(draftKey);
-        setDraftNotice('');
-      }
-      draftBasis.current[q.questionId] = questionBasis({
-        ...q,
-        grade,
-        status: 'TEACHER_GRADED',
-        revisionHash: confirmation.resultRevision,
-      });
-      setDirty((previous) => ({ ...previous, [q.questionId]: false }));
-      setSaved((previous) => ({ ...previous, [q.questionId]: true }));
-      showSnackbar('Question saved.', 'success');
-    } catch (err) {
-      if (version === requestVersion.current) setSaveError((previous) => ({ ...previous, [q.questionId]: err }));
-    } finally {
-      if (version === requestVersion.current) setSaving(null);
-    }
-  };
-  const questions = data?.perQuestion ?? [];
-  const pending = questions.filter((q) => q.status === 'PENDING_REVIEW');
-  const visible = filter === 'pending' ? pending : questions;
-  const current = visible.find((q) => q.questionId === selected) || visible[0];
-  const number = current ? questions.findIndex((q) => q.questionId === current.questionId) + 1 : 0;
-  const held = current?.status === 'PENDING_REVIEW'; // no AI mark: the teacher types one (design §3.5)
-  const reason = held && (current.reviewReason || current.oldReason); // results graded before 1.33 have no reviewReason
-  const noMark = current?.grade == null || current?.grade === '';
-  const failure = current ? saveError[current.questionId] : null; // a check's words, or the save's error
-  // The 2-of-3 note, only while the mark shown is still the AI's.
-  const agreement = current?.status === 'AI_GRADED' && !dirty[current.questionId] && current.agreement;
-  const items = visible.map((q) => ({
-    id: q.questionId,
-    label: q.printedLabel,
-    number: questions.indexOf(q) + 1,
-    title: q.questionText?.slice(0, 80),
-    state: dirty[q.questionId] ? 'Unsaved' : q.status === 'PENDING_REVIEW' ? 'Needs review' : 'Marked',
-  }));
-
-  if (loading)
+  if (load.loading)
     return (
       <Box>
         <Skeleton height={80} />
         <Skeleton height={420} />
       </Box>
     );
-  if (error) return <ErrorAlert error={error}>{error.message || 'Could not load this review.'}</ErrorAlert>;
+  if (load.error)
+    return <ErrorAlert error={load.error}>{load.error.message || 'Could not load this review.'}</ErrorAlert>;
   if (!data) return <Alert severity="info">No review data found.</Alert>;
+
+  const questions = records.map((q) => saves.card(q).record); // each card's freshest record
+  const byId = new Map(questions.map((q, index) => [rules.idOf(q), { question: q, number: index + 1 }]));
+  const pending = questions.filter(rules.isHeld).length;
+  const start = questions.find((q) => rules.idOf(q) === asked) ?? questions.find(rules.isHeld); // asked, or first held
+  const viewed = byId.get(inView)?.question ?? questions[0];
+  const { total, maximum } = rules.totals(questions);
+  const context = [data.assessmentName, `${questions.length} questions`, pending ? `${pending} pending review` : null];
+
+  // "Reload this question", after it changed somewhere else.
+  const reload = async (id) => {
+    try {
+      const fresh = (await read()).perQuestion.find((q) => rules.idOf(q) === id);
+      if (fresh) saves.card(fresh).reset(fresh);
+    } catch (error) {
+      showSnackbar(error.message || 'Could not load this review.', 'error', error.reference);
+    }
+  };
+  const download = async (format) => {
+    try {
+      await reviewService.downloadReport(jobId, entityId, format);
+    } catch (error) {
+      showSnackbar(error.message || 'Could not download the report.', 'error', error.reference);
+      throw error;
+    }
+  };
+
   return (
-    <Box className="mst-review-workspace" sx={{ maxWidth: 1240, mx: 'auto', minWidth: 0 }}>
-      {sourceOpen && current && (
+    <Box className="mst-review-page" sx={{ minWidth: 0 }}>
+      {script ? (
         <OriginalScriptDialog
-          key={`${job_id}:${entity_id}:${current.questionId}:${current.sourceExecutionId}`}
-          jobId={job_id}
-          studentId={entity_id}
-          question={current}
+          jobId={jobId}
+          key={`${jobId}:${entityId}:${script.questionId}:${script.sourceExecutionId}`}
+          onClose={() => setScript(null)}
+          question={script}
+          studentId={entityId}
           studentName={data.studentName}
-          onClose={() => setSourceOpen(false)}
         />
-      )}
-      <PageHeader
-        backLabel="Back to results"
-        backTo={`/assessments/${job_id}/results`}
+      ) : null}
+      <ReviewHeader
+        backLabel={BACK}
+        backTo={`/assessments/${jobId}/results`}
         breadcrumbs={[
           { label: 'Assessments', to: '/assessments' },
-          { label: 'Results', to: `/assessments/${job_id}/results` },
+          { label: 'Results', to: `/assessments/${jobId}/results` },
           { label: 'Review' },
         ]}
+        max={maximum}
+        score={total}
+        subtitle={context.filter(Boolean).join(' · ')}
         title={data.studentName || 'Review'}
-        subtitle={`${data.assessmentName} · ${questions.length} questions · ${pending.length} need review`}
-      />
-      {data.isOutsider && data.matchNote && (
+      >
+        {viewed ? (
+          <Button onClick={() => setScript(viewed)} variant="outlined">
+            {SCRIPT}
+          </Button>
+        ) : null}
+        {total === null ? null : <DownloadMenu onDownload={download} />}
+      </ReviewHeader>
+      {data.isOutsider && data.matchNote ? (
         <Alert
-          severity="warning"
-          sx={{ mb: 1 }}
           action={
-            <Button size="small" onClick={() => setSourceOpen(true)}>
-              View submitted script
-            </Button>
+            viewed ? (
+              <Button onClick={() => setScript(viewed)} size="small">
+                {SCRIPT}
+              </Button>
+            ) : null
           }
+          severity="warning"
+          sx={{ mb: 2 }}
         >
           <AlertTitle>Not matched to the student list</AlertTitle>
           {data.matchNote}
         </Alert>
-      )}
-      {draftNotice && (
-        <Alert severity="info" sx={{ mb: 1 }}>
-          {draftNotice}
-        </Alert>
-      )}
-      <div className="mst-review-overview">
-        <p>Check the answer, adjust the mark or feedback, then save this question.</p>
-        {Object.values(dirty).some(Boolean) && (
-          <span aria-live="polite">
-            {Object.values(dirty).filter(Boolean).length} unsaved drafts. Switching questions keeps them here; refresh
-            does not.
-          </span>
-        )}
-      </div>
-      <div className="mst-question-workspace">
-        <QuestionNavigator items={items} selected={current?.questionId} onSelect={setSelected} label="Review questions">
-          <div className="mst-review-filters" role="group" aria-label="Filter review questions">
-            <Button size="small" aria-pressed={filter === 'all'} onClick={() => setFilter('all')}>
-              All ({questions.length})
-            </Button>
-            <Button size="small" aria-pressed={filter === 'pending'} onClick={() => setFilter('pending')}>
-              Needs review ({pending.length})
-            </Button>
-          </div>
-          <p className="mst-question-nav-hint">Dot: needs review · ring: unsaved edit</p>
-        </QuestionNavigator>
-        <div className="mst-focused-question">
-          {!current ? (
-            <Alert severity="success">Nothing needs review. Choose All to inspect marked answers.</Alert>
-          ) : (
-            <Card className="mst-rim mst-review-q" key={current.questionId}>
-              <div className="mst-review-q-head">
-                <h2 className="mst-review-q-title">
-                  {current.printedLabel || `Question ${number}`}{' '}
-                  <span className="mst-hint">
-                    ({number} of {questions.length})
-                  </span>
-                </h2>
-                <StatusChip status={current.status} />
-              </div>
-              <p className="mst-review-q-text">
-                <MathTextDisplay text={current.questionText} />
-              </p>
-              {reason && <HeldReason reason={reason} />}
-              <div className="mst-review-answer">
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 1,
-                    flexWrap: 'wrap',
-                  }}
-                >
-                  <span className="mst-review-answer-label">AI reading of the answer</span>
-                  <Button size="small" sx={{ minHeight: 44 }} onClick={() => setSourceOpen(true)}>
-                    View submitted script
-                  </Button>
-                </Box>
-                <p className="mst-hint">
-                  {current.readingState === 'blank'
-                    ? 'The AI readings report a blank response.'
-                    : current.readingState === 'described_work'
-                      ? 'Check the submitted script.' // the reason line says why
-                      : ['unclear', 'missing_source'].includes(current.readingState)
-                        ? 'Some evidence could not be read. Compare the submitted script.'
-                        : 'Compare with the script when checking accuracy. Saving a mark does not verify this transcription.'}
-                </p>
-                <span className="mst-review-answer-text">
-                  <MathTextDisplay text={current.studentAnswer || 'No answer was read from the sheet.'} />
-                </span>
-              </div>
-              <div className="mst-review-fields">
-                <Box sx={{ display: 'grid', gap: '4px', minWidth: 0 }}>
-                  <NumberField
-                    label={`Mark (out of ${current.maxScore})`}
-                    type="number"
-                    value={current.grade ?? ''}
-                    disabled={saving === current.questionId}
-                    onChange={(event) => change(current.questionId, 'grade', event.target.value)}
-                    inputProps={{ min: 0, max: current.maxScore }}
-                  />
-                  {agreement && <AgreementHint agreement={agreement} grade={current.grade} />}
-                </Box>
-                <MathInputWithPreview
-                  fullWidth
-                  label="Feedback for the student"
-                  multiline
-                  minRows={3}
-                  value={current.feedback ?? ''}
-                  disabled={saving === current.questionId}
-                  onChange={(event) => change(current.questionId, 'feedback', event.target.value)}
-                />
-              </div>
-              {failure && <ErrorAlert reference={failure.reference}>{failure.message ?? failure}</ErrorAlert>}
-              <div className="mst-review-q-foot">
-                <span role="status">
-                  {saving === current.questionId
-                    ? 'Saving…'
-                    : dirty[current.questionId]
-                      ? 'Unsaved changes'
-                      : saved[current.questionId]
-                        ? 'Saved'
-                        : 'Mark and feedback shown above'}
-                </span>
-                <div className="mst-review-save-actions">
-                  <Button
-                    variant="contained"
-                    disabled={saving !== null || (held ? noMark : !dirty[current.questionId])}
-                    onClick={() => save(current)}
-                  >
-                    {saving === current.questionId ? 'Saving…' : held ? 'Save mark' : 'Save changes'}
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          )}
-        </div>
-      </div>
+      ) : null}
+      <ReviewLayout
+        initialId={start ? rules.idOf(start) : undefined}
+        items={questions.map((q, index) => rules.mapItem(q, index + 1))}
+        legend={rules.LEGEND}
+        onActive={setInView}
+        renderCard={(item) => {
+          const { question, number } = byId.get(item.id);
+          return (
+            <AssessmentReviewCard
+              card={saves.card(question)}
+              key={item.id}
+              number={number}
+              onReload={() => reload(item.id)}
+              onScript={setScript}
+              question={question}
+            />
+          );
+        }}
+      />
+      <UndoToast onClose={saves.closeToast} toast={saves.toast} />
     </Box>
   );
+}
+
+// Another student or assessment starts the page afresh: its own saves, map and toast.
+const AssessmentReviewPage = () => {
+  const { job_id, entity_id } = useParams();
+  return <StudentReview entityId={entity_id} jobId={job_id} key={`${job_id}:${entity_id}`} />;
 };
 export default AssessmentReviewPage;

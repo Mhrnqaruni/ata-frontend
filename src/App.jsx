@@ -68,14 +68,8 @@ const ProfilePage = lazyPage(() => import('./areas/family/child/ProfilePage'));
 const NotebookPage = lazyPage(() => import('./areas/family/notebook/NotebookPage'));
 const ResultPage = lazyPage(() => import('./areas/family/results/ResultPage'));
 import FamilyLoading from './areas/family/FamilyLoading';
-import Quizzes from './pages/Quizzes';
-const QuizBuilder = lazyPage(() => import('./pages/quizzes/QuizBuilder'));
-const QuizHost = lazyPage(() => import('./pages/quizzes/QuizHost'));
-const QuizParticipant = lazyPage(() => import('./pages/quizzes/QuizParticipant'));
-const QuizAnalytics = lazyPage(() => import('./pages/quizzes/QuizAnalytics'));
-const QuizSPParticipant = lazyPage(() => import('./pages/quizzes/QuizSPParticipant'));
-const QuizSPHost = lazyPage(() => import('./pages/quizzes/QuizSPHost'));
-const QuizSPAnalytics = lazyPage(() => import('./pages/quizzes/QuizSPAnalytics'));
+// Every quiz address, the pupils' and the teacher's (Phase 1.46, SOT-16), in the quiz area's one route file.
+import { pupilQuizRoutes, teacherQuizRoutes } from './areas/quizzes/QuizRoutes';
 
 /**
  * A layout component that wraps all protected pages.
@@ -157,13 +151,8 @@ const ThemedApp = () => {
             {/* This route is accessible to anyone, logged in or not. */}
             <Route path="/report/:report_token" element={<PublicReportView />} />
 
-            {/* --- QUIZ PARTICIPANT ROUTES (Public - No Auth Required) --- */}
-            <Route path="/quiz/join" element={<QuizParticipant />} />
-            <Route path="/quiz/join/:roomCode" element={<QuizParticipant />} />
-
-            {/* --- SELF-PACED QUIZ PARTICIPANT ROUTES (Public - No Auth Required) --- */}
-            <Route path="/quiz/sp/join" element={<QuizSPParticipant />} />
-            <Route path="/quiz/sp/join/:accessCode" element={<QuizSPParticipant />} />
+            {/* The pupils' quiz pages, with no sign-in: /join, and the live and homework join pages. */}
+            {pupilQuizRoutes}
 
             {/* Parent mode (Phase 1.37): one pathless route holds the sign-in guard, the parent space, its loading
             screen and "Start Parent mode". Each address inside is written out, because the page-name test reads
@@ -250,13 +239,8 @@ const ThemedApp = () => {
               <Route path="/assessments/quick" element={<QuickAssessment />} />
               <Route path="/assessments/:job_id/results" element={<AssessmentResultsPage />} />
               <Route path="/assessments/:job_id/review/:entity_id" element={<AssessmentReviewPage />} />
-              <Route path="/quizzes" element={<Quizzes />} />
-              <Route path="/quizzes/new" element={<QuizBuilder />} />
-              <Route path="/quizzes/:quizId/edit" element={<QuizBuilder />} />
-              <Route path="/quizzes/:quizId/analytics" element={<QuizAnalytics />} />
-              <Route path="/quizzes/sessions/:sessionId/host" element={<QuizHost />} />
-              <Route path="/quizzes/sp-sessions/:sessionId/host" element={<QuizSPHost />} />
-              <Route path="/quizzes/sp-sessions/:sessionId/analytics" element={<QuizSPAnalytics />} />
+              {/* The teacher's quiz pages: the library, editor, live and homework runs, and results. */}
+              {teacherQuizRoutes}
               <Route path="/chat/:sessionId?" element={<Chatbot />} />
 
               {/* A catch-all route for any other path, rendered within the protected layout. */}

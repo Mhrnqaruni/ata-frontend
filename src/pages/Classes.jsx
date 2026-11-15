@@ -1,4 +1,4 @@
-// The teacher's classes as a grid of cards, with Create a class (with or without class lists) and a Tags tab.
+// The teacher's classes as a grid of cards, with Create a class (with or without class lists) and a Student groups tab.
 // Area: academics
 
 import { useTeacherData } from '../hooks/useTeacherData';
@@ -103,24 +103,24 @@ const Classes = () => {
               startIcon={<AddOutlined />}
               variant="contained"
             >
-              {section === 1 ? 'New tag' : 'Create class'}
+              {section === 1 ? 'New group' : 'Create class'}
             </Button>
           }
           subtitle={
             section === 1
-              ? 'Private labels for students across your classes. Tags do not change AI grading.'
+              ? "Private groups of students across your classes. Groups don't change AI grading."
               : "Your rosters, grades and each student's progress."
           }
-          title={section === 1 ? 'Student tags' : 'Classes'}
+          title={section === 1 ? 'Student groups' : 'Classes'}
         />
         <Tabs
           value={section}
           onChange={(_, v) => setSearchParams(v ? { view: 'tags' } : {})}
-          aria-label="Classes and tags"
+          aria-label="Classes and student groups"
           sx={{ mb: 2 }}
         >
           <Tab label="Classes" />
-          <Tab label="Tags" />
+          <Tab label="Student groups" />
         </Tabs>
         <QueryNotice query={classesQuery} label="classes" />
         {section === 0 ? renderContent() : <TagsPanel newRequest={newTagRequest} />}

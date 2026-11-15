@@ -4,7 +4,8 @@
 
 import { matchRoutes } from 'react-router-dom';
 
-// One entry for each <Route path> in App.jsx, in its order. tests/pageNames.test.mjs fails if one is missing.
+// One entry for each <Route path> in App.jsx, and in the route lists it places (areas/quizzes/QuizRoutes.jsx), in
+// their order. tests/pageNames.test.mjs fails if one is missing.
 export const PAGES = [
   { path: '/owner/sign-in', name: 'owner.sign_in' },
   { path: '/owner', name: 'owner.overview' },
@@ -21,6 +22,8 @@ export const PAGES = [
   { path: '/login', name: 'login' },
   { path: '/register', name: 'register' },
   { path: '/report/:report_token', name: 'report' },
+  { path: '/join', name: 'join' },
+  { path: '/join/:code', name: 'join.code' },
   { path: '/quiz/join', name: 'quiz.join' },
   { path: '/quiz/join/:roomCode', name: 'quiz.join.code' },
   { path: '/quiz/sp/join', name: 'quiz.sp.join' },
@@ -58,6 +61,8 @@ export const PAGES = [
   { path: '/quizzes', name: 'quizzes' },
   { path: '/quizzes/new', name: 'quizzes.new' },
   { path: '/quizzes/:quizId/edit', name: 'quizzes.edit' },
+  { path: '/quizzes/:quizId/results', name: 'quizzes.results' },
+  { path: '/quizzes/:quizId/runs/:runId/pupils/:pupilId', name: 'quizzes.review' },
   { path: '/quizzes/:quizId/analytics', name: 'quizzes.analytics' },
   { path: '/quizzes/sessions/:sessionId/host', name: 'quizzes.host' },
   { path: '/quizzes/sp-sessions/:sessionId/host', name: 'quizzes.sp.host' },

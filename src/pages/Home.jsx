@@ -3,6 +3,12 @@
 
 import { assessmentDestination } from '../utils/assessmentNavigation';
 import { useTeacherData } from '../hooks/useTeacherData';
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '../hooks/useAuth';
+import { libraryQuery } from '../areas/quizzes/queries';
+import { quizLink } from '../areas/quizzes/links';
+import { classList } from '../areas/quizzes/words';
+import StatusDot from '../areas/quizzes/shared/StatusDot';
 import QueryNotice from '../components/common/QueryNotice';
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -20,9 +26,8 @@ import quizService from '../services/quizService';
 
 const shortDate = (value) =>
   value ? new Date(value).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : '';
-const newest = (a, b) =>
-  new Date(b.updated_at || b.createdAt || b.created_at || 0) -
-  new Date(a.updated_at || a.createdAt || a.created_at || 0);
+// The quizzes on the go, last used first: what Home's panel lists (SOT-2, QA P2-4).
+const ON_THE_GO = { state: ['draft', 'ready', 'live', 'homework'], sort: 'last_used', limit: 4 };
 
 function RecentPanel({ title, note, to, loading, error, empty, children }) {
   return (
@@ -53,26 +58,35 @@ function RecentPanel({ title, note, to, loading, error, empty, children }) {
 
 // Real teacher data only. All actions keep the existing routes and API contracts.
 export default function Home() {
+  const { user } = useAuth();
   const summaryQuery = useTeacherData('summary');
   const assessmentQuery = useTeacherData('assessments');
-  const quizQuery = useTeacherData('quizzes');
+  const quizQuery = useQuery({
+    ...libraryQuery(user?.id, ON_THE_GO),
+    enabled: Boolean(user?.id),
+    refetchInterval: 60000,
+    refetchIntervalInBackground: false,
+  });
   const summary = summaryQuery.data;
   const assessments = assessmentQuery.data ?? null;
-  const quizzes = quizQuery.data ?? null;
+  const library = quizQuery.data ?? null;
   const errors = {
     summary: !summary && summaryQuery.error,
     assessments: !assessments && assessmentQuery.error,
-    quizzes: !quizzes && quizQuery.error,
+    quizzes: !library && quizQuery.error,
   };
   const recent = [...(assessments || [])].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-  const activeQuizzes = (quizzes || []).filter((quiz) => quiz.status !== 'completed').sort(newest);
+  const activeQuizzes = library?.items ?? [];
   const pending = recent.filter((job) => job.status === 'Pending Review').length;
-  const drafts = activeQuizzes.filter((quiz) => quiz.status === 'draft').length;
+  // The counts ignore the state filter: all but archived is what the list's total is with no filter.
+  const counts = library?.counts;
+  const quizCount = counts && counts.draft + counts.ready + counts.live + counts.homework + counts.finished;
+  const drafts = counts?.draft ?? 0;
   const stats = [
     ['Classes', summary?.classCount, SchoolOutlined],
     ['Students', summary?.studentCount, PeopleAltOutlined],
     ['Assessments', assessments?.length, GradingOutlined],
-    ['Quizzes', quizzes?.length, QuizOutlined],
+    ['Quizzes', quizCount, QuizOutlined],
   ];
   return (
     <div className="home-home">
@@ -127,32 +141,30 @@ export default function Home() {
             title="Quizzes"
             note={drafts ? `${drafts} ${drafts === 1 ? 'draft' : 'drafts'} to finish` : null}
             to="/quizzes"
-            loading={!quizzes}
+            loading={!library}
             error={errors.quizzes}
             empty={
-              quizzes?.length
-                ? 'All quizzes are complete. See all for results.'
+              quizCount
+                ? 'All your quizzes are finished. See all for their results.'
                 : 'No quizzes yet. Open Quizzes to create one.'
             }
           >
-            {activeQuizzes.slice(0, 4).map((quiz) => (
+            {activeQuizzes.map((quiz) => (
               <li key={quiz.id}>
-                <Link className="mst-list-row home-row-button" to={`/quizzes/${quiz.id}/edit`}>
+                {/* Each quiz opens where its state says (links.js): a live or homework run, or the editor. */}
+                <Link className="mst-list-row home-row-button" to={quizLink(quiz)}>
                   <span className="mst-tile" data-size="sm">
                     <QuizOutlined />
                   </span>
                   <span className="mst-list-text">
                     <span className="mst-list-title">{quiz.title}</span>
                     <span className="mst-list-meta">
-                      {quiz.question_count || 0} questions ·{' '}
-                      {quiz.settings?.mode === 'self_paced' ? 'Self-paced' : 'Live'}
+                      {classList(quiz.classes)} · {quiz.question_count}{' '}
+                      {quiz.question_count === 1 ? 'question' : 'questions'} ·{' '}
+                      {quiz.mode === 'self_paced' ? 'Homework' : 'Live'}
                     </span>
                   </span>
-                  <span className="home-work-state">
-                    {quiz.status === 'published'
-                      ? 'Ready'
-                      : String(quiz.status || '').replace(/^./, (c) => c.toUpperCase())}
-                  </span>
+                  <StatusDot state={quiz.state} deadline={quiz.open_run?.deadline} tip={false} />
                 </Link>
               </li>
             ))}

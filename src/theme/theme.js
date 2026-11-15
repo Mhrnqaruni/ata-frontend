@@ -547,13 +547,15 @@ export const getTheme = (mode) => {
             width: 28,
             height: 28,
             borderRadius: '50%',
-            color: isDark ? 'rgba(255,255,255,.08)' : 'rgba(16,24,40,.06)',
+            color: c.ink2, // the digit (DR-8), read against the disc: the icon's own background, not its circle
+            backgroundColor: isDark ? 'rgba(255,255,255,.08)' : 'rgba(16,24,40,.06)',
+            '& circle': { fill: 'transparent' },
             boxShadow: 'inset 0 0 0 1.5px var(--mst-edge-control)',
-            transition: `box-shadow 200ms ${ease}, color 200ms ${ease}`,
-            '&.Mui-active': { color: c.accentSolid, boxShadow: `0 0 0 4px ${c.tint}` },
-            '&.Mui-completed': { color: c.accentSolid, boxShadow: 'none' },
+            transition: `box-shadow 200ms ${ease}, color 200ms ${ease}, background-color 200ms ${ease}`,
+            '&.Mui-active': { color: '#FFFFFF', backgroundColor: c.accentSolid, boxShadow: `0 0 0 4px ${c.tint}` },
+            '&.Mui-completed': { color: c.accentSolid, backgroundColor: 'transparent', boxShadow: 'none' },
           },
-          text: { fill: c.ink2, fontSize: 11, fontWeight: 600, fontFamily: font },
+          text: { fill: 'currentColor', fontSize: 12, fontWeight: 600, fontFamily: font },
         },
       },
       MuiStepLabel: {
@@ -566,7 +568,6 @@ export const getTheme = (mode) => {
             '&.Mui-active': { color: c.ink, fontWeight: 600 },
             '&.Mui-completed': { color: c.ink2, fontWeight: 500 },
           },
-          iconContainer: { '& .Mui-active .MuiStepIcon-text': { fill: '#FFFFFF' } },
         },
       },
       MuiStepConnector: {
@@ -607,9 +608,7 @@ export const getTheme = (mode) => {
       MuiSnackbarContent: {
         styleOverrides: { root: { ...glass2, borderRadius: 999, color: c.ink, padding: '4px 16px' } },
       },
-      MuiFab: {
-        styleOverrides: { root: { boxShadow: 'var(--mst-shadow-rest)' } },
-      },
+      MuiFab: { styleOverrides: { root: { boxShadow: 'var(--mst-shadow-rest)' } } },
       MuiToggleButtonGroup: {
         styleOverrides: {
           root: {
@@ -617,9 +616,10 @@ export const getTheme = (mode) => {
             gap: 2,
             borderRadius: 999,
             backgroundColor: 'var(--mst-well)',
-            border: '1px solid var(--mst-edge)',
+            border: '1px solid var(--mst-edge)', // the chosen segment's edge reaches 3:1 (DR-8): its fill barely shows
+            '& .MuiToggleButtonGroup-grouped.Mui-selected': { borderColor: 'var(--mst-edge-control) !important' },
           },
-          grouped: { border: '0 !important', borderRadius: '999px !important', margin: 0 },
+          grouped: { border: '1px solid transparent !important', borderRadius: '999px !important', margin: 0 },
         },
       },
       MuiToggleButton: {

@@ -1,0 +1,47 @@
+// The words the shared review layout says on the quiz and the assessment review pages (design.md §3.9, §5). Each
+// page keeps its own words for the rest ("pupil" for quizzes, "student" for assessments).
+// Area: platform
+
+export const REVIEW = {
+  map: 'Questions',
+  filter: 'Show questions',
+  all: 'All',
+  needsLook: 'Needs a look',
+  nothingNeeds: 'Nothing needs a look now. Choose All to see every question.',
+  // The map's legend, by square state; a page can word its own.
+  legend: {
+    right: 'Right',
+    wrong: 'Wrong',
+    part: 'Part marks',
+    none: 'No answer',
+    waiting: 'Waiting for a mark',
+    changed: 'Changed by you',
+  },
+  question: (label) => `Question ${label}`,
+  mark: 'Mark',
+  outOf: (max) => `out of ${max}`,
+  addMark: 'Add a mark to save',
+  markRange: (max) => `Add a mark from 0 to ${max} to save`,
+  saving: 'Saving…',
+  saved: 'Saved ✓',
+  notSaved: 'Not saved',
+  tryAgain: 'Try again',
+  changedElsewhere: 'Changed somewhere else',
+  reloadQuestion: 'Reload this question',
+  markChanged: 'Mark changed',
+  undo: 'Undo',
+  restored: 'Restored',
+  close: 'Close',
+  leave: (count) => `Leave without saving? ${count === 1 ? "1 change isn't saved." : `${count} changes aren't saved.`}`,
+  points: 'points',
+  previous: 'Previous',
+  next: 'Next',
+  previousOf: (name) => `Previous: ${name}`,
+  nextOf: (name) => `Next: ${name}`,
+  download: 'Download report',
+  pdf: 'PDF',
+  pdfHint: 'For printing or sending',
+  word: 'Word',
+  wordHint: 'To edit before sending',
+  preparing: (format) => (format === 'pdf' ? 'Preparing the PDF…' : 'Preparing the Word file…'),
+};

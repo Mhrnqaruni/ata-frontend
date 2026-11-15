@@ -101,14 +101,14 @@
   --mst-neutral: rgb(255 255 255 / 0.08);
 
   --mst-edge: rgb(255 255 255 / 0.1);
-  --mst-edge-control: rgb(255 255 255 / 0.36);
+  --mst-edge-control: rgb(255 255 255 / 0.48);
   --mst-ink: rgb(246 247 250 / 0.96);
   --mst-ink-2: rgb(246 247 250 / 0.7);
   --mst-ink-3: rgb(246 247 250 / 0.58);
   --mst-accent: #7c9cff;
   --mst-accent-ink: #a5b8ff;
-  --mst-accent-solid: #3a55d0;
-  --mst-accent-hover: #4562e0;
+  --mst-accent-solid: #4a67e2; /* fills reach 3:1 on dark solid cards, with white text at 4.8:1 (DR-8) */
+  --mst-accent-hover: #4f6be3;
   --mst-accent-tint: rgb(124 156 255 / 0.16);
   --mst-ok: #3ddc97;
   --mst-ok-ink: #86f0c0;
@@ -1065,7 +1065,7 @@ body { background: transparent; }
 .mst-option .MuiSwitch-root { flex: none; }
 .mst-option .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track { background-color: var(--mst-ok); }
 .mst-option-letter { display: grid; place-items: center; flex: none; width: 28px; height: 28px; margin-top: 8px; border-radius: 8px; background: var(--mst-neutral); font-size: 12px; font-weight: 600; color: var(--mst-ink-2); }
-.mst-option[data-correct="true"] .mst-option-letter { background: var(--mst-ok); color: #fff; }
+.mst-option[data-correct="true"] .mst-option-letter { background: var(--mst-ok); color: var(--mst-solid); }
 .mst-option-field { flex: 1; min-width: 0; }
 .mst-option .MuiInputLabel-root { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 .mst-option > .MuiIconButton-root { margin-top: 2px; }
@@ -1414,7 +1414,7 @@ main.MuiBox-root > .mst-footer { margin-top: auto; padding-top: 48px; }
 .mst-question-image-action > button, .mst-question-image-action > label { min-height: 44px; }
 /* Override the theme's pill rail: selected cells share exactly the same geometry. */
 .mst-type-switch.MuiToggleButtonGroup-root { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 6px; border: 0; padding: 0; background: none; border-radius: 0; }
-.mst-type-switch.MuiToggleButtonGroup-root .MuiToggleButton-root { border: 1px solid var(--mst-edge) !important; border-radius: 10px !important; margin: 0 !important; min-width: 0; min-height: 44px; padding: 8px 6px; box-shadow: none; background: var(--mst-well); font-size: 13px; }
+.mst-type-switch.MuiToggleButtonGroup-root .MuiToggleButton-root { border: 1px solid var(--mst-edge-control) !important; border-radius: 10px !important; margin: 0 !important; min-width: 0; min-height: 44px; padding: 8px 6px; box-shadow: none; background: var(--mst-well); font-size: 13px; }
 .mst-type-switch.MuiToggleButtonGroup-root .MuiToggleButton-root.Mui-selected { background: var(--mst-accent-tint); border-color: var(--mst-accent-ink) !important; }
 .mst-review-overview { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; color: var(--mst-ink-2); font-size: 14px; }
 .mst-review-overview p { margin: 0; }

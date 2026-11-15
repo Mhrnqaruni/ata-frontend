@@ -1,0 +1,303 @@
+/* The questions step (Phase 1.46 S5.2, design.md §3.4, §6): the outline, the 72 px closed cards on a solid surface, */
+/* the open card with its answers, the empty start and the phone-shaped Preview. Tokens only. */
+/* Area: quizzes */
+
+/* every question on one page; the outline sits beside the cards from 1100 px and 10 questions (DR-5), 24 px apart */
+.mst-qe-questions { display: grid; grid-template-columns: minmax(0, 960px); gap: 16px; align-items: start; }
+.mst-qe-questions[data-outline="side"] { grid-template-columns: 280px minmax(0, 1fr); gap: 24px; }
+.mst-qe-cards { display: grid; gap: 8px; min-width: 0; }
+.mst-qe-goto { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px; }
+
+/* the outline: sticky, with its own scroll */
+.mst-qe-outline {
+  position: sticky;
+  top: 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: calc(100dvh - 200px);
+  min-height: 0;
+  padding: 12px;
+  border: 1px solid var(--mst-g1-edge);
+  border-radius: 20px;
+  background: var(--mst-g1-fill);
+  box-shadow: var(--mst-g1-hi), var(--mst-shadow-rest);
+}
+.mst-qe-drawer .mst-qe-outline { position: static; max-height: none; height: 100%; border: 0; border-radius: 0; box-shadow: none; background: none; }
+/* the drawer gets a solid surface of its own: the theme leaves drawer papers clear, for the sidebar's glass */
+.MuiDrawer-paper.mst-qe-drawer {
+  width: min(340px, 90vw);
+  padding: 12px 8px;
+  border-right: 1px solid var(--mst-edge);
+  border-radius: 0 20px 20px 0;
+  background: var(--mst-solid);
+  box-shadow: var(--mst-shadow-float);
+}
+.mst-qe-outline-list { flex: 1; min-height: 0; margin: 0 -4px; padding: 0 4px; overflow-y: auto; list-style: none; }
+.mst-qe-outline-list > li { border-radius: 10px; }
+.mst-qe-outline-list > li[data-over="before"] { box-shadow: inset 0 2px 0 var(--mst-accent); }
+.mst-qe-outline-list > li[data-over="after"] { box-shadow: inset 0 -2px 0 var(--mst-accent); }
+.mst-qe-outline-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 32px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--mst-ink);
+  text-align: left;
+  cursor: pointer;
+}
+.mst-qe-outline-item:hover { background: var(--mst-row-hover); }
+.mst-qe-outline-item:focus-visible { outline: 2px solid var(--mst-accent); outline-offset: -2px; }
+.mst-qe-outline-item[aria-current="true"] { background: var(--mst-accent-tint); font-weight: 600; }
+.mst-qe-outline-num { flex: none; min-width: 22px; text-align: right; color: var(--mst-ink-2); font-variant-numeric: tabular-nums; }
+.mst-qe-outline-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mst-qe-outline-empty { margin: 4px 8px; font-size: 14px; line-height: 20px; color: var(--mst-ink-2); }
+.mst-qe-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--mst-bad); }
+
+/* a closed card: 72 px, solid (the Phase 1.14 rule for dense work), the number badge 28 px */
+.mst-qe-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 72px;
+  padding: 12px 16px 12px 12px;
+  border: 1px solid var(--mst-edge);
+  border-radius: 16px;
+  background: var(--mst-solid);
+  font: inherit;
+  color: var(--mst-ink);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 150ms var(--mst-ease);
+}
+.mst-qe-card:hover { border-color: var(--mst-edge-control); }
+.mst-qe-card:focus-visible { outline: 2px solid var(--mst-accent); outline-offset: 2px; }
+.mst-qe-badge {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--mst-neutral);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--mst-ink);
+}
+.mst-qe-card-text { display: grid; flex: 1; gap: 2px; min-width: 0; }
+.mst-qe-card-title { overflow: hidden; font-size: 14px; line-height: 20px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.mst-qe-card-title[data-empty] { font-weight: 500; color: var(--mst-ink-3); }
+.mst-qe-card-answers { overflow: hidden; font-size: 12px; line-height: 16px; color: var(--mst-ink-2); text-overflow: ellipsis; white-space: nowrap; }
+.mst-qe-right { font-weight: 600; color: var(--mst-ok-ink); }
+.mst-qe-card-facts {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--mst-ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* the open card: radius 20, solid, with a 2 px accent left edge */
+.mst-qe-open {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px 16px 16px;
+  border: 1px solid var(--mst-edge);
+  border-left: 2px solid var(--mst-accent);
+  border-radius: 20px;
+  background: var(--mst-solid);
+}
+.mst-qe-open-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.mst-qe-grow { flex: 1; }
+.mst-qe-type-value { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; }
+.mst-qe-text-tools.MuiInputAdornment-root { align-self: flex-start; height: auto; margin-top: 2px; }
+.mst-qe-picture { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.mst-qe-picture img { max-width: 160px; max-height: 96px; border: 1px solid var(--mst-edge); border-radius: 10px; object-fit: contain; }
+.mst-qe-field-label { margin-bottom: 6px; font-size: 14px; line-height: 20px; font-weight: 500; color: var(--mst-ink); }
+.mst-qe-note { margin: 0; font-size: 12px; line-height: 16px; color: var(--mst-ink-2); }
+.mst-qe-add-row { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-left: -8px; }
+
+/* answers: 2 columns, 1 below 900 px; each box has its letter, its words and the right-answer button */
+.mst-qe-answers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.mst-qe-answer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 4px 6px;
+  border: 1px solid var(--mst-edge-control);
+  border-radius: 12px;
+  background: var(--mst-well);
+}
+.mst-qe-answer:focus-within { border-color: var(--mst-accent-ink); box-shadow: 0 0 0 3px var(--mst-accent-tint); }
+.mst-qe-answer[data-right="true"] { border-color: var(--mst-ok); background: color-mix(in srgb, var(--mst-ok) var(--mst-tint), var(--mst-solid)); }
+.mst-qe-letter {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--mst-neutral);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  color: var(--mst-ink);
+}
+.mst-qe-answer-text { display: grid; flex: 1; min-width: 0; }
+.mst-qe-answer-text input, .mst-qe-accepted input, .mst-qe-phone-type {
+  min-width: 0;
+  padding: 8px 4px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  font-size: 15px;
+  line-height: 24px;
+  color: var(--mst-ink);
+}
+.mst-qe-answer-text input::placeholder, .mst-qe-accepted input::placeholder, .mst-qe-phone-type::placeholder { color: var(--mst-ink-3); }
+.mst-qe-answer-maths { padding: 0 4px 6px; font-size: 14px; }
+.mst-qe-mark {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1.5px solid var(--mst-edge-control);
+  border-radius: 50%;
+  background: transparent;
+  color: transparent;
+  cursor: pointer;
+}
+.mst-qe-mark svg { font-size: 18px; }
+.mst-qe-mark:hover, .mst-qe-mark:focus-visible { border-color: var(--mst-ok); color: var(--mst-ok-ink); outline: none; }
+.mst-qe-mark[aria-pressed="true"] { border-color: var(--mst-ok); background: var(--mst-ok); color: var(--mst-solid); }
+.mst-qe-answer .mst-qe-remove { opacity: 0; }
+.mst-qe-answer:hover .mst-qe-remove, .mst-qe-answer:focus-within .mst-qe-remove { opacity: 1; }
+@media (hover: none) { .mst-qe-answer .mst-qe-remove { opacity: 1; } }
+
+/* true or false: two large choice buttons, and the red-dot hint until one is the right answer */
+.mst-qe-truth-part { display: grid; gap: 8px; }
+.mst-qe-truth-hint { display: flex; align-items: center; gap: 6px; }
+.mst-qe-truth { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.mst-qe-truth button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  border: 1px solid var(--mst-edge-control);
+  border-radius: 12px;
+  background: var(--mst-well);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--mst-ink);
+  cursor: pointer;
+}
+.mst-qe-truth button:focus-visible { outline: 2px solid var(--mst-accent); outline-offset: 2px; }
+.mst-qe-truth button[aria-pressed="true"] { border-color: var(--mst-ok); background: color-mix(in srgb, var(--mst-ok) var(--mst-tint), var(--mst-solid)); color: var(--mst-ok-ink); }
+
+/* a short answer's accepted answers, as chips with a box to add to */
+.mst-qe-accepted {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  margin-bottom: 6px;
+  padding: 4px 8px;
+  border: 1px solid var(--mst-edge-control);
+  border-radius: 12px;
+  background: var(--mst-well);
+}
+.mst-qe-accepted:focus-within { border-color: var(--mst-accent-ink); box-shadow: 0 0 0 3px var(--mst-accent-tint); }
+.mst-qe-accepted input { flex: 1; min-width: 180px; }
+
+/* how close a typed answer must be (Phase 1.47 design.md §3.7): a 36 px three-way switch up to 480 px, its line, and
+   how it's marked in ink-3, after the AI sparkle for the two levels the AI marks */
+.mst-qe-level-part { display: grid; gap: 6px; }
+.mst-qe-level-part .mst-qe-field-label { margin-bottom: 0; font-weight: 600; }
+.mst-qe-level.MuiToggleButtonGroup-root { display: flex; width: 100%; max-width: 480px; }
+.mst-qe-level .MuiToggleButton-root { flex: 1; min-width: 0; min-height: 28px; padding: 4px 12px; line-height: 20px; }
+.mst-qe-level-marking { display: flex; align-items: center; gap: 4px; margin: 0; font-size: 12px; line-height: 16px; color: var(--mst-ink-3); }
+.mst-qe-level-ai.MuiSvgIcon-root { font-size: 14px; fill: url(#mst-ai-grad); }
+
+/* the dashed card that ends the list, and the empty quiz's two tiles */
+.mst-qe-add-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 48px;
+  border: 1.5px dashed var(--mst-edge-control);
+  border-radius: 16px;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--mst-accent-ink);
+  cursor: pointer;
+}
+.mst-qe-add-card:hover { background: var(--mst-row-hover); }
+.mst-qe-add-card:focus-visible { outline: 2px solid var(--mst-accent); outline-offset: 2px; }
+/* the empty quiz (Phase 1.47 design.md §3.11): "Add your first question", then two 320 x 180 cards, centred */
+.mst-qe-empty { display: grid; justify-items: center; gap: 16px; margin-top: 24px; }
+.mst-qe-empty-title { margin: 0; font-size: 17px; line-height: 24px; font-weight: 600; color: var(--mst-ink); text-align: center; }
+.mst-qe-empty-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 320px)); justify-content: center; gap: 24px; width: 100%; }
+.mst-qe-tile {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: 8px;
+  min-height: 180px;
+  padding: 24px;
+  border: 1px solid var(--mst-g1-edge);
+  border-radius: 20px;
+  background: var(--mst-g1-fill);
+  box-shadow: var(--mst-g1-hi), var(--mst-shadow-rest);
+  font: inherit;
+  color: var(--mst-ink);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 200ms var(--mst-ease);
+}
+.mst-qe-tile:hover { transform: translateY(-2px); }
+.mst-qe-tile:focus-visible { outline: 2px solid var(--mst-accent); outline-offset: 2px; }
+.mst-qe-tile-title { margin-top: 4px; font-size: 17px; line-height: 24px; font-weight: 600; }
+.mst-qe-tile-hint { font-size: 14px; line-height: 20px; color: var(--mst-ink-2); }
+
+/* the import window's fields */
+.mst-qe-import.MuiDialogContent-root { display: grid; gap: 16px; padding-top: 8px; }
+.mst-qe-import-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+
+@media (max-width: 899px) {
+  .mst-qe-answers, .mst-qe-import-row { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 599px) {
+  .mst-qe-empty-tiles { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .mst-qe-tile { min-height: 150px; padding: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mst-qe-tile, .mst-qe-card { transition: none; }
+  .mst-qe-tile:hover { transform: none; }
+}

@@ -1,0 +1,163 @@
+/* The quiz editor's frame (Phase 1.46, design.md §3.0, §6): the centred page column, the header's context line, the */
+/* step line and the bottom bar. Tokens only; both themes come from app.css. */
+/* Area: quizzes */
+
+/* The editor is a full-window work page with its own bottom bar, so, like the assistant's page, it leaves out the
+   app's footer. The page fills the window inside the shell's 24 + 16 px (76 + 16 px under the phone bar), so a short
+   step's bottom bar sits at the bottom of the window and the page doesn't scroll. */
+main:has(.mst-qe) > .mst-footer { display: none; }
+/* One centre line (Phase 1.47 design.md §3.11): the header, the step line, the step and its bottom bar share one
+   centred column, 720 px on Details and 960 px on Questions and Settings; with the outline beside the cards, the
+   column is the two together (280 + 24 + 960 px), so the bar spans the group. */
+.mst-qe {
+  --mst-qe-column: 960px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  max-width: var(--mst-qe-column);
+  min-height: calc(100dvh - 40px);
+  margin-inline: auto;
+}
+.mst-qe[data-step="details"] { --mst-qe-column: 720px; }
+.mst-qe:has(.mst-qe-questions[data-outline="side"]) { --mst-qe-column: 1264px; }
+@media (max-width: 899px) {
+  .mst-qe { min-height: calc(100dvh - 92px); }
+}
+.mst-qe .mst-page-head { margin-bottom: 12px; }
+.mst-qe .mst-page-head-text { flex-basis: 200px; }
+/* the title cuts with "…" and the saving words stay beside it, also when the header condenses */
+.mst-qe .mst-page-head-row { flex-wrap: nowrap; }
+.mst-qe .mst-page-head-title {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mst-qe .mst-page-head-adorn { flex: none; font-size: 14px; line-height: 20px; color: var(--mst-ink-2); }
+.mst-qe-body { display: flex; flex-direction: column; gap: 16px; min-width: 0; margin-bottom: 16px; }
+
+/* the context line: the facts cut with "…", while the warning link and the saving words always show */
+.mst-qe .mst-page-head-sub { margin-top: 4px; }
+.mst-qe-context {
+  display: flex;
+  align-items: center;
+  gap: 4px 12px;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--mst-ink-2);
+}
+.mst-qe-context-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mst-qe-warning {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--mst-warn-ink);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.mst-qe-warning svg { font-size: 16px; }
+.mst-qe-status {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.mst-qe-status svg { font-size: 16px; }
+.mst-qe-status svg[data-tone="ok"] { color: var(--mst-ok); }
+.mst-qe-status[data-tone="warn"] { color: var(--mst-warn-ink); font-weight: 600; }
+
+/* the step line: one 40 px line under the title (design.md §3.0, item 4) */
+.mst-qe-steps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  min-height: 40px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+.mst-qe-step { display: inline-flex; align-items: center; gap: 12px; }
+.mst-qe-step-rule { width: 48px; height: 1px; background: var(--mst-edge-control); }
+.mst-qe-step-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 4px 8px 4px 4px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  color: var(--mst-ink-2);
+}
+button.mst-qe-step-go { cursor: pointer; }
+button.mst-qe-step-go:hover { background: var(--mst-hover-fill); color: var(--mst-ink); }
+button.mst-qe-step-go:focus-visible { outline: 2px solid var(--mst-accent); outline-offset: 2px; }
+.mst-qe-step[data-state="current"] .mst-qe-step-go { color: var(--mst-ink); font-weight: 600; }
+.mst-qe-step-num {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+/* a done step's circle takes the theme's accent fill and white tick (StepLine.jsx), in both themes */
+.mst-qe-step:not([data-state="done"]) .mst-qe-step-num { border-color: var(--mst-edge-control); color: var(--mst-ink-2); }
+.mst-qe-step[data-state="current"] .mst-qe-step-num { border: 1.5px solid var(--mst-accent); color: var(--mst-accent-ink); }
+
+/* the bottom bar: the app's glass bar, pushed to the bottom of the window on a short step, 20 px under a long one */
+.mst-qe-bar.mst-builder-foot { margin-top: auto; }
+.mst-qe-bar-side { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+
+/* glass 1 for a card or tile; the Import with AI button outlined in the AI stroke once the quiz has questions */
+.mst-qe-glass {
+  position: relative;
+  border: 1px solid var(--mst-g1-edge);
+  border-radius: 20px;
+  background: var(--mst-g1-fill);
+  box-shadow: var(--mst-g1-hi), var(--mst-shadow-rest);
+}
+.MuiButton-root.mst-qe-ai-outline {
+  border: 1px solid transparent;
+  background: linear-gradient(var(--mst-solid), var(--mst-solid)) padding-box, var(--mst-ai-stroke) border-box;
+  color: var(--mst-ink);
+}
+.MuiButton-root.mst-qe-ai-outline:hover { filter: brightness(1.04); }
+.MuiButton-root.mst-qe-ai-outline .MuiButton-startIcon svg { fill: url(#mst-ai-grad); }
+.mst-qe-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (max-width: 599px) {
+  .mst-qe-step-rule { width: 16px; }
+}
