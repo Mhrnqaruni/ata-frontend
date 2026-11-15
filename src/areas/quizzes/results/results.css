@@ -1,0 +1,149 @@
+/* The quiz results page (Phase 1.46; Phase 1.47 design.md §3.8, §6): the header's pickers, the glass summary card, */
+/* then two solid halves, pupils and questions, side by side from 1100 px of content. Tokens only, so both themes follow. */
+/* Area: quizzes */
+
+/* the header's context line: the run picker, the class filter and an open run's state */
+.quiz-results-context { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.quiz-results-context-text { font-size: 14px; line-height: 20px; font-weight: 500; color: var(--mst-ink-2); }
+.quiz-results-context-open { display: inline-flex; align-items: center; gap: 4px; }
+.MuiButton-root.quiz-results-pick { min-height: 32px; height: 32px; padding: 0 10px 0 14px; border-radius: 999px; border-color: var(--mst-edge-control); background: transparent; color: var(--mst-ink); font-size: 14px; line-height: 20px; font-weight: 500; white-space: nowrap; }
+.MuiButton-root.quiz-results-pick:hover { border-color: var(--mst-accent-ink); background: var(--mst-hover-fill); }
+.MuiButton-root.quiz-results-pick[data-set="true"] { border-color: transparent; background: var(--mst-accent-tint); color: var(--mst-accent-ink); }
+.MuiButton-root.quiz-results-pick .MuiButton-endIcon { margin-left: 4px; }
+.MuiButton-root.quiz-results-pick .MuiButton-endIcon svg { font-size: 18px; }
+
+/* "Ask AI about these results": the AI style, secondary (design.md §2): an AI-stroke edge and a gradient star */
+.MuiButton-root.quiz-results-ai { position: relative; border-color: transparent; color: var(--mst-ink); }
+.MuiButton-root.quiz-results-ai::before { content: ""; position: absolute; inset: -1px; padding: 1px; border-radius: inherit; background: var(--mst-ai-stroke); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; }
+.MuiButton-root.quiz-results-ai:hover { border-color: transparent; background: var(--mst-hover-fill); }
+.MuiButton-root.quiz-results-ai .MuiButton-startIcon svg { fill: url(#mst-ai-grad); }
+
+/* states */
+.quiz-results-loading { display: grid; gap: 24px; }
+.quiz-results-loading .quiz-results-halves { margin-top: 0; }
+.quiz-results-alert.MuiAlert-root { margin-bottom: 16px; }
+.quiz-results-body { container: quiz-results / inline-size; transition: opacity 150ms var(--mst-ease); }
+.quiz-results-body[data-refreshing="true"] { opacity: 0.6; }
+
+/* the summary: four facts, then one plain sentence (glass 1) */
+.quiz-results-summary { padding: 12px 12px 20px; container-type: inline-size; }
+.quiz-results-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 12px; }
+.quiz-results-fact, .quiz-results-fact.MuiButtonBase-root { display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 2px; min-width: 0; padding: 8px 12px; border-radius: 14px; text-align: left; color: inherit; }
+.quiz-results-fact-value { font-family: var(--font-display); font-size: 30px; line-height: 36px; font-weight: 600; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--mst-ink); }
+.quiz-results-fact-label { font-size: 14px; line-height: 20px; font-weight: 500; color: var(--mst-ink-2); }
+.quiz-results-fact-detail { font-size: 12px; line-height: 16px; font-weight: 500; color: var(--mst-ink-2); overflow-wrap: anywhere; }
+.quiz-results-fact-button { transition: background-color 150ms var(--mst-ease); }
+.quiz-results-fact-button:hover { background: var(--mst-hover-fill); }
+.quiz-results-fact-button.Mui-focusVisible { box-shadow: 0 0 0 2px var(--mst-accent-ink); }
+.quiz-results-fact-button[data-active="true"] { background: var(--mst-accent-tint); }
+.quiz-results-fact-button .quiz-results-fact-value { color: var(--mst-warn-ink); }
+.quiz-results-fact-action { display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--mst-accent-ink); }
+.quiz-results-fact-action svg { font-size: 16px; }
+.quiz-results-sentence { margin: 12px 12px 0; padding-top: 16px; border-top: 1px solid var(--mst-edge); font-size: 15px; line-height: 24px; color: var(--mst-ink); }
+@container (max-width: 640px) { .quiz-results-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* the two halves (design.md §3.8): one column, pupils first, until there's room for two (1fr 1fr, 24 px apart) */
+.quiz-results-halves { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; margin-top: 24px; }
+@container quiz-results (min-width: 1000px) { .quiz-results-halves { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+
+/* the solid data cards (design.md §2: results tables are solid surfaces); each scrolls with the page */
+.quiz-results-card { margin-top: 24px; overflow: hidden; border: 1px solid var(--mst-edge); border-radius: 20px; background: var(--mst-solid); container-type: inline-size; }
+.quiz-results-halves > .quiz-results-card { margin-top: 0; }
+.quiz-results-card-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; min-height: 56px; padding: 12px 20px; }
+.quiz-results-card-head h2 { margin: 0; font-size: 17px; line-height: 24px; font-weight: 600; letter-spacing: -0.01em; color: var(--mst-ink); }
+.quiz-results-count { font-size: 14px; line-height: 20px; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--mst-ink-2); }
+.quiz-results-caption { margin-left: auto; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--mst-ink-2); }
+.quiz-results-note { margin: 0; padding: 0 20px 12px; font-size: 14px; line-height: 20px; color: var(--mst-ink-2); }
+.quiz-results-more { display: flex; justify-content: center; padding: 8px; border-top: 1px solid var(--mst-edge); }
+
+/* the bars: 8 px, the share in accent (questions 96 px, pupils' scores 64 px) */
+.quiz-results-bar { position: relative; display: block; flex: none; width: 96px; height: 8px; overflow: hidden; border-radius: 999px; background: var(--mst-neutral); }
+.quiz-results-bar[data-size="small"] { width: 64px; }
+.quiz-results-bar > span { position: absolute; inset: 0; border-radius: inherit; background: var(--mst-accent); transform-origin: left center; }
+
+/* the pupils: 48 px rows, name · score and bar · the Result word · Review › (a click on the row opens the review) */
+.quiz-results-table.mst-table tbody .MuiTableCell-root { height: 48px; padding-block: 4px; }
+.quiz-results-table .MuiTableCell-root { padding-inline: 8px; }
+.quiz-results-table .MuiTableCell-root:first-of-type { padding-left: 20px; }
+.quiz-results-table .MuiTableCell-root:last-of-type { padding-right: 12px; }
+.quiz-results-pupils-table tbody tr[data-link="true"] { cursor: pointer; }
+.quiz-results-name { font-weight: 500; color: var(--mst-ink); overflow-wrap: break-word; }
+.quiz-results-score-col { width: 160px; }
+.quiz-results-result-col { width: 148px; }
+.quiz-results-review-col { width: 1%; }
+.quiz-results-score { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--mst-ink-2); }
+.quiz-results-score > span:first-child { min-width: 68px; text-align: right; } /* "120 / 120", so the bars line up */
+.quiz-results-score strong { font-weight: 600; color: var(--mst-ink); }
+.quiz-results-none, .quiz-results-quiet { color: var(--mst-ink-2); }
+.quiz-results-result { display: block; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--mst-ink-2); }
+.quiz-results-result[data-tone="warn"] { font-weight: 600; color: var(--mst-warn-ink); }
+.quiz-results-review-cell { white-space: nowrap; text-align: right; }
+.MuiButton-root.quiz-results-review { min-width: 0; padding-inline: 8px 4px; color: var(--mst-accent-ink); }
+.MuiButton-root.quiz-results-review .MuiButton-endIcon { margin-left: 0; }
+.MuiButton-root.quiz-results-match { min-width: 0; padding-inline: 8px; white-space: nowrap; }
+.quiz-results-typed { display: block; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--mst-ink-2); }
+.quiz-results-typed-id { font-family: var(--font-mono); }
+.quiz-results-figure { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.quiz-results-change[data-tone="ok"] { font-weight: 600; color: var(--mst-ok-ink); }
+.quiz-results-change[data-tone="warn"] { font-weight: 600; color: var(--mst-warn-ink); }
+/* a phone or narrow half: each pupil on two lines, the name and Review ›, then the score and the Result */
+@container (max-width: 480px) {
+  .quiz-results-pupils-table thead { display: none; }
+  .quiz-results-pupils-table tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name review" "score result"; align-items: center; gap: 2px 12px; padding: 8px 12px 8px 16px; border-bottom: 1px solid var(--mst-edge); }
+  .quiz-results-pupils-table tbody tr:last-child { border-bottom: 0; }
+  .quiz-results-table.mst-table.quiz-results-pupils-table tbody .MuiTableCell-root { display: block; height: auto; padding: 0; border: 0; }
+  .quiz-results-pupils-table .quiz-results-name { grid-area: name; }
+  .quiz-results-pupils-table .quiz-results-review-cell { grid-area: review; }
+  .quiz-results-pupils-table .quiz-results-score-cell { grid-area: score; }
+  .quiz-results-pupils-table .quiz-results-score > span:first-child { min-width: 0; text-align: left; }
+  .quiz-results-pupils-table .quiz-results-result-cell { grid-area: result; text-align: right; }
+}
+
+/* the questions: "Q4" · its words over two lines at most · "14 of 28 right" over its bar; then a 12/16 line */
+.quiz-results-qlist { margin: 0; padding: 0; list-style: none; }
+.quiz-results-qrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; border-top: 1px solid var(--mst-edge); transition: background-color 150ms var(--mst-ease); }
+.quiz-results-qrow[data-active="true"] { background: var(--mst-accent-tint); }
+.quiz-results-qmain, .quiz-results-qmain.MuiButtonBase-root { display: grid; flex: 1; grid-template-columns: 32px minmax(0, 1fr) auto; align-items: start; justify-content: stretch; gap: 4px 12px; min-width: 0; padding: 12px 16px 12px 20px; font-family: inherit; font-size: 14px; line-height: 20px; text-align: left; color: inherit; transition: background-color 150ms var(--mst-ease); }
+.quiz-results-qmain.MuiButtonBase-root:hover { background: var(--mst-row-hover); }
+.quiz-results-qmain.Mui-focusVisible { box-shadow: inset 0 0 0 2px var(--mst-accent-ink); }
+.quiz-results-qnum { font-size: 12px; line-height: 20px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--mst-ink-2); }
+.quiz-results-qtext { font-size: 14px; line-height: 20px; color: var(--mst-ink); }
+.quiz-results-clamp { display: -webkit-box; overflow: hidden; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: break-word; }
+.quiz-results-qfigure { display: grid; justify-items: end; gap: 6px; padding-top: 2px; font-size: 14px; line-height: 16px; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--mst-ink-2); }
+.quiz-results-qline { grid-column: 2 / -1; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--mst-ink-2); }
+.quiz-results-qpicture { grid-column: 2; grid-row: 1; display: flex; align-items: center; padding-right: 8px; }
+@media (pointer: fine) {
+  .quiz-results-qpicture .MuiIconButton-root { width: 32px; height: 32px; min-width: 32px; min-height: 32px; }
+}
+/* the question filtering the pupils: "Showing who missed it · Clear", lined up with the question's words */
+.quiz-results-qshowing { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: -6px 0 0; padding: 0 16px 10px 64px; font-size: 12px; line-height: 16px; font-weight: 600; color: var(--mst-accent-ink); }
+.quiz-results-qclear.MuiButtonBase-root { padding: 2px 4px; border-radius: 6px; font: inherit; color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.quiz-results-qclear.MuiButtonBase-root:hover { background: var(--mst-hover-fill); }
+.quiz-results-qclear.Mui-focusVisible { box-shadow: 0 0 0 2px var(--mst-accent-ink); }
+/* a phone or narrow half: the words take the width, with "14 of 28 right" and its bar on the line under them */
+@container (max-width: 480px) {
+  .quiz-results-qmain, .quiz-results-qmain.MuiButtonBase-root { grid-template-columns: 28px minmax(0, 1fr); padding-inline: 16px 12px; }
+  .quiz-results-qfigure { grid-column: 2; grid-row: 2; display: flex; align-items: center; gap: 8px; padding-top: 0; }
+  .quiz-results-qline { grid-column: 2; }
+  .quiz-results-qshowing { padding-left: 56px; }
+}
+
+/* the walk-ins, folded at the bottom of the pupils' half */
+.quiz-results-walk-ins { border-top: 1px solid var(--mst-edge); }
+.quiz-results-fold-head { margin: 0; }
+.quiz-results-fold.MuiButtonBase-root { display: flex; justify-content: flex-start; gap: 12px; width: 100%; min-height: 56px; padding: 12px 20px; font-size: 14px; line-height: 20px; font-weight: 600; text-align: left; color: var(--mst-ink); }
+.quiz-results-fold.MuiButtonBase-root:hover { background: var(--mst-row-hover); }
+.quiz-results-fold.Mui-focusVisible { box-shadow: inset 0 0 0 2px var(--mst-accent-ink); }
+.quiz-results-fold-icon.MuiSvgIcon-root { margin-left: auto; color: var(--mst-ink-2); transition: transform 200ms var(--mst-ease); }
+.quiz-results-fold[data-open="true"] .quiz-results-fold-icon { transform: rotate(180deg); }
+
+/* the windows: marking, matching and a question's picture */
+.quiz-results-dialog-text { margin: 0 0 12px; font-size: 15px; line-height: 24px; color: var(--mst-ink-2); }
+.quiz-results-placeholder { color: var(--mst-ink-2); }
+.quiz-results-mark-head { margin: 0 0 4px; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--mst-ink); }
+.quiz-results-picture-text { margin: 0 0 16px; color: var(--mst-ink); }
+.quiz-results-picture { display: block; max-width: 100%; border-radius: 12px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .quiz-results-body, .quiz-results-fact-button, .quiz-results-qrow, .quiz-results-qmain, .quiz-results-fold-icon.MuiSvgIcon-root { transition: none; }
+}

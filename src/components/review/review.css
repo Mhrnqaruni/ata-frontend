@@ -1,0 +1,115 @@
+/* The shared review layout (Phase 1.47, design.md §3.9, §6): the sticky question map, five 36 px squares a row, with its */
+/* legend, the solid question cards up to 760 px, the mark box, the save status and the header's total. Tokens only. */
+/* Area: platform */
+
+/* the map is 248 px: 212 px of squares (5 × 36 + 4 × 8) with room for the ring, then its padding and its edge */
+.mst-rv { display: grid; grid-template-columns: 248px minmax(0, 760px); gap: 24px; justify-content: center; align-items: start; min-width: 0; }
+.mst-rv-cards { display: grid; gap: 16px; min-width: 0; }
+.mst-rv-empty { margin: 0; padding: 24px; border: 1px dashed var(--mst-edge-control); border-radius: 20px; font-size: 14px; line-height: 20px; color: var(--mst-ink-2); text-align: center; }
+
+/* the map: glass 1, like the editor's outline; its grid scrolls on its own when there are many questions */
+.mst-rv-map {
+  position: sticky;
+  top: 96px;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  max-height: calc(100dvh - 120px);
+  padding: 12px;
+  border: 1px solid var(--mst-g1-edge);
+  border-radius: 20px;
+  background: var(--mst-g1-fill);
+  box-shadow: var(--mst-g1-hi), var(--mst-shadow-rest);
+}
+.mst-rv-filter { display: grid; grid-template-columns: auto 1fr; gap: 2px; padding: 2px; border: 1px solid var(--mst-edge); border-radius: 999px; background: var(--mst-well); }
+.mst-rv-filter button { min-height: 32px; padding: 0 10px; border: 0; border-radius: 999px; background: transparent; font: inherit; font-size: 12px; line-height: 16px; font-weight: 600; color: var(--mst-ink-2); cursor: pointer; white-space: nowrap; }
+.mst-rv-filter button[aria-pressed="true"] { background: var(--mst-solid); color: var(--mst-ink); box-shadow: var(--mst-shadow-rest); }
+.mst-rv-filter button:disabled { cursor: default; opacity: 0.6; }
+.mst-rv-filter button:focus-visible, .mst-rv-square:focus-visible { outline: 2px solid var(--mst-accent-ink); outline-offset: 2px; }
+
+.mst-rv-grid { display: grid; grid-template-columns: repeat(5, 36px); gap: 8px; align-content: start; min-height: 0; margin: 0; padding: 4px; overflow-y: auto; list-style: none; }
+.mst-rv-grid[data-wide="true"] { grid-template-columns: repeat(4, 44px); }
+.mst-rv-square {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--mst-edge-control);
+  border-radius: 10px;
+  background: var(--mst-solid);
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--mst-ink);
+  cursor: pointer;
+  transition: box-shadow 150ms var(--mst-ease);
+}
+.mst-rv-square[data-state="right"] { border-color: var(--mst-ok); background: color-mix(in srgb, var(--mst-ok) var(--mst-tint), var(--mst-solid)); color: var(--mst-ok-ink); }
+.mst-rv-square[data-state="wrong"] { border-color: var(--mst-bad); background: color-mix(in srgb, var(--mst-bad) var(--mst-tint), var(--mst-solid)); color: var(--mst-bad-ink); }
+.mst-rv-square[data-state="part"] { border-color: var(--mst-warn); background: color-mix(in srgb, var(--mst-warn) var(--mst-tint), var(--mst-solid)); color: var(--mst-warn-ink); }
+.mst-rv-square[data-state="none"] { border-style: dashed; color: var(--mst-ink-2); }
+.mst-rv-square[data-state="waiting"] { border-style: dashed; border-color: var(--mst-warn); color: var(--mst-warn-ink); }
+/* changed by you: a 6 px accent dot at the top right; the question in view: a 2 px accent ring */
+.mst-rv-square[data-changed="true"]::after { content: ""; position: absolute; top: -3px; right: -3px; width: 6px; height: 6px; border-radius: 50%; background: var(--mst-accent); box-shadow: 0 0 0 2px var(--mst-solid); }
+.mst-rv-square[aria-current="true"] { box-shadow: 0 0 0 2px var(--mst-solid), 0 0 0 4px var(--mst-accent); }
+
+.mst-rv-legend { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--mst-ink-2); }
+.mst-rv-legend li { position: relative; display: flex; align-items: center; gap: 8px; }
+.mst-rv-legend li::before { content: ""; flex: none; width: 12px; height: 12px; border: 1px solid var(--mst-edge-control); border-radius: 4px; background: var(--mst-solid); }
+.mst-rv-legend li[data-state="right"]::before { border-color: var(--mst-ok); background: color-mix(in srgb, var(--mst-ok) var(--mst-tint), var(--mst-solid)); }
+.mst-rv-legend li[data-state="wrong"]::before { border-color: var(--mst-bad); background: color-mix(in srgb, var(--mst-bad) var(--mst-tint), var(--mst-solid)); }
+.mst-rv-legend li[data-state="part"]::before { border-color: var(--mst-warn); background: color-mix(in srgb, var(--mst-warn) var(--mst-tint), var(--mst-solid)); }
+.mst-rv-legend li[data-state="none"]::before { border-style: dashed; }
+.mst-rv-legend li[data-state="waiting"]::before { border-style: dashed; border-color: var(--mst-warn); }
+.mst-rv-legend li[data-state="changed"]::before { width: 6px; height: 6px; margin: 0 3px; border: 0; border-radius: 50%; background: var(--mst-accent); }
+
+/* the cards: solid, radius 20, padding 24 */
+.mst-rv-card { position: relative; display: grid; gap: 16px; min-width: 0; padding: 24px; border: 1px solid var(--mst-edge); border-radius: 20px; background: var(--mst-solid); box-shadow: var(--mst-shadow-rest); scroll-margin-top: 96px; }
+.mst-rv-card:focus { outline: none; }
+.mst-rv-card:focus-visible { outline: 2px solid var(--mst-accent-ink); outline-offset: 2px; }
+.mst-rv-card-top { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0; }
+.mst-rv-card-title { margin: 0; font-family: var(--font-ui); font-size: 12px; line-height: 16px; font-weight: 600; color: var(--mst-ink-2); }
+.mst-rv-card-kind { font-size: 12px; line-height: 16px; font-weight: 500; color: var(--mst-ink-2); }
+.mst-rv-card-kind::before { content: "·"; margin-right: 8px; }
+.mst-rv-card-chip { margin-left: auto; }
+.mst-rv-card-question { margin: 0; max-width: 75ch; font-size: 17px; line-height: 24px; font-weight: 600; color: var(--mst-ink); white-space: pre-wrap; overflow-wrap: anywhere; }
+.mst-rv-card-marking { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 16px; align-items: start; }
+.mst-rv-wide { grid-column: 1 / -1; }
+.mst-rv-mark.MuiFormControl-root { width: 96px; }
+.mst-rv-mark .MuiInputBase-input { font-variant-numeric: tabular-nums; }
+.mst-rv-mark .MuiInputAdornment-root p { font-size: 14px; color: var(--mst-ink-3); white-space: nowrap; }
+.mst-rv-card-foot { display: flex; justify-content: flex-end; min-height: 16px; margin-top: -8px; }
+.mst-rv-status { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 0 4px; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--mst-ink-2); }
+.mst-rv-status[data-tone="ok"] { color: var(--mst-ok-ink); }
+.mst-rv-status[data-tone="warn"] { color: var(--mst-warn-ink); }
+.mst-rv-status-action.MuiButton-root { min-height: 32px; padding: 0 8px; font-size: 12px; }
+.mst-rv-status-reason { flex-basis: 100%; text-align: right; color: var(--mst-ink-2); }
+
+/* the header: the total in the display face, ‹ › and the page's actions */
+.mst-rv-head-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.mst-rv-total { display: grid; justify-items: end; margin: 0 8px 0 0; }
+.mst-rv-total-value { font-family: var(--font-display); font-size: 30px; line-height: 36px; font-weight: 600; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; color: var(--mst-ink-2); white-space: nowrap; }
+.mst-rv-total-value strong { font-weight: 600; color: var(--mst-ink); }
+.mst-rv-total-unit { font-size: 12px; line-height: 16px; font-weight: 500; color: var(--mst-ink-3); }
+.mst-rv-steps { display: inline-flex; gap: 4px; }
+.mst-rv-step.MuiIconButton-root { width: 36px; height: 36px; border: 1px solid var(--mst-edge-control); border-radius: 50%; }
+
+@media (max-width: 1023px) {
+  .mst-rv { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .mst-rv-map { position: static; grid-template-rows: auto; max-height: none; }
+  .mst-rv-filter { justify-self: start; }
+  .mst-rv-grid, .mst-rv-grid[data-wide="true"] { grid-template-columns: repeat(auto-fill, minmax(36px, 44px)); max-height: 132px; }
+  .mst-rv-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+}
+@media (max-width: 599px) {
+  .mst-rv-card { padding: 16px; }
+  .mst-rv-card-marking { grid-template-columns: minmax(0, 1fr); }
+  .mst-rv-total { justify-items: start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mst-rv-square { transition: none; }
+}

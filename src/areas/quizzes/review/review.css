@@ -1,0 +1,35 @@
+/* The quiz review page's own parts (Phase 1.47, design.md §3.9): the options with "Their answer" and the tick, the */
+/* typed answer's quote box and accepted line, the chips, the AI comment's states and the banners. Tokens only. */
+/* Area: quizzes */
+
+.quiz-review { display: grid; gap: 16px; min-width: 0; }
+.quiz-review .mst-qr-banner { max-width: 1000px; width: 100%; justify-self: center; }
+.mst-qr-blank { margin: 0 auto; max-width: 1000px; width: 100%; font-size: 14px; line-height: 20px; color: var(--mst-ink-2); }
+
+/* the options: 36 px rows; the pupil's choice has an accent edge, the right one a tick in ok ink */
+.mst-qr-options { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.mst-qr-option { display: flex; align-items: center; gap: 12px; min-height: 36px; padding: 6px 12px; border: 1px solid var(--mst-edge); border-radius: 12px; background: var(--mst-solid); font-size: 15px; line-height: 24px; color: var(--mst-ink); }
+.mst-qr-option[data-chosen="true"] { border: 2px solid var(--mst-accent); padding: 5px 11px; background: var(--mst-accent-tint); }
+.mst-qr-option[data-right="true"] { background: color-mix(in srgb, var(--mst-ok) var(--mst-tint), var(--mst-solid)); }
+.mst-qr-option[data-chosen="true"][data-right="true"] { background: color-mix(in srgb, var(--mst-ok) var(--mst-tint), var(--mst-solid)); }
+.mst-qr-letter { display: grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: 8px; background: var(--mst-neutral); font-size: 12px; line-height: 16px; font-weight: 600; color: var(--mst-ink-2); }
+.mst-qr-option-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.mst-qr-tag { flex: none; font-size: 12px; line-height: 16px; font-weight: 600; color: var(--mst-accent-ink); }
+.mst-qr-tick.MuiSvgIcon-root { flex: none; font-size: 20px; color: var(--mst-ok-ink); }
+
+/* a typed answer */
+.mst-qr-typed { display: grid; gap: 6px; }
+.mst-qr-label { font-size: 12px; line-height: 16px; font-weight: 600; color: var(--mst-ink-2); }
+.mst-qr-quote { margin: 0; padding: 12px 16px; border-left: 3px solid var(--mst-accent); border-radius: 0 12px 12px 0; background: var(--mst-neutral); font-size: 15px; line-height: 24px; color: var(--mst-ink); white-space: pre-wrap; overflow-wrap: anywhere; }
+.mst-qr-accepted, .mst-qr-poll { margin: 0; font-size: 12px; line-height: 16px; color: var(--mst-ink-2); overflow-wrap: anywhere; }
+.mst-qr-none { margin: 0; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--mst-ink-2); }
+.mst-qr-picture { display: block; max-width: 100%; max-height: 240px; border: 1px solid var(--mst-edge); border-radius: 12px; object-fit: contain; }
+
+/* the chips: "Marked by you" has an accent outline, "Waiting for a mark" a dashed warning edge */
+.mst-qr-chip.MuiChip-outlined[data-key="teacher"] { border-color: var(--mst-accent); background: transparent; color: var(--mst-accent-ink); }
+.mst-qr-chip.MuiChip-outlined[data-key="waiting"] { border: 1px dashed var(--mst-warn); background: transparent; color: var(--mst-warn-ink); }
+
+/* the AI comment: its sparkle in the AI stroke, and the skeleton while it's written */
+.mst-qr-ai { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--mst-ink-2); }
+.mst-qr-ai .MuiSvgIcon-root { font-size: 16px; fill: url(#mst-ai-grad); }
+.mst-qr-writing { display: grid; gap: 4px; align-content: start; min-height: 64px; padding: 8px 12px; border: 1px dashed var(--mst-edge-control); border-radius: 12px; }

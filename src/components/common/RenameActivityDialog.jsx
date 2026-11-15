@@ -4,6 +4,18 @@
 import React, { useEffect, useState } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, Alert } from '@mui/material';
 import { renameActivity } from '../../services/activityService';
+import { queryClient } from '../../services/queryCache';
+
+// Each kind's cached teacher list, and its row with the new name (Phase 1.46, SOT-1.4). A quiz's display title is
+// left to the list, which works it out from the title and the quiz's pre or post phase, as the server does.
+const LISTS = {
+  quiz: ['quizzes', (row, name) => ({ ...row, title: name, display_title: null })],
+  assessment: ['assessments', (row, name) => ({ ...row, assessmentName: name })],
+};
+// Teacher lists are keyed ['teacher', session, user, family] (hooks/useTeacherData.js's teacherOptions).
+const teacherList = (family) => ({
+  predicate: (query) => query.queryKey[0] === 'teacher' && query.queryKey[3] === family,
+});
 
 /** One small name-only command; questions, scores and sessions are untouched. */
 export default function RenameActivityDialog({ item, onClose, onSaved }) {
@@ -20,8 +32,19 @@ export default function RenameActivityDialog({ item, onClose, onSaved }) {
     setBusy(true);
     setError('');
     try {
-      await renameActivity(item.kind, item.id, name.trim());
-      onSaved?.();
+      const saved = await renameActivity(item.kind, item.id, name.trim());
+      const newName = saved?.name || name.trim();
+      // SOT-1.4: the list's own cached row takes the new name before the window closes, so the card shows it at
+      // once; the refresh every rename starts then confirms it.
+      const [family, renamed] = LISTS[item.kind] || [];
+      if (family) {
+        queryClient.setQueriesData(teacherList(family), (rows) =>
+          Array.isArray(rows)
+            ? rows.map((row) => (String(row.id) === String(item.id) ? renamed(row, newName) : row))
+            : rows
+        );
+      }
+      onSaved?.(newName); // a page with its own cache (the Phase 1.46 quiz library) renames its row with it
       onClose();
     } catch (failure) {
       const detail = failure.response?.data?.detail;

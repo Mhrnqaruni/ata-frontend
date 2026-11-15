@@ -1,0 +1,64 @@
+/* Details, step 1 (Phase 1.46 S5.1, design.md §3.2): one glass card of at most 720 px with labels above the fields, */
+/* the classes field and its line, the tags, and the two-choice switch. Tokens only. */
+/* Area: quizzes */
+
+.mst-qe-details {
+  display: grid;
+  gap: 16px;
+  width: 100%;
+  max-width: 720px;
+  padding: 20px 24px 24px;
+  border: 1px solid var(--mst-g1-edge);
+  border-radius: 20px;
+  background: var(--mst-g1-fill);
+  box-shadow: var(--mst-g1-hi), var(--mst-shadow-rest);
+  -webkit-backdrop-filter: var(--mst-g1-blur, none);
+  backdrop-filter: var(--mst-g1-blur, none);
+}
+.mst-qe-field { display: grid; min-width: 0; }
+.mst-qe-label { margin-bottom: 6px; font-size: 14px; line-height: 20px; font-weight: 500; color: var(--mst-ink); }
+.mst-qe-label-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.mst-qe-label-row .mst-qe-label { margin: 0; }
+.mst-qe-label-row .MuiButton-root { min-height: 28px; margin: -4px -8px -4px 0; padding: 2px 8px; }
+
+/* the classes field: it looks like a field and opens the chooser */
+.mst-qe-picker.MuiButtonBase-root {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  width: 100%;
+  min-height: 44px;
+  padding: 6px 12px;
+  border: 1px solid var(--mst-edge-control);
+  border-radius: 12px;
+  background: var(--mst-well);
+  text-align: left;
+  transition: border-color 150ms var(--mst-ease);
+}
+.mst-qe-picker.MuiButtonBase-root:hover { border-color: var(--mst-accent-ink); }
+.mst-qe-picker.Mui-focusVisible { outline: 2px solid var(--mst-accent); outline-offset: 2px; }
+.mst-qe-picker.Mui-disabled { opacity: 0.7; }
+.mst-qe-placeholder { font-size: 15px; line-height: 24px; color: var(--mst-ink-3); }
+.mst-qe-more { font-size: 12px; line-height: 16px; color: var(--mst-ink-2); }
+.mst-qe-help-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-top: 6px; }
+.mst-qe-help { margin: 6px 0 0; font-size: 12px; line-height: 16px; color: var(--mst-ink-2); }
+.mst-qe-help-row .mst-qe-help { margin: 0; }
+.mst-qe-help[data-tone="warn"] { font-weight: 600; color: var(--mst-warn-ink); }
+
+/* the tags: chips, then the add button or the field */
+.mst-qe-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 32px; }
+.mst-qe-tags > .MuiButton-root { min-height: 32px; margin-left: -6px; padding: 4px 10px; }
+
+/* how they take it: a 48 px two-choice switch */
+.mst-qe-how.MuiToggleButtonGroup-root { display: flex; width: 100%; max-width: 560px; }
+.mst-qe-how .MuiToggleButton-root { flex: 1; justify-content: flex-start; gap: 8px; min-height: 40px; padding: 6px 16px; }
+.mst-qe-how .MuiToggleButton-root svg { color: var(--mst-accent-ink); }
+.mst-qe-how-label { font-weight: 600; color: var(--mst-ink); }
+.mst-qe-how-hint { font-weight: 400; color: var(--mst-ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+@media (max-width: 599px) {
+  .mst-qe-details { padding: 16px; }
+  .mst-qe-how-hint { display: none; }
+}

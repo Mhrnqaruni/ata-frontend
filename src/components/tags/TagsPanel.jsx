@@ -1,4 +1,4 @@
-// The Tags tab on the Classes page: create, rename and archive student tags, and choose which students have each.
+// The Student groups tab on the Classes page (tags in the data): create, rename and archive groups, and choose who is in each.
 // Area: academics
 
 import { useTeacherData } from '../../hooks/useTeacherData';
@@ -57,7 +57,7 @@ export default function TagsPanel({ newRequest = 0 }) {
   }, [tagsQuery.data]);
   // Membership changes are local until Save; changing the tag must not silently discard them.
   const canLeave = () =>
-    !dirty || window.confirm('Discard unsaved membership changes? Your saved tag members will stay unchanged.');
+    !dirty || window.confirm("Discard unsaved changes? The group's saved members stay as they are.");
   const choose = (tag) => {
     if (busy || !canLeave()) return;
     const ids = data.students.filter((s) => s.tags.some((t) => t.id === tag?.id)).map((s) => s.id);
@@ -116,7 +116,7 @@ export default function TagsPanel({ newRequest = 0 }) {
   };
   return (
     <Box className="mst-tags-panel" sx={{ display: 'grid', gap: 2 }}>
-      <QueryNotice query={tagsQuery} label="tags" />
+      <QueryNotice query={tagsQuery} label="student groups" />
       {error && <Alert severity="error">{error}</Alert>}
       {message && <Alert severity="success">{message}</Alert>}
       <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
@@ -128,11 +128,11 @@ export default function TagsPanel({ newRequest = 0 }) {
           isOptionEqualToValue={(a, b) => a.id === b.id}
           getOptionLabel={(tag) => `${tag.name} (${tag.count ?? 0})`}
           onChange={(_, tag) => choose(tag)}
-          renderInput={(params) => <TextField {...params} size="small" label="Choose a tag" />}
+          renderInput={(params) => <TextField {...params} size="small" label="Choose a group" />}
         />
         {selected && (
           <IconButton
-            aria-label={`Options for tag ${selected.name}`}
+            aria-label={`Options for group ${selected.name}`}
             aria-haspopup="menu"
             onClick={(event) => setMenu(event.currentTarget)}
             disabled={busy}
@@ -164,7 +164,7 @@ export default function TagsPanel({ newRequest = 0 }) {
               });
             }}
           >
-            Archive tag
+            Archive group
           </MenuItem>
         </Menu>
       </Box>
@@ -217,7 +217,7 @@ export default function TagsPanel({ newRequest = 0 }) {
         </Box>
       ) : (
         <Typography variant="body2" color="text.secondary">
-          Choose a tag to manage its members, or use New tag to create one.
+          Choose a group to manage its members, or use New group to create one.
         </Typography>
       )}
       {loading ? (
@@ -284,17 +284,17 @@ export default function TagsPanel({ newRequest = 0 }) {
         maxWidth="xs"
         PaperProps={{ component: 'form', onSubmit: saveName }}
       >
-        <DialogTitle>{nameDialog === 'rename' ? 'Rename tag' : 'New tag'}</DialogTitle>
+        <DialogTitle>{nameDialog === 'rename' ? 'Rename group' : 'New group'}</DialogTitle>
         <DialogContent>
           <Typography variant="body2" sx={{ mb: 2 }}>
-            Private label for students across your classes. Tags do not change AI grading.
+            A private group of students across your classes. Groups don&rsquo;t change AI grading.
           </Typography>
-          <QueryNotice query={tagsQuery} label="tags" />
+          <QueryNotice query={tagsQuery} label="student groups" />
           {error && <Alert severity="error">{error}</Alert>}
           <TextField
             autoFocus
             fullWidth
-            label="Tag name"
+            label="Group name"
             margin="dense"
             value={name}
             onChange={(event) => setName(event.target.value)}
@@ -307,7 +307,7 @@ export default function TagsPanel({ newRequest = 0 }) {
             Cancel
           </Button>
           <Button type="submit" variant="contained" disabled={busy || !name.trim()}>
-            {busy ? 'Saving…' : nameDialog === 'rename' ? 'Save name' : 'Create tag'}
+            {busy ? 'Saving…' : nameDialog === 'rename' ? 'Save name' : 'Create group'}
           </Button>
         </DialogActions>
       </Dialog>

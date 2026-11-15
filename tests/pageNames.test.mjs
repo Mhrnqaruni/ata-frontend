@@ -1,12 +1,13 @@
-// Page names (Phase 1.34 SOT-1): every route in App.jsx has a name in PAGES and every name has its route, so a
-// route added without a name fails here; pageFor() gives a raw path's name and pattern, never the path.
+// Page names (Phase 1.34 SOT-1): every route in App.jsx, and in the quiz area's route lists that it places (Phase 1.46,
+// SOT-16), has a name in PAGES and every name has its route; pageFor() gives a raw path's name and pattern.
 // Area: platform
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { PAGES, pageFor } from '../src/services/pages.js';
 
-const app = await readFile(new URL('../src/App.jsx', import.meta.url), 'utf8');
+const read = (file) => readFile(new URL(`../src/${file}`, import.meta.url), 'utf8');
+const app = (await read('App.jsx')) + (await read('areas/quizzes/QuizRoutes.jsx'));
 const routes = [...app.matchAll(/<Route\b[^>]*?\bpath="([^"]+)"/g)].map((match) => match[1]);
 
 test('every route in App.jsx has a page name, and every page name has its route', () => {
@@ -37,6 +38,10 @@ test('pageFor() names a raw path by its pattern, with ids, codes and tokens left
     '/assessments/job_fe79e4e2/review/stu-42': ['assessments.review', '/assessments/:job_id/review/:entity_id'],
     '/assessments/new': ['assessments.new', '/assessments/new'],
     '/quiz/join/ABC123': ['quiz.join.code', '/quiz/join/:roomCode'],
+    '/join': ['join', '/join'],
+    '/join/NCFL38': ['join.code', '/join/:code'],
+    '/quizzes/3f9c2a1b-8d7e/results': ['quizzes.results', '/quizzes/:quizId/results'],
+    '/quizzes/sp-sessions/45048ed9/analytics': ['quizzes.sp.analytics', '/quizzes/sp-sessions/:sessionId/analytics'],
     '/report/SECRET-share-token': ['report', '/report/:report_token'],
     '/chat': ['chat', '/chat/:sessionId?'],
     '/chat/41': ['chat', '/chat/:sessionId?'],
