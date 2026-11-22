@@ -26,12 +26,14 @@ export function resetTeacherSession({ preserveDrafts = false } = {}) {
   queryClient.clear(); // Cancels old reads before a new account can render.
   return generation;
 }
+// What a class or student change refreshes, the Students list (Phase 1.48) included.
+const roster = ['classes', 'class', 'summary', 'tags', 'quizzes', 'performance', 'students'];
 export const cacheFamilies = {
-  roster: ['classes', 'class', 'summary', 'tags', 'quizzes', 'performance'],
+  roster,
   assessment: ['assessments', 'quick', 'class', 'summary', 'performance'],
   quiz: ['quizzes', 'quizSession', 'class', 'summary', 'performance'],
   tags: ['tags', 'classes', 'class', 'quizzes', 'performance'],
-  all: ['classes', 'class', 'summary', 'tags', 'quizzes', 'performance', 'assessments', 'quick', 'quizSession'],
+  all: [...roster, 'assessments', 'quick', 'quizSession'],
 };
 // Only a notification crosses tabs. No student data or credentials are broadcast.
 const channel =

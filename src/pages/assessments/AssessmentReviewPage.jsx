@@ -1,13 +1,16 @@
-// The marking review page for one student: every question on one page with the question map, the AI's reading before
-// each mark, and marks and feedback saved card by card with Undo (Phase 1.47 S4.3; SOT-6, design.md §3.9).
+// The marking review page for one student: every question on one page with the map, the AI's reading before each
+// mark, marks and feedback saved card by card with Undo (Phase 1.47), Download, and feedback for all students.
 // Area: assessments
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { Alert, AlertTitle, Box, Button, Skeleton } from '@mui/material';
+import { Alert, AlertTitle, Box, Button, CircularProgress, Skeleton } from '@mui/material';
+import AutoAwesomeRounded from '@mui/icons-material/AutoAwesomeRounded';
 import ErrorAlert from '../../components/common/ErrorAlert';
 import OriginalScriptDialog from '../../components/assessments/OriginalScriptDialog';
-import DownloadMenu from '../../components/review/DownloadMenu';
+import ReportDownloadMenu from '../../areas/assessments/ReportDownloadMenu';
+import realisticService from '../../areas/assessments/realisticService';
+import { preparedWords, WORDS } from '../../areas/assessments/realisticRules';
 import ReviewHeader from '../../components/review/ReviewHeader';
 import ReviewLayout from '../../components/review/ReviewLayout';
 import UndoToast from '../../components/review/UndoToast';
@@ -32,6 +35,7 @@ function StudentReview({ jobId, entityId }) {
   const [load, setLoad] = useState({ loading: true, error: null, data: null });
   const [script, setScript] = useState(null); // the question whose submitted script is open
   const [inView, setInView] = useState(null);
+  const [queueing, setQueueing] = useState(false); // "Prepare feedback for all students" is waiting for its answer
 
   // The review, with the time it was asked for, so a read older than a save never undoes it.
   const read = useCallback(async () => {
@@ -104,12 +108,16 @@ function StudentReview({ jobId, entityId }) {
       showSnackbar(error.message || 'Could not load this review.', 'error', error.reference);
     }
   };
-  const download = async (format) => {
+
+  // Queues every student whose review is final, then says how many are queued and ready (SOT-6 API).
+  const prepareAll = async () => {
+    setQueueing(true);
     try {
-      await reviewService.downloadReport(jobId, entityId, format);
+      showSnackbar(preparedWords(await realisticService.prepareAll(jobId)), 'success');
     } catch (error) {
-      showSnackbar(error.message || 'Could not download the report.', 'error', error.reference);
-      throw error;
+      showSnackbar(error.message, 'error', error.reference);
+    } finally {
+      setQueueing(false);
     }
   };
 
@@ -143,7 +151,15 @@ function StudentReview({ jobId, entityId }) {
             {SCRIPT}
           </Button>
         ) : null}
-        {total === null ? null : <DownloadMenu onDownload={download} />}
+        <Button
+          disabled={queueing}
+          onClick={prepareAll}
+          startIcon={queueing ? <CircularProgress size={16} /> : <AutoAwesomeRounded />}
+          variant="outlined"
+        >
+          {WORDS.prepareAll}
+        </Button>
+        {total === null ? null : <ReportDownloadMenu entityId={entityId} jobId={jobId} name={data.studentName} />}
       </ReviewHeader>
       {data.isOutsider && data.matchNote ? (
         <Alert

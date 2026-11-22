@@ -49,13 +49,15 @@ const classService = {
       throw new Error(errorMessage);
     }
   },
+  // Removes the class only: its students and every result stay (Phase 1.48, C3).
   deleteClass: async (classId) => {
     try {
       await apiClient.delete(`/api/classes/${classId}`);
     } catch (error) {
-      console.error(`Error deleting class ${classId}:`, error);
-      const errorMessage = error.response?.data?.detail || 'Failed to delete the class.';
-      throw new Error(errorMessage);
+      console.error(`Error removing class ${classId}:`, error);
+      // The server's own words, or design §3.1's when it has none.
+      const detail = error.response?.data?.detail;
+      throw new Error(typeof detail === 'string' && detail ? detail : "Couldn't remove the class. Try again.");
     }
   },
   exportClassRoster: async (classId) => {

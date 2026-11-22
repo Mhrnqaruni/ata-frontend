@@ -18,8 +18,6 @@ export const initialStateV2 = {
   audienceStudents: null,
   questionFiles: [],
   answerKeyFiles: [],
-  markingStrategy: 'document', // 'document' or 'ai'
-  totalMarks: 100,
   uploadMode: 'batch', // 'batch' or 'manual'
   config: null, // Will hold the AI-parsed V2 config object
   answerSheetFiles: [],

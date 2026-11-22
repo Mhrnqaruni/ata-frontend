@@ -1,5 +1,5 @@
 // One class's page: its stats and student roster, with Add students (from files or one by one), edit, export and
-// delete, and an AI chat.
+// remove (only the class goes; its students stay), and an AI chat.
 // Area: academics
 
 import AddStudentsDialog from '../components/classes/AddStudentsDialog';
@@ -47,6 +47,12 @@ import PageHeader from '../components/common/PageHeader';
 // --- Service Import ---
 import classService from '../services/classService';
 import { useSnackbar } from '../hooks/useSnackbar';
+
+// The remove dialog's words (design §3.1): only the class goes, and its students stay with their results.
+const removeClassWords = (count) =>
+  count
+    ? `Only the class goes. Its ${count} ${count === 1 ? 'student stays' : 'students stay'} in your Students list with all their results, and quizzes keep their results. You can't bring the class back.`
+    : "Only the class goes. Quizzes keep their results. You can't bring the class back.";
 
 /**
  * The "Class Details" page, with full advanced management capabilities.
@@ -107,16 +113,18 @@ const ClassDetails = () => {
     }
   };
 
+  // Closing keeps the dialog's words, so they don't change while it fades out.
+  const handleCloseConfirmDelete = () => setDeleteConfirmation((prev) => ({ ...prev, open: false }));
   const handleOpenConfirmStudentDelete = (student) =>
     setDeleteConfirmation({ open: true, type: 'student', data: student });
   const handleDeleteStudent = async () => {
     try {
       await classService.removeStudent(class_id, deleteConfirmation.data.id);
       showSnackbar('Student removed successfully.', 'success');
-      setDeleteConfirmation({ open: false, type: null, data: null });
+      handleCloseConfirmDelete();
     } catch (err) {
       showSnackbar(err.message, 'error');
-      setDeleteConfirmation({ open: false, type: null, data: null });
+      handleCloseConfirmDelete();
     }
   };
 
@@ -153,18 +161,18 @@ const ClassDetails = () => {
     setDeleteConfirmation({ open: true, type: 'class', data: classData });
     handleMenuClose();
   };
+  // The dialog closes at once (so a second click can't send a second removal); the snackbar then says how it went.
+  // classService refreshes the classes, quizzes, Students list and analytics after a removal.
   const handleDeleteClass = async () => {
+    handleCloseConfirmDelete();
     try {
       await classService.deleteClass(class_id);
-      showSnackbar('Class deleted successfully.', 'success');
-      setDeleteConfirmation({ open: false, type: null, data: null });
+      showSnackbar('Class removed. Its students are in your Students list.', 'success');
       navigate('/classes');
     } catch (err) {
       showSnackbar(err.message, 'error');
-      setDeleteConfirmation({ open: false, type: null, data: null });
     }
   };
-  const handleCloseConfirmDelete = () => setDeleteConfirmation({ open: false, type: null, data: null });
 
   // Handler for student progress tracker button
   const handleStudentProgressTracker = (student) => {
@@ -197,10 +205,10 @@ const ClassDetails = () => {
   if (error) return <QueryNotice query={classQuery} label="this class" />;
   if (!classData) return <Alert severity="warning">Could not find class data.</Alert>;
 
-  const confirmationDescription =
-    deleteConfirmation.type === 'student'
-      ? `Are you sure you want to remove ${deleteConfirmation.data?.name}? This action cannot be undone.`
-      : `Are you sure you want to delete the class "${deleteConfirmation.data?.name}"? All associated students will also be removed. This action is irreversible.`;
+  const removingStudent = deleteConfirmation.type === 'student';
+  const confirmationDescription = removingStudent
+    ? `Are you sure you want to remove ${deleteConfirmation.data?.name}? This action cannot be undone.`
+    : removeClassWords(deleteConfirmation.data?.analytics?.studentCount);
 
   const analyticsCards = [
     { id: 'count', title: 'Students', value: classData.analytics.studentCount, icon: <PeopleAltOutlined /> },
@@ -307,7 +315,7 @@ const ClassDetails = () => {
           <ListItemIcon>
             <DeleteOutlineOutlined fontSize="small" color="error" />
           </ListItemIcon>
-          Delete class
+          Remove class
         </MenuItem>
       </Menu>
 
@@ -338,9 +346,10 @@ const ClassDetails = () => {
       <ConfirmationModal
         open={deleteConfirmation.open}
         onClose={handleCloseConfirmDelete}
-        onConfirm={deleteConfirmation.type === 'student' ? handleDeleteStudent : handleDeleteClass}
-        title={`Delete ${deleteConfirmation.type === 'student' ? 'Student' : 'Class'}`}
+        onConfirm={removingStudent ? handleDeleteStudent : handleDeleteClass}
+        title={removingStudent ? 'Delete Student' : `Remove ${deleteConfirmation.data?.name}?`}
         description={confirmationDescription}
+        confirmLabel={removingStudent ? undefined : 'Remove class'}
       />
     </Box>
   );

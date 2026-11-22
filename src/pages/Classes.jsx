@@ -1,9 +1,11 @@
-// The teacher's classes as a grid of cards, with Create a class (with or without class lists) and a Student groups tab.
+// The teacher's classes as a grid of cards, with Create a class (with or without class lists), then a Students tab
+// (every student, in a class or not) and a Student groups tab.
 // Area: academics
 
 import { useTeacherData } from '../hooks/useTeacherData';
 import QueryNotice from '../components/common/QueryNotice';
 import TagsPanel from '../components/tags/TagsPanel';
+import StudentsPanel from '../components/classes/StudentsPanel';
 
 // --- Core React Imports ---
 import React, { useState, useEffect, useCallback } from 'react';
@@ -22,6 +24,16 @@ import AddClassModal from '../components/classes/AddClassModal';
 import PageHeader from '../components/common/PageHeader';
 import EmptyState from '../components/common/EmptyState';
 
+// Each tab's header (design §3.2). The tab follows the address's ?view=, not its place, so group links keep working.
+const VIEWS = {
+  classes: { title: 'Classes', subtitle: "Your rosters, grades and each student's progress." },
+  students: { title: 'Students', subtitle: 'All your students, in a class or not.' },
+  tags: {
+    title: 'Student groups',
+    subtitle: "Private groups of students across your classes. Groups don't change AI grading.",
+  },
+};
+
 // --- Sub-Component for the Empty State ---
 /**
  * The main dashboard page for the "Your Classes" feature. This is the final,
@@ -30,7 +42,7 @@ import EmptyState from '../components/common/EmptyState';
 const Classes = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const section = searchParams.get('view') === 'tags' ? 1 : 0;
+  const view = ['students', 'tags'].includes(searchParams.get('view')) ? searchParams.get('view') : 'classes';
   const [newTagRequest, setNewTagRequest] = useState(0);
   const classesQuery = useTeacherData('classes');
   const classes = classesQuery.data || [];
@@ -98,32 +110,42 @@ const Classes = () => {
       <Box>
         <PageHeader
           actions={
-            <Button
-              onClick={section === 1 ? () => setNewTagRequest((value) => value + 1) : handleOpenModal}
-              startIcon={<AddOutlined />}
-              variant="contained"
-            >
-              {section === 1 ? 'New group' : 'Create class'}
-            </Button>
+            view === 'students' ? null : (
+              <Button
+                onClick={view === 'tags' ? () => setNewTagRequest((value) => value + 1) : handleOpenModal}
+                startIcon={<AddOutlined />}
+                variant="contained"
+              >
+                {view === 'tags' ? 'New group' : 'Create class'}
+              </Button>
+            )
           }
-          subtitle={
-            section === 1
-              ? "Private groups of students across your classes. Groups don't change AI grading."
-              : "Your rosters, grades and each student's progress."
-          }
-          title={section === 1 ? 'Student groups' : 'Classes'}
+          subtitle={VIEWS[view].subtitle}
+          title={VIEWS[view].title}
         />
+        {/* The pills scroll in their own row if they ever don't fit, so the page never scrolls sideways. */}
         <Tabs
-          value={section}
-          onChange={(_, v) => setSearchParams(v ? { view: 'tags' } : {})}
-          aria-label="Classes and student groups"
+          value={view}
+          onChange={(_, next) => setSearchParams(next === 'classes' ? {} : { view: next })}
+          aria-label="Classes, students and student groups"
+          scrollButtons={false}
+          variant="scrollable"
           sx={{ mb: 2 }}
         >
-          <Tab label="Classes" />
-          <Tab label="Student groups" />
+          <Tab label="Classes" value="classes" />
+          <Tab label="Students" value="students" />
+          <Tab label="Student groups" value="tags" />
         </Tabs>
-        <QueryNotice query={classesQuery} label="classes" />
-        {section === 0 ? renderContent() : <TagsPanel newRequest={newTagRequest} />}
+        {view === 'classes' ? (
+          <>
+            <QueryNotice query={classesQuery} label="classes" />
+            {renderContent()}
+          </>
+        ) : view === 'students' ? (
+          <StudentsPanel onCreateClass={handleOpenModal} />
+        ) : (
+          <TagsPanel newRequest={newTagRequest} />
+        )}
       </Box>
 
       <AddClassModal open={isModalOpen} onClose={handleCloseModal} onCreated={handleCreated} />
