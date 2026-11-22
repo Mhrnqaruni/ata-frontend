@@ -1,29 +1,25 @@
-// The student results table of an assessment: status and grade per student, a Review button and report download.
+// The student results table of an assessment: status and grade per student, a Review button and each student's
+// Download menu (the report, and the marked paper with comments or the grade only; Phase 1.49).
 // Area: assessments
 
 import useTableSort from '../../hooks/useTableSort';
 import { Link } from 'react-router-dom';
 import React, { useState } from 'react';
-import { useSnackbar } from '../../hooks/useSnackbar';
 import {
   Button,
   Card,
-  IconButton,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Tooltip,
   Typography,
   useTheme,
-  Menu,
-  MenuItem,
   TableSortLabel,
   Link as MuiLink,
 } from '@mui/material';
-import DownloadRounded from '@mui/icons-material/DownloadRounded';
+import ReportDownloadMenu from '../../areas/assessments/ReportDownloadMenu';
 import EmptyState from '../common/EmptyState';
 import { initialsOf } from '../classes/StudentTable';
 import AssignmentOutlined from '@mui/icons-material/AssignmentOutlined';
@@ -31,7 +27,6 @@ import WarningAmberRounded from '@mui/icons-material/WarningAmberRounded';
 import { useNavigate, useParams } from 'react-router-dom';
 import StatusChip from './StatusChip';
 import '../common/responsive-table.css';
-import reviewService from '../../services/reviewService';
 
 const ResultsTable = ({ rows, assessmentOnly = false, toUnmatched }) => {
   const navigate = useNavigate();
@@ -62,22 +57,6 @@ const ResultsTable = ({ rows, assessmentOnly = false, toUnmatched }) => {
       </TableSortLabel>
     </TableCell>
   );
-
-  const { showSnackbar } = useSnackbar();
-  const [downloadMenu, setDownloadMenu] = useState(null);
-  const [downloading, setDownloading] = useState(null);
-  const handleDownload = async (format) => {
-    const entityId = downloadMenu.entityId;
-    setDownloadMenu(null);
-    setDownloading(entityId);
-    try {
-      await reviewService.downloadReport(job_id, entityId, format);
-    } catch (error) {
-      showSnackbar(error.message || 'Report download failed.', 'error');
-    } finally {
-      setDownloading(null);
-    }
-  };
 
   const handleReview = (entityId) => {
     navigate(`/assessments/${job_id}/review/${entityId}`);
@@ -177,17 +156,15 @@ const ResultsTable = ({ rows, assessmentOnly = false, toUnmatched }) => {
               >
                 Review
               </Button>
-              <Tooltip title={canDownload ? 'Download report' : 'No report yet'}>
-                <span>
-                  <IconButton
-                    aria-label={`Download ${s.studentName}'s report`}
-                    onClick={(event) => setDownloadMenu({ anchor: event.currentTarget, entityId: s.entityId })}
-                    disabled={!canDownload || downloading === s.entityId}
-                  >
-                    <DownloadRounded fontSize="small" />
-                  </IconButton>
-                </span>
-              </Tooltip>
+              <ReportDownloadMenu
+                compact
+                disabled={!canDownload}
+                entityId={s.entityId}
+                jobId={job_id}
+                label={`Download for ${s.studentName}`}
+                name={s.studentName}
+                title={canDownload ? 'Download' : 'No report yet'}
+              />
             </>
           )}
         </TableCell>
@@ -200,10 +177,6 @@ const ResultsTable = ({ rows, assessmentOnly = false, toUnmatched }) => {
       <Button size="small" aria-pressed={showIds} onClick={() => setShowIds((v) => !v)}>
         {showIds ? 'Hide' : 'Show'} student IDs
       </Button>
-      <Menu anchorEl={downloadMenu?.anchor} open={Boolean(downloadMenu)} onClose={() => setDownloadMenu(null)}>
-        <MenuItem onClick={() => handleDownload('pdf')}>PDF (.pdf)</MenuItem>
-        <MenuItem onClick={() => handleDownload('docx')}>Word (.docx)</MenuItem>
-      </Menu>
       {sortColumn === 'gradeSort' && (
         <Typography variant="caption" sx={{ px: 2 }}>
           Sorted by percentage; ungraded results last.

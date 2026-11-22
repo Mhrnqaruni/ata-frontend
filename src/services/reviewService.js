@@ -4,6 +4,7 @@
 
 import { invalidateAfter, cacheFamilies } from './queryCache';
 import apiClient, { apiError } from './api';
+import saveBlob from '../utils/saveBlob';
 
 const reviewService = {
   async source(jobId, studentId, questionId, execution) {
@@ -83,37 +84,9 @@ const reviewService = {
         `/api/assessments/${jobId}/students/${studentId}/report.docx`,
         { responseType: 'blob', params: { format } } // Keep the existing DOCX URL compatible.
       );
-
-      // Create a URL for the blob
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-
-      // Create a temporary link element to trigger the download
-      const link = document.createElement('a');
-      link.href = url;
-
-      // Extract filename from Content-Disposition header if available
-      // Note: Axios normalizes headers to lowercase
-      let filename = `report_${studentId}.${format}`; // fallback
-      const contentDisposition = response.headers['content-disposition'] || response.headers['Content-Disposition'];
-      if (contentDisposition) {
-        // Match filename with or without quotes, handles: filename="name.docx" or filename=name.docx
-        const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-        if (filenameMatch && filenameMatch[1]) {
-          filename = filenameMatch[1].replace(/['"]/g, ''); // Remove quotes
-        }
-      }
-      link.setAttribute('download', filename);
-
-      // Append to the document, click, and then remove
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode.removeChild(link);
-
-      // Clean up the blob URL
-      window.URL.revokeObjectURL(url);
+      saveBlob(response, `report_${studentId}.${format}`);
     } catch (error) {
       console.error(`Error downloading report for student ${studentId} in job ${jobId}:`, error);
-      // Optionally, show a user-facing error message here
       throw apiError(error, 'Could not download the report.');
     }
   },

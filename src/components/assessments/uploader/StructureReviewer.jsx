@@ -2,9 +2,10 @@
 // Area: assessments
 
 import React, { useEffect, useRef, useState } from 'react';
-import { TextField, Button, IconButton } from '@mui/material';
+import { TextField, Button, Chip, IconButton } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+import AutoAwesomeRounded from '@mui/icons-material/AutoAwesomeRounded';
 import useNumberInput from '../../../hooks/useNumberInput';
 import MathInputWithPreview from '../../common/MathInputWithPreview';
 import MathTextDisplay from '../../common/MathTextDisplay';
@@ -133,6 +134,8 @@ export default function StructureReviewer({ config, dispatch, disabled }) {
                           (issue) => issue.questionId === q.id
                         );
                         const number = questions.findIndex((item) => item.id === q.id) + 1;
+                        // The AI drafted this question's answer and marking criteria (SOT-6.2).
+                        const drafted = q.markingBasis?.provenance === 'generated';
                         return (
                           <div className="mst-sr-q" key={q.id}>
                             <button
@@ -141,7 +144,7 @@ export default function StructureReviewer({ config, dispatch, disabled }) {
                               onClick={() => toggle(q.id)}
                               aria-expanded={open}
                               aria-controls={`extracted-${q.id}`}
-                              aria-label={`${q.printedLabel || `Question ${number}`}: ${q.text || 'Untitled'}`}
+                              aria-label={`${q.printedLabel || `Question ${number}`}: ${q.text || 'Untitled'}${drafted ? ' (AI draft)' : ''}`}
                             >
                               <span className="mst-question-num" aria-hidden="true">
                                 {q.printedLabel || number}
@@ -150,6 +153,16 @@ export default function StructureReviewer({ config, dispatch, disabled }) {
                                 <MathTextDisplay text={q.text || `Question ${number} · add question text`} />
                                 {readingIssues.length > 0 ? ' · Check source' : ''}
                               </span>
+                              {drafted && (
+                                <Chip
+                                  component="span"
+                                  size="small"
+                                  color="primary"
+                                  icon={<AutoAwesomeRounded className="mst-ai-glyph" />}
+                                  label="AI draft"
+                                  sx={{ flex: 'none' }}
+                                />
+                              )}
                               <span className="mst-hint">{q.maxScore ?? 0} marks</span>
                               <span aria-hidden="true">{open ? '−' : '+'}</span>
                             </button>

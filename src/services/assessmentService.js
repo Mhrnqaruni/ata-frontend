@@ -1,5 +1,5 @@
 // Wraps /api/assessments: list and delete assessments, create them from batch or manual uploads, and retry.
-// Also wraps document parsing, AI mark splitting, mark overrides and page counting.
+// Also wraps document parsing, mark overrides and page counting.
 // Area: assessments
 
 import { invalidateAfter, cacheFamilies } from './queryCache';
@@ -63,17 +63,6 @@ const assessmentService = {
     } catch (error) {
       console.error('Error creating V2 assessment job:', error);
       throw apiError(error, 'Failed to create V2 assessment job.');
-    }
-  },
-
-  distributeScoresWithAI: async (config, totalMarks) => {
-    try {
-      const payload = { config, totalMarks };
-      const response = await apiClient.post('/api/assessments/distribute-scores', payload);
-      return response.data;
-    } catch (error) {
-      console.error('Error distributing scores with AI:', error);
-      throw apiError(error, 'Failed to distribute scores.');
     }
   },
 

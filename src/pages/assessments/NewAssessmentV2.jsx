@@ -25,8 +25,6 @@ import {
   useTheme,
 } from '@mui/material';
 import AutoAwesomeRounded from '@mui/icons-material/AutoAwesomeRounded';
-import DescriptionOutlined from '@mui/icons-material/DescriptionOutlined';
-import CalculateOutlined from '@mui/icons-material/CalculateOutlined';
 import FileCopyOutlined from '@mui/icons-material/FileCopyOutlined';
 import PersonOutlined from '@mui/icons-material/PersonOutlined';
 import PageHeader from '../../components/common/PageHeader';
@@ -36,7 +34,7 @@ import usePageCounts from '../../hooks/usePageCounts';
 // Import our full suite of components
 import OrderedDocumentUploader from '../../components/assessments/uploader/OrderedDocumentUploader';
 import StructureReviewer from '../../components/assessments/uploader/StructureReviewer';
-import GradingModeSelector from '../../components/assessments/uploader/GradingModeSelector';
+import CheckNotices from '../../areas/assessments/CheckNotices';
 import Step1Setup from '../../components/assessments/wizard/Step1Setup';
 import Step3Upload from '../../components/assessments/wizard/Step3Upload';
 import ManualUploader from '../../components/assessments/uploader/ManualUploader';
@@ -45,7 +43,6 @@ import WizardStep from '../../components/assessments/WizardStep';
 import assessmentService from '../../services/assessmentService';
 import classService from '../../services/classService';
 import { useSnackbar } from '../../hooks/useSnackbar';
-import useNumberInput from '../../hooks/useNumberInput';
 import { wizardReducerV2, initialStateV2 } from './NewAssessmentV2.state';
 
 const steps = ['Set up', 'Define', 'Upload answers', 'Review & start'];
@@ -65,6 +62,7 @@ const NewAssessmentV2 = () => {
   const [analysis, setAnalysis] = useState(null);
   const [analysisError, setAnalysisError] = useState('');
   const [uploadingAnalysis, setUploadingAnalysis] = useState(false);
+  const [drafting, setDrafting] = useState(false);
   const restoredAnalysis = useRef(null),
     appliedAnalysis = useRef(null),
     analysisPosting = useRef(false);
@@ -126,17 +124,7 @@ const NewAssessmentV2 = () => {
     state.config?.sections.every((section) => section.questions.every((q) => q.text.trim() && q.maxScore > 0))
   );
 
-  // Number input hook for total marks
   const docPages = usePageCounts([...state.questionFiles, ...state.answerKeyFiles]);
-  const totalMarksInputProps = useNumberInput(
-    state.totalMarks,
-    (value) => dispatch({ type: 'UPDATE_FIELD', payload: { field: 'totalMarks', value } }),
-    {
-      defaultValue: 0,
-      min: 0,
-      max: 1000,
-    }
-  );
 
   // Load class list on mount (unchanged)
   useEffect(() => {
@@ -245,15 +233,6 @@ const NewAssessmentV2 = () => {
       showSnackbar('Question paper and answer key together must be 20 MB or smaller.', 'error');
       return;
     }
-    if (
-      state.markingStrategy === 'ai' &&
-      (String(totalMarksInputProps.value).trim() === '' ||
-        !Number.isInteger(Number(totalMarksInputProps.value)) ||
-        Number(totalMarksInputProps.value) <= 0)
-    ) {
-      showSnackbar('Enter a positive whole-number total before reading the documents.', 'error');
-      return;
-    }
     analysisPosting.current = true;
     try {
       if (state.answerKeyFiles.length) {
@@ -274,6 +253,7 @@ const NewAssessmentV2 = () => {
     }
     analysisPosting.current = true;
     setUploadingAnalysis(true);
+    setDrafting(false);
     setAnalysis(null);
     setAnalysisError('');
     dispatch({ type: 'START_PARSING' });
@@ -287,8 +267,6 @@ const NewAssessmentV2 = () => {
         {
           assessmentName: state.assessmentName,
           classId: state.classId,
-          markingStrategy: state.markingStrategy,
-          totalMarks: state.totalMarks,
           audience: state.audience,
           retryJobId,
         },
@@ -316,9 +294,6 @@ const NewAssessmentV2 = () => {
     state.answerKeyFiles,
     state.classId,
     state.assessmentName,
-    state.markingStrategy,
-    state.totalMarks,
-    totalMarksInputProps.value,
     state.audience,
     retryJobId,
     location.pathname,
@@ -336,6 +311,7 @@ const NewAssessmentV2 = () => {
       return;
     }
     analysisPosting.current = true;
+    setDrafting(true);
     const id = crypto.randomUUID();
     const params = new URLSearchParams(location.search);
     params.set('analysisId', id);
@@ -545,38 +521,9 @@ const NewAssessmentV2 = () => {
                   fileMeta={docPages}
                 />
               </div>
-              <Box sx={{ mt: 3 }}>
-                <ChoiceCards
-                  disabled={isProcessing}
-                  legend="Marks for each question"
-                  name="marking-strategy"
-                  onChange={(value) => dispatch({ type: 'UPDATE_FIELD', payload: { field: 'markingStrategy', value } })}
-                  options={[
-                    {
-                      value: 'document',
-                      label: 'Read them from the paper',
-                      description: 'Use the marks printed in the documents.',
-                      icon: <DescriptionOutlined />,
-                    },
-                    {
-                      value: 'ai',
-                      label: 'Let AI share out the marks',
-                      description: 'Give the total; AI assigns marks per question.',
-                      icon: <CalculateOutlined />,
-                      ai: true,
-                      content: (
-                        <TextField
-                          type="number"
-                          label="Total marks for this exam"
-                          {...totalMarksInputProps}
-                          disabled={isProcessing}
-                          sx={{ mt: 1, width: 220, maxWidth: '100%' }}
-                        />
-                      ),
-                    },
-                  ]}
-                  value={state.markingStrategy}
-                />
+              <Box component="p" sx={{ mt: 2, mb: 0, fontSize: 12, lineHeight: '16px', color: 'var(--mst-ink-2)' }}>
+                Marks come from the paper. AI suggests any that are missing, and you can change every mark before
+                grading.
               </Box>
               <div className="mst-structure-row">
                 <Button
@@ -597,11 +544,6 @@ const NewAssessmentV2 = () => {
                 ) : null}
               </div>
             </Box>
-            {analysis?.result?.allocationWarning && (
-              <Alert severity="warning">
-                {analysis.result.allocationWarning} Check and set each question’s marks before starting grading.
-              </Alert>
-            )}
             {state.status === 'parsing' ? (
               <div className="mst-ai-progress" role="status">
                 <div className="mst-ai-bar" />
@@ -635,20 +577,14 @@ const NewAssessmentV2 = () => {
             {state.config && (
               <Box className="mst-reviewer" mt={4}>
                 <h3 className="mst-subhead">Check the questions</h3>
-                {state.config.referenceNotice && (
-                  <Alert severity={state.config.referenceStatus === 'needs_review' ? 'warning' : 'info'} sx={{ mb: 2 }}>
-                    {state.config.referenceNotice}
-                  </Alert>
-                )}
-                {state.config.sections.some((s) =>
-                  s.questions.some((q) => !String(q.answer || '').trim() && !String(q.rubric || '').trim())
-                ) && (
-                  <Button variant="outlined" onClick={handlePrepareReference} disabled={isProcessing} sx={{ mb: 2 }}>
-                    Prepare draft marking scheme
-                  </Button>
-                )}
+                <CheckNotices
+                  config={state.config}
+                  allocationWarning={analysis?.result?.allocationWarning}
+                  drafting={isProcessing && drafting}
+                  disabled={isProcessing}
+                  onDraft={handlePrepareReference}
+                />
                 <StructureReviewer config={state.config} dispatch={dispatch} disabled={isProcessing} />
-                <GradingModeSelector config={state.config} dispatch={dispatch} disabled={isProcessing} />
               </Box>
             )}
           </Box>
@@ -752,7 +688,6 @@ const NewAssessmentV2 = () => {
             'Answer sheets',
             `${fileCount} ${fileCount === 1 ? 'file' : 'files'}${state.uploadMode === 'manual' ? ', added per student' : ''}`,
           ],
-          ['Marks', state.markingStrategy === 'ai' ? 'Shared out by AI' : 'Read from the paper'],
         ];
         return (
           <Box>

@@ -1,5 +1,5 @@
-// The app-wide pop-up messages: a provider that shows them and a hook with showSnackbar(message, severity, reference).
-// An error with a reference shows it and stays until it's closed.
+// The app-wide pop-up messages: a provider that shows them and a hook with showSnackbar(message, severity, reference,
+// action). An error with a reference stays until it's closed; an action ({ label, onClick }) adds one button.
 // Area: platform
 
 // --- Core React Imports ---
@@ -7,7 +7,7 @@ import React, { useState, createContext, useContext, useMemo } from 'react';
 
 // --- MUI Component Imports ---
 // Import the components needed to render the notification UI.
-import { Snackbar, Alert } from '@mui/material';
+import { Snackbar, Alert, Button } from '@mui/material';
 import ErrorReference from '../components/common/ErrorReference';
 import { formatReference } from '../services/clientErrors';
 
@@ -27,13 +27,14 @@ export const SnackbarProvider = ({ children }) => {
     message: '',
     severity: 'info', // Can be 'error', 'warning', 'info', or 'success'
     reference: null, // An error's reference (error.reference), shown for errors only
+    action: null, // One button, { label, onClick }, such as Download when feedback is ready
   });
 
   // --- Core Functions ---
   // This is the function that will be exposed to the rest of the app.
   // It takes a message and severity and updates the state to show the snackbar.
-  const showSnackbar = (message, severity = 'info', reference = null) => {
-    setSnackbarState({ open: true, message, severity, reference });
+  const showSnackbar = (message, severity = 'info', reference = null, action = null) => {
+    setSnackbarState({ open: true, message, severity, reference, action });
   };
 
   // This function handles the closing of the snackbar, either by timeout or close button.
@@ -53,6 +54,20 @@ export const SnackbarProvider = ({ children }) => {
 
   // An error's reference is its last line, and the error then stays until it's closed, so there's time to copy it.
   const reference = snackbarState.severity === 'error' ? snackbarState.reference : null;
+  // A message with a button stays 10 s, so there's time to press it; pressing it closes the message.
+  const { action } = snackbarState;
+  const button = action ? (
+    <Button
+      color="inherit"
+      onClick={() => {
+        handleClose();
+        action.onClick();
+      }}
+      size="small"
+    >
+      {action.label}
+    </Button>
+  ) : undefined;
 
   return (
     <SnackbarContext.Provider value={contextValue}>
@@ -64,7 +79,7 @@ export const SnackbarProvider = ({ children }) => {
       */}
       <Snackbar
         open={snackbarState.open}
-        autoHideDuration={formatReference(reference) ? null : 4500}
+        autoHideDuration={formatReference(reference) ? null : action ? 10000 : 4500}
         onClose={handleClose}
         // Position the snackbar at the bottom center of the screen.
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
@@ -74,7 +89,13 @@ export const SnackbarProvider = ({ children }) => {
           for the message, based on the 'severity' state. The onClose prop
           adds the 'X' close button to the alert.
         */}
-        <Alert className="mst-toast" onClose={handleClose} severity={snackbarState.severity} sx={{ width: '100%' }}>
+        <Alert
+          action={button}
+          className="mst-toast"
+          onClose={handleClose}
+          severity={snackbarState.severity}
+          sx={{ width: '100%' }}
+        >
           {snackbarState.message}
           <ErrorReference reference={reference} />
         </Alert>
